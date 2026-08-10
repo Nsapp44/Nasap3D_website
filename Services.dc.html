@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#161514;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#ff5a3c}
+a:hover{color:#ff7a5c}
+</style>
+<script src="./pageloader.js"></script>
+<script src="./navguard.js"></script>
+</helmet>
+
+<div style="background:#161514;min-height:100vh">
+
+  <!-- HEADER -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 40px;border-bottom:1px solid rgba(255,255,255,.08)">
+    <a href="Home.dc.html" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+      <img src="assets/logo-blanc-full.png" alt="Nasap3D" style="height:34px;width:auto">
+    </a>
+    <div style="display:flex;gap:26px;font:500 13px 'Inter',sans-serif;color:rgba(255,255,255,.62)">
+      <a href="Home.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Accueil</a>
+      <span style="color:#f3f1ec;border-bottom:2px solid #ff5a3c;padding-bottom:4px;display:inline-block;transition:transform .2s ease" style-hover="transform:scale(1.18)">Services</span>
+      <a href="About.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">À propos</a>
+      <a href="Realisations.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Réalisations</a>
+      <a href="Machines.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Machines</a>
+      <a href="Contact.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Contact</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:18px;font:500 12px 'Inter',sans-serif;color:rgba(255,255,255,.75)">
+      <a href="Account.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Compte</a>
+      <a href="Cart.dc.html" style="text-decoration:none;color:inherit;position:relative;display:inline-flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg><span style="position:absolute;top:-9px;right:-9px;width:15px;height:15px;border-radius:50%;background:#ff5a3c;color:#161514;font:700 8.5px/15px 'Inter',sans-serif;text-align:center">0</span></a>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div style="padding:48px 24px 20px">
+    <div style="max-width:900px;margin:0 auto">
+      <div style="font:600 12px 'Inter',sans-serif;letter-spacing:1.2px;color:#ff5a3c;text-transform:uppercase;margin-bottom:12px">Nos prestations</div>
+      <div style="font:700 32px/1.15 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:12px">Six façons de donner vie à votre projet</div>
+      <div style="font:400 13px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55);max-width:600px">De la pièce cassée à réparer jusqu'à l'objet personnalisé au laser, en passant par l'impression 3D et le maquettage — voici comment on peut vous aider.</div>
+    </div>
+  </div>
+
+  <!-- NAV RAPIDE -->
+  <div style="padding:12px 24px 0">
+    <div style="max-width:900px;margin:0 auto;display:flex;flex-wrap:wrap;gap:8px">
+      <a href="#retroconception" style="text-decoration:none;font:600 11px 'Inter',sans-serif;color:#e8e6e1;background:#1a1917;border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:7px 14px;transition:transform .2s ease,border-color .2s ease" style-hover="transform:scale(1.08);border-color:#ff5a3c">Rétro-conception</a>
+      <a href="#impression3d" style="text-decoration:none;font:600 11px 'Inter',sans-serif;color:#e8e6e1;background:#1a1917;border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:7px 14px;transition:transform .2s ease,border-color .2s ease" style-hover="transform:scale(1.08);border-color:#ff5a3c">Impression 3D</a>
+      <a href="#maquettage" style="text-decoration:none;font:600 11px 'Inter',sans-serif;color:#e8e6e1;background:#1a1917;border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:7px 14px;transition:transform .2s ease,border-color .2s ease" style-hover="transform:scale(1.08);border-color:#ff5a3c">Maquettage</a>
+      <a href="#customisation" style="text-decoration:none;font:600 11px 'Inter',sans-serif;color:#e8e6e1;background:#1a1917;border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:7px 14px;transition:transform .2s ease,border-color .2s ease" style-hover="transform:scale(1.08);border-color:#ff5a3c">Customisation Multisupports</a>
+      <a href="#maintenance" style="text-decoration:none;font:600 11px 'Inter',sans-serif;color:#e8e6e1;background:#1a1917;border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:7px 14px;transition:transform .2s ease,border-color .2s ease" style-hover="transform:scale(1.08);border-color:#ff5a3c">Maintenance machine</a>
+      <a href="#initiation" style="text-decoration:none;font:600 11px 'Inter',sans-serif;color:#e8e6e1;background:#1a1917;border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:7px 14px;transition:transform .2s ease,border-color .2s ease" style-hover="transform:scale(1.08);border-color:#ff5a3c">Initiation</a>
+    </div>
+  </div>
+
+  <!-- RETRO-CONCEPTION -->
+  <div id="retroconception" style="padding:40px 24px;scroll-margin-top:80px">
+    <div style="max-width:900px;margin:0 auto;border-top:1px solid rgba(255,255,255,.08);padding-top:36px">
+      <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">01 · Rétro-conception</div>
+      <div style="font:700 22px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:12px">Redonner vie à une pièce cassée ou disparue</div>
+      <div style="font:400 12.5px/1.7 'Inter',sans-serif;color:rgba(255,255,255,.55);max-width:620px;margin-bottom:18px">À partir d'une pièce existante — cassée, usée ou introuvable dans le commerce — on la reconçoit en CAO pour vous livrer un fichier 3D fidèle et réutilisable.</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+        <div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;background:#1a1917"><div style="font:600 11.5px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Livrable</div><div style="font:400 10.5px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Fichiers 3D / STL réutilisables</div></div>
+        <div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;background:#1a1917"><div style="font:600 11.5px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Option</div><div style="font:400 10.5px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Impression incluse sur demande</div></div>
+        <div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;background:#1a1917"><div style="font:600 11.5px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Tarif</div><div style="font:400 10.5px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Au temps passé, sur devis</div></div>
+      </div>
+      <a href="Contact.dc.html" style="text-decoration:none;display:inline-block;background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:10px 18px;border-radius:6px;transition:transform .2s ease" style-hover="transform:scale(1.05)">Demander un devis →</a>
+    </div>
+  </div>
+
+  <!-- IMPRESSION 3D -->
+  <div id="impression3d" style="padding:0 24px;scroll-margin-top:80px">
+    <div style="max-width:900px;margin:0 auto;border-top:1px solid rgba(255,255,255,.08);padding-top:36px;padding-bottom:36px">
+      <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">02 · Impression 3D</div>
+      <div style="font:700 22px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:12px">Prototypage, pièces et petites séries</div>
+      <div style="font:400 12.5px/1.7 'Inter',sans-serif;color:rgba(255,255,255,.55);max-width:620px;margin-bottom:22px">Deux technologies complémentaires : le dépôt de filament (FDM) pour les pièces fonctionnelles et les séries, la résine (SLA) pour le détail fin et le post-traitement.</div>
+
+      <!-- Bloc FDM -->
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:22px;background:#1a1917;margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font:700 15px 'Space Grotesk',sans-serif;color:#f3f1ec">Impression FDM (filament)</span><span style="font:600 9px 'Inter',sans-serif;color:#ff5a3c;background:rgba(255,90,60,.12);border-radius:20px;padding:4px 10px">Devis instantané</span></div>
+        <div style="font:400 11.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:16px">Prototypage rapide, pièces de remplacement, petites séries — conseil matière selon vos contraintes mécaniques, thermiques ou chimiques.</div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:18px">
+          <div style="border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;background:#161514"><div style="font:600 11px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Séries</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Jusqu'à 500 pièces</div></div>
+          <div style="border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;background:#161514"><div style="font:600 11px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Matières</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">PLA, PETG, ABS, ASA, TPU, PP, Nylon</div></div>
+        </div>
+        <a href="Home.dc.html#sec-accueil" style="text-decoration:none;display:inline-block;background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:10px 18px;border-radius:6px;transition:transform .2s ease" style-hover="transform:scale(1.05)">Obtenir un devis instantané →</a>
+      </div>
+
+      <!-- Bloc SLA -->
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:22px;background:#1a1917;margin-bottom:20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font:700 15px 'Space Grotesk',sans-serif;color:#f3f1ec">Impression résine (SLA)</span><span style="font:600 9px 'Inter',sans-serif;color:#ff5a3c;background:rgba(255,90,60,.12);border-radius:20px;padding:4px 10px">Sur devis uniquement</span></div>
+        <div style="font:400 11.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:16px">Pour les pièces très détaillées destinées au post-traitement — ponçage, apprêt, peinture — et les figurines ou modèles fins où la finesse de surface prime. Non disponible au devis instantané.</div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:18px">
+          <div style="border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;background:#161514"><div style="font:600 11px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Séries</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Petite série possible, 20 à 30 pièces</div></div>
+          <div style="border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;background:#161514"><div style="font:600 11px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Matières</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Résine standard, ABS-Like, résine transparente</div></div>
+        </div>
+        <a href="Contact.dc.html" style="text-decoration:none;display:inline-block;background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:10px 18px;border-radius:6px;transition:transform .2s ease" style-hover="transform:scale(1.05)">Demander un devis SLA →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAQUETTAGE -->
+  <div id="maquettage" style="padding:0 24px;scroll-margin-top:80px">
+    <div style="max-width:900px;margin:0 auto;border-top:1px solid rgba(255,255,255,.08);padding-top:36px;padding-bottom:36px">
+      <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">03 · Maquettage</div>
+      <div style="font:700 22px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:12px">Modélisation et impression de maquettes</div>
+      <div style="font:400 12.5px/1.7 'Inter',sans-serif;color:rgba(255,255,255,.55);max-width:620px;margin-bottom:18px">Modélisation et/ou impression de maquettes 3D — produit design, outil pédagogique, projet d'architecture — pour présenter, tester ou expliquer un concept en volume.</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+        <div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;background:#1a1917"><div style="font:600 11.5px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Design produit</div><div style="font:400 10.5px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Maquette d'un objet à concevoir</div></div>
+        <div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;background:#1a1917"><div style="font:600 11.5px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Pédagogique</div><div style="font:400 10.5px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Support d'apprentissage ou de démonstration</div></div>
+        <div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;background:#1a1917"><div style="font:600 11.5px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Architecture</div><div style="font:400 10.5px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Maquette de bâtiment ou d'aménagement</div></div>
+      </div>
+      <a href="Contact.dc.html" style="text-decoration:none;display:inline-block;background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:10px 18px;border-radius:6px;transition:transform .2s ease" style-hover="transform:scale(1.05)">Décrire mon projet →</a>
+    </div>
+  </div>
+
+  <!-- CUSTOMISATION MULTISUPPORTS -->
+  <div id="customisation" style="padding:0 24px;scroll-margin-top:80px">
+    <div style="max-width:900px;margin:0 auto;border-top:1px solid rgba(255,255,255,.08);padding-top:36px;padding-bottom:36px">
+      <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">04 · Customisation Multisupports</div>
+      <div style="font:700 22px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:12px">Laser, vinyle et sublimation, sur presque tous les supports</div>
+      <div style="font:400 12.5px/1.7 'Inter',sans-serif;color:rgba(255,255,255,.55);max-width:620px;margin-bottom:24px">Au-delà de l'impression 3D, l'atelier personnalise et fabrique sur une large gamme de matières : découpe et gravure laser, découpe vinyle, stickers, transfert textile et sublimation thermique. De l'idée au produit fini — on modélise et on génère les fichiers de production si vous ne les avez pas. Ces prestations se font sur devis.</div>
+
+      <!-- Procédé 1 : Laser -->
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:22px;background:#1a1917;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px">
+          <div style="font:700 15px 'Space Grotesk',sans-serif;color:#f3f1ec">Découpe &amp; gravure laser</div>
+          <div style="font:600 9px 'Inter',sans-serif;color:#ff5a3c;background:rgba(255,90,60,.12);border-radius:20px;padding:4px 10px;white-space:nowrap">Diode 40W · Fibre 20W · UV 2W</div>
+        </div>
+        <div style="font:400 11.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:16px">Découpe et gravure de précision micrométrique sur la quasi-totalité des supports, du prototype technique à l'objet personnalisé.</div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
+          <div style="border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;background:#161514"><div style="font:600 11px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:5px">Bois &amp; dérivés</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Contreplaqué, MDF, bois massif, liège — signalétique, boîtiers, décoration événementielle, trophées.</div></div>
+          <div style="border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;background:#161514"><div style="font:600 11px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:5px">Métaux (gravure Fibre)</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Inox, aluminium, laiton, titane — plaques constructeur, QR/numéros de série, pièces méca auto/moto.</div></div>
+          <div style="border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;background:#161514"><div style="font:600 11px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:5px">Verre, céramique &amp; fragiles (UV)</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Verre, cristal, ardoise, céramique, silicone — marquage ultra-fin sans micro-fissures.</div></div>
+          <div style="border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;background:#161514"><div style="font:600 11px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:5px">Plastiques &amp; acryliques</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Plexiglas, ABS, POM (Delrin) — panneaux lumineux, façades d'interfaces, lettrages.</div></div>
+          <div style="border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;background:#161514"><div style="font:600 11px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:5px">Matériaux souples</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Cuir, carton, papier épais — écussons, packaging sur-mesure, carterie.</div></div>
+        </div>
+        <div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.45);margin-top:12px">Petite série jusqu'à 500 pièces. Modélisation et fichiers de production réalisés si besoin.</div>
+      </div>
+
+      <!-- Procédé 2 : Vinyle & stickers -->
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:22px;background:#1a1917;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px">
+          <div style="font:700 15px 'Space Grotesk',sans-serif;color:#f3f1ec">Découpe vinyle &amp; stickers</div>
+          <div style="font:600 9px 'Inter',sans-serif;color:#ff5a3c;background:rgba(255,90,60,.12);border-radius:20px;padding:4px 10px;white-space:nowrap">Plotter de découpe</div>
+        </div>
+        <div style="font:400 11.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:16px">Lettrages, autocollants et marquages textiles sur-mesure pour la communication, la personnalisation et la signalétique.</div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
+          <div style="border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;background:#161514"><div style="font:600 11px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:5px">Stickers &amp; vinyle adhésif</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Vitrines, carrosseries, plastiques, packaging — logos d'entreprise, signalétique, déco de carénages, étiquettes.</div></div>
+          <div style="border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;background:#161514"><div style="font:600 11px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:5px">Flocage &amp; transfert textile</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Coton, polyester, T-shirts, tote bags, casquettes — tenues pro, événementiel, goodies textiles.</div></div>
+          <div style="border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;background:#161514"><div style="font:600 11px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:5px">Pochoirs &amp; masquage</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Vinyle temporaire sur métal, bois, verre, murs — pochoirs de peinture (restauration auto/moto, marquage d'atelier).</div></div>
+          <div style="border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;background:#161514"><div style="font:600 11px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:5px">Papier &amp; cartonnage léger</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Papier épais, kraft, bristol, plastique fin (≤ 1 mm) — packaging, étiquettes volantes, carterie.</div></div>
+        </div>
+        <div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.45);margin-top:12px">Petite série possible selon le projet.</div>
+      </div>
+
+      <!-- Procédé 3 : Sublimation & transfert -->
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:22px;background:#1a1917;margin-bottom:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px">
+          <div style="font:700 15px 'Space Grotesk',sans-serif;color:#f3f1ec">Transfert &amp; sublimation thermique</div>
+          <div style="font:600 9px 'Inter',sans-serif;color:#ff5a3c;background:rgba(255,90,60,.12);border-radius:20px;padding:4px 10px;white-space:nowrap">Presses à plat · mug · mobiles</div>
+        </div>
+        <div style="font:400 11.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:16px">Marquages couleur haute définition : l'encre est injectée dans la matière, pour un rendu lisse au toucher, ultra-résistant et inaltérable.</div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
+          <div style="border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;background:#161514"><div style="font:600 11px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:5px">Textiles (vêtements)</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Textiles clairs ≥ 50% polyester — vêtements de sport, tenues techniques, marquages dégradés/photos impossibles en vinyle.</div></div>
+          <div style="border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;background:#161514"><div style="font:600 11px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:5px">Céramiques &amp; tasses</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Mugs céramique, tasses métal émaillé — mugs d'entreprise, cadeaux personnalisés, goodies.</div></div>
+          <div style="border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;background:#161514"><div style="font:600 11px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:5px">Objets plats &amp; goodies</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Plaques alu polyester, tapis de souris, sous-verres, puzzles — plaques déco, signalétique couleur, cadeaux d'affaires.</div></div>
+          <div style="border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;background:#161514"><div style="font:600 11px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:5px">Surfaces atypiques</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Casquettes, trousses, sacs à dos, manches — chauffe ciblée sur zones difficiles ou volumineuses.</div></div>
+        </div>
+        <div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.45);margin-top:12px">Petite série possible, jusqu'à 20 unités pour ce procédé.</div>
+      </div>
+
+      <a href="Contact.dc.html" style="text-decoration:none;display:inline-block;background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:10px 18px;border-radius:6px;transition:transform .2s ease" style-hover="transform:scale(1.05)">Demander un devis →</a>
+    </div>
+  </div>
+
+  <!-- MAINTENANCE -->
+  <div id="maintenance" style="padding:0 24px;scroll-margin-top:80px">
+    <div style="max-width:900px;margin:0 auto;border-top:1px solid rgba(255,255,255,.08);padding-top:36px;padding-bottom:36px">
+      <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">05 · Maintenance machine</div>
+      <div style="font:700 22px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:12px">Diagnostic, réparation, entretien préventif</div>
+      <div style="font:400 12.5px/1.7 'Inter',sans-serif;color:rgba(255,255,255,.55);max-width:620px;margin-bottom:18px">Panne électronique ou mécanique sur votre imprimante ? Diagnostic complet, réparation et maintenance préventive pour prolonger la vie de votre machine.</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+        <div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;background:#1a1917"><div style="font:600 11.5px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Diagnostic</div><div style="font:400 10.5px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Électronique et mécanique</div></div>
+        <div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;background:#1a1917"><div style="font:600 11.5px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Préventif</div><div style="font:400 10.5px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Entretien régulier sur devis</div></div>
+        <div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;background:#1a1917"><div style="font:600 11.5px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Garantie</div><div style="font:400 10.5px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Retour atelier sous 3 jours</div></div>
+      </div>
+      <a href="Contact.dc.html" style="text-decoration:none;display:inline-block;background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:10px 18px;border-radius:6px;transition:transform .2s ease" style-hover="transform:scale(1.05)">Décrire la panne →</a>
+    </div>
+  </div>
+
+  <!-- INITIATION -->
+  <div id="initiation" style="padding:0 24px 50px;scroll-margin-top:80px">
+    <div style="max-width:900px;margin:0 auto;border-top:1px solid rgba(255,255,255,.08);padding-top:36px">
+      <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">06 · Initiation</div>
+      <div style="font:700 22px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:12px">Apprenez l'impression 3D à l'atelier</div>
+      <div style="font:400 12.5px/1.7 'Inter',sans-serif;color:rgba(255,255,255,.55);max-width:620px;margin-bottom:24px">Trois formules selon le temps que vous voulez y consacrer — de la découverte à une vraie autonomie sur machine.</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px">
+        <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:22px;background:#1a1917">
+          <div style="font:600 9px 'Inter',sans-serif;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Débutant</div>
+          <div style="font:700 26px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:2px">90€</div>
+          <div style="font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.45);margin-bottom:14px">≈ 2h</div>
+          <div style="font:400 11px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55)">Découverte de la machine et des bases du slicing.</div>
+        </div>
+        <div style="border:1px solid #ff5a3c;border-radius:10px;padding:22px;background:#1e1917;position:relative">
+          <div style="position:absolute;top:-10px;left:22px;background:#ff5a3c;color:#161514;font:700 9px 'Inter',sans-serif;padding:3px 9px;border-radius:10px">Le plus choisi</div>
+          <div style="font:600 9px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Standard</div>
+          <div style="font:700 26px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:2px">225€</div>
+          <div style="font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.45);margin-bottom:14px">≈ 4h — une après-midi</div>
+          <div style="font:400 11px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55)">Réglages, matériaux et premières impressions autonomes.</div>
+        </div>
+        <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:22px;background:#1a1917">
+          <div style="font:600 9px 'Inter',sans-serif;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Advanced</div>
+          <div style="font:700 26px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:2px">270€</div>
+          <div style="font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.45);margin-bottom:14px">≈ 6h — deux après-midis</div>
+          <div style="font:400 11px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55)">Maintenance de base, dépannage courant et autonomie complète.</div>
+        </div>
+      </div>
+      <a href="Contact.dc.html" style="text-decoration:none;display:inline-block;background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:10px 18px;border-radius:6px;transition:transform .2s ease" style-hover="transform:scale(1.05)">Réserver une session →</a>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="padding:20px 40px;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:center;font:10px 'Inter',sans-serif;color:rgba(255,255,255,.4)">
+    <div><a href="MentionsLegales.dc.html" style="color:rgba(255,255,255,.4)">Mentions légales</a> · <a href="CGU.dc.html" style="color:rgba(255,255,255,.4)">CGU</a> · <a href="Confidentialite.dc.html" style="color:rgba(255,255,255,.4)">Confidentialité</a> · <a href="Cookies.dc.html" style="color:rgba(255,255,255,.4)">Cookies</a></div>
+    <div>© 2026 Nasap3D, Site conçu par Nsapp</div>
+  </div>
+
+</div>
+
+</x-dc>
+</body>
+</html>

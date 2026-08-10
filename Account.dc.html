@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#161514;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#ff5a3c}
+a:hover{color:#ff7a5c}
+@keyframes popupBackdropIn{from{opacity:0}to{opacity:1}}
+@keyframes popupModalIn{0%{opacity:0;transform:scale(.9) translateY(12px)}70%{opacity:1;transform:scale(1.02) translateY(0)}100%{opacity:1;transform:scale(1) translateY(0)}}
+</style>
+<script src="./pageloader.js"></script>
+<script src="./navguard.js"></script>
+</helmet>
+
+<div style="background:#161514;min-height:100vh">
+
+  <!-- HEADER -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 40px;border-bottom:1px solid rgba(255,255,255,.08)">
+    <a href="Home.dc.html" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+      <img src="assets/logo-blanc-full.png" alt="Nasap3D" style="height:34px;width:auto">
+    </a>
+    <div style="display:flex;gap:26px;font:500 13px 'Inter',sans-serif;color:rgba(255,255,255,.62)">
+      <a href="Home.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Accueil</a>
+      <a href="Devis Instantane.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Devis instantané</a>
+      <a href="Services.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Services</a>
+      <a href="About.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">À propos</a>
+      <a href="Realisations.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Réalisations</a>
+      <a href="Machines.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Machines</a>
+      <a href="Contact.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Contact</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:18px;font:500 12px 'Inter',sans-serif;color:rgba(255,255,255,.75)">
+      <span style="color:#f3f1ec;border-bottom:2px solid #ff5a3c;padding-bottom:4px;display:inline-block;transition:transform .2s ease" style-hover="transform:scale(1.18)">Compte</span>
+      <sc-if value="{{ isLoggedIn }}" hint-placeholder-val="{{ false }}">
+        <span onClick="{{ goSettings }}" title="Réglages du compte" style="cursor:pointer;color:inherit;display:inline-flex;align-items:center;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg></span>
+      </sc-if>
+      <a href="Cart.dc.html" style="text-decoration:none;color:inherit;position:relative;display:inline-flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg><span style="position:absolute;top:-9px;right:-9px;width:15px;height:15px;border-radius:50%;background:#ff5a3c;color:#161514;font:700 8.5px/15px 'Inter',sans-serif;text-align:center">{{ cartCount }}</span></a>
+    </div>
+  </div>
+
+  <!-- LOGGED OUT -->
+  <sc-if value="{{ isLoggedOut }}" hint-placeholder-val="{{ true }}">
+    <div style="max-width:400px;margin:60px auto;padding:0 24px">
+      <div style="text-align:center;margin-bottom:28px">
+        <div style="font:600 12px 'Inter',sans-serif;letter-spacing:1.2px;color:#ff5a3c;text-transform:uppercase;margin-bottom:10px">{{ authModeLabel }}</div>
+        <div style="font:700 26px 'Space Grotesk',sans-serif;color:#f3f1ec">{{ authTitle }}</div>
+      </div>
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#1a1917;padding:26px">
+        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:8px">
+          <input value="{{ authEmail }}" onChange="{{ onAuthEmail }}" type="email" placeholder="Email" style="width:100%;box-sizing:border-box;height:38px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:12px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+          <div style="position:relative">
+            <input value="{{ authPassword }}" onChange="{{ onAuthPassword }}" type="{{ passwordInputType }}" placeholder="Mot de passe" style="width:100%;box-sizing:border-box;height:38px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 40px 0 12px;font:12px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+            <span onClick="{{ toggleShowPassword }}" style="position:absolute;right:12px;top:0;height:38px;display:flex;align-items:center;color:rgba(255,255,255,.55);cursor:pointer;user-select:none">
+              <sc-if value="{{ showPassword }}" hint-placeholder-val="{{ false }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"></path><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"></path><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"></path><path d="m2 2 20 20"></path></svg>
+              </sc-if>
+              <sc-if value="{{ passwordHidden }}" hint-placeholder-val="{{ true }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </sc-if>
+            </span>
+          </div>
+        </div>
+        <sc-if value="{{ isSignup }}" hint-placeholder-val="{{ false }}">
+          <div style="font:400 9.5px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.4);margin-bottom:12px">8 caractères minimum, avec au moins 1 majuscule et 1 caractère spécial.</div>
+        </sc-if>
+        <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+          <div style="text-align:right;margin-bottom:12px"><span onClick="{{ forgotPassword }}" style="font:500 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.45);cursor:pointer">Mot de passe oublié ?</span></div>
+        </sc-if>
+        <div onClick="{{ toggleCaptcha }}" style="display:flex;align-items:center;gap:10px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:11px 14px;cursor:pointer;margin-bottom:14px">
+          <span style="{{ captchaBoxStyle }}">{{ captchaCheckMark }}</span>
+          <span style="font:12px 'Inter',sans-serif;color:rgba(255,255,255,.55)">Je ne suis pas un robot — captcha anti-spam</span>
+        </div>
+        <div onClick="{{ emailLogin }}" style="{{ authSubmitStyle }}">{{ authSubmitLabel }}</div>
+        <div style="text-align:center;margin-top:16px;font:400 11px 'Inter',sans-serif;color:rgba(255,255,255,.45)">{{ authSwitchPrompt }} <span onClick="{{ toggleAuthMode }}" style="color:#ff5a3c;cursor:pointer;font-weight:600">{{ authSwitchAction }}</span></div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- POPUP -->
+  <sc-if value="{{ hasPopup }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(10,10,10,.7);display:flex;align-items:center;justify-content:center;z-index:50;animation:popupBackdropIn .2s ease">
+      <div style="width:340px;max-width:90vw;background:#1a1917;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:24px;text-align:center;animation:popupModalIn .35s cubic-bezier(.2,.9,.3,1.1)">
+        <div style="font:500 12.5px/1.6 'Inter',sans-serif;color:#f3f1ec;margin-bottom:18px">{{ popupMessage }}</div>
+        <sc-if value="{{ isPlainPopup }}" hint-placeholder-val="{{ true }}">
+          <div onClick="{{ closePopup }}" style="display:inline-block;background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:9px 20px;border-radius:6px;cursor:pointer">OK</div>
+        </sc-if>
+        <sc-if value="{{ hasPopupConfirm }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:10px;justify-content:center">
+            <div onClick="{{ closePopup }}" style="border:1px solid rgba(255,255,255,.2);color:#f3f1ec;font:600 12px 'Inter',sans-serif;padding:9px 18px;border-radius:6px;cursor:pointer">Annuler</div>
+            <div onClick="{{ confirmPopup }}" style="background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:9px 18px;border-radius:6px;cursor:pointer">Supprimer</div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- LOGGED IN -->
+  <sc-if value="{{ isLoggedIn }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:900px;margin:0 auto;padding:44px 24px 60px">
+      <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px">
+        <div>
+          <div style="font:600 12px 'Inter',sans-serif;letter-spacing:1.2px;color:#ff5a3c;text-transform:uppercase;margin-bottom:8px">Mon compte</div>
+          <div style="font:700 26px 'Space Grotesk',sans-serif;color:#f3f1ec">{{ authEmail }}</div>
+          <div style="font:400 11px 'Inter',sans-serif;color:rgba(255,255,255,.45);margin-top:6px">N° de client : <span style="font:600 11px ui-monospace,monospace;color:#ff5a3c;background:rgba(255,90,60,.1);border-radius:4px;padding:2px 8px">{{ customerNo }}</span></div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <div onClick="{{ goSettings }}" style="display:flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.2);color:#f3f1ec;font:500 12px 'Inter',sans-serif;padding:9px 14px;border-radius:6px;cursor:pointer;transition:border-color .2s ease" style-hover="border-color:#ff5a3c"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Réglages</div>
+          <div onClick="{{ logout }}" style="border:1px solid rgba(255,255,255,.2);color:#f3f1ec;font:500 12px 'Inter',sans-serif;padding:9px 16px;border-radius:6px;cursor:pointer">Se déconnecter</div>
+        </div>
+      </div>
+
+      <div style="border:1px solid rgba(255,90,60,.3);background:rgba(255,90,60,.06);border-radius:10px;padding:15px 18px;margin-bottom:32px;display:flex;gap:12px;align-items:flex-start">
+        <span style="color:#ff5a3c;flex:none;margin-top:1px"><svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span>
+        <div style="font:400 11.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.6)">Un souci avec une commande ou une demande d'annulation suite à une erreur ? Passez par le <a href="Contact.dc.html">formulaire de contact</a> en indiquant le <strong style="color:#f3f1ec;font-weight:600">numéro de commande dans l'objet</strong> de votre demande.</div>
+      </div>
+
+      <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">Commande en cours</div>
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#1a1917;padding:24px;margin-bottom:36px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:20px">
+          <div style="font:600 13px 'Space Grotesk',sans-serif;color:#f3f1ec">Commande #N3D-2841</div>
+          <div style="font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.45)">Pièce personnalisée (STL) · PLA · x2</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0">
+          <sc-for list="{{ orderSteps }}" as="step" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;flex:1">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:8px;min-width:80px">
+                <span style="{{ step.dotStyle }}">{{ step.icon }}</span>
+                <span style="{{ step.labelStyle }}">{{ step.label }}</span>
+              </div>
+              <sc-if value="{{ step.hasLine }}" hint-placeholder-val="{{ true }}">
+                <div style="{{ step.lineStyle }}"></div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">Historique des commandes</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{ orderHistory }}" as="order" hint-placeholder-count="3">
+          <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;background:#1a1917;padding:16px 18px;display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font:600 12px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:3px">{{ order.ref }}</div>
+              <div style="font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.45)">{{ order.desc }} · {{ order.date }}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px">
+              <span style="{{ order.statusStyle }}">{{ order.status }}</span>
+              <span style="font:700 13px 'Space Grotesk',sans-serif;color:#f3f1ec">{{ order.price }} €</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:1px;margin:36px 0 14px">Factures</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{ invoices }}" as="inv" hint-placeholder-count="3">
+          <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;background:#1a1917;padding:16px 18px;display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font:600 12px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:3px">{{ inv.ref }}</div>
+              <div style="font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.45)">Commande {{ inv.order }} · {{ inv.date }}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px">
+              <span style="font:700 13px 'Space Grotesk',sans-serif;color:#f3f1ec">{{ inv.amount }} €</span>
+              <div onClick="{{ inv.onDownload }}" style="display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.2);color:#f3f1ec;font:600 10.5px 'Inter',sans-serif;padding:7px 12px;border-radius:6px;cursor:pointer;transition:border-color .2s ease,color .2s ease" style-hover="border-color:#ff5a3c;color:#ff5a3c"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>PDF</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ goDashboard }}" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font:500 11.5px 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:22px;transition:color .2s ease" style-hover="color:#ff5a3c">← Retour à mon compte</div>
+      <div style="font:600 12px 'Inter',sans-serif;letter-spacing:1.2px;color:#ff5a3c;text-transform:uppercase;margin-bottom:8px">Réglages</div>
+      <div style="font:700 26px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:26px">Détails du compte</div>
+
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#1a1917;padding:22px;margin-bottom:16px;max-width:520px">
+        <div style="font:600 13px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Adresse e-mail</div>
+        <div style="font:400 11px 'Inter',sans-serif;color:rgba(255,255,255,.45);margin-bottom:6px">Actuelle : {{ authEmail }}</div>
+        <div style="display:flex;align-items:center;gap:8px;font:400 11px 'Inter',sans-serif;color:rgba(255,255,255,.45);margin-bottom:14px">N° de client : <span style="font:600 11px ui-monospace,monospace;color:#ff5a3c;background:rgba(255,90,60,.1);border-radius:4px;padding:2px 8px">{{ customerNo }}</span><span style="font:400 9.5px 'Inter',sans-serif;color:rgba(255,255,255,.35)">— rattaché à vos factures</span></div>
+        <input value="{{ newEmail }}" onChange="{{ onNewEmail }}" type="email" placeholder="Nouvelle adresse e-mail" style="width:100%;box-sizing:border-box;height:38px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:12px 'Inter',sans-serif;color:#e8e6e1;outline:none;margin-bottom:14px" />
+        <div onClick="{{ changeEmail }}" style="display:inline-block;background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:10px 18px;border-radius:7px;cursor:pointer">Mettre à jour l'e-mail</div>
+      </div>
+
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#1a1917;padding:22px;margin-bottom:16px;max-width:520px">
+        <div style="font:600 13px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:14px">Mot de passe</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px">
+          <input value="{{ curPwd }}" onChange="{{ onCurPwd }}" type="password" placeholder="Mot de passe actuel" style="width:100%;box-sizing:border-box;height:38px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:12px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+          <input value="{{ newPwd }}" onChange="{{ onNewPwd }}" type="password" placeholder="Nouveau mot de passe" style="width:100%;box-sizing:border-box;height:38px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:12px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+          <input value="{{ confirmPwd }}" onChange="{{ onConfirmPwd }}" type="password" placeholder="Confirmer le nouveau mot de passe" style="width:100%;box-sizing:border-box;height:38px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:12px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+        </div>
+        <div style="font:400 9.5px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.4);margin-bottom:14px">8 caractères minimum, avec au moins 1 majuscule et 1 caractère spécial.</div>
+        <div onClick="{{ changePassword }}" style="display:inline-block;background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:10px 18px;border-radius:7px;cursor:pointer">Changer le mot de passe</div>
+      </div>
+
+      <div style="border:1px solid rgba(255,90,60,.3);border-radius:12px;background:rgba(255,90,60,.06);padding:22px;max-width:520px">
+        <div style="font:600 13px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Supprimer le compte</div>
+        <div style="font:400 11px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.5);margin-bottom:14px">La suppression est définitive : vos commandes et factures ne seront plus accessibles.</div>
+        <div onClick="{{ deleteAccount }}" style="display:inline-block;border:1px solid #ff5a3c;color:#ff5a3c;font:600 12px 'Inter',sans-serif;padding:10px 18px;border-radius:7px;cursor:pointer;transition:background .2s ease,color .2s ease" style-hover="background:#ff5a3c;color:#161514">Supprimer mon compte</div>
+      </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- FOOTER -->
+  <div style="padding:20px 40px;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:center;font:10px 'Inter',sans-serif;color:rgba(255,255,255,.4)">
+    <div><a href="MentionsLegales.dc.html" style="color:rgba(255,255,255,.4)">Mentions légales</a> · <a href="CGU.dc.html" style="color:rgba(255,255,255,.4)">CGU</a> · <a href="Confidentialite.dc.html" style="color:rgba(255,255,255,.4)">Confidentialité</a> · <a href="Cookies.dc.html" style="color:rgba(255,255,255,.4)">Cookies</a></div>
+    <div>© 2026 Nasap3D, Site conçu par Nsapp</div>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    loggedIn: false, authMode: 'login', authEmail: '', authPassword: '', cartCount: 0,
+    popupMessage: null, popupConfirm: null, showPassword: false, captchaChecked: false,
+    view: 'dashboard', accountPassword: '',
+    newEmail: '', curPwd: '', newPwd: '', confirmPwd: ''
+  };
+
+  componentDidMount() {
+    this._loadCart();
+    this._listener = () => this._loadCart();
+    window.addEventListener('nasap3d-cart-changed', this._listener);
+  }
+  componentWillUnmount() {
+    window.removeEventListener('nasap3d-cart-changed', this._listener);
+  }
+  async _loadCart() {
+    const mod = await import('./cart.js');
+    this.setState({ cartCount: mod.cartCount() });
+  }
+  googleLogin() {
+    this.setState({ loggedIn: true, authEmail: 'client.google@gmail.com' });
+  }
+  _isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+  _isValidPassword(password) {
+    return /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>_\-+=~`[\]/\\;']).{8,}$/.test(password);
+  }
+  static ADMIN_EMAIL = 'admin@nasap3d.com';
+  static ADMIN_PASSWORD = 'Nasap3D#Admin26';
+  static DEMO_ACCOUNT_KEY = 'nasap3d_demo_account';
+  static TEST_EMAIL = 'client@nasap3d.com';
+  static TEST_PASSWORD = 'Client2026!';
+  emailLogin() {
+    const s = this.state;
+    if (s.authMode === 'signup') {
+      if (!s.authEmail.trim() || !s.authPassword.trim()) {
+        this.setState({ popupMessage: 'Champ mail et mot de passe obligatoire' });
+        return;
+      }
+    }
+    if (!s.authEmail.trim()) {
+      this.setState({ popupMessage: 'Champ mail obligatoire' });
+      return;
+    }
+    if (!this._isValidEmail(s.authEmail)) {
+      this.setState({ popupMessage: "Format d'email invalide" });
+      return;
+    }
+    if (!s.captchaChecked) {
+      this.setState({ popupMessage: 'Merci de cocher le captcha « Je ne suis pas un robot ».' });
+      return;
+    }
+    if (s.authMode === 'login' && s.authEmail === Component.ADMIN_EMAIL && s.authPassword === Component.ADMIN_PASSWORD) {
+      window.location.href = 'Admin.dc.html';
+      return;
+    }
+    if (s.authMode === 'login' && s.authEmail === Component.TEST_EMAIL && s.authPassword === Component.TEST_PASSWORD) {
+      this.setState({ loggedIn: true, authEmail: s.authEmail, accountPassword: s.authPassword, view: 'dashboard' });
+      return;
+    }
+    if (s.authMode === 'signup') {
+      if (!this._isValidPassword(s.authPassword)) {
+        this.setState({ popupMessage: 'Le mot de passe doit contenir au moins 8 caractères, 1 majuscule et 1 caractère spécial.' });
+        return;
+      }
+      localStorage.setItem(Component.DEMO_ACCOUNT_KEY, JSON.stringify({ email: s.authEmail, password: s.authPassword }));
+      this.setState({ loggedIn: true, authEmail: s.authEmail, accountPassword: s.authPassword, view: 'dashboard' });
+      return;
+    }
+    // login mode: check against the demo account created via signup
+    let demo = null;
+    try { demo = JSON.parse(localStorage.getItem(Component.DEMO_ACCOUNT_KEY)); } catch (e) {}
+    if (!demo || demo.email !== s.authEmail || demo.password !== s.authPassword) {
+      this.setState({ popupMessage: 'Aucun compte trouvé, vérifiez le mail/mot de passe' });
+      return;
+    }
+    this.setState({ loggedIn: true, authEmail: s.authEmail, accountPassword: s.authPassword, view: 'dashboard' });
+  }
+  toggleShowPassword() {
+    this.setState(s => ({ showPassword: !s.showPassword }));
+  }
+  toggleCaptcha() {
+    this.setState(s => ({ captchaChecked: !s.captchaChecked }));
+  }
+  forgotPassword() {
+    const email = this.state.authEmail;
+    if (!this._isValidEmail(email)) {
+      this.setState({ popupMessage: 'Champ mail obligatoire' });
+      return;
+    }
+    this.setState({ popupMessage: 'Un email a été envoyé à ' + email + ' pour réinitialiser votre mot de passe.' });
+  }
+  closePopup() {
+    this.setState({ popupMessage: null, popupConfirm: null });
+  }
+  logout() {
+    this.setState({ loggedIn: false, authMode: 'login', view: 'dashboard', authPassword: '', newEmail: '', curPwd: '', newPwd: '', confirmPwd: '', captchaChecked: false });
+  }
+  goSettings() { this.setState({ view: 'settings' }); }
+  goDashboard() { this.setState({ view: 'dashboard', newEmail: '', curPwd: '', newPwd: '', confirmPwd: '' }); }
+  _syncDemoStore(email, password) {
+    let demo = null;
+    try { demo = JSON.parse(localStorage.getItem(Component.DEMO_ACCOUNT_KEY)); } catch (e) {}
+    if (demo && demo.email === this.state.authEmail) {
+      localStorage.setItem(Component.DEMO_ACCOUNT_KEY, JSON.stringify({ email: email || demo.email, password: password || demo.password }));
+    }
+  }
+  changeEmail() {
+    const s = this.state;
+    if (!this._isValidEmail(s.newEmail)) {
+      this.setState({ popupMessage: "Merci d'entrer une adresse e-mail valide." });
+      return;
+    }
+    this._syncDemoStore(s.newEmail, null);
+    this.setState({ authEmail: s.newEmail, newEmail: '', popupMessage: 'Votre adresse e-mail a été mise à jour : ' + s.newEmail });
+  }
+  changePassword() {
+    const s = this.state;
+    if (s.curPwd !== s.accountPassword) {
+      this.setState({ popupMessage: 'Le mot de passe actuel est incorrect.' });
+      return;
+    }
+    if (!this._isValidPassword(s.newPwd)) {
+      this.setState({ popupMessage: 'Le nouveau mot de passe doit contenir au moins 8 caractères, 1 majuscule et 1 caractère spécial.' });
+      return;
+    }
+    if (s.newPwd !== s.confirmPwd) {
+      this.setState({ popupMessage: 'Les deux mots de passe ne correspondent pas.' });
+      return;
+    }
+    this._syncDemoStore(null, s.newPwd);
+    this.setState({ accountPassword: s.newPwd, curPwd: '', newPwd: '', confirmPwd: '', popupMessage: 'Votre mot de passe a été modifié avec succès.' });
+  }
+  deleteAccount() {
+    this.setState({
+      popupMessage: 'Supprimer définitivement votre compte ? Vos commandes et factures ne seront plus accessibles. Cette action est irréversible.',
+      popupConfirm: 'delete'
+    });
+  }
+  confirmPopup() {
+    if (this.state.popupConfirm === 'delete') {
+      try {
+        const demo = JSON.parse(localStorage.getItem(Component.DEMO_ACCOUNT_KEY));
+        if (demo && demo.email === this.state.authEmail) localStorage.removeItem(Component.DEMO_ACCOUNT_KEY);
+      } catch (e) {}
+      this.setState({ loggedIn: false, authMode: 'login', view: 'dashboard', authEmail: '', authPassword: '', accountPassword: '', popupMessage: null, popupConfirm: null });
+      return;
+    }
+    this.setState({ popupMessage: null, popupConfirm: null });
+  }
+  toggleAuthMode() {
+    this.setState(s => ({ authMode: s.authMode === 'login' ? 'signup' : 'login', captchaChecked: false }));
+  }
+  renderVals() {
+    const s = this.state;
+    const orderStepsRaw = ['Devis reçu', 'En impression', 'Expédié / Prêt'];
+    const currentStep = 1;
+    const orderSteps = orderStepsRaw.map((label, i) => {
+      const done = i < currentStep;
+      const active = i === currentStep;
+      return {
+        label,
+        icon: done ? '✓' : String(i + 1),
+        dotStyle: {
+          width: '28px', height: '28px', borderRadius: '50%', textAlign: 'center',
+          font: "700 12px/28px 'Inter',sans-serif",
+          background: done || active ? '#ff5a3c' : '#2a2826',
+          color: done || active ? '#161514' : 'rgba(255,255,255,.5)'
+        },
+        labelStyle: { font: "600 10.5px 'Inter',sans-serif", color: active ? '#f3f1ec' : (done ? 'rgba(255,255,255,.7)' : 'rgba(255,255,255,.4)'), textAlign: 'center' },
+        hasLine: i < orderStepsRaw.length - 1,
+        lineStyle: { flex: 1, height: '2px', background: i < currentStep ? '#ff5a3c' : 'rgba(255,255,255,.15)', marginBottom: '24px' }
+      };
+    });
+    const orderHistory = [
+      { ref: 'N3D-2790', desc: 'Rétro-conception — support cassé', date: '02 juin 2026', status: 'Livré', price: '68.00', statusStyle: { font: "600 10px 'Inter',sans-serif", color: '#8fd19e', background: 'rgba(143,209,158,.12)', borderRadius: '5px', padding: '4px 9px' } },
+      { ref: 'N3D-2712', desc: 'Pièce PETG x4', date: '18 mai 2026', status: 'Livré', price: '52.40', statusStyle: { font: "600 10px 'Inter',sans-serif", color: '#8fd19e', background: 'rgba(143,209,158,.12)', borderRadius: '5px', padding: '4px 9px' } },
+      { ref: 'N3D-2650', desc: 'Initiation — formule Standard', date: '03 mai 2026', status: 'Livré', price: '225.00', statusStyle: { font: "600 10px 'Inter',sans-serif", color: '#8fd19e', background: 'rgba(143,209,158,.12)', borderRadius: '5px', padding: '4px 9px' } }
+    ];
+    const customerNo = 'CUS-' + (Array.from(s.authEmail).reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 1000000, 7) + '').padStart(6, '0');
+    const MONTHS = { 'janvier': '01', 'février': '02', 'fevrier': '02', 'mars': '03', 'avril': '04', 'mai': '05', 'juin': '06', 'juillet': '07', 'août': '08', 'aout': '08', 'septembre': '09', 'octobre': '10', 'novembre': '11', 'décembre': '12', 'decembre': '12' };
+    const invRaw = [
+      { order: 'N3D-2790', date: '02 juin 2026', amount: '68.00' },
+      { order: 'N3D-2712', date: '18 mai 2026', amount: '52.40' },
+      { order: 'N3D-2650', date: '03 mai 2026', amount: '225.00' }
+    ];
+    const dayCounts = {};
+    const invoices = invRaw.map(inv => {
+      const parts = inv.date.split(' ');
+      const dd = parts[0].padStart(2, '0');
+      const mm = MONTHS[parts[1].toLowerCase()] || '00';
+      const yyyy = parts[2];
+      const key = yyyy + mm + dd;
+      dayCounts[key] = (dayCounts[key] || 0) + 1;
+      const seq = String(dayCounts[key]).padStart(3, '0');
+      const ref = 'FA' + seq + '-' + yyyy + '_' + mm + '_' + dd + '_' + customerNo;
+      return {
+        ref: ref, order: inv.order, date: inv.date, amount: inv.amount,
+        onDownload: () => this.setState({ popupMessage: 'Facture ' + ref + ' — téléchargement du PDF (démo). Le document définitif sera généré à la mise en production.' })
+      };
+    });
+    return {
+      cartCount: s.cartCount,
+      isLoggedOut: !s.loggedIn,
+      isLoggedIn: s.loggedIn,
+      authModeLabel: s.authMode === 'login' ? 'Connexion' : 'Inscription',
+      authTitle: s.authMode === 'login' ? 'Content de vous revoir' : 'Créer un compte',
+      authEmail: s.authEmail,
+      authPassword: s.authPassword,
+      passwordInputType: s.showPassword ? 'text' : 'password',
+      showPassword: s.showPassword,
+      passwordHidden: !s.showPassword,
+      toggleShowPassword: () => this.toggleShowPassword(),
+      onAuthEmail: (e) => this.setState({ authEmail: e.target.value }),
+      onAuthPassword: (e) => this.setState({ authPassword: e.target.value }),
+      isLogin: s.authMode === 'login',
+      isSignup: s.authMode === 'signup',
+      forgotPassword: () => this.forgotPassword(),
+      hasPopup: !!s.popupMessage,
+      popupMessage: s.popupMessage,
+      closePopup: () => this.closePopup(),
+      googleLogin: () => this.googleLogin(),
+      emailLogin: () => this.emailLogin(),
+      authSubmitLabel: s.authMode === 'login' ? 'Se connecter' : "S'inscrire",
+      authSubmitStyle: {
+        textAlign: 'center', background: '#ff5a3c', color: '#161514',
+        font: "600 12.5px 'Inter',sans-serif", padding: '11px', borderRadius: '7px', cursor: 'pointer'
+      },
+      authSwitchPrompt: s.authMode === 'login' ? 'Pas encore de compte ?' : 'Déjà un compte ?',
+      authSwitchAction: s.authMode === 'login' ? "S'inscrire" : 'Se connecter',
+      toggleAuthMode: () => this.toggleAuthMode(),
+      captchaChecked: s.captchaChecked,
+      customerNo,
+      toggleCaptcha: () => this.toggleCaptcha(),
+      captchaCheckMark: s.captchaChecked ? '✓' : '',
+      captchaBoxStyle: {
+        width: '16px', height: '16px', borderRadius: '4px', flex: 'none',
+        border: '1px solid ' + (s.captchaChecked ? '#ff5a3c' : 'rgba(255,255,255,.35)'),
+        background: s.captchaChecked ? '#ff5a3c' : 'transparent',
+        color: '#161514', font: "700 11px/16px 'Inter',sans-serif", textAlign: 'center'
+      },
+      logout: () => this.logout(),
+      orderSteps,
+      orderHistory,
+      invoices,
+      isDashboard: s.view === 'dashboard',
+      isSettings: s.view === 'settings',
+      goSettings: () => this.goSettings(),
+      goDashboard: () => this.goDashboard(),
+      newEmail: s.newEmail,
+      curPwd: s.curPwd,
+      newPwd: s.newPwd,
+      confirmPwd: s.confirmPwd,
+      onNewEmail: (e) => this.setState({ newEmail: e.target.value }),
+      onCurPwd: (e) => this.setState({ curPwd: e.target.value }),
+      onNewPwd: (e) => this.setState({ newPwd: e.target.value }),
+      onConfirmPwd: (e) => this.setState({ confirmPwd: e.target.value }),
+      changeEmail: () => this.changeEmail(),
+      changePassword: () => this.changePassword(),
+      deleteAccount: () => this.deleteAccount(),
+      hasPopupConfirm: !!s.popupConfirm,
+      isPlainPopup: !s.popupConfirm,
+      confirmPopup: () => this.confirmPopup()
+    };
+  }
+}
+
+</script>
+</body>
+</html>

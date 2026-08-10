@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics="">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#161514;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#ff5a3c}
+a:hover{color:#ff7a5c}
+</style>
+<script src="./pageloader.js"></script>
+<script src="./navguard.js"></script>
+</helmet>
+
+<div style="background:#161514;min-height:100vh">
+
+  <!-- HEADER -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 40px;border-bottom:1px solid rgba(255,255,255,.08)">
+    <a href="Home.dc.html" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+      <img src="assets/logo-blanc-full.png" alt="Nasap3D" style="height:34px;width:auto">
+    </a>
+    <div style="display:flex;gap:26px;font:500 13px 'Inter',sans-serif;color:rgba(255,255,255,.62)">
+      <a href="Home.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Accueil</a>
+      <a href="Services.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Services</a>
+      <a href="About.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">À propos</a>
+      <a href="Realisations.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Réalisations</a>
+      <span style="color:#f3f1ec;border-bottom:2px solid #ff5a3c;padding-bottom:4px;display:inline-block;transition:transform .2s ease" style-hover="transform:scale(1.18)">Machines</span>
+      <a href="Contact.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Contact</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:18px;font:500 12px 'Inter',sans-serif;color:rgba(255,255,255,.75)">
+      <a href="Account.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Compte</a>
+      <a href="Cart.dc.html" style="text-decoration:none;color:inherit;position:relative;display:inline-flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg><span style="position:absolute;top:-9px;right:-9px;width:15px;height:15px;border-radius:50%;background:#ff5a3c;color:#161514;font:700 8.5px/15px 'Inter',sans-serif;text-align:center">0</span></a>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div style="padding:56px 24px 30px">
+    <div style="max-width:1000px;margin:0 auto">
+      <div style="font:600 12px 'Inter',sans-serif;letter-spacing:1.2px;color:#ff5a3c;text-transform:uppercase;margin-bottom:10px">Parc machine</div>
+      <div style="font:700 30px/1.15 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:10px">L'atelier, machine par machine</div>
+      <div style="font:400 13px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55);max-width:560px">Trois imprimantes FDM, une résine SLA, un laser diode/UV, un laser fibre métal, un Cricut et une presse à chaud — de quoi couvrir la plupart des besoins, du prototype au marquage.</div>
+    </div>
+  </div>
+
+  <!-- IMPRESSION 3D -->
+  <div style="padding:10px 24px 40px">
+    <div style="max-width:1000px;margin:0 auto">
+      <div style="font:600 9.5px 'Inter',sans-serif;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">Impression 3D — FDM</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+        <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;overflow:hidden;background:#1a1917;transition:border-color .25s ease,box-shadow .25s ease,transform .25s ease" style-hover="border-color:#ff5a3c;box-shadow:0 12px 24px rgba(0,0,0,.35);transform:translateY(-3px)">
+          <div style="height: 297px; background: url('assets/machine-h2c.jpg') center/cover no-repeat; border-bottom: 1px solid rgba(255,255,255,.1); width: 320px"></div>
+          <div style="padding:16px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <span style="font:700 14px 'Space Grotesk',sans-serif;color:#f3f1ec">Bambu Lab H2C</span>
+              <span style="font:700 9px 'Inter',sans-serif;color:#ff5a3c;background:rgba(255,90,60,.12);border-radius:4px;padding:2px 7px">x2</span>
+            </div>
+            <div style="font:400 10.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.5)">Multi-matériaux haute précision, châssis fermé pour l'ABS/ASA.</div>
+          </div>
+        </div>
+        <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;overflow:hidden;background:#1a1917;transition:border-color .25s ease,box-shadow .25s ease,transform .25s ease" style-hover="border-color:#ff5a3c;box-shadow:0 12px 24px rgba(0,0,0,.35);transform:translateY(-3px)">
+          <div style="height: 297px; background: url('assets/machine-x2d.jpg') center/cover no-repeat; border-bottom: 1px solid rgba(255,255,255,.1); width: 320px"></div>
+          <div style="padding:16px">
+            <div style="font:700 14px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:6px">Bambu Lab X2D</div>
+            <div style="font:400 10.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.5)">Vitesse et fiabilité pour les séries et le prototypage rapide.</div>
+          </div>
+        </div>
+        <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;overflow:hidden;background:#1a1917;transition:border-color .25s ease,box-shadow .25s ease,transform .25s ease" style-hover="border-color:#ff5a3c;box-shadow:0 12px 24px rgba(0,0,0,.35);transform:translateY(-3px)">
+          <div style="height: 297px; background: url('assets/machine-x1c.jpg') center/cover no-repeat; border-bottom: 1px solid rgba(255,255,255,.1); width: 317px"></div>
+          <div style="padding:16px">
+            <div style="font:700 14px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:6px">Bambu Lab X1C</div>
+            <div style="font:400 10.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.5)">La polyvalente de l'atelier : détails fins, large gamme de matières.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTRES MACHINES -->
+  
+
+  <!-- CTA -->
+  <div style="padding:10px 24px 50px">
+    <div style="max-width:1000px;margin:0 auto">
+      <div style="font:600 9.5px 'Inter',sans-serif;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">Autres machines de l'atelier</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+        <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;overflow:hidden;background:#1a1917;transition:border-color .25s ease,box-shadow .25s ease,transform .25s ease" style-hover="border-color:#ff5a3c;box-shadow:0 12px 24px rgba(0,0,0,.35);transform:translateY(-3px)">
+          <div style="height: 318px; background: url('assets/machine-sla.jpg') center/cover no-repeat; border-bottom: 1px solid rgba(255,255,255,.1); width: 320px"></div>
+          <div style="padding:14px">
+            <div style="font:700 12.5px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:5px">Imprimante SLA résine</div>
+            <div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Finitions ultra détaillées pour figurines et pièces techniques.</div>
+          </div>
+        </div>
+        <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;overflow:hidden;background:#1a1917;transition:border-color .25s ease,box-shadow .25s ease,transform .25s ease" style-hover="border-color:#ff5a3c;box-shadow:0 12px 24px rgba(0,0,0,.35);transform:translateY(-3px)">
+          <div style="height: 315px; background: url('assets/machine-laser-fibre.jpg') center/cover no-repeat; border-bottom: 1px solid rgba(255,255,255,.1); width: 320px"></div>
+          <div style="padding:14px">
+            <div style="font:700 12.5px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:5px">Gravure laser métal (Fibre)</div>
+            <div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Fibre 20W — gravure inaltérable sur inox, aluminium, laiton, titane.</div>
+          </div>
+        </div>
+        <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;overflow:hidden;background:#1a1917;transition:border-color .25s ease,box-shadow .25s ease,transform .25s ease" style-hover="border-color:#ff5a3c;box-shadow:0 12px 24px rgba(0,0,0,.35);transform:translateY(-3px)">
+          <div style="height: 314px; background: url('assets/machine-presse.png') center/cover no-repeat; border-bottom: 1px solid rgba(255,255,255,.1); width: 321px"></div>
+          <div style="padding:14px">
+            <div style="font:700 12.5px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:5px">Presse à chaud</div>
+            <div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Transfert vinyle &amp; sublimation thermique.</div>
+          </div>
+        </div>
+        <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;overflow:hidden;background:#1a1917;transition:border-color .25s ease,box-shadow .25s ease,transform .25s ease" style-hover="border-color:#ff5a3c;box-shadow:0 12px 24px rgba(0,0,0,.35);transform:translateY(-3px)">
+          <div style="height:200px;background:url('assets/machine-xtool-s1.png') center/cover no-repeat;border-bottom:1px solid rgba(255,255,255,.1)"></div>
+          <div style="padding:14px">
+            <div style="font:700 12.5px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:5px">Découpe/gravure laser</div>
+            <div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">XTOOL S1 Diode/UV — bois, acrylique, cuir, papier.</div>
+          </div>
+        </div>
+        <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;overflow:hidden;background:#1a1917;transition:border-color .25s ease,box-shadow .25s ease,transform .25s ease" style-hover="border-color:#ff5a3c;box-shadow:0 12px 24px rgba(0,0,0,.35);transform:translateY(-3px)">
+          <div style="height:200px;background:url('assets/machine-cricut.jpg') center/cover no-repeat;border-bottom:1px solid rgba(255,255,255,.1)"></div>
+          <div style="padding:14px">
+            <div style="font:700 12.5px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:5px">Cricut</div>
+            <div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Découpe vinyle, stickers, plastique fin.</div>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </div><div style="max-width:1000px;margin:0 auto;padding:0 24px 56px;text-align:center">
+    <div style="{{ ctaBoxStyle }}" onMouseEnter="{{ onCtaEnter }}" onMouseLeave="{{ onCtaLeave }}">
+      <div style="font:700 17px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:6px">Une machine qui fait des siennes ?</div>
+      <div style="font:400 11.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:14px">On propose aussi le diagnostic et la réparation — pas seulement l'impression.</div>
+      <a href="Services.dc.html#maintenance" style="{{ ctaLinkStyle }}">Voir la maintenance machine</a>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="padding:20px 40px;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:center;font:10px 'Inter',sans-serif;color:rgba(255,255,255,.4)">
+    <div><a href="MentionsLegales.dc.html" style="color:rgba(255,255,255,.4)">Mentions légales</a> · <a href="CGU.dc.html" style="color:rgba(255,255,255,.4)">CGU</a> · <a href="Confidentialite.dc.html" style="color:rgba(255,255,255,.4)">Confidentialité</a> · <a href="Cookies.dc.html" style="color:rgba(255,255,255,.4)">Cookies</a></div>
+    <div>© 2026 Nasap3D, Site conçu par Nsapp</div>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { hoveredCta: false };
+  renderVals() {
+    const h = this.state.hoveredCta;
+    return {
+      onCtaEnter: () => this.setState({ hoveredCta: true }),
+      onCtaLeave: () => this.setState({ hoveredCta: false }),
+      ctaBoxStyle: {
+        border: '1px solid ' + (h ? '#ff5a3c' : 'rgba(255,90,60,.3)'),
+        background: 'rgba(255,90,60,.08)',
+        borderRadius: '12px',
+        padding: '28px',
+        transform: h ? 'scale(1.02)' : 'scale(1)',
+        boxShadow: h ? '0 14px 28px rgba(0,0,0,.35)' : 'none',
+        transition: 'transform .25s ease, box-shadow .25s ease, border-color .25s ease'
+      },
+      ctaLinkStyle: {
+        textDecoration: 'none',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
+        width: 'fit-content',
+        font: "600 11px 'Inter',sans-serif",
+        color: '#ff5a3c',
+        padding: h ? '6px 12px' : '0',
+        border: '1px solid ' + (h ? '#ff5a3c' : 'transparent'),
+        borderRadius: '6px',
+        background: h ? 'rgba(255,90,60,.1)' : 'transparent',
+        transition: 'padding .25s ease, border-color .25s ease, background .25s ease'
+      }
+    };
+  }
+}
+
+</script>
+</body>
+</html>

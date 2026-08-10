@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+body{margin:0;background:#161514;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#ff5a3c}
+a:hover{color:#ff7a5c}
+.printer-loader-svg{width:100%;height:100%;display:block}
+.printer-loader-svg .filament{fill:none;stroke:currentColor;stroke-width:6;stroke-linecap:round;stroke-linejoin:round}
+.printer-loader-svg .stack{animation:plShiftDown 2.5s linear infinite}
+.printer-loader-svg .nozzle{fill:var(--pl-nozzle-fill,#161514);stroke:currentColor;stroke-width:2.5;stroke-linejoin:round;animation:plNozzleMove 2.5s linear infinite}
+.printer-loader-svg .line-lr{stroke-dasharray:100;animation:plDrawLr 2.5s linear infinite}
+.printer-loader-svg .arc-r{stroke-dasharray:100;animation:plDrawArcR 2.5s linear infinite}
+.printer-loader-svg .line-rl{stroke-dasharray:100;animation:plDrawRl 2.5s linear infinite}
+.printer-loader-svg .arc-l{stroke-dasharray:100;animation:plDrawArcL 2.5s linear infinite}
+@keyframes plShiftDown{0%,38%{transform:translateY(0px)}50%,88%{transform:translateY(10px)}100%{transform:translateY(20px)}}
+@keyframes plNozzleMove{0%{transform:translateX(-25px)}38%{transform:translateX(25px)}44%{transform:translateX(30px)}50%{transform:translateX(25px)}88%{transform:translateX(-25px)}94%{transform:translateX(-30px)}100%{transform:translateX(-25px)}}
+@keyframes plDrawLr{0%{stroke-dashoffset:100}38%,100%{stroke-dashoffset:50}}
+@keyframes plDrawArcR{0%,38%{stroke-dashoffset:100}50%,100%{stroke-dashoffset:84.3}}
+@keyframes plDrawRl{0%,50%{stroke-dashoffset:100}88%,100%{stroke-dashoffset:50}}
+@keyframes plDrawArcL{0%,88%{stroke-dashoffset:100}100%{stroke-dashoffset:84.3}}
+@keyframes mapPulse{0%{transform:scale(0.4);opacity:.85}70%{transform:scale(2.6);opacity:0}100%{transform:scale(2.6);opacity:0}}
+.nasap-pulse-wrap{position:relative;width:20px;height:20px}
+.nasap-pulse-ring{position:absolute;left:50%;top:50%;width:20px;height:20px;margin:-10px;border-radius:50%;background:#ff5a3c;animation:mapPulse 1.8s ease-out infinite}
+.nasap-pulse-dot{position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px;border-radius:50%;background:#ff5a3c;border:2px solid #fff;box-shadow:0 0 6px rgba(0,0,0,.4);box-sizing:border-box}
+</style>
+<script src="./pageloader.js"></script>
+<script src="./navguard.js"></script>
+</helmet>
+
+<div style="background:#161514;min-height:100vh">
+
+  <!-- HEADER -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 40px;border-bottom:1px solid rgba(255,255,255,.08)">
+    <a href="Home.dc.html" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+      <img src="assets/logo-blanc-full.png" alt="Nasap3D" style="height:34px;width:auto">
+    </a>
+    <div style="display:flex;gap:26px;font:500 13px 'Inter',sans-serif;color:rgba(255,255,255,.62)">
+      <a href="Home.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Accueil</a>
+      <a href="Services.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Services</a>
+      <a href="About.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">À propos</a>
+      <a href="Realisations.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Réalisations</a>
+      <a href="Machines.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Machines</a>
+      <span style="color:#f3f1ec;border-bottom:2px solid #ff5a3c;padding-bottom:4px;display:inline-block;transition:transform .2s ease" style-hover="transform:scale(1.18)">Contact</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:18px;font:500 12px 'Inter',sans-serif;color:rgba(255,255,255,.75)">
+      <a href="Account.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Compte</a>
+      <a href="Cart.dc.html" style="text-decoration:none;color:inherit;position:relative;display:inline-flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg><span style="position:absolute;top:-9px;right:-9px;width:15px;height:15px;border-radius:50%;background:#ff5a3c;color:#161514;font:700 8.5px/15px 'Inter',sans-serif;text-align:center">0</span></a>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div style="padding:56px 24px 20px">
+    <div style="max-width:1000px;margin:0 auto">
+      <div style="font:600 12px 'Inter',sans-serif;letter-spacing:1.2px;color:#ff5a3c;text-transform:uppercase;margin-bottom:10px">Contact</div>
+      <div style="font:700 30px/1.15 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:10px">Parlons de votre projet</div>
+      <div style="font:400 13px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55);max-width:560px">Pièce complexe, rétro-conception, maintenance, question sur un devis — écrivez-nous. Fichier prêt et besoin standard ? Le <a href="Devis Instantane.dc.html">devis instantané</a> ira plus vite.</div>
+    </div>
+  </div>
+
+  <!-- FORM + INFOS -->
+  <div style="padding:20px 24px 56px">
+    <div style="max-width:1000px;margin:0 auto;display:grid;grid-template-columns:1.3fr 1fr;gap:40px">
+
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#1a1917;padding:28px">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+              <div style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,.5);margin-bottom:5px">Nom <span style="color:#ff5a3c">*</span></div>
+              <input value="{{ contactName }}" onChange="{{ onContactName }}" maxlength="60" placeholder="Votre nom" style="width:100%;box-sizing:border-box;height:38px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:12px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+              <div style="font:9px ui-monospace,monospace;color:rgba(255,255,255,.3);margin-top:3px;text-align:right">{{ contactName.length }} / 60 caractères</div>
+            </div>
+            <div>
+              <div style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,.5);margin-bottom:5px">Email <span style="color:#ff5a3c">*</span></div>
+              <input value="{{ contactEmail }}" onChange="{{ onContactEmail }}" type="email" maxlength="80" placeholder="vous@exemple.com" style="width:100%;box-sizing:border-box;height:38px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:12px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+              <div style="font:9px ui-monospace,monospace;color:rgba(255,255,255,.3);margin-top:3px;text-align:right">{{ contactEmail.length }} / 80 caractères</div>
+            </div>
+          </div>
+          <div>
+            <div style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,.5);margin-bottom:5px">Objet <span style="color:#ff5a3c">*</span></div>
+            <input value="{{ contactObjet }}" onChange="{{ onContactObjet }}" maxlength="80" placeholder="Objet ou Numéro de compte/Numéro de la commande" style="width:100%;box-sizing:border-box;height:38px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:12px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+            <div style="font:9px ui-monospace,monospace;color:rgba(255,255,255,.3);margin-top:3px;text-align:right">{{ contactObjet.length }} / 80 caractères</div>
+          </div>
+          <div>
+            <textarea value="{{ contactMessage }}" onChange="{{ onContactMessage }}" placeholder="Message — décrivez votre besoin (pièce, contrainte, délai souhaité…)" maxlength="1000" style="width:100%;box-sizing:border-box;height:110px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:10px 12px;font:12px 'Inter',sans-serif;color:#e8e6e1;outline:none;resize:none;font-family:inherit"></textarea>
+            <div style="font:9px ui-monospace,monospace;color:rgba(255,255,255,.3);margin-top:3px;text-align:right">{{ contactMessage.length }} / 1000 caractères</div>
+          </div>
+          <div>
+            <sc-if value="{{ contactFileNone }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ attachContactFile }}" onDragOver="{{ onContactDragOver }}" onDragLeave="{{ onContactDragLeave }}" onDrop="{{ onContactDrop }}" style="{{ contactDropStyle }}">+ Joindre un fichier (pièce cassée, plan, photo…)</div>
+            </sc-if>
+            <sc-if value="{{ contactFileUploading }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1.5px dashed rgba(255,90,60,.4);border-radius:6px;padding:32px 14px;font:13px 'Inter',sans-serif;color:rgba(255,255,255,.6);text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">
+                <span style="width:60px;height:60px;display:inline-block;color:#ff5a3c;--pl-nozzle-fill:#1a1917"><svg viewBox="0 0 100 100" class="printer-loader-svg">
+<defs>
+<linearGradient id="plFadeC1" x1="0" y1="0" x2="0" y2="1">
+<stop offset="65%" stop-color="white" stop-opacity="1"/>
+<stop offset="90%" stop-color="white" stop-opacity="0"/>
+</linearGradient>
+<mask id="plMaskC1">
+<rect x="0" y="0" width="100" height="100" fill="url(#plFadeC1)"/>
+</mask>
+</defs>
+<g mask="url(#plMaskC1)">
+<g class="stack">
+<path class="filament" d="M 75 105 L 25 105 A 5 5 0 0 1 25 95 L 75 95 A 5 5 0 0 0 75 85 L 25 85 A 5 5 0 0 1 25 75 L 75 75 A 5 5 0 0 0 75 65 L 25 65 A 5 5 0 0 1 25 55"/>
+<path class="filament line-lr" d="M 25 55 L 75 55"/>
+<path class="filament arc-r" d="M 75 55 A 5 5 0 0 0 75 45"/>
+<path class="filament line-rl" d="M 75 45 L 25 45"/>
+<path class="filament arc-l" d="M 25 45 A 5 5 0 0 1 25 35"/>
+</g>
+</g>
+<g class="nozzle">
+<rect x="40" y="15" width="20" height="15" rx="1"/>
+<line x1="38" y1="20" x2="62" y2="20"/>
+<line x1="38" y1="25" x2="62" y2="25"/>
+<polygon points="35,30 65,30 65,42 35,42"/>
+<polygon points="35,42 65,42 53,55 47,55"/>
+</g>
+</svg></span>Chargement du fichier…
+              </div>
+            </sc-if>
+            <sc-if value="{{ contactFileReady }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1px solid rgba(255,90,60,.35);background:rgba(255,90,60,.08);border-radius:6px;padding:14px;font:12px 'Inter',sans-serif;color:#f3f1ec;text-align:center">✓ {{ contactFileName }}</div>
+            </sc-if>
+            <div style="font:9px ui-monospace,monospace;color:rgba(255,255,255,.3);margin-top:3px">.stl .step .pdf .jpg .png — 10 Mo max</div>
+          </div>
+          <div onClick="{{ toggleCaptcha }}" style="display:flex;align-items:center;gap:10px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:11px 14px;cursor:pointer">
+            <span style="{{ captchaBoxStyle }}">{{ captchaCheckMark }}</span>
+            <span style="font:12px 'Inter',sans-serif;color:rgba(255,255,255,.55)">Je ne suis pas un robot — captcha anti-spam</span>
+          </div>
+          <div onClick="{{ submitContact }}" style="{{ contactSendStyle }}">
+            <sc-if value="{{ contactFileUploading }}" hint-placeholder-val="{{ false }}">
+              <span style="width:11px;height:11px;display:inline-block;color:#fff;--pl-nozzle-fill:#ff5a3c"><svg viewBox="0 0 100 100" class="printer-loader-svg">
+<defs>
+<linearGradient id="plFadeC2" x1="0" y1="0" x2="0" y2="1">
+<stop offset="65%" stop-color="white" stop-opacity="1"/>
+<stop offset="90%" stop-color="white" stop-opacity="0"/>
+</linearGradient>
+<mask id="plMaskC2">
+<rect x="0" y="0" width="100" height="100" fill="url(#plFadeC2)"/>
+</mask>
+</defs>
+<g mask="url(#plMaskC2)">
+<g class="stack">
+<path class="filament" d="M 75 105 L 25 105 A 5 5 0 0 1 25 95 L 75 95 A 5 5 0 0 0 75 85 L 25 85 A 5 5 0 0 1 25 75 L 75 75 A 5 5 0 0 0 75 65 L 25 65 A 5 5 0 0 1 25 55"/>
+<path class="filament line-lr" d="M 25 55 L 75 55"/>
+<path class="filament arc-r" d="M 75 55 A 5 5 0 0 0 75 45"/>
+<path class="filament line-rl" d="M 75 45 L 25 45"/>
+<path class="filament arc-l" d="M 25 45 A 5 5 0 0 1 25 35"/>
+</g>
+</g>
+<g class="nozzle">
+<rect x="40" y="15" width="20" height="15" rx="1"/>
+<line x1="38" y1="20" x2="62" y2="20"/>
+<line x1="38" y1="25" x2="62" y2="25"/>
+<polygon points="35,30 65,30 65,42 35,42"/>
+<polygon points="35,42 65,42 53,55 47,55"/>
+</g>
+</svg></span>
+            </sc-if>
+            <span>Envoyer le message</span>
+          </div>
+          <sc-if value="{{ showSentMessage }}" hint-placeholder-val="{{ false }}">
+            <div style="font:600 11px 'Inter',sans-serif;color:#ff5a3c">✓ Message envoyé — nous revenons vers vous rapidement.</div>
+          </sc-if>
+        </div>
+      </div>
+
+      <div>
+        <div style="font:700 15px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:14px">Nasap3D</div>
+        <div style="font:400 12.5px/2 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:22px">
+          29 rue Mellier, 44100 Nantes<br>06 61 43 05 06<br>nasap3D@gmail.com
+        </div>
+        <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;overflow:hidden;background:#1a1917;margin-bottom:16px;width:100%">
+          <div ref="{{ mapRef }}" style="width:100%;height:420px"></div>
+        </div>
+        <div style="font:400 10.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.4)">Retrait à l'atelier possible sur rendez-vous, ou expédition partout en France.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="padding:20px 40px;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:center;font:10px 'Inter',sans-serif;color:rgba(255,255,255,.4)">
+    <div><a href="MentionsLegales.dc.html" style="color:rgba(255,255,255,.4)">Mentions légales</a> · <a href="CGU.dc.html" style="color:rgba(255,255,255,.4)">CGU</a> · <a href="Confidentialite.dc.html" style="color:rgba(255,255,255,.4)">Confidentialité</a> · <a href="Cookies.dc.html" style="color:rgba(255,255,255,.4)">Cookies</a></div>
+    <div>© 2026 Nasap3D, Site conçu par Nsapp</div>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    contactName: '', contactEmail: '', contactObjet: '', contactMessage: '',
+    contactFileState: 'none', contactFileName: '', captchaChecked: false, sent: false, contactDragging: false
+  };
+  mapRef = React.createRef();
+  componentDidMount() {
+    this._initMap();
+  }
+  _initMap(attempt) {
+    attempt = attempt || 0;
+    const el = this.mapRef.current;
+    if (!el) return;
+    if (typeof L === 'undefined') {
+      if (attempt < 40) setTimeout(() => this._initMap(attempt + 1), 150);
+      return;
+    }
+    if (this._map) return;
+    const coords = [47.21023, -1.580297];
+    this._map = L.map(el, { zoomControl: false, attributionControl: false }).setView(coords, 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      subdomains: 'abc', maxZoom: 19
+    }).addTo(this._map);
+    const pulseIcon = L.divIcon({
+      className: '',
+      html: '<div class="nasap-pulse-wrap"><div class="nasap-pulse-ring"></div><div class="nasap-pulse-dot"></div></div>',
+      iconSize: [20, 20],
+      iconAnchor: [10, 10]
+    });
+    L.marker(coords, { icon: pulseIcon }).addTo(this._map).bindPopup('Nasap3D — Nantes (Canclaux)');
+  }
+  componentWillUnmount() {
+    clearTimeout(this._fileTimer);
+    clearTimeout(this._sentTimer);
+    if (this._map) { this._map.remove(); this._map = null; }
+  }
+  _isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+  attachContactFile() {
+    this.setState({ contactFileState: 'uploading' });
+    clearTimeout(this._fileTimer);
+    this._fileTimer = setTimeout(() => this.setState({ contactFileState: 'ready', contactFileName: 'piece-jointe.stl' }), 1400);
+  }
+  toggleCaptcha() {
+    this.setState(s => ({ captchaChecked: !s.captchaChecked }));
+  }
+  submitContact() {
+    const s = this.state;
+    const uploading = s.contactFileState === 'uploading';
+    const canSend = s.contactName.trim() && this._isValidEmail(s.contactEmail) && s.contactObjet.trim() && s.captchaChecked && !uploading;
+    if (!canSend) return;
+    this.setState({ sent: true, contactName: '', contactEmail: '', contactObjet: '', contactMessage: '', captchaChecked: false, contactFileState: 'none' });
+    clearTimeout(this._sentTimer);
+    this._sentTimer = setTimeout(() => this.setState({ sent: false }), 5000);
+  }
+  renderVals() {
+    const s = this.state;
+    const mapRef = this.mapRef;
+    const uploading = s.contactFileState === 'uploading';
+    const canSend = s.contactName.trim().length > 0 && this._isValidEmail(s.contactEmail) && s.contactObjet.trim().length > 0 && s.captchaChecked && !uploading;
+    return {
+      mapRef,
+      contactName: s.contactName,
+      contactEmail: s.contactEmail,
+      contactObjet: s.contactObjet,
+      contactMessage: s.contactMessage,
+      onContactName: (e) => this.setState({ contactName: e.target.value }),
+      onContactEmail: (e) => this.setState({ contactEmail: e.target.value }),
+      onContactObjet: (e) => this.setState({ contactObjet: e.target.value }),
+      onContactMessage: (e) => this.setState({ contactMessage: e.target.value }),
+      contactFileState: s.contactFileState,
+      contactFileName: s.contactFileName,
+      contactFileNone: s.contactFileState === 'none',
+      contactFileUploading: uploading,
+      contactFileReady: s.contactFileState === 'ready',
+      attachContactFile: () => this.attachContactFile(),
+      contactDropStyle: {
+        border: '1.5px dashed ' + (s.contactDragging ? '#ff5a3c' : 'rgba(255,255,255,.25)'),
+        borderRadius: '6px', padding: '14px', font: "12px 'Inter',sans-serif",
+        color: s.contactDragging ? '#ff5a3c' : 'rgba(255,255,255,.4)',
+        textAlign: 'center', cursor: 'pointer',
+        transform: s.contactDragging ? 'scale(1.05)' : 'scale(1)',
+        background: s.contactDragging ? 'rgba(255,90,60,.1)' : 'transparent',
+        boxShadow: s.contactDragging ? '0 0 0 3px rgba(255,90,60,.18), 0 0 18px rgba(255,90,60,.35)' : 'none',
+        transition: 'border-color .2s ease, background .2s ease, box-shadow .2s ease, color .2s ease, transform .2s ease'
+      },
+      onContactDragOver: (e) => { e.preventDefault(); if (!this.state.contactDragging) this.setState({ contactDragging: true }); },
+      onContactDragLeave: (e) => { e.preventDefault(); this.setState({ contactDragging: false }); },
+      onContactDrop: (e) => { e.preventDefault(); this.setState({ contactDragging: false }); this.attachContactFile(); },
+      captchaChecked: s.captchaChecked,
+      toggleCaptcha: () => this.toggleCaptcha(),
+      captchaCheckMark: s.captchaChecked ? '✓' : '',
+      captchaBoxStyle: {
+        width: '16px', height: '16px', borderRadius: '4px', flex: 'none',
+        border: '1px solid ' + (s.captchaChecked ? '#ff5a3c' : 'rgba(255,255,255,.35)'),
+        background: s.captchaChecked ? '#ff5a3c' : 'transparent',
+        color: '#161514', font: "700 11px/16px 'Inter',sans-serif", textAlign: 'center'
+      },
+      showSentMessage: s.sent,
+      submitContact: () => this.submitContact(),
+      contactSendStyle: {
+        alignSelf: 'flex-start',
+        background: canSend ? '#ff5a3c' : '#3a3936',
+        color: canSend ? '#161514' : '#fff',
+        border: canSend ? 'none' : '1px solid rgba(255,255,255,.12)',
+        font: "600 13px 'Inter',sans-serif",
+        padding: '11px 20px',
+        borderRadius: '7px',
+        marginTop: '2px',
+        cursor: canSend ? 'pointer' : 'not-allowed',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        transition: 'background .2s ease, color .2s ease'
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+.thumbnail
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Backend (added when the API project is scaffolded)
+node_modules/
+dist/
+.env
+.env.local

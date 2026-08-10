@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#161514;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#ff5a3c}
+a:hover{color:#ff7a5c}
+.printer-loader-svg{width:100%;height:100%;display:block}
+.printer-loader-svg .filament{fill:none;stroke:currentColor;stroke-width:6;stroke-linecap:round;stroke-linejoin:round}
+.printer-loader-svg .stack{animation:plShiftDown 2.5s linear infinite}
+.printer-loader-svg .nozzle{fill:var(--pl-nozzle-fill,#161514);stroke:currentColor;stroke-width:2.5;stroke-linejoin:round;animation:plNozzleMove 2.5s linear infinite}
+.printer-loader-svg .line-lr{stroke-dasharray:100;animation:plDrawLr 2.5s linear infinite}
+.printer-loader-svg .arc-r{stroke-dasharray:100;animation:plDrawArcR 2.5s linear infinite}
+.printer-loader-svg .line-rl{stroke-dasharray:100;animation:plDrawRl 2.5s linear infinite}
+.printer-loader-svg .arc-l{stroke-dasharray:100;animation:plDrawArcL 2.5s linear infinite}
+@keyframes plShiftDown{0%,38%{transform:translateY(0px)}50%,88%{transform:translateY(10px)}100%{transform:translateY(20px)}}
+@keyframes plNozzleMove{0%{transform:translateX(-25px)}38%{transform:translateX(25px)}44%{transform:translateX(30px)}50%{transform:translateX(25px)}88%{transform:translateX(-25px)}94%{transform:translateX(-30px)}100%{transform:translateX(-25px)}}
+@keyframes plDrawLr{0%{stroke-dashoffset:100}38%,100%{stroke-dashoffset:50}}
+@keyframes plDrawArcR{0%,38%{stroke-dashoffset:100}50%,100%{stroke-dashoffset:84.3}}
+@keyframes plDrawRl{0%,50%{stroke-dashoffset:100}88%,100%{stroke-dashoffset:50}}
+@keyframes plDrawArcL{0%,88%{stroke-dashoffset:100}100%{stroke-dashoffset:84.3}}
+@keyframes cfgFadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes cfgViewerSpin{from{transform:rotateY(0deg) rotateX(-18deg)}to{transform:rotateY(360deg) rotateX(-18deg)}}
+</style>
+<script src="./pageloader.js"></script>
+<script src="./navguard.js"></script>
+</helmet>
+
+<div style="background:#161514;min-height:100vh">
+
+  <!-- HEADER -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 40px;border-bottom:1px solid rgba(255,255,255,.08)">
+    <a href="Home.dc.html" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+      <img src="assets/logo-blanc-full.png" alt="Nasap3D" style="height:34px;width:auto">
+    </a>
+    <div style="display:flex;gap:26px;font:500 13px 'Inter',sans-serif;color:rgba(255,255,255,.62)">
+      <a href="Home.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Accueil</a>
+      <span data-quote-nav style="color:#f3f1ec;border-bottom:2px solid #ff5a3c;padding-bottom:4px;display:inline-block;transition:transform .2s ease" style-hover="transform:scale(1.18)">Devis instantané</span>
+      <a href="Services.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Services</a>
+      <a href="About.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">À propos</a>
+      <a href="Realisations.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Réalisations</a>
+      <a href="Machines.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Machines</a>
+      <a href="Contact.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Contact</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:18px;font:500 12px 'Inter',sans-serif;color:rgba(255,255,255,.75)">
+      <a href="Account.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Compte</a>
+      <a href="Cart.dc.html" style="text-decoration:none;color:inherit;position:relative;display:inline-flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg><span style="position:absolute;top:-9px;right:-9px;width:15px;height:15px;border-radius:50%;background:#ff5a3c;color:#161514;font:700 8.5px/15px 'Inter',sans-serif;text-align:center">{{ cartCount }}</span></a>
+    </div>
+  </div>
+
+  <!-- BREADCRUMB + HERO -->
+  <div style="max-width:1000px;margin:0 auto;padding:36px 24px 30px">
+    <div style="font:500 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.35);margin-bottom:14px"><a href="Home.dc.html" style="color:rgba(255,255,255,.35);text-decoration:none">Accueil</a> / Devis instantané</div>
+    <div style="font:600 12px 'Inter',sans-serif;letter-spacing:1.2px;color:#ff5a3c;text-transform:uppercase;margin-bottom:12px">Configurateur & conseils</div>
+    <div style="font:700 32px/1.15 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:12px;max-width:600px">Votre devis en 2 minutes — et les bons réglages pour bien choisir.</div>
+    <div style="font:400 13px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55);max-width:560px">Déposez votre fichier, choisissez vos options, l'analyse automatique calcule le prix. Pas sûr d'un réglage ? Les explications sont juste en dessous.</div>
+  </div>
+
+  <!-- CONFIGURATOR (wizard identique à l'accueil) -->
+  <div style="max-width:1000px;margin:0 auto;padding:0 24px 50px">
+    <sc-if value="{{ quotePaused }}" hint-placeholder-val="{{ false }}">
+      <div style="border:1px solid rgba(255,90,60,.3);background:rgba(255,90,60,.08);border-radius:12px;padding:30px 28px;display:flex;align-items:center;gap:20px">
+        <div style="font-size:32px;flex:none">🛠️</div>
+        <div>
+          <div style="font:700 17px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:6px">Devis instantané momentanément indisponible</div>
+          <div style="font:400 12px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.6);max-width:640px">L'atelier est en pause (congés / maintenance). Le configurateur rouvrira très vite — en attendant, décrivez votre projet via le <a href="Contact.dc.html">formulaire de contact</a> et nous vous répondons dès le retour.</div>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ quoteEnabled }}" hint-placeholder-val="{{ true }}">
+    <div style="background:#1e1c1a;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:24px;display:grid;grid-template-columns:170px 1fr;gap:24px">
+      <div style="display:flex;flex-direction:column;gap:0;position:relative">
+        <div style="position:absolute;left:9px;top:10px;bottom:10px;width:1px;background:rgba(255,255,255,.15)"></div>
+        <div style="{{ cfgRail1.wrapStyle }}" onClick="{{ cfgRail1.onClick }}"><span style="{{ cfgRail1.dotStyle }}">{{ cfgRail1.label }}</span><span style="{{ cfgRail1.labelStyle }}">{{ cfgRail1.text }}</span></div>
+        <div style="{{ cfgRail2.wrapStyle }}" onClick="{{ cfgRail2.onClick }}"><span style="{{ cfgRail2.dotStyle }}">{{ cfgRail2.label }}</span><span style="{{ cfgRail2.labelStyle }}">{{ cfgRail2.text }}</span></div>
+        <div style="{{ cfgRail3.wrapStyle }}" onClick="{{ cfgRail3.onClick }}"><span style="{{ cfgRail3.dotStyle }}">{{ cfgRail3.label }}</span><span style="{{ cfgRail3.labelStyle }}">{{ cfgRail3.text }}</span></div>
+        <div style="{{ cfgRail4.wrapStyle }}" onClick="{{ cfgRail4.onClick }}"><span style="{{ cfgRail4.dotStyle }}">{{ cfgRail4.label }}</span><span style="{{ cfgRail4.labelStyle }}">{{ cfgRail4.text }}</span></div>
+      </div>
+      <div>
+        <sc-if value="{{ isCfgStep1 }}">
+          <sc-if value="{{ cfgFileReady }}" hint-placeholder-val="{{ false }}">
+            <div style="border:1px solid rgba(255,90,60,.3);background:#101010;border-radius:8px;padding:14px;margin-bottom:16px;animation:cfgFadeUp .35s ease">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,.5)">piece.stl — aperçu 3D</span><span style="width:16px;height:16px;border-radius:50%;background:#ff5a3c;color:#161514;font:700 10px/16px 'Inter',sans-serif;text-align:center">✓</span></div>
+              <div style="height:150px;display:flex;align-items:center;justify-content:center;perspective:400px;background:radial-gradient(ellipse at center, rgba(255,90,60,.08), transparent 70%);border-radius:6px">
+                <div style="width:64px;height:64px;position:relative;transform-style:preserve-3d;animation:cfgViewerSpin 5s linear infinite">
+                  <div style="position:absolute;inset:0;transform:translateZ(32px);background:rgba(255,90,60,.18);border:1px solid rgba(255,90,60,.6)"></div>
+                  <div style="position:absolute;inset:0;transform:rotateY(180deg) translateZ(32px);background:rgba(255,90,60,.1);border:1px solid rgba(255,90,60,.4)"></div>
+                  <div style="position:absolute;inset:0;transform:rotateY(90deg) translateZ(32px);background:rgba(255,90,60,.14);border:1px solid rgba(255,90,60,.5)"></div>
+                  <div style="position:absolute;inset:0;transform:rotateY(-90deg) translateZ(32px);background:rgba(255,90,60,.14);border:1px solid rgba(255,90,60,.5)"></div>
+                  <div style="position:absolute;inset:0;transform:rotateX(90deg) translateZ(32px);background:rgba(255,90,60,.22);border:1px solid rgba(255,90,60,.6)"></div>
+                  <div style="position:absolute;inset:0;transform:rotateX(-90deg) translateZ(32px);background:rgba(255,90,60,.08);border:1px solid rgba(255,90,60,.35)"></div>
+                </div>
+              </div>
+              <div style="font:400 9.5px 'Inter',sans-serif;color:rgba(255,255,255,.4);text-align:center;margin-top:8px">Fichier analysé avec succès</div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;animation:cfgFadeUp .4s ease .05s both"><div onClick="{{ cfgNext }}" style="background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:10px 20px;border-radius:6px;cursor:pointer">Suivant →</div></div>
+          </sc-if>
+          <sc-if value="{{ cfgLoading }}" hint-placeholder-val="{{ false }}">
+            <div style="border:1.5px dashed rgba(255,255,255,.25);border-radius:8px;padding:34px;text-align:center">
+              <div style="width:64px;height:64px;margin:0 auto 16px;color:#ff5a3c;--pl-nozzle-fill:#1a1917"><svg viewBox="0 0 100 100" class="printer-loader-svg">
+<defs>
+<linearGradient id="plFadeD1" x1="0" y1="0" x2="0" y2="1">
+<stop offset="65%" stop-color="white" stop-opacity="1"/>
+<stop offset="90%" stop-color="white" stop-opacity="0"/>
+</linearGradient>
+<mask id="plMaskD1">
+<rect x="0" y="0" width="100" height="100" fill="url(#plFadeD1)"/>
+</mask>
+</defs>
+<g mask="url(#plMaskD1)">
+<g class="stack">
+<path class="filament" d="M 75 105 L 25 105 A 5 5 0 0 1 25 95 L 75 95 A 5 5 0 0 0 75 85 L 25 85 A 5 5 0 0 1 25 75 L 75 75 A 5 5 0 0 0 75 65 L 25 65 A 5 5 0 0 1 25 55"/>
+<path class="filament line-lr" d="M 25 55 L 75 55"/>
+<path class="filament arc-r" d="M 75 55 A 5 5 0 0 0 75 45"/>
+<path class="filament line-rl" d="M 75 45 L 25 45"/>
+<path class="filament arc-l" d="M 25 45 A 5 5 0 0 1 25 35"/>
+</g>
+</g>
+<g class="nozzle">
+<rect x="40" y="15" width="20" height="15" rx="1"/>
+<line x1="38" y1="20" x2="62" y2="20"/>
+<line x1="38" y1="25" x2="62" y2="25"/>
+<polygon points="35,30 65,30 65,42 35,42"/>
+<polygon points="35,42 65,42 53,55 47,55"/>
+</g>
+</svg></div>
+              <div style="font:600 12px 'Inter',sans-serif;color:#f3f1ec">Analyse du fichier en cours…</div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isCfgIdle }}" hint-placeholder-val="{{ true }}">
+            <div onClick="{{ dropFile }}" style="border:1.5px dashed rgba(255,255,255,.25);border-radius:8px;padding:34px;text-align:center;cursor:pointer">
+              <div style="font:600 13px 'Inter',sans-serif;color:#f3f1ec;margin-bottom:4px">Glissez votre fichier .STL ici</div>
+              <div style="font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.4)">ou cliquez pour parcourir</div>
+            </div>
+          </sc-if>
+        </sc-if>
+
+        <sc-if value="{{ isCfgStep2 }}">
+          <div style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Matériau</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px">
+            <sc-for list="{{ cfgMaterials }}" as="mat" hint-placeholder-count="7"><span style="{{ mat.chipStyle }}" onClick="{{ mat.onClick }}">{{ mat.label }}</span></sc-for>
+          </div>
+          <div style="font:400 9px 'Inter',sans-serif;color:rgba(255,255,255,.35);margin-bottom:16px">PEEK / PEKK non proposés</div>
+
+          <div style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Couleur</div>
+          <div style="display:flex;gap:8px;margin-bottom:16px">
+            <sc-for list="{{ cfgColors }}" as="c" hint-placeholder-count="4"><span style="{{ c.style }}" onClick="{{ c.onClick }}"></span></sc-for>
+          </div>
+
+          <div style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Taux de remplissage</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">
+            <sc-for list="{{ infills }}" as="fill" hint-placeholder-count="6"><span style="{{ fill.chipStyle }}" onClick="{{ fill.onClick }}">{{ fill.label }}</span></sc-for>
+          </div>
+          <div style="font:400 9.5px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.4);margin-bottom:16px">{{ infillHint }}</div>
+
+          <div style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Qualité d'impression</div>
+          <div style="display:flex;gap:6px;margin-bottom:6px">
+            <sc-for list="{{ qualities }}" as="q" hint-placeholder-count="3"><span style="{{ q.chipStyle }}" onClick="{{ q.onClick }}">{{ q.label }}</span></sc-for>
+          </div>
+          <div style="font:400 9.5px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.4);margin-bottom:16px">{{ qualityHint }}</div>
+
+          <div style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Quantité</div>
+          <div style="position:relative;margin-bottom:20px" onMouseEnter="{{ cfgDiscountEnter }}" onMouseLeave="{{ cfgDiscountLeave }}">
+            <div style="display:flex;align-items:center;gap:10px;font:600 12px 'Inter',sans-serif;color:#f3f1ec">
+              <span onClick="{{ cfgDecQty }}" style="width:22px;height:22px;border:1px solid rgba(255,255,255,.25);border-radius:5px;text-align:center;line-height:20px;cursor:pointer">–</span>{{ cfgQty }}<span onClick="{{ cfgIncQty }}" style="width:22px;height:22px;border:1px solid rgba(255,255,255,.25);border-radius:5px;text-align:center;line-height:20px;cursor:pointer">+</span>
+              <sc-if value="{{ cfgHasDiscount }}" hint-placeholder-val="{{ false }}"><span style="font:700 10px 'Inter',sans-serif;color:#ff5a3c;background:rgba(255,90,60,.12);border-radius:4px;padding:3px 8px">−{{ cfgDiscountPct }}%</span></sc-if>
+            </div>
+            <sc-if value="{{ cfgShowDiscountInfo }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;left:0;top:calc(100% + 8px);z-index:6;background:#161514;border:1px solid rgba(255,90,60,.3);border-radius:8px;padding:12px 14px;box-shadow:0 12px 24px rgba(0,0,0,.4);animation:cfgFadeUp .2s ease;min-width:170px">
+                <div style="font:600 9px 'Inter',sans-serif;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Remises par quantité</div>
+                <sc-for list="{{ discountTiers }}" as="tier" hint-placeholder-count="5"><div style="{{ tier.rowStyle }}"><span>{{ tier.label }}</span></div></sc-for>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="display:flex;justify-content:flex-end"><div onClick="{{ cfgNext }}" style="background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:10px 20px;border-radius:6px;cursor:pointer">Suivant →</div></div>
+        </sc-if>
+
+        <sc-if value="{{ isCfgStep3 }}">
+          <sc-if value="{{ cfgAnalysisReady }}" hint-placeholder-val="{{ false }}">
+            <div style="border:1px solid rgba(255,90,60,.3);background:#101010;border-radius:8px;padding:14px;margin-bottom:16px;animation:cfgFadeUp .35s ease">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,.5)">Analyse terminée</span><span style="width:16px;height:16px;border-radius:50%;background:#ff5a3c;color:#161514;font:700 10px/16px 'Inter',sans-serif;text-align:center">✓</span></div>
+              <div style="height:150px;display:flex;align-items:center;justify-content:center;perspective:400px;background:radial-gradient(ellipse at center, rgba(255,90,60,.08), transparent 70%);border-radius:6px">
+                <div style="width:64px;height:64px;position:relative;transform-style:preserve-3d;animation:cfgViewerSpin 5s linear infinite">
+                  <div style="position:absolute;inset:0;transform:translateZ(32px);background:rgba(255,90,60,.18);border:1px solid rgba(255,90,60,.6)"></div>
+                  <div style="position:absolute;inset:0;transform:rotateY(180deg) translateZ(32px);background:rgba(255,90,60,.1);border:1px solid rgba(255,90,60,.4)"></div>
+                  <div style="position:absolute;inset:0;transform:rotateY(90deg) translateZ(32px);background:rgba(255,90,60,.14);border:1px solid rgba(255,90,60,.5)"></div>
+                  <div style="position:absolute;inset:0;transform:rotateY(-90deg) translateZ(32px);background:rgba(255,90,60,.14);border:1px solid rgba(255,90,60,.5)"></div>
+                  <div style="position:absolute;inset:0;transform:rotateX(90deg) translateZ(32px);background:rgba(255,90,60,.22);border:1px solid rgba(255,90,60,.6)"></div>
+                  <div style="position:absolute;inset:0;transform:rotateX(-90deg) translateZ(32px);background:rgba(255,90,60,.08);border:1px solid rgba(255,90,60,.35)"></div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;animation:cfgFadeUp .4s ease .05s both"><div onClick="{{ cfgNext }}" style="background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:10px 20px;border-radius:6px;cursor:pointer">Suivant →</div></div>
+          </sc-if>
+          <sc-if value="{{ cfgAnalyzing }}" hint-placeholder-val="{{ true }}">
+            <div style="border:1.5px dashed rgba(255,255,255,.25);border-radius:8px;padding:34px;text-align:center">
+              <div style="width:64px;height:64px;margin:0 auto 16px;color:#ff5a3c;--pl-nozzle-fill:#1a1917"><svg viewBox="0 0 100 100" class="printer-loader-svg">
+<defs>
+<linearGradient id="plFadeD2" x1="0" y1="0" x2="0" y2="1">
+<stop offset="65%" stop-color="white" stop-opacity="1"/>
+<stop offset="90%" stop-color="white" stop-opacity="0"/>
+</linearGradient>
+<mask id="plMaskD2">
+<rect x="0" y="0" width="100" height="100" fill="url(#plFadeD2)"/>
+</mask>
+</defs>
+<g mask="url(#plMaskD2)">
+<g class="stack">
+<path class="filament" d="M 75 105 L 25 105 A 5 5 0 0 1 25 95 L 75 95 A 5 5 0 0 0 75 85 L 25 85 A 5 5 0 0 1 25 75 L 75 75 A 5 5 0 0 0 75 65 L 25 65 A 5 5 0 0 1 25 55"/>
+<path class="filament line-lr" d="M 25 55 L 75 55"/>
+<path class="filament arc-r" d="M 75 55 A 5 5 0 0 0 75 45"/>
+<path class="filament line-rl" d="M 75 45 L 25 45"/>
+<path class="filament arc-l" d="M 25 45 A 5 5 0 0 1 25 35"/>
+</g>
+</g>
+<g class="nozzle">
+<rect x="40" y="15" width="20" height="15" rx="1"/>
+<line x1="38" y1="20" x2="62" y2="20"/>
+<line x1="38" y1="25" x2="62" y2="25"/>
+<polygon points="35,30 65,30 65,42 35,42"/>
+<polygon points="35,42 65,42 53,55 47,55"/>
+</g>
+</svg></div>
+              <div style="font:600 12px 'Inter',sans-serif;color:#f3f1ec">Analyse de votre besoin en cours…</div>
+            </div>
+          </sc-if>
+        </sc-if>
+
+        <sc-if value="{{ isCfgStep4 }}">
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;font:10px 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:20px">
+            <div style="background:#161514;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:10px"><div style="color:rgba(255,255,255,.4);font-size:9px;text-transform:uppercase;margin-bottom:3px">Volume</div>14,2 cm³</div>
+            <div style="background:#161514;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:10px"><div style="color:rgba(255,255,255,.4);font-size:9px;text-transform:uppercase;margin-bottom:3px">Poids total</div>17 g</div>
+            <div style="background:#161514;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:10px"><div style="color:rgba(255,255,255,.4);font-size:9px;text-transform:uppercase;margin-bottom:3px">Filament</div><div style="display:flex;align-items:center;gap:6px"><span style="{{ cfgSelColorStyle }}"></span>{{ cfgSelMaterial }} · {{ cfgSelColorName }}</div></div>
+            <div style="background:#161514;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:10px"><div style="color:rgba(255,255,255,.4);font-size:9px;text-transform:uppercase;margin-bottom:3px">Définition d'impression</div>{{ cfgSelQuality }}</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding-top:2px">
+            <div>
+              <div style="font:500 10px 'Inter',sans-serif;color:rgba(255,255,255,.45)">Prix estimé</div>
+              <div style="display:flex;align-items:baseline;gap:9px">
+                <sc-if value="{{ cfgHasDiscount }}" hint-placeholder-val="{{ false }}"><span style="font:500 14px 'Space Grotesk',sans-serif;color:rgba(255,255,255,.4);text-decoration:line-through">{{ cfgRawPrice }} €</span></sc-if>
+                <span style="font:700 26px 'Space Grotesk',sans-serif;color:#ff5a3c">{{ cfgPrice }} €</span>
+                <span style="font:500 11px 'Inter',sans-serif;color:rgba(255,255,255,.4)">HT</span>
+                <sc-if value="{{ cfgHasDiscount }}" hint-placeholder-val="{{ false }}"><span style="font:700 10.5px 'Inter',sans-serif;color:#ff5a3c;background:rgba(255,90,60,.12);border-radius:4px;padding:3px 8px">−{{ cfgDiscountPct }}%</span></sc-if>
+              </div>
+            </div>
+            <div onClick="{{ addToCart }}" style="background:#ff5a3c;color:#161514;font:600 12.5px 'Inter',sans-serif;padding:11px 18px;border-radius:7px;cursor:pointer">Ajouter au panier</div>
+          </div>
+          <sc-if value="{{ showAddedToast }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:14px;border:1px solid rgba(255,90,60,.35);background:rgba(255,90,60,.08);border-radius:8px;padding:10px 14px;font:600 11px 'Inter',sans-serif;color:#f3f1ec;animation:cfgFadeUp .3s ease">✓ Ajouté au panier — <a href="Cart.dc.html">voir le panier</a></div>
+          </sc-if>
+        </sc-if>
+      </div>
+    </div>
+    </sc-if>
+  </div>
+
+  <!-- CONSEIL: REMPLISSAGE -->
+  <div style="max-width:1000px;margin:0 auto;padding:10px 24px 46px">
+    <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Sous le capot</div>
+    <div style="font:700 20px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:16px">Taux de remplissage : ce que ça change</div>
+    <div style="font:400 12px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55);max-width:640px;margin-bottom:20px">L'intérieur d'une pièce n'est pas plein : une structure interne la renforce tout en économisant du temps et de la matière.</div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px">
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px;background:#1a1917"><div style="height:44px;border-radius:6px;background:repeating-linear-gradient(45deg,rgba(255,90,60,.08),rgba(255,90,60,.08) 3px,transparent 3px,transparent 26px);border:1px solid rgba(255,255,255,.1);margin-bottom:10px"></div><div style="font:700 15px 'Space Grotesk',sans-serif;color:#ff5a3c">15%</div><div style="font:400 9.5px/1.4 'Inter',sans-serif;color:rgba(255,255,255,.5)">Minimum, déco fragile</div></div>
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px;background:#1a1917"><div style="height:44px;border-radius:6px;background:repeating-linear-gradient(45deg,rgba(255,90,60,.12),rgba(255,90,60,.12) 3px,transparent 3px,transparent 22px);border:1px solid rgba(255,255,255,.1);margin-bottom:10px"></div><div style="font:700 15px 'Space Grotesk',sans-serif;color:#ff5a3c">30%</div><div style="font:400 9.5px/1.4 'Inter',sans-serif;color:rgba(255,255,255,.5)">Décoratif standard</div></div>
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px;background:#1a1917"><div style="height:44px;border-radius:6px;background:repeating-linear-gradient(45deg,rgba(255,90,60,.16),rgba(255,90,60,.16) 4px,transparent 4px,transparent 18px);border:1px solid rgba(255,255,255,.1);margin-bottom:10px"></div><div style="font:700 15px 'Space Grotesk',sans-serif;color:#ff5a3c">40%</div><div style="font:400 9.5px/1.4 'Inter',sans-serif;color:rgba(255,255,255,.5)">Usage courant</div></div>
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px;background:#1a1917"><div style="height:44px;border-radius:6px;background:repeating-linear-gradient(45deg,rgba(255,90,60,.22),rgba(255,90,60,.22) 5px,transparent 5px,transparent 13px);border:1px solid rgba(255,255,255,.1);margin-bottom:10px"></div><div style="font:700 15px 'Space Grotesk',sans-serif;color:#ff5a3c">60%</div><div style="font:400 9.5px/1.4 'Inter',sans-serif;color:rgba(255,255,255,.5)">Renforcé</div></div>
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px;background:#1a1917"><div style="height:44px;border-radius:6px;background:repeating-linear-gradient(45deg,rgba(255,90,60,.3),rgba(255,90,60,.3) 6px,transparent 6px,transparent 10px);border:1px solid rgba(255,255,255,.1);margin-bottom:10px"></div><div style="font:700 15px 'Space Grotesk',sans-serif;color:#ff5a3c">80%</div><div style="font:400 9.5px/1.4 'Inter',sans-serif;color:rgba(255,255,255,.5)">Forte contrainte</div></div>
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px;background:#1a1917"><div style="height:44px;border-radius:6px;background:rgba(255,90,60,.4);border:1px solid rgba(255,255,255,.1);margin-bottom:10px"></div><div style="font:700 15px 'Space Grotesk',sans-serif;color:#ff5a3c">100%</div><div style="font:400 9.5px/1.4 'Inter',sans-serif;color:rgba(255,255,255,.5)">Quasi plein</div></div>
+    </div>
+  </div>
+
+  <!-- CONSEIL: QUALITE -->
+  <div style="max-width:1000px;margin:0 auto;padding:10px 24px 46px">
+    <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Vitesse ou finition</div>
+    <div style="font:700 20px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:16px">Qualité d'impression, en clair</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:18px;background:#1a1917"><div style="font:600 13px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:6px">Rapide — 0,28 mm</div><div style="font:400 10.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.5)">Couche épaisse : impression plus rapide et moins chère. Bon pour les pièces brutes ou les gros volumes, lignes de couche visibles.</div></div>
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:18px;background:#1a1917"><div style="font:600 13px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:6px">Standard — 0,20 mm</div><div style="font:400 10.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.5)">Le réglage par défaut : bon compromis détail / délai pour la majorité des pièces fonctionnelles.</div></div>
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:18px;background:#1a1917"><div style="font:600 13px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:6px">Fine — 0,12 mm</div><div style="font:400 10.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.5)">Plus de détails et une surface plus lisse, au prix d'un temps d'impression nettement plus long.</div></div>
+    </div>
+  </div>
+
+  <!-- CONSEIL: MULTICOULEUR -->
+  <div style="max-width:1000px;margin:0 auto;padding:10px 24px 46px">
+    <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Aller plus loin</div>
+    <div style="font:700 20px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:16px">Impression multicouleur</div>
+    <div style="border:1px solid rgba(255,90,60,.3);background:rgba(255,90,60,.08);border-radius:10px;padding:20px 22px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap">
+      <div style="max-width:600px;font:400 12px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.6)">L'impression multicouleur (plusieurs teintes sur une même pièce) est possible, mais uniquement sur devis sur-mesure — le configurateur ne la couvre pas. Décrivez votre projet et nous vous répondons avec un tarif adapté.</div>
+      <a href="Contact.dc.html" style="text-decoration:none;white-space:nowrap;background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:11px 18px;border-radius:7px">Me contacter</a>
+    </div>
+  </div>
+
+  <!-- CONSEIL: TAILLE MAX -->
+  <div style="max-width:1000px;margin:0 auto;padding:10px 24px 46px">
+    <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Gabarit</div>
+    <div style="font:700 20px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:16px">Quelle taille de pièce est possible ?</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px">
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:16px;background:#1a1917"><div style="font:600 12px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Bambu Lab X1C</div><div style="font:400 11px 'Inter',sans-serif;color:rgba(255,255,255,.5)">256 × 256 × 256 mm</div></div>
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:16px;background:#1a1917"><div style="font:600 12px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Bambu Lab H2C</div><div style="font:400 11px 'Inter',sans-serif;color:rgba(255,255,255,.5)">350 × 320 × 325 mm</div></div>
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:16px;background:#1a1917"><div style="font:600 12px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Bambu Lab X2D</div><div style="font:400 11px 'Inter',sans-serif;color:rgba(255,255,255,.5)">256 × 256 × 256 mm</div></div>
+    </div>
+    <div style="font:400 11.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.45)">Pièce plus grande ? Elle peut être imprimée en plusieurs parties puis assemblée — décrivez votre projet via le <a href="Contact.dc.html">formulaire de contact</a> pour un devis sur-mesure.</div>
+  </div>
+
+  <!-- CONSEIL: MATERIAU -->
+  <div style="max-width:1000px;margin:0 auto;padding:10px 24px 46px">
+    <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Bien choisir</div>
+    <div style="font:700 20px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:16px">Quel matériau pour quel usage ?</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;background:#1a1917"><div style="font:600 12px 'Space Grotesk',sans-serif;color:#ff5a3c;margin-bottom:5px">PLA</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Déco, prototypes visuels, usage intérieur</div></div>
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;background:#1a1917"><div style="font:600 12px 'Space Grotesk',sans-serif;color:#ff5a3c;margin-bottom:5px">PETG</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Résistant, extérieur, contact humide</div></div>
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;background:#1a1917"><div style="font:600 12px 'Space Grotesk',sans-serif;color:#ff5a3c;margin-bottom:5px">ABS / ASA</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Chaleur, UV, pièces techniques</div></div>
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;background:#1a1917"><div style="font:600 12px 'Space Grotesk',sans-serif;color:#ff5a3c;margin-bottom:5px">TPU</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Flexible, amortissant, joints</div></div>
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;background:#1a1917"><div style="font:600 12px 'Space Grotesk',sans-serif;color:#ff5a3c;margin-bottom:5px">PP</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Résistance chimique, pliable</div></div>
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;background:#1a1917"><div style="font:600 12px 'Space Grotesk',sans-serif;color:#ff5a3c;margin-bottom:5px">Nylon</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">Pièces mécaniques, friction, usure</div></div>
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:14px;background:#1a1917;opacity:.5"><div style="font:600 12px 'Space Grotesk',sans-serif;color:rgba(255,255,255,.5);margin-bottom:5px">PEEK / PEKK</div><div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.4)">Non proposés actuellement</div></div>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div style="max-width:1000px;margin:0 auto;padding:10px 24px 60px">
+    <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Avant de vous lancer</div>
+    <div style="font:700 20px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:16px">Questions fréquentes</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <sc-for list="{{ faqs }}" as="faq" hint-placeholder-count="5">
+        <div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;background:#1a1917;overflow:hidden">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer" onClick="{{ faq.toggle }}"><span style="font:600 12.5px 'Space Grotesk',sans-serif;color:#f3f1ec">{{ faq.q }}</span><span style="font:600 14px 'Inter',sans-serif;color:#ff5a3c">{{ faq.icon }}</span></div>
+          <div style="{{ faq.answerStyle }}"><div style="padding:0 16px 14px;font:400 11px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55)">{{ faq.a }}</div></div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- CTA FINALE -->
+  <div style="max-width:1000px;margin:0 auto;padding:0 24px 60px;text-align:center">
+    <div style="border:1px solid rgba(255,90,60,.3);background:rgba(255,90,60,.08);border-radius:12px;padding:32px">
+      <div style="font:700 18px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:8px">Une pièce complexe ou un besoin sur-mesure ?</div>
+      <div style="font:400 11.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:16px">Le configurateur ne couvre pas tout — écrivez-nous directement pour la rétro-conception, les séries ou la maintenance.</div>
+      <a href="Contact.dc.html" style="text-decoration:none;display:inline-block;background:#ff5a3c;color:#161514;font:600 12.5px 'Inter',sans-serif;padding:11px 20px;border-radius:7px">Contacter Nasap3D</a>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="padding:20px 40px;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:center;font:10px 'Inter',sans-serif;color:rgba(255,255,255,.4)">
+    <div><a href="MentionsLegales.dc.html" style="color:rgba(255,255,255,.4)">Mentions légales</a> · <a href="CGU.dc.html" style="color:rgba(255,255,255,.4)">CGU</a> · <a href="Confidentialite.dc.html" style="color:rgba(255,255,255,.4)">Confidentialité</a> · <a href="Cookies.dc.html" style="color:rgba(255,255,255,.4)">Cookies</a></div>
+    <div>© 2026 Nasap3D, Site conçu par Nsapp</div>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    cfgStep: 1, cfgLoading: false, cfgFileReady: false,
+    cfgMaterial: 'PLA', cfgColor: 0, cfgInfill: 40, cfgQuality: 'Standard', cfgQty: 1,
+    cfgShowDiscountInfo: false, cfgAnalyzing: false, cfgAnalysisReady: false,
+    openFaq: 0, cartCount: 0, showAddedToast: false, quoteEnabled: true,
+    availableMaterials: ['PLA', 'PETG', 'ABS', 'ASA', 'TPU', 'PP', 'Nylon'],
+    availableColors: []
+  };
+  static DISCOUNT_TIERS = [
+    { min: 5, pct: 5 }, { min: 15, pct: 10 }, { min: 50, pct: 15 }, { min: 100, pct: 20 }, { min: 500, pct: 30 }
+  ];
+  componentDidMount() {
+    this._loadCart();
+    this._cartListener = () => this._loadCart();
+    window.addEventListener('nasap3d-cart-changed', this._cartListener);
+    this._loadStock();
+    this._stockListener = () => this._loadStock();
+    window.addEventListener('nasap3d-stock-changed', this._stockListener);
+    this._quoteListener = () => { if (this._stock) this.setState({ quoteEnabled: this._stock.isQuoteEnabled() }); };
+    window.addEventListener('nasap3d-quote-changed', this._quoteListener);
+  }
+  componentWillUnmount() {
+    window.removeEventListener('nasap3d-cart-changed', this._cartListener);
+    window.removeEventListener('nasap3d-stock-changed', this._stockListener);
+    window.removeEventListener('nasap3d-quote-changed', this._quoteListener);
+    clearTimeout(this._loadTimer);
+    clearTimeout(this._analysisTimer);
+    clearTimeout(this._toastTimer);
+  }
+  async _loadStock() {
+    const mod = await import('./stock.js');
+    this._stock = mod;
+    this.setState({ quoteEnabled: mod.isQuoteEnabled() });
+    const materials = mod.materialsInStock();
+    this.setState(s => {
+      const material = materials.includes(s.cfgMaterial) ? s.cfgMaterial : (materials[0] || s.cfgMaterial);
+      const colors = mod.colorsInStock(material);
+      const colorIdx = s.cfgColor < colors.length ? s.cfgColor : 0;
+      return { availableMaterials: materials, availableColors: colors, cfgMaterial: material, cfgColor: colorIdx };
+    });
+  }
+  _selectMaterial(m) {
+    const colors = this._stock ? this._stock.colorsInStock(m) : [];
+    this.setState({ cfgMaterial: m, availableColors: colors, cfgColor: 0 });
+  }
+  async _loadCart() {
+    const mod = await import('./cart.js');
+    this._cart = mod;
+    this.setState({ cartCount: mod.cartCount() });
+  }
+  _discountFor(qty) {
+    let pct = 0;
+    for (const t of Component.DISCOUNT_TIERS) if (qty >= t.min) pct = t.pct;
+    return pct;
+  }
+  dropFile() {
+    if (this.state.cfgLoading || this.state.cfgFileReady) return;
+    this.setState({ cfgLoading: true });
+    clearTimeout(this._loadTimer);
+    this._loadTimer = setTimeout(() => this.setState({ cfgLoading: false, cfgFileReady: true }), 1600);
+  }
+  cfgNext() {
+    this.setState(s => ({ cfgStep: Math.min(4, s.cfgStep + 1) }), () => {
+      if (this.state.cfgStep === 3 && !this.state.cfgAnalysisReady) this._startAnalysis();
+    });
+  }
+  cfgGoStep(n) {
+    if (n < this.state.cfgStep) this.setState({ cfgStep: n });
+  }
+  _startAnalysis() {
+    this.setState({ cfgAnalyzing: true });
+    clearTimeout(this._analysisTimer);
+    this._analysisTimer = setTimeout(() => this.setState({ cfgAnalyzing: false, cfgAnalysisReady: true }), 1500);
+  }
+  async addToCart() {
+    if (!this._cart) await this._loadCart();
+    const s = this.state;
+    const pct = this._discountFor(s.cfgQty);
+    const unit = 14 * (1 - pct / 100);
+    const chosenColor = s.availableColors[s.cfgColor];
+    this._cart.addItem({
+      name: 'Pièce personnalisée (STL)',
+      material: s.cfgMaterial,
+      colorHex: chosenColor ? chosenColor.colorHex : '#ff5a3c',
+      infill: s.cfgInfill,
+      quality: s.cfgQuality,
+      qty: s.cfgQty,
+      unitPrice: unit,
+      thumb: 'stl'
+    });
+    this.setState({ cartCount: this._cart.cartCount(), showAddedToast: true });
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => this.setState({ showAddedToast: false }), 4000);
+  }
+  renderVals() {
+    const s = this.state;
+    const railStep = (n, label) => {
+      const done = n < s.cfgStep;
+      const active = n === s.cfgStep;
+      return {
+        onClick: () => this.cfgGoStep(n),
+        wrapStyle: { display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 0', cursor: done ? 'pointer' : 'default' },
+        dotStyle: {
+          width: '20px', height: '20px', borderRadius: '50%', textAlign: 'center', zIndex: 1,
+          font: "700 10.5px/20px 'Inter',sans-serif",
+          background: done ? '#ff5a3c' : (active ? '#ff5a3c' : '#2a2826'),
+          color: done || active ? '#161514' : 'rgba(255,255,255,.5)',
+          border: active && !done ? 'none' : (done ? 'none' : '1px solid rgba(255,255,255,.25)')
+        },
+        labelStyle: { font: "600 11px 'Inter',sans-serif", color: active ? '#f3f1ec' : (done ? 'rgba(255,255,255,.7)' : 'rgba(255,255,255,.45)') },
+        label: done ? '✓' : String(n),
+        text: label
+      };
+    };
+    const materials = s.availableMaterials.map(m => ({
+      label: m,
+      onClick: () => this._selectMaterial(m),
+      chipStyle: {
+        padding: '6px 12px', borderRadius: '6px', font: "600 10.5px 'Inter',sans-serif", cursor: 'pointer',
+        background: s.cfgMaterial === m ? '#ff5a3c' : 'transparent',
+        color: s.cfgMaterial === m ? '#161514' : '#e8e6e1',
+        border: '1px solid ' + (s.cfgMaterial === m ? '#ff5a3c' : 'rgba(255,255,255,.2)')
+      }
+    }));
+    const colors = s.availableColors.map((c, i) => ({
+      onClick: () => this.setState({ cfgColor: i }),
+      style: { width: '20px', height: '20px', borderRadius: '50%', background: c.colorHex, cursor: 'pointer', border: s.cfgColor === i ? '2px solid #f3f1ec' : '1px solid rgba(255,255,255,.3)' }
+    }));
+    const infillHints = {
+      15: 'Minimum conseillé — très léger, déco fragile uniquement.',
+      30: 'Léger, décoratif standard.',
+      40: 'Usage courant, bon compromis poids / coût.',
+      60: 'Renforcé, pièces modérément sollicitées.',
+      80: 'Très renforcé, forte contrainte mécanique.',
+      100: 'Quasi plein, pièces fortement sollicitées.'
+    };
+    const infills = [15, 30, 40, 60, 80, 100].map(v => ({
+      label: v + '%',
+      onClick: () => this.setState({ cfgInfill: v }),
+      chipStyle: {
+        padding: '6px 11px', borderRadius: '6px', font: "600 10.5px 'Inter',sans-serif", cursor: 'pointer',
+        background: s.cfgInfill === v ? '#ff5a3c' : 'transparent',
+        color: s.cfgInfill === v ? '#161514' : '#e8e6e1',
+        border: '1px solid ' + (s.cfgInfill === v ? '#ff5a3c' : 'rgba(255,255,255,.2)')
+      }
+    }));
+    const qualityHints = {
+      Rapide: 'Couche 0,28 mm — plus rapide et économique, lignes de couche visibles.',
+      Standard: "Couche 0,20 mm — le compromis détail / délai par défaut.",
+      Fine: 'Couche 0,12 mm — plus de détails, surface plus lisse, délai plus long.'
+    };
+    const qualities = ['Rapide', 'Standard', 'Fine'].map(q => ({
+      label: q,
+      onClick: () => this.setState({ cfgQuality: q }),
+      chipStyle: {
+        padding: '6px 14px', borderRadius: '6px', font: "600 11px 'Inter',sans-serif", cursor: 'pointer',
+        background: s.cfgQuality === q ? '#ff5a3c' : 'transparent',
+        color: s.cfgQuality === q ? '#161514' : '#e8e6e1',
+        border: '1px solid ' + (s.cfgQuality === q ? '#ff5a3c' : 'rgba(255,255,255,.2)')
+      }
+    }));
+    const qty = s.cfgQty;
+    const unit = 14;
+    const rawTotal = unit * qty;
+    const pct = this._discountFor(qty);
+    const finalTotal = rawTotal * (1 - pct / 100);
+    const discountTiers = Component.DISCOUNT_TIERS.map(t => ({
+      label: '≥ ' + t.min + ' : −' + t.pct + '%',
+      rowStyle: { display: 'flex', justifyContent: 'space-between', gap: '10px', padding: '3px 0', color: qty >= t.min ? '#ff5a3c' : 'rgba(255,255,255,.5)', font: (qty >= t.min ? '700' : '500') + " 10px 'Inter',sans-serif" }
+    }));
+    const faqsRaw = [
+      { q: 'Quels formats de fichiers acceptez-vous ?', a: 'Les formats 3D courants : STL, OBJ et 3MF. Pas de fichier prêt ? Contactez-nous pour être accompagné.' },
+      { q: 'Quelle taille de pièce est possible ?', a: 'Jusqu\u2019à 350 × 320 × 325 mm selon la machine. Les pièces plus grandes peuvent être imprimées en plusieurs parties puis assemblées.' },
+      { q: 'Quels sont les délais ?', a: 'Ils dépendent du volume, du remplissage, de la qualité choisie et de la charge de l\u2019atelier.' },
+      { q: 'Comment choisir mon matériau ?', a: 'Le configurateur propose PLA, PETG, ABS, ASA, TPU, PP et Nylon (le PEEK/PEKK n\u2019est pas proposé). Un doute ? Consultez le guide ci-dessus ou contactez-nous.' },
+      { q: 'Comment se passent le paiement et la livraison ?', a: 'Paiement en ligne sécurisé via Stripe à la validation du panier. Retrait à Nantes (Canclaux) ou expédition.' }
+    ];
+    const faqs = faqsRaw.map((f, i) => {
+      const isOpen = s.openFaq === i;
+      return {
+        q: f.q, a: f.a, icon: isOpen ? '−' : '+',
+        toggle: () => this.setState({ openFaq: isOpen ? null : i }),
+        answerStyle: { maxHeight: isOpen ? '200px' : '0px', overflow: 'hidden', transition: 'max-height .25s ease' }
+      };
+    });
+    return {
+      cartCount: s.cartCount,
+      quoteEnabled: s.quoteEnabled,
+      quotePaused: !s.quoteEnabled,
+      isCfgStep1: s.cfgStep === 1, isCfgStep2: s.cfgStep === 2, isCfgStep3: s.cfgStep === 3, isCfgStep4: s.cfgStep === 4,
+      cfgLoading: s.cfgLoading, cfgFileReady: s.cfgFileReady, cfgAnalyzing: s.cfgAnalyzing, cfgAnalysisReady: s.cfgAnalysisReady,
+      isCfgIdle: !s.cfgLoading && !s.cfgFileReady,
+      cfgRail1: railStep(1, 'Fichier STL'), cfgRail2: railStep(2, 'Options'), cfgRail3: railStep(3, 'Analyse auto'), cfgRail4: railStep(4, 'Prix & panier'),
+      cfgMaterials: materials, cfgColors: colors,
+      infills, infillHint: infillHints[s.cfgInfill],
+      qualities, qualityHint: qualityHints[s.cfgQuality],
+      cfgSelMaterial: s.cfgMaterial,
+      cfgSelQuality: s.cfgQuality,
+      cfgSelColorName: (s.availableColors[s.cfgColor] || {}).colorName || '—',
+      cfgSelColorStyle: { width: '11px', height: '11px', borderRadius: '50%', background: (s.availableColors[s.cfgColor] || {}).colorHex || '#ff5a3c', border: '1px solid rgba(255,255,255,.25)', flex: 'none' },
+      cfgQty: s.cfgQty,
+      cfgIncQty: () => this.setState(st => ({ cfgQty: st.cfgQty + 1 })),
+      cfgDecQty: () => this.setState(st => ({ cfgQty: Math.max(1, st.cfgQty - 1) })),
+      dropFile: () => this.dropFile(),
+      cfgNext: () => this.cfgNext(),
+      cfgDiscountPct: pct, cfgRawPrice: rawTotal.toFixed(2), cfgPrice: finalTotal.toFixed(2), cfgHasDiscount: pct > 0,
+      cfgShowDiscountInfo: s.cfgShowDiscountInfo,
+      cfgDiscountEnter: () => this.setState({ cfgShowDiscountInfo: true }),
+      cfgDiscountLeave: () => this.setState({ cfgShowDiscountInfo: false }),
+      discountTiers,
+      addToCart: () => this.addToCart(),
+      showAddedToast: s.showAddedToast,
+      faqs
+    };
+  }
+}
+
+</script>
+</body>
+</html>

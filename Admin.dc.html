@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#161514;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#ff5a3c}
+a:hover{color:#ff7a5c}
+</style>
+<script src="./pageloader.js"></script>
+<script src="./navguard.js"></script>
+</helmet>
+
+<div style="background:#161514;min-height:100vh">
+
+  <!-- HEADER -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 40px;border-bottom:1px solid rgba(255,255,255,.08)">
+    <a href="Home.dc.html" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+      <img src="assets/logo-blanc-full.png" alt="Nasap3D" style="height:34px;width:auto">
+      <span style="font:700 9px 'Inter',sans-serif;color:#161514;background:#ff5a3c;border-radius:4px;padding:3px 7px;margin-left:4px">ADMIN</span>
+    </a>
+    <div style="display:flex;gap:26px;font:500 13px 'Inter',sans-serif;color:rgba(255,255,255,.62)">
+      <span style="{{ tabStyleOrders }}" onClick="{{ goOrders }}">Commandes</span>
+      <span style="{{ tabStyleStock }}" onClick="{{ goStock }}">Stock filament</span>
+    </div>
+    <a href="Account.dc.html" style="text-decoration:none;color:rgba(255,255,255,.6);font:500 12px 'Inter',sans-serif">Retour au compte client</a>
+  </div>
+
+  <!-- VACATION / QUOTE TOGGLE -->
+  <div style="max-width:1000px;margin:0 auto;padding:24px 24px 0">
+    <div style="{{ quoteBarStyle }}">
+      <div style="display:flex;align-items:center;gap:14px">
+        <span style="{{ quoteBadgeStyle }}">{{ quoteBadgeLabel }}</span>
+        <div>
+          <div style="font:600 13px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:2px">Devis instantané — {{ quoteStateLabel }}</div>
+          <div style="font:400 10.5px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.55);max-width:640px">{{ quoteBarHint }}</div>
+        </div>
+      </div>
+      <span style="{{ quoteTrackStyle }}" onClick="{{ toggleQuote }}"><span style="{{ quoteKnobStyle }}"></span></span>
+    </div>
+  </div>
+
+  <!-- ORDERS TAB -->
+  <sc-if value="{{ isOrdersTab }}" hint-placeholder-val="{{ true }}">
+    <div style="max-width:1000px;margin:0 auto;padding:44px 24px 60px">
+      <div style="font:600 12px 'Inter',sans-serif;letter-spacing:1.2px;color:#ff5a3c;text-transform:uppercase;margin-bottom:10px">Gestion des commandes</div>
+      <div style="font:700 26px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:18px">Commandes en cours</div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+        <sc-for list="{{ orderFilters }}" as="f" hint-placeholder-count="5"><span style="{{ f.chipStyle }}" onClick="{{ f.onClick }}">{{ f.label }} <span style="{{ f.countStyle }}">{{ f.count }}</span></span></sc-for>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <sc-for list="{{ orders }}" as="order" hint-placeholder-count="4">
+          <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;background:#1a1917;padding:18px 20px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <div>
+                <div style="font:600 13px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:3px">{{ order.ref }} — {{ order.client }}</div>
+                <div style="font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.45)">{{ order.desc }} · reçu le {{ order.date }}</div>
+              </div>
+              <span style="font:700 14px 'Space Grotesk',sans-serif;color:#ff5a3c">{{ order.price }} €</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;gap:6px">
+                <sc-for list="{{ order.statusOptions }}" as="opt" hint-placeholder-count="4">
+                  <span style="{{ opt.chipStyle }}" onClick="{{ opt.onClick }}">{{ opt.label }}</span>
+                </sc-for>
+              </div>
+              <sc-if value="{{ order.needsAcceptance }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;gap:8px">
+                  <span onClick="{{ order.onAccept }}" style="background:#ff5a3c;color:#161514;font:600 11px 'Inter',sans-serif;padding:7px 14px;border-radius:6px;cursor:pointer">Accepter</span>
+                  <span onClick="{{ order.onReject }}" style="border:1px solid rgba(255,255,255,.2);color:#f3f1ec;font:500 11px 'Inter',sans-serif;padding:7px 14px;border-radius:6px;cursor:pointer">Refuser</span>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-for>
+        <sc-if value="{{ ordersEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="border:1px dashed rgba(255,255,255,.15);border-radius:10px;padding:34px;text-align:center;font:500 12px 'Inter',sans-serif;color:rgba(255,255,255,.4)">Aucune commande à cette étape.</div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- STOCK TAB -->
+  <sc-if value="{{ isStockTab }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:1000px;margin:0 auto;padding:44px 24px 60px">
+      <div style="font:600 12px 'Inter',sans-serif;letter-spacing:1.2px;color:#ff5a3c;text-transform:uppercase;margin-bottom:10px">Inventaire</div>
+      <div style="font:700 26px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:28px">Stock filament</div>
+
+      <sc-for list="{{ groups }}" as="group" hint-placeholder-count="7">
+        <div style="margin-bottom:30px">
+          <div style="font:600 9.5px 'Inter',sans-serif;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">{{ group.material }}</div>
+          <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px">
+            <sc-for list="{{ group.swatches }}" as="sw" hint-placeholder-count="6">
+              <div style="{{ sw.cardStyle }}">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                  <span style="width:16px;height:16px;border-radius:50%;background:{{ sw.colorHex }};flex:none;border:{{ sw.swatchBorder }}"></span>
+                  <span style="font:600 10.5px 'Inter',sans-serif;color:#f3f1ec;line-height:1.2">{{ sw.colorName }}</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <span style="font:700 9.5px 'Inter',sans-serif;color:{{ sw.statusColor }}">{{ sw.statusLabel }}</span>
+                  <span style="{{ sw.toggleTrackStyle }}" onClick="{{ sw.onToggle }}"><span style="{{ sw.toggleKnobStyle }}"></span></span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    tab: 'orders',
+    orderFilter: 'all',
+    quoteEnabled: true,
+    orders: [
+      { id: 1, ref: 'N3D-2841', client: 'M. Dubois', desc: 'Pièce personnalisée (STL) · PLA · x2', date: '12 juil. 2026', price: '25.20', status: 'pending' },
+      { id: 2, ref: 'N3D-2839', client: 'L. Perrin', desc: 'Rétro-conception — support moteur', date: '10 juil. 2026', price: '140.00', status: 'printing' },
+      { id: 3, ref: 'N3D-2835', client: 'S. Roy', desc: 'Pièce PETG x6', date: '08 juil. 2026', price: '61.60', status: 'ready' },
+      { id: 4, ref: 'N3D-2830', client: 'K. Morel', desc: 'Maintenance — imprimante Ender', date: '05 juil. 2026', price: '55.00', status: 'pending' }
+    ],
+    spools: []
+  };
+  componentDidMount() {
+    this._loadStock();
+    this._stockListener = () => this._loadStock();
+    window.addEventListener('nasap3d-stock-changed', this._stockListener);
+    this._quoteListener = () => { if (this._stock) this.setState({ quoteEnabled: this._stock.isQuoteEnabled() }); };
+    window.addEventListener('nasap3d-quote-changed', this._quoteListener);
+  }
+  componentWillUnmount() {
+    window.removeEventListener('nasap3d-stock-changed', this._stockListener);
+    window.removeEventListener('nasap3d-quote-changed', this._quoteListener);
+  }
+  async _loadStock() {
+    const mod = await import('./stock.js');
+    this._stock = mod;
+    this.setState({ spools: mod.getStock(), quoteEnabled: mod.isQuoteEnabled() });
+  }
+  toggleQuote() {
+    const next = !this.state.quoteEnabled;
+    if (this._stock) this._stock.setQuoteEnabled(next);
+    this.setState({ quoteEnabled: next });
+  }
+
+  setOrderStatus(id, status) {
+    this.setState(s => ({ orders: s.orders.map(o => (o.id === id ? { ...o, status } : o)) }));
+  }
+  rejectOrder(id) {
+    this.setState(s => ({ orders: s.orders.filter(o => o.id !== id) }));
+  }
+  toggleSpool(id) {
+    const current = this.state.spools.find(sp => sp.id === id);
+    if (this._stock) this._stock.setInStock(id, !current.inStock);
+  }
+  renderVals() {
+    const s = this.state;
+    const statusDefs = [
+      { key: 'pending', label: 'Devis reçu' },
+      { key: 'printing', label: 'En impression' },
+      { key: 'ready', label: 'Expédié / Prêt' },
+      { key: 'delivered', label: 'Livré' }
+    ];
+    const filterDefs = [{ key: 'all', label: 'Toutes' }, ...statusDefs];
+    const counts = {};
+    filterDefs.forEach(f => { counts[f.key] = f.key === 'all' ? s.orders.length : s.orders.filter(o => o.status === f.key).length; });
+    const orderFilters = filterDefs.map(f => {
+      const active = s.orderFilter === f.key;
+      return {
+        label: f.label, count: counts[f.key],
+        onClick: () => this.setState({ orderFilter: f.key }),
+        chipStyle: { display: 'inline-flex', alignItems: 'center', gap: '6px', font: "600 11px 'Inter',sans-serif", padding: '7px 12px', borderRadius: '7px', cursor: 'pointer', background: active ? '#ff5a3c' : 'transparent', color: active ? '#161514' : 'rgba(255,255,255,.6)', border: '1px solid ' + (active ? '#ff5a3c' : 'rgba(255,255,255,.15)') },
+        countStyle: { font: "700 9.5px 'Inter',sans-serif", padding: '1px 6px', borderRadius: '20px', background: active ? 'rgba(22,21,20,.25)' : 'rgba(255,255,255,.1)', color: active ? '#161514' : 'rgba(255,255,255,.55)' }
+      };
+    });
+    const visibleOrders = s.orders.filter(o => s.orderFilter === 'all' || o.status === s.orderFilter);
+    const orders = visibleOrders.map(o => ({
+      ref: o.ref,
+      client: o.client,
+      desc: o.desc,
+      date: o.date,
+      price: o.price,
+      needsAcceptance: o.status === 'pending',
+      onAccept: () => this.setOrderStatus(o.id, 'printing'),
+      onReject: () => this.rejectOrder(o.id),
+      statusOptions: statusDefs.map(def => {
+        const active = o.status === def.key;
+        return {
+          label: def.label,
+          onClick: () => this.setOrderStatus(o.id, def.key),
+          chipStyle: {
+            font: "600 10px 'Inter',sans-serif", padding: '5px 10px', borderRadius: '5px', cursor: 'pointer',
+            background: active ? '#ff5a3c' : 'transparent',
+            color: active ? '#161514' : 'rgba(255,255,255,.5)',
+            border: '1px solid ' + (active ? '#ff5a3c' : 'rgba(255,255,255,.15)')
+          }
+        };
+      })
+    }));
+    const materialOrder = ['PLA', 'PETG HF', 'ABS', 'ASA', 'TPU 95A', 'PA (Nylon)', 'PP'];
+    const groups = materialOrder.map(material => ({
+      material,
+      swatches: s.spools.filter(sp => sp.material === material).map(sp => ({
+        colorName: sp.colorName,
+        colorHex: sp.colorHex,
+        inStock: sp.inStock,
+        onToggle: () => this.toggleSpool(sp.id),
+        swatchBorder: (sp.colorHex === '#f4f4ef' || sp.colorHex === '#d8d3c8') ? '1px solid rgba(255,255,255,.35)' : '1px solid rgba(255,255,255,.15)',
+        cardStyle: {
+          border: '1px solid ' + (sp.inStock ? 'rgba(255,255,255,.1)' : 'rgba(255,90,60,.25)'),
+          borderRadius: '10px', background: '#1a1917', padding: '14px',
+          opacity: sp.inStock ? 1 : 0.55
+        },
+        toggleTrackStyle: {
+          width: '38px', height: '20px', borderRadius: '10px', position: 'relative', cursor: 'pointer',
+          background: sp.inStock ? '#ff5a3c' : 'rgba(255,255,255,.15)', transition: 'background .2s ease'
+        },
+        toggleKnobStyle: {
+          position: 'absolute', top: '2px', left: sp.inStock ? '20px' : '2px', width: '16px', height: '16px',
+          borderRadius: '50%', background: '#fff', transition: 'left .2s ease'
+        },
+        statusLabel: sp.inStock ? 'En stock' : 'Rupture',
+        statusColor: sp.inStock ? '#8fd19e' : '#ff5a3c'
+      }))
+    }));
+    return {
+      isOrdersTab: s.tab === 'orders',
+      isStockTab: s.tab === 'stock',
+      goOrders: () => this.setState({ tab: 'orders' }),
+      goStock: () => this.setState({ tab: 'stock' }),
+      tabStyleOrders: { cursor: 'pointer', paddingBottom: '4px', color: s.tab === 'orders' ? '#f3f1ec' : 'rgba(255,255,255,.5)', fontWeight: s.tab === 'orders' ? 600 : 500, borderBottom: s.tab === 'orders' ? '2px solid #ff5a3c' : '2px solid transparent' },
+      tabStyleStock: { cursor: 'pointer', paddingBottom: '4px', color: s.tab === 'stock' ? '#f3f1ec' : 'rgba(255,255,255,.5)', fontWeight: s.tab === 'stock' ? 600 : 500, borderBottom: s.tab === 'stock' ? '2px solid #ff5a3c' : '2px solid transparent' },
+      orders,
+      groups,
+      orderFilters,
+      ordersEmpty: visibleOrders.length === 0,
+      quoteEnabled: s.quoteEnabled,
+      quoteStateLabel: s.quoteEnabled ? 'en ligne' : 'en pause',
+      quoteBadgeLabel: s.quoteEnabled ? 'EN LIGNE' : 'EN PAUSE',
+      quoteBadgeStyle: { font: "700 9px 'Inter',sans-serif", letterSpacing: '.5px', padding: '5px 9px', borderRadius: '5px', flex: 'none', background: s.quoteEnabled ? 'rgba(143,209,158,.15)' : 'rgba(255,90,60,.18)', color: s.quoteEnabled ? '#8fd19e' : '#ff5a3c' },
+      quoteBarHint: s.quoteEnabled ? 'Actif : les clients peuvent déposer un fichier et commander. Coupez-le pendant vos congés.' : "En pause : le configurateur est masqué partout (accueil + page dédiée). Les visiteurs voient un message d'indisponibilité.",
+      quoteBarStyle: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px', border: '1px solid ' + (s.quoteEnabled ? 'rgba(255,255,255,.1)' : 'rgba(255,90,60,.35)'), background: s.quoteEnabled ? '#1a1917' : 'rgba(255,90,60,.08)', borderRadius: '12px', padding: '16px 20px' },
+      quoteTrackStyle: { width: '46px', height: '24px', borderRadius: '12px', position: 'relative', cursor: 'pointer', flex: 'none', background: s.quoteEnabled ? '#ff5a3c' : 'rgba(255,255,255,.15)', transition: 'background .2s ease' },
+      quoteKnobStyle: { position: 'absolute', top: '3px', left: s.quoteEnabled ? '25px' : '3px', width: '18px', height: '18px', borderRadius: '50%', background: '#fff', transition: 'left .2s ease' },
+      toggleQuote: () => this.toggleQuote()
+    };
+  }
+}
+
+</script>
+</body>
+</html>

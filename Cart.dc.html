@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#161514;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#ff5a3c}
+a:hover{color:#ff7a5c}
+.printer-loader-svg{width:100%;height:100%;display:block}
+.printer-loader-svg .filament{fill:none;stroke:currentColor;stroke-width:6;stroke-linecap:round;stroke-linejoin:round}
+.printer-loader-svg .stack{animation:plShiftDown 2.5s linear infinite}
+.printer-loader-svg .nozzle{fill:var(--pl-nozzle-fill,#161514);stroke:currentColor;stroke-width:2.5;stroke-linejoin:round;animation:plNozzleMove 2.5s linear infinite}
+.printer-loader-svg .line-lr{stroke-dasharray:100;animation:plDrawLr 2.5s linear infinite}
+.printer-loader-svg .arc-r{stroke-dasharray:100;animation:plDrawArcR 2.5s linear infinite}
+.printer-loader-svg .line-rl{stroke-dasharray:100;animation:plDrawRl 2.5s linear infinite}
+.printer-loader-svg .arc-l{stroke-dasharray:100;animation:plDrawArcL 2.5s linear infinite}
+@keyframes plShiftDown{0%,38%{transform:translateY(0px)}50%,88%{transform:translateY(10px)}100%{transform:translateY(20px)}}
+@keyframes plNozzleMove{0%{transform:translateX(-25px)}38%{transform:translateX(25px)}44%{transform:translateX(30px)}50%{transform:translateX(25px)}88%{transform:translateX(-25px)}94%{transform:translateX(-30px)}100%{transform:translateX(-25px)}}
+@keyframes plDrawLr{0%{stroke-dashoffset:100}38%,100%{stroke-dashoffset:50}}
+@keyframes plDrawArcR{0%,38%{stroke-dashoffset:100}50%,100%{stroke-dashoffset:84.3}}
+@keyframes plDrawRl{0%,50%{stroke-dashoffset:100}88%,100%{stroke-dashoffset:50}}
+@keyframes plDrawArcL{0%,88%{stroke-dashoffset:100}100%{stroke-dashoffset:84.3}}
+@keyframes cFadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes cViewerSpin{from{transform:rotateY(0deg) rotateX(-18deg)}to{transform:rotateY(360deg) rotateX(-18deg)}}
+@keyframes popupBackdropIn{from{opacity:0}to{opacity:1}}
+@keyframes popupModalIn{0%{opacity:0;transform:scale(.9) translateY(12px)}70%{opacity:1;transform:scale(1.02) translateY(0)}100%{opacity:1;transform:scale(1) translateY(0)}}
+</style>
+<script src="./pageloader.js"></script>
+<script src="./navguard.js"></script>
+</helmet>
+
+<div style="background:#161514;min-height:100vh">
+
+  <!-- HEADER -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 40px;border-bottom:1px solid rgba(255,255,255,.08)">
+    <a href="Home.dc.html" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+      <img src="assets/logo-blanc-full.png" alt="Nasap3D" style="height:34px;width:auto">
+    </a>
+    <div style="display:flex;gap:26px;font:500 13px 'Inter',sans-serif;color:rgba(255,255,255,.62)">
+      <a href="Home.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Accueil</a>
+      <a href="Services.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Services</a>
+      <a href="About.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">À propos</a>
+      <a href="Realisations.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Réalisations</a>
+      <a href="Machines.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Machines</a>
+      <a href="Contact.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Contact</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:18px;font:500 12px 'Inter',sans-serif;color:rgba(255,255,255,.75)">
+      <a href="Account.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Compte</a>
+      <span style="position:relative;color:#f3f1ec;border-bottom:2px solid #ff5a3c;padding-bottom:4px;display:inline-flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg><span style="position:absolute;top:-9px;right:-9px;width:15px;height:15px;border-radius:50%;background:#ff5a3c;color:#161514;font:700 8.5px/15px 'Inter',sans-serif;text-align:center">{{ cartCount }}</span></span>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div style="padding:48px 24px 24px">
+    <div style="max-width:900px;margin:0 auto">
+      <div style="font:600 12px 'Inter',sans-serif;letter-spacing:1.2px;color:#ff5a3c;text-transform:uppercase;margin-bottom:10px">Panier</div>
+      <div style="font:700 30px/1.15 'Space Grotesk',sans-serif;color:#f3f1ec">{{ itemCountLabel }}</div>
+    </div>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:900px;margin:0 auto;padding:0 24px 60px;text-align:center">
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#1a1917;padding:50px 24px">
+        <div style="font:600 14px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:8px">Votre panier est vide</div>
+        <div style="font:400 11.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.5);margin-bottom:18px">Lancez un devis instantané pour ajouter une pièce.</div>
+        <a href="Devis Instantane.dc.html" style="text-decoration:none;display:inline-block;background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:10px 18px;border-radius:6px">Obtenir un devis instantané</a>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- CART CONTENT -->
+  <sc-if value="{{ hasItems }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:900px;margin:0 auto;padding:0 24px 60px;display:grid;grid-template-columns:1.5fr 1fr;gap:32px;align-items:start">
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <sc-for list="{{ items }}" as="item" hint-placeholder-count="2">
+          <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;background:#1a1917;padding:14px;display:grid;grid-template-columns:72px 1fr auto;gap:14px;align-items:center">
+            <div style="width:72px;height:72px;border-radius:8px;background:radial-gradient(circle at 35% 30%, #ddd9d2, #b5b1a8);border:1px solid rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;perspective:150px;overflow:hidden;box-shadow:inset 0 -6px 10px rgba(0,0,0,.12)">
+              <div style="width:34px;height:34px;position:relative;transform-style:preserve-3d;transform:rotateX(-25deg) rotateY(-35deg)">
+                <div style="position:absolute;inset:0;transform:translateZ(17px);background:{{ item.colorHex }};border:0.5px solid rgba(0,0,0,.18)"></div>
+                <div style="position:absolute;inset:0;transform:rotateY(180deg) translateZ(17px);background:{{ item.colorHex }};filter:brightness(.62);border:0.5px solid rgba(0,0,0,.18)"></div>
+                <div style="position:absolute;inset:0;transform:rotateY(90deg) translateZ(17px);background:{{ item.colorHex }};filter:brightness(.5);border:0.5px solid rgba(0,0,0,.18)"></div>
+                <div style="position:absolute;inset:0;transform:rotateY(-90deg) translateZ(17px);background:{{ item.colorHex }};filter:brightness(.5);border:0.5px solid rgba(0,0,0,.18)"></div>
+                <div style="position:absolute;inset:0;transform:rotateX(90deg) translateZ(17px);background:{{ item.colorHex }};filter:brightness(1.45);border:0.5px solid rgba(0,0,0,.18)"></div>
+                <div style="position:absolute;inset:0;transform:rotateX(-90deg) translateZ(17px);background:{{ item.colorHex }};filter:brightness(.4);border:0.5px solid rgba(0,0,0,.18)"></div>
+              </div>
+            </div>
+            <div>
+              <div style="font:600 13px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">{{ item.name }}</div>
+              <div style="font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.5);margin-bottom:8px">{{ item.material }} · remplissage {{ item.infill }}% · qualité {{ item.quality }}</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span onClick="{{ item.onDec }}" style="width:20px;height:20px;border:1px solid rgba(255,255,255,.25);border-radius:5px;text-align:center;line-height:18px;font:12px 'Inter',sans-serif;color:#e8e6e1;cursor:pointer">–</span>
+                <span style="font:600 12px 'Inter',sans-serif;color:#f3f1ec;min-width:16px;text-align:center">{{ item.qty }}</span>
+                <span onClick="{{ item.onInc }}" style="width:20px;height:20px;border:1px solid rgba(255,255,255,.25);border-radius:5px;text-align:center;line-height:18px;font:12px 'Inter',sans-serif;color:#e8e6e1;cursor:pointer">+</span>
+                <sc-if value="{{ item.hasDiscount }}" hint-placeholder-val="{{ false }}">
+                  <span style="font:700 9px 'Inter',sans-serif;color:#ff5a3c;background:rgba(255,90,60,.12);border-radius:4px;padding:2px 6px">−{{ item.discountPct }}%</span>
+                </sc-if>
+              </div>
+            </div>
+            <div style="text-align:right">
+              <div style="font:700 15px 'Space Grotesk',sans-serif;color:#ff5a3c;margin-bottom:8px">{{ item.lineTotal }} €</div>
+              <div onClick="{{ item.onRemove }}" style="font:500 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.4);cursor:pointer">Retirer</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#1a1917;padding:22px;position:sticky;top:20px">
+        <div style="font:700 15px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:16px">Récapitulatif</div>
+        <div style="display:flex;justify-content:space-between;font:400 11.5px 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:8px"><span>Sous-total</span><span>{{ subtotal }} €</span></div>
+        <sc-if value="{{ hasDiscount }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;justify-content:space-between;font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;margin-bottom:8px"><span>Remise quantité</span><span>−{{ discountAmount }} €</span></div>
+        </sc-if>
+        <div style="display:flex;justify-content:space-between;font:700 17px 'Space Grotesk',sans-serif;color:#f3f1ec;padding-top:12px;margin-top:8px;border-top:1px solid rgba(255,255,255,.1)"><span>Total HT</span><span>{{ total }} €</span></div>
+
+        <sc-if value="{{ isIdle }}" hint-placeholder-val="{{ true }}">
+          <div onClick="{{ startCheckout }}" style="margin-top:18px;background:#635bff;color:#fff;font:600 13px 'Inter',sans-serif;padding:12px;border-radius:7px;text-align:center;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+            <span>Payer avec Stripe</span>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isRedirecting }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:18px;background:#635bff;color:#fff;font:600 13px 'Inter',sans-serif;padding:12px;border-radius:7px;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px;opacity:.85">
+            <span style="width:11px;height:11px;display:inline-block;color:#fff;--pl-nozzle-fill:#635bff"><svg viewBox="0 0 100 100" class="printer-loader-svg">
+<defs>
+<linearGradient id="plFadeCA1" x1="0" y1="0" x2="0" y2="1">
+<stop offset="65%" stop-color="white" stop-opacity="1"/>
+<stop offset="90%" stop-color="white" stop-opacity="0"/>
+</linearGradient>
+<mask id="plMaskCA1">
+<rect x="0" y="0" width="100" height="100" fill="url(#plFadeCA1)"/>
+</mask>
+</defs>
+<g mask="url(#plMaskCA1)">
+<g class="stack">
+<path class="filament" d="M 75 105 L 25 105 A 5 5 0 0 1 25 95 L 75 95 A 5 5 0 0 0 75 85 L 25 85 A 5 5 0 0 1 25 75 L 75 75 A 5 5 0 0 0 75 65 L 25 65 A 5 5 0 0 1 25 55"/>
+<path class="filament line-lr" d="M 25 55 L 75 55"/>
+<path class="filament arc-r" d="M 75 55 A 5 5 0 0 0 75 45"/>
+<path class="filament line-rl" d="M 75 45 L 25 45"/>
+<path class="filament arc-l" d="M 25 45 A 5 5 0 0 1 25 35"/>
+</g>
+</g>
+<g class="nozzle">
+<rect x="40" y="15" width="20" height="15" rx="1"/>
+<line x1="38" y1="20" x2="62" y2="20"/>
+<line x1="38" y1="25" x2="62" y2="25"/>
+<polygon points="35,30 65,30 65,42 35,42"/>
+<polygon points="35,42 65,42 53,55 47,55"/>
+</g>
+</svg></span>
+            <span>Redirection vers Stripe…</span>
+          </div>
+        </sc-if>
+        <div style="font:400 9.5px 'Inter',sans-serif;color:rgba(255,255,255,.35);margin-top:10px;text-align:center">Paiement sécurisé — carte, Apple Pay, Google Pay</div>
+      </div>
+
+    </div>
+  </sc-if>
+
+  <!-- MOCK STRIPE CHECKOUT OVERLAY -->
+  <sc-if value="{{ isCheckoutOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(10,10,10,.7);display:flex;align-items:center;justify-content:center;z-index:50;animation:popupBackdropIn .2s ease">
+      <div style="width:400px;max-width:90vw;background:#fff;border-radius:12px;overflow:hidden;font-family:'Inter',sans-serif;animation:popupModalIn .35s cubic-bezier(.2,.9,.3,1.1)">
+        <div style="padding:20px 24px;border-bottom:1px solid #eee;display:flex;align-items:center;gap:8px">
+          <span style="font:800 16px 'Space Grotesk',sans-serif;color:#635bff">stripe</span>
+          <span style="font:500 11px 'Inter',sans-serif;color:#888">checkout (démo)</span>
+        </div>
+        <div style="padding:24px">
+          <div style="font:600 11px 'Inter',sans-serif;color:#333;margin-bottom:4px">Nasap3D</div>
+          <div style="font:700 22px 'Space Grotesk',sans-serif;color:#111;margin-bottom:18px">{{ total }} €</div>
+          <div style="border:1px solid #ddd;border-radius:6px;padding:10px 12px;font:12px 'Inter',sans-serif;color:#999;margin-bottom:10px">4242 4242 4242 4242</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+            <div style="border:1px solid #ddd;border-radius:6px;padding:10px 12px;font:12px 'Inter',sans-serif;color:#999">MM / AA</div>
+            <div style="border:1px solid #ddd;border-radius:6px;padding:10px 12px;font:12px 'Inter',sans-serif;color:#999">CVC</div>
+          </div>
+          <div onClick="{{ confirmCheckout }}" style="background:#635bff;color:#fff;font:600 13px 'Inter',sans-serif;padding:12px;border-radius:7px;text-align:center;cursor:pointer">Payer {{ total }} €</div>
+          <div onClick="{{ cancelCheckout }}" style="text-align:center;margin-top:12px;font:500 11px 'Inter',sans-serif;color:#888;cursor:pointer">← Retour à la boutique</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- SUCCESS -->
+  <sc-if value="{{ isPaid }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:900px;margin:0 auto;padding:0 24px 60px;text-align:center">
+      <div style="border:1px solid rgba(255,90,60,.3);background:rgba(255,90,60,.08);border-radius:12px;padding:44px 24px">
+        <div style="width:44px;height:44px;border-radius:50%;background:#ff5a3c;color:#161514;font:700 20px/44px 'Inter',sans-serif;margin:0 auto 16px">✓</div>
+        <div style="font:700 18px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:8px">Paiement confirmé</div>
+        <div style="font:400 12px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:18px">Suivez votre commande depuis votre espace compte.</div>
+        <a href="Account.dc.html" style="text-decoration:none;display:inline-block;background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:10px 18px;border-radius:6px">Voir ma commande</a>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- FOOTER -->
+  <div style="padding:20px 40px;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:center;font:10px 'Inter',sans-serif;color:rgba(255,255,255,.4)">
+    <div><a href="MentionsLegales.dc.html" style="color:rgba(255,255,255,.4)">Mentions légales</a> · <a href="CGU.dc.html" style="color:rgba(255,255,255,.4)">CGU</a> · <a href="Confidentialite.dc.html" style="color:rgba(255,255,255,.4)">Confidentialité</a> · <a href="Cookies.dc.html" style="color:rgba(255,255,255,.4)">Cookies</a></div>
+    <div>© 2026 Nasap3D, Site conçu par Nsapp</div>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { items: [], checkoutState: 'idle' };
+
+  componentDidMount() {
+    this._loadCart();
+    this._listener = () => this._loadCart();
+    window.addEventListener('nasap3d-cart-changed', this._listener);
+  }
+  componentWillUnmount() {
+    window.removeEventListener('nasap3d-cart-changed', this._listener);
+    clearTimeout(this._redirectTimer);
+  }
+  async _loadCart() {
+    const mod = await import('./cart.js');
+    this._cart = mod;
+    this.setState({ items: mod.getCart() });
+  }
+  startCheckout() {
+    this.setState({ checkoutState: 'redirecting' });
+    clearTimeout(this._redirectTimer);
+    this._redirectTimer = setTimeout(() => this.setState({ checkoutState: 'checkout' }), 1200);
+  }
+  cancelCheckout() {
+    this.setState({ checkoutState: 'idle' });
+  }
+  confirmCheckout() {
+    if (this._cart) this._cart.clearCart();
+    this.setState({ checkoutState: 'paid', items: [] });
+  }
+  renderVals() {
+    const s = this.state;
+    const cart = this._cart;
+    const items = s.items.map(it => {
+      const pct = cart ? cart.discountFor(it.qty) : 0;
+      const total = cart ? cart.lineTotal(it) : it.unitPrice * it.qty;
+      return {
+        name: it.name,
+        material: it.material,
+        infill: it.infill,
+        quality: it.quality,
+        qty: it.qty,
+        colorHex: it.colorHex || '#ff5a3c',
+        hasDiscount: pct > 0,
+        discountPct: pct,
+        lineTotal: total.toFixed(2),
+        onInc: () => { cart.updateQty(it.id, it.qty + 1); },
+        onDec: () => { cart.updateQty(it.id, it.qty - 1); },
+        onRemove: () => { cart.removeItem(it.id); }
+      };
+    });
+    const subtotal = cart ? cart.cartSubtotal() : 0;
+    const total = cart ? cart.cartTotal() : 0;
+    const discountAmount = subtotal - total;
+    return {
+      cartCount: cart ? cart.cartCount() : 0,
+      itemCountLabel: s.items.length ? s.items.length + ' article' + (s.items.length > 1 ? 's' : '') : 'Panier',
+      isEmpty: s.items.length === 0 && s.checkoutState !== 'paid',
+      hasItems: s.items.length > 0 && s.checkoutState !== 'paid',
+      items,
+      subtotal: subtotal.toFixed(2),
+      total: total.toFixed(2),
+      discountAmount: discountAmount.toFixed(2),
+      hasDiscount: discountAmount > 0.001,
+      isIdle: s.checkoutState === 'idle',
+      isRedirecting: s.checkoutState === 'redirecting',
+      isCheckoutOpen: s.checkoutState === 'checkout',
+      isPaid: s.checkoutState === 'paid',
+      startCheckout: () => this.startCheckout(),
+      cancelCheckout: () => this.cancelCheckout(),
+      confirmCheckout: () => this.confirmCheckout()
+    };
+  }
+}
+
+</script>
+</body>
+</html>

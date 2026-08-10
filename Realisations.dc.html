@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics="">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#161514;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#ff5a3c}
+a:hover{color:#ff7a5c}
+</style>
+<script src="./pageloader.js"></script>
+<script src="./navguard.js"></script>
+</helmet>
+
+<div style="background:#161514;min-height:100vh">
+
+  <!-- HEADER -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 40px;border-bottom:1px solid rgba(255,255,255,.08)">
+    <a href="Home.dc.html" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+      <img src="assets/logo-blanc-full.png" alt="Nasap3D" style="height:34px;width:auto">
+    </a>
+    <div style="display:flex;gap:26px;font:500 13px 'Inter',sans-serif;color:rgba(255,255,255,.62)">
+      <a href="Home.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Accueil</a>
+      <a href="Services.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Services</a>
+      <a href="About.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">À propos</a>
+      <span style="color:#f3f1ec;border-bottom:2px solid #ff5a3c;padding-bottom:4px;display:inline-block;transition:transform .2s ease" style-hover="transform:scale(1.18)">Réalisations</span>
+      <a href="Machines.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Machines</a>
+      <a href="Contact.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Contact</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:18px;font:500 12px 'Inter',sans-serif;color:rgba(255,255,255,.75)">
+      <a href="Account.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Compte</a>
+      <a href="Cart.dc.html" style="text-decoration:none;color:inherit;position:relative;display:inline-flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg><span style="position:absolute;top:-9px;right:-9px;width:15px;height:15px;border-radius:50%;background:#ff5a3c;color:#161514;font:700 8.5px/15px 'Inter',sans-serif;text-align:center">0</span></a>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div style="padding:56px 24px 30px">
+    <div style="max-width:1000px;margin:0 auto">
+      <div style="font:600 12px 'Inter',sans-serif;letter-spacing:1.2px;color:#ff5a3c;text-transform:uppercase;margin-bottom:10px">Réalisations</div>
+      <div style="font:700 30px/1.15 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:10px">Un aperçu de ce qu'on fabrique</div>
+      <div style="font:400 13px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55);max-width:560px">Prototypes, pièces de rétro-conception, interventions de maintenance — quelques exemples de projets menés à l'atelier.</div>
+    </div>
+  </div>
+
+  <!-- GALLERY -->
+  <div style="padding:0 24px 56px">
+    <div style="max-width:1000px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+      <sc-for list="{{ items }}" as="it" hint-placeholder-count="9">
+        <div style="position:relative;border:1px solid rgba(255,255,255,.1);border-radius:10px;overflow:hidden;background:#1a1917;transition:border-color .25s ease,box-shadow .25s ease,transform .25s ease" style-hover="border-color:#ff5a3c;box-shadow:0 12px 24px rgba(0,0,0,.35);transform:translateY(-3px)">
+          <div style="aspect-ratio:4/5;background-image:url('{{ it.img }}');background-size:cover;background-position:center;background-repeat:no-repeat"></div>
+          <div style="padding:14px;border-top:1px solid rgba(255,255,255,.08)">
+            <div style="font: 600 12.5px 'Space Grotesk',sans-serif; color: #f3f1ec; margin-bottom: 4px; position: relative">{{ it.label }}</div>
+            <div style="font:400 10.5px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5)">{{ it.desc }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div style="max-width:1000px;margin:0 auto;padding:0 24px 56px;text-align:center">
+    <div style="{{ ctaBoxStyle }}" onMouseEnter="{{ onCtaEnter }}" onMouseLeave="{{ onCtaLeave }}">
+      <div style="font:700 17px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:6px">Un projet en tête ?</div>
+      <div style="font:400 11.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:14px">Décrivez-le nous, ou lancez directement un devis instantané si votre fichier est prêt.</div>
+      <a href="Contact.dc.html" style="{{ ctaLinkStyle }}">Nous contacter</a>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="padding:20px 40px;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:center;font:10px 'Inter',sans-serif;color:rgba(255,255,255,.4)">
+    <div><a href="MentionsLegales.dc.html" style="color:rgba(255,255,255,.4)">Mentions légales</a> · <a href="CGU.dc.html" style="color:rgba(255,255,255,.4)">CGU</a> · <a href="Confidentialite.dc.html" style="color:rgba(255,255,255,.4)">Confidentialité</a> · <a href="Cookies.dc.html" style="color:rgba(255,255,255,.4)">Cookies</a></div>
+    <div>© 2026 Nasap3D, Site conçu par Nsapp</div>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { hoveredCta: false };
+  renderVals() {
+    const h = this.state.hoveredCta;
+    const items = [
+      { img: 'assets/real-1.png', label: 'Maquette ÄKTA readyflux', desc: 'Reproduction détaillée d’un système de chromatographie, vue d’ensemble.' },
+      { img: 'assets/real-2.png', label: 'ÄKTA readyflux — face avant', desc: 'Panneau fluidique, vannes et tubulures fonctionnels à l’échelle.' },
+      { img: 'assets/real-3.png', label: 'ÄKTA readyflux — vue 3/4', desc: 'Châssis, tubulures et raccords fonctionnels à l’échelle.' },
+      { img: 'assets/real-4.jpg', label: 'Trophée cerf', desc: 'Découpe laser multi-couches en bois, montage mural.' },
+      { img: 'assets/real-5.jpg', label: 'Caravanes Fendt miniatures', desc: 'Série de modèles réduits imprimés et détaillés.' },
+      { img: 'assets/real-6.jpg', label: 'Rondin gravé mariage', desc: 'Gravure laser personnalisée sur tranche de bois.' },
+      { img: 'assets/real-7.jpg', label: 'Médaille animal gravée', desc: 'Gravure fibre sur médaille inox personnalisée.' },
+      { img: 'assets/real-8.jpg', label: 'Maquette cellule — vue de face', desc: 'Modèle pédagogique en coupe, pièces multicolores.' },
+      { img: 'assets/real-9.jpg', label: 'Maquette cellule', desc: 'Modèle pédagogique en coupe, pièces multicolores.' },
+      { img: 'assets/real-10.jpg', label: 'Engrenage métal inox 316L', desc: 'Impression 3D métal, engrenage technique en acier inoxydable 316L.' },
+      { img: 'assets/real-12.jpg', label: 'Pièce rétro-conçue', desc: 'Réducteur redessiné en CAO à partir de la pièce d’origine usée.' },
+      { img: 'assets/real-13.jpg', label: 'Verres personnalisés', desc: 'Gravure laser sur manchon cuir, personnalisation au prénom.' },
+      { img: 'assets/real-14.jpg', label: 'Petite série technique', desc: 'Pièce en TPU noir 90A, série de 528 unités.' },
+      { img: 'assets/real-15.jpg', label: 'Formes pédagogiques', desc: 'Pièces d’illustration multicolores pour le secteur santé.' },
+      { img: 'assets/real-16.jpg', label: 'Figurines résine SLA', desc: 'Impression résine haute définition prête pour peinture.' },
+      { img: 'assets/real-17.jpg', label: 'Objets liturgiques', desc: 'Maquettes de design produit pour une présentation' },
+      { img: 'assets/real-18.jpg', label: 'Cache Peugeot 102', desc: 'Cache personnalisé imprimé pour Peugeot 102.' },
+      { img: 'assets/real-19.png', label: 'Maquette bioréacteur — vue d’ensemble', desc: 'Reproduction détaillée d’une cuve, tubulures et raccords.' },
+      { img: 'assets/real-20.png', label: 'Maquette bioréacteur — vue de dessus', desc: 'Vue du dessus de la maquette.' },
+      { img: 'assets/real-21.png', label: 'Maquette bioréacteur — détail vannes', desc: 'Bloc de vannes et manomètres imprimés avec stickers intégrés' }
+    ];
+    return {
+      items,
+      onCtaEnter: () => this.setState({ hoveredCta: true }),
+      onCtaLeave: () => this.setState({ hoveredCta: false }),
+      ctaBoxStyle: {
+        border: '1px solid ' + (h ? '#ff5a3c' : 'rgba(255,90,60,.3)'),
+        background: 'rgba(255,90,60,.08)',
+        borderRadius: '12px',
+        padding: '28px',
+        transform: h ? 'scale(1.02)' : 'scale(1)',
+        boxShadow: h ? '0 14px 28px rgba(0,0,0,.35)' : 'none',
+        transition: 'transform .25s ease, box-shadow .25s ease, border-color .25s ease'
+      },
+      ctaLinkStyle: {
+        textDecoration: 'none',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
+        width: 'fit-content',
+        font: "600 11px 'Inter',sans-serif",
+        color: '#ff5a3c',
+        padding: h ? '6px 12px' : '0',
+        border: '1px solid ' + (h ? '#ff5a3c' : 'transparent'),
+        borderRadius: '6px',
+        background: h ? 'rgba(255,90,60,.1)' : 'transparent',
+        transition: 'padding .25s ease, border-color .25s ease, background .25s ease'
+      }
+    };
+  }
+}
+
+</script>
+</body>
+</html>

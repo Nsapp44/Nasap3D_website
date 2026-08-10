@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#161514;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.printer-loader-svg{width:100%;height:100%;display:block}
+.printer-loader-svg .filament{fill:none;stroke:currentColor;stroke-width:6;stroke-linecap:round;stroke-linejoin:round}
+.printer-loader-svg .stack{animation:plShiftDown 2.5s linear infinite}
+.printer-loader-svg .nozzle{fill:var(--pl-nozzle-fill,#161514);stroke:currentColor;stroke-width:2.5;stroke-linejoin:round;animation:plNozzleMove 2.5s linear infinite}
+.printer-loader-svg .line-lr{stroke-dasharray:100;animation:plDrawLr 2.5s linear infinite}
+.printer-loader-svg .arc-r{stroke-dasharray:100;animation:plDrawArcR 2.5s linear infinite}
+.printer-loader-svg .line-rl{stroke-dasharray:100;animation:plDrawRl 2.5s linear infinite}
+.printer-loader-svg .arc-l{stroke-dasharray:100;animation:plDrawArcL 2.5s linear infinite}
+@keyframes plShiftDown{0%,38%{transform:translateY(0px)}50%,88%{transform:translateY(10px)}100%{transform:translateY(20px)}}
+@keyframes plNozzleMove{0%{transform:translateX(-25px)}38%{transform:translateX(25px)}44%{transform:translateX(30px)}50%{transform:translateX(25px)}88%{transform:translateX(-25px)}94%{transform:translateX(-30px)}100%{transform:translateX(-25px)}}
+@keyframes plDrawLr{0%{stroke-dashoffset:100}38%,100%{stroke-dashoffset:50}}
+@keyframes plDrawArcR{0%,38%{stroke-dashoffset:100}50%,100%{stroke-dashoffset:84.3}}
+@keyframes plDrawRl{0%,50%{stroke-dashoffset:100}88%,100%{stroke-dashoffset:50}}
+@keyframes plDrawArcL{0%,88%{stroke-dashoffset:100}100%{stroke-dashoffset:84.3}}
+</style>
+</helmet>
+
+<div style="background:#161514;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px">
+  <div style="width:70px;height:70px;color:#ff5a3c;--pl-nozzle-fill:#161514">
+    <svg viewBox="0 0 100 100" class="printer-loader-svg">
+      <defs>
+        <linearGradient id="plFadeLoad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="65%" stop-color="white" stop-opacity="1"></stop>
+          <stop offset="90%" stop-color="white" stop-opacity="0"></stop>
+        </linearGradient>
+        <mask id="plMaskLoad">
+          <rect x="0" y="0" width="100" height="100" fill="url(#plFadeLoad)"></rect>
+        </mask>
+      </defs>
+      <g mask="url(#plMaskLoad)">
+        <g class="stack">
+          <path class="filament" d="M 75 105 L 25 105 A 5 5 0 0 1 25 95 L 75 95 A 5 5 0 0 0 75 85 L 25 85 A 5 5 0 0 1 25 75 L 75 75 A 5 5 0 0 0 75 65 L 25 65 A 5 5 0 0 1 25 55"></path>
+          <path class="filament line-lr" d="M 25 55 L 75 55"></path>
+          <path class="filament arc-r" d="M 75 55 A 5 5 0 0 0 75 45"></path>
+          <path class="filament line-rl" d="M 75 45 L 25 45"></path>
+          <path class="filament arc-l" d="M 25 45 A 5 5 0 0 1 25 35"></path>
+        </g>
+      </g>
+      <g class="nozzle">
+        <rect x="40" y="15" width="20" height="15" rx="1"></rect>
+        <line x1="38" y1="20" x2="62" y2="20"></line>
+        <line x1="38" y1="25" x2="62" y2="25"></line>
+        <polygon points="35,30 65,30 65,42 35,42"></polygon>
+        <polygon points="35,42 65,42 53,55 47,55"></polygon>
+      </g>
+    </svg>
+  </div>
+  <div style="font:600 12px 'Inter',sans-serif;color:rgba(255,255,255,.5);letter-spacing:1px;text-transform:uppercase">Chargement…</div>
+</div>
+</x-dc>
+</body>
+</html>
