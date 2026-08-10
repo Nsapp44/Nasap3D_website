@@ -1,0 +1,241 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CLIENT
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PRINTING
+  READY
+  DELIVERED
+}
+
+enum QuoteJobStatus {
+  DRAFT
+  ANALYZED
+  EXPIRED
+  CONVERTED
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  customerNo   String    @unique
+  role         Role      @default(CLIENT)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  orders        Order[]
+  invoices      Invoice[]
+  quoteJobs     QuoteJob[]
+  cartItems     CartItem[]
+  refreshTokens RefreshToken[]
+  resetTokens   PasswordResetToken[]
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model Material {
+  id              String          @id @default(cuid())
+  key             String          @unique
+  label           String
+  densityGCm3     Float
+  pricePerKgCents Int
+  active          Boolean         @default(true)
+  colors          MaterialColor[]
+  quoteJobs       QuoteJob[]
+}
+
+model MaterialColor {
+  id         String     @id @default(cuid())
+  materialId String
+  material   Material   @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  colorName  String
+  colorHex   String
+  inStock    Boolean    @default(true)
+  quoteJobs  QuoteJob[]
+
+  @@unique([materialId, colorName])
+}
+
+model QualityProfile {
+  id             String     @id @default(cuid())
+  key            String     @unique
+  label          String
+  layerHeightMm  Float
+  timeMultiplier Float
+  active         Boolean    @default(true)
+  quoteJobs      QuoteJob[]
+}
+
+model DiscountTier {
+  id     String @id @default(cuid())
+  minQty Int    @unique
+  pct    Float
+}
+
+model Settings {
+  id                 Int      @id @default(1)
+  quoteEnabled       Boolean  @default(true)
+  hourlyRateCents    Int
+  marginPct          Float
+  setupFeeCents      Int
+  quoteExpiryMinutes Int      @default(60)
+  recaptchaMinScore  Float    @default(0.5)
+  updatedAt          DateTime @updatedAt
+}
+
+model Counter {
+  key   String @id
+  value Int    @default(0)
+}
+
+model QuoteJob {
+  id               String         @id @default(cuid())
+  userId           String?
+  user             User?          @relation(fields: [userId], references: [id])
+  sessionId        String?
+  fileKey          String
+  fileName         String
+  fileSizeBytes    Int
+  materialId       String
+  material         Material       @relation(fields: [materialId], references: [id])
+  colorId          String
+  color            MaterialColor  @relation(fields: [colorId], references: [id])
+  qualityId        String
+  quality          QualityProfile @relation(fields: [qualityId], references: [id])
+  infillPct        Int
+  quantity         Int
+  volumeCm3        Float?
+  bboxXMm          Float?
+  bboxYMm          Float?
+  bboxZMm          Float?
+  weightG          Float?
+  estimatedTimeMin Float?
+  unitPriceCents   Int?
+  totalPriceCents  Int?
+  status           QuoteJobStatus @default(DRAFT)
+  expiresAt        DateTime?
+  createdAt        DateTime       @default(now())
+
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@index([userId])
+  @@index([sessionId])
+}
+
+model CartItem {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  sessionId  String?
+  quoteJobId String
+  quoteJob   QuoteJob @relation(fields: [quoteJobId], references: [id])
+  qty        Int      @default(1)
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([sessionId])
+}
+
+model Order {
+  id                    String      @id @default(cuid())
+  ref                   String      @unique
+  userId                String
+  user                  User        @relation(fields: [userId], references: [id])
+  status                OrderStatus @default(PENDING)
+  subtotalCents         Int
+  discountCents         Int
+  totalCents            Int
+  stripePaymentIntentId String?     @unique
+  printingAt            DateTime?
+  readyAt               DateTime?
+  deliveredAt           DateTime?
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  items   OrderItem[]
+  invoice Invoice?
+
+  @@index([userId])
+  @@index([status])
+}
+
+model OrderItem {
+  id                 String    @id @default(cuid())
+  orderId            String
+  order              Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  quoteJobId         String?
+  quoteJob           QuoteJob? @relation(fields: [quoteJobId], references: [id])
+  nameSnapshot       String
+  materialSnapshot   String
+  colorNameSnapshot  String
+  colorHexSnapshot   String
+  infillSnapshot     Int
+  qualitySnapshot    String
+  qty                Int
+  unitPriceCents     Int
+  lineTotalCents     Int
+
+  @@index([orderId])
+}
+
+model Invoice {
+  id          String   @id @default(cuid())
+  ref         String   @unique
+  orderId     String   @unique
+  order       Order    @relation(fields: [orderId], references: [id])
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  amountCents Int
+  pdfKey      String
+  dailySeq    Int
+  issuedAt    DateTime @default(now())
+
+  @@index([userId])
+}
+
+model ContactMessage {
+  id             String   @id @default(cuid())
+  name           String
+  email          String
+  subject        String
+  message        String
+  fileKey        String?
+  recaptchaScore Float?
+  createdAt      DateTime @default(now())
+}

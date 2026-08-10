@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nasap3d
+      POSTGRES_PASSWORD: nasap3d_dev_only
+      POSTGRES_DB: nasap3d
+    ports:
+      - "5432:5432"
+    volumes:
+      - nasap3d_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nasap3d -d nasap3d"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./server
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ./server/.env
+    environment:
+      DATABASE_URL: postgresql://nasap3d:nasap3d_dev_only@db:5432/nasap3d
+    ports:
+      - "3000:3000"
+    profiles:
+      - full
+
+volumes:
+  nasap3d_db_data:
