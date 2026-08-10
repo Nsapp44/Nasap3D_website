@@ -38,6 +38,7 @@ a:hover{color:#ff7a5c}
 </style>
 <script src="./pageloader.js"></script>
 <script src="./navguard.js"></script>
+<script src="https://www.google.com/recaptcha/api.js?render=6Lc-5X4tAAAAAKV1mRgZz7YEzvqBT4lEbqvsOTGi"></script>
 </helmet>
 
 <div style="background:#161514;min-height:100vh">
@@ -137,10 +138,6 @@ a:hover{color:#ff7a5c}
             </sc-if>
             <div style="font:9px ui-monospace,monospace;color:rgba(255,255,255,.3);margin-top:3px">.stl .step .pdf .jpg .png — 10 Mo max</div>
           </div>
-          <div onClick="{{ toggleCaptcha }}" style="display:flex;align-items:center;gap:10px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:11px 14px;cursor:pointer">
-            <span style="{{ captchaBoxStyle }}">{{ captchaCheckMark }}</span>
-            <span style="font:12px 'Inter',sans-serif;color:rgba(255,255,255,.55)">Je ne suis pas un robot — captcha anti-spam</span>
-          </div>
           <div onClick="{{ submitContact }}" style="{{ contactSendStyle }}">
             <sc-if value="{{ contactFileUploading }}" hint-placeholder-val="{{ false }}">
               <span style="width:11px;height:11px;display:inline-block;color:#fff;--pl-nozzle-fill:#ff5a3c"><svg viewBox="0 0 100 100" class="printer-loader-svg">
@@ -176,6 +173,9 @@ a:hover{color:#ff7a5c}
           <sc-if value="{{ showSentMessage }}" hint-placeholder-val="{{ false }}">
             <div style="font:600 11px 'Inter',sans-serif;color:#ff5a3c">✓ Message envoyé — nous revenons vers vous rapidement.</div>
           </sc-if>
+          <sc-if value="{{ hasError }}" hint-placeholder-val="{{ false }}">
+            <div style="font:600 11px 'Inter',sans-serif;color:#ff8a70">{{ errorMessage }}</div>
+          </sc-if>
         </div>
       </div>
 
@@ -206,7 +206,8 @@ a:hover{color:#ff7a5c}
 class Component extends DCLogic {
   state = {
     contactName: '', contactEmail: '', contactObjet: '', contactMessage: '',
-    contactFileState: 'none', contactFileName: '', captchaChecked: false, sent: false, contactDragging: false
+    contactFileState: 'none', contactFileName: '', sent: false, contactDragging: false,
+    submitting: false, errorMessage: null
   };
   mapRef = React.createRef();
   componentDidMount() {
@@ -242,20 +243,38 @@ class Component extends DCLogic {
   _isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
+  // TODO(devis serveur / upload S3): l'attachement est encore simulé
+  // (aucun fichier n'est réellement envoyé) en attendant l'endpoint d'upload
+  // partagé avec le configurateur de devis.
   attachContactFile() {
     this.setState({ contactFileState: 'uploading' });
     clearTimeout(this._fileTimer);
     this._fileTimer = setTimeout(() => this.setState({ contactFileState: 'ready', contactFileName: 'piece-jointe.stl' }), 1400);
   }
-  toggleCaptcha() {
-    this.setState(s => ({ captchaChecked: !s.captchaChecked }));
+  async _api() {
+    if (!this._apiMod) this._apiMod = (await import('./api-client.js')).api;
+    return this._apiMod;
   }
-  submitContact() {
+  async submitContact() {
     const s = this.state;
     const uploading = s.contactFileState === 'uploading';
-    const canSend = s.contactName.trim() && this._isValidEmail(s.contactEmail) && s.contactObjet.trim() && s.captchaChecked && !uploading;
+    const canSend = s.contactName.trim() && this._isValidEmail(s.contactEmail) && s.contactObjet.trim() && !uploading && !s.submitting;
     if (!canSend) return;
-    this.setState({ sent: true, contactName: '', contactEmail: '', contactObjet: '', contactMessage: '', captchaChecked: false, contactFileState: 'none' });
+    this.setState({ submitting: true, errorMessage: null });
+    const api = await this._api();
+    const res = await api.submitContact({
+      name: s.contactName, email: s.contactEmail, subject: s.contactObjet, message: s.contactMessage
+    });
+    if (!res.ok) {
+      this.setState({
+        submitting: false,
+        errorMessage: (res.data && res.data.error === 'recaptcha_failed')
+          ? 'Vérification anti-robot échouée, merci de réessayer.'
+          : "Échec de l'envoi, merci de réessayer dans un instant."
+      });
+      return;
+    }
+    this.setState({ submitting: false, sent: true, contactName: '', contactEmail: '', contactObjet: '', contactMessage: '', contactFileState: 'none' });
     clearTimeout(this._sentTimer);
     this._sentTimer = setTimeout(() => this.setState({ sent: false }), 5000);
   }
@@ -263,7 +282,7 @@ class Component extends DCLogic {
     const s = this.state;
     const mapRef = this.mapRef;
     const uploading = s.contactFileState === 'uploading';
-    const canSend = s.contactName.trim().length > 0 && this._isValidEmail(s.contactEmail) && s.contactObjet.trim().length > 0 && s.captchaChecked && !uploading;
+    const canSend = s.contactName.trim().length > 0 && this._isValidEmail(s.contactEmail) && s.contactObjet.trim().length > 0 && !uploading && !s.submitting;
     return {
       mapRef,
       contactName: s.contactName,
@@ -293,16 +312,9 @@ class Component extends DCLogic {
       onContactDragOver: (e) => { e.preventDefault(); if (!this.state.contactDragging) this.setState({ contactDragging: true }); },
       onContactDragLeave: (e) => { e.preventDefault(); this.setState({ contactDragging: false }); },
       onContactDrop: (e) => { e.preventDefault(); this.setState({ contactDragging: false }); this.attachContactFile(); },
-      captchaChecked: s.captchaChecked,
-      toggleCaptcha: () => this.toggleCaptcha(),
-      captchaCheckMark: s.captchaChecked ? '✓' : '',
-      captchaBoxStyle: {
-        width: '16px', height: '16px', borderRadius: '4px', flex: 'none',
-        border: '1px solid ' + (s.captchaChecked ? '#ff5a3c' : 'rgba(255,255,255,.35)'),
-        background: s.captchaChecked ? '#ff5a3c' : 'transparent',
-        color: '#161514', font: "700 11px/16px 'Inter',sans-serif", textAlign: 'center'
-      },
       showSentMessage: s.sent,
+      hasError: !!s.errorMessage,
+      errorMessage: s.errorMessage,
       submitContact: () => this.submitContact(),
       contactSendStyle: {
         alignSelf: 'flex-start',

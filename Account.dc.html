@@ -20,6 +20,7 @@ a:hover{color:#ff7a5c}
 </style>
 <script src="./pageloader.js"></script>
 <script src="./navguard.js"></script>
+<script src="https://www.google.com/recaptcha/api.js?render=6Lc-5X4tAAAAAKV1mRgZz7YEzvqBT4lEbqvsOTGi"></script>
 </helmet>
 
 <div style="background:#161514;min-height:100vh">
@@ -46,6 +47,24 @@ a:hover{color:#ff7a5c}
       <a href="Cart.dc.html" style="text-decoration:none;color:inherit;position:relative;display:inline-flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg><span style="position:absolute;top:-9px;right:-9px;width:15px;height:15px;border-radius:50%;background:#ff5a3c;color:#161514;font:700 8.5px/15px 'Inter',sans-serif;text-align:center">{{ cartCount }}</span></a>
     </div>
   </div>
+
+  <!-- RESET PASSWORD (arrivée depuis le lien reçu par e-mail) -->
+  <sc-if value="{{ isResetPassword }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:400px;margin:60px auto;padding:0 24px">
+      <div style="text-align:center;margin-bottom:28px">
+        <div style="font:600 12px 'Inter',sans-serif;letter-spacing:1.2px;color:#ff5a3c;text-transform:uppercase;margin-bottom:10px">Réinitialisation</div>
+        <div style="font:700 26px 'Space Grotesk',sans-serif;color:#f3f1ec">Choisissez un nouveau mot de passe</div>
+      </div>
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#1a1917;padding:26px">
+        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:8px">
+          <input value="{{ resetNewPwd }}" onChange="{{ onResetNewPwd }}" type="password" placeholder="Nouveau mot de passe" style="width:100%;box-sizing:border-box;height:38px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:12px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+          <input value="{{ resetConfirmPwd }}" onChange="{{ onResetConfirmPwd }}" type="password" placeholder="Confirmer le mot de passe" style="width:100%;box-sizing:border-box;height:38px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:12px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+        </div>
+        <div style="font:400 9.5px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.4);margin-bottom:14px">8 caractères minimum, avec au moins 1 majuscule et 1 caractère spécial.</div>
+        <div onClick="{{ submitResetPassword }}" style="text-align:center;background:#ff5a3c;color:#161514;font:600 12.5px 'Inter',sans-serif;padding:11px;border-radius:7px;cursor:pointer">Valider le nouveau mot de passe</div>
+      </div>
+    </div>
+  </sc-if>
 
   <!-- LOGGED OUT -->
   <sc-if value="{{ isLoggedOut }}" hint-placeholder-val="{{ true }}">
@@ -75,10 +94,6 @@ a:hover{color:#ff7a5c}
         <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
           <div style="text-align:right;margin-bottom:12px"><span onClick="{{ forgotPassword }}" style="font:500 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.45);cursor:pointer">Mot de passe oublié ?</span></div>
         </sc-if>
-        <div onClick="{{ toggleCaptcha }}" style="display:flex;align-items:center;gap:10px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:11px 14px;cursor:pointer;margin-bottom:14px">
-          <span style="{{ captchaBoxStyle }}">{{ captchaCheckMark }}</span>
-          <span style="font:12px 'Inter',sans-serif;color:rgba(255,255,255,.55)">Je ne suis pas un robot — captcha anti-spam</span>
-        </div>
         <div onClick="{{ emailLogin }}" style="{{ authSubmitStyle }}">{{ authSubmitLabel }}</div>
         <div style="text-align:center;margin-top:16px;font:400 11px 'Inter',sans-serif;color:rgba(255,255,255,.45)">{{ authSwitchPrompt }} <span onClick="{{ toggleAuthMode }}" style="color:#ff5a3c;cursor:pointer;font-weight:600">{{ authSwitchAction }}</span></div>
       </div>
@@ -187,7 +202,8 @@ a:hover{color:#ff7a5c}
         <div style="font:600 13px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Adresse e-mail</div>
         <div style="font:400 11px 'Inter',sans-serif;color:rgba(255,255,255,.45);margin-bottom:6px">Actuelle : {{ authEmail }}</div>
         <div style="display:flex;align-items:center;gap:8px;font:400 11px 'Inter',sans-serif;color:rgba(255,255,255,.45);margin-bottom:14px">N° de client : <span style="font:600 11px ui-monospace,monospace;color:#ff5a3c;background:rgba(255,90,60,.1);border-radius:4px;padding:2px 8px">{{ customerNo }}</span><span style="font:400 9.5px 'Inter',sans-serif;color:rgba(255,255,255,.35)">— rattaché à vos factures</span></div>
-        <input value="{{ newEmail }}" onChange="{{ onNewEmail }}" type="email" placeholder="Nouvelle adresse e-mail" style="width:100%;box-sizing:border-box;height:38px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:12px 'Inter',sans-serif;color:#e8e6e1;outline:none;margin-bottom:14px" />
+        <input value="{{ newEmail }}" onChange="{{ onNewEmail }}" type="email" placeholder="Nouvelle adresse e-mail" style="width:100%;box-sizing:border-box;height:38px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:12px 'Inter',sans-serif;color:#e8e6e1;outline:none;margin-bottom:10px" />
+        <input value="{{ emailCurPwd }}" onChange="{{ onEmailCurPwd }}" type="password" placeholder="Mot de passe actuel (confirmation)" style="width:100%;box-sizing:border-box;height:38px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:12px 'Inter',sans-serif;color:#e8e6e1;outline:none;margin-bottom:14px" />
         <div onClick="{{ changeEmail }}" style="display:inline-block;background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:10px 18px;border-radius:7px;cursor:pointer">Mettre à jour l'e-mail</div>
       </div>
 
@@ -205,6 +221,7 @@ a:hover{color:#ff7a5c}
       <div style="border:1px solid rgba(255,90,60,.3);border-radius:12px;background:rgba(255,90,60,.06);padding:22px;max-width:520px">
         <div style="font:600 13px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Supprimer le compte</div>
         <div style="font:400 11px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.5);margin-bottom:14px">La suppression est définitive : vos commandes et factures ne seront plus accessibles.</div>
+        <input value="{{ deletePwd }}" onChange="{{ onDeletePwd }}" type="password" placeholder="Mot de passe actuel (confirmation)" style="width:100%;max-width:300px;box-sizing:border-box;height:38px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:12px 'Inter',sans-serif;color:#e8e6e1;outline:none;margin-bottom:14px" />
         <div onClick="{{ deleteAccount }}" style="display:inline-block;border:1px solid #ff5a3c;color:#ff5a3c;font:600 12px 'Inter',sans-serif;padding:10px 18px;border-radius:7px;cursor:pointer;transition:background .2s ease,color .2s ease" style-hover="background:#ff5a3c;color:#161514">Supprimer mon compte</div>
       </div>
       </sc-if>
@@ -224,15 +241,23 @@ a:hover{color:#ff7a5c}
 class Component extends DCLogic {
   state = {
     loggedIn: false, authMode: 'login', authEmail: '', authPassword: '', cartCount: 0,
-    popupMessage: null, popupConfirm: null, showPassword: false, captchaChecked: false,
-    view: 'dashboard', accountPassword: '',
-    newEmail: '', curPwd: '', newPwd: '', confirmPwd: ''
+    popupMessage: null, popupConfirm: null, showPassword: false, busy: false,
+    view: 'dashboard', customerNo: '',
+    newEmail: '', emailCurPwd: '', curPwd: '', newPwd: '', confirmPwd: '', deletePwd: '',
+    resetToken: null, resetNewPwd: '', resetConfirmPwd: ''
   };
 
   componentDidMount() {
     this._loadCart();
     this._listener = () => this._loadCart();
     window.addEventListener('nasap3d-cart-changed', this._listener);
+
+    const resetToken = new URLSearchParams(window.location.search).get('resetToken');
+    if (resetToken) {
+      this.setState({ resetToken });
+    } else {
+      this._checkSession();
+    }
   }
   componentWillUnmount() {
     window.removeEventListener('nasap3d-cart-changed', this._listener);
@@ -241,8 +266,17 @@ class Component extends DCLogic {
     const mod = await import('./cart.js');
     this.setState({ cartCount: mod.cartCount() });
   }
-  googleLogin() {
-    this.setState({ loggedIn: true, authEmail: 'client.google@gmail.com' });
+  async _api() {
+    if (!this._apiMod) this._apiMod = (await import('./api-client.js')).api;
+    return this._apiMod;
+  }
+  async _checkSession() {
+    const api = await this._api();
+    const res = await api.me();
+    if (res.ok && res.data && res.data.user) {
+      const u = res.data.user;
+      this.setState({ loggedIn: true, authEmail: u.email, customerNo: u.customerNo, view: 'dashboard' });
+    }
   }
   _isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -250,101 +284,128 @@ class Component extends DCLogic {
   _isValidPassword(password) {
     return /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>_\-+=~`[\]/\\;']).{8,}$/.test(password);
   }
-  static ADMIN_EMAIL = 'admin@nasap3d.com';
-  static ADMIN_PASSWORD = 'Nasap3D#Admin26';
-  static DEMO_ACCOUNT_KEY = 'nasap3d_demo_account';
-  static TEST_EMAIL = 'client@nasap3d.com';
-  static TEST_PASSWORD = 'Client2026!';
-  emailLogin() {
+  _errorMessage(data) {
+    const code = data && data.error;
+    return {
+      invalid_credentials: 'Aucun compte trouvé, vérifiez le mail/mot de passe.',
+      email_taken: 'Un compte existe déjà avec cette adresse e-mail.',
+      weak_password: 'Le mot de passe doit contenir au moins 8 caractères, 1 majuscule et 1 caractère spécial.',
+      invalid_email: "Format d'email invalide.",
+      wrong_password: 'Le mot de passe actuel est incorrect.',
+      recaptcha_failed: 'Vérification anti-robot échouée, merci de réessayer.',
+      invalid_or_expired_token: 'Ce lien de réinitialisation est invalide ou a expiré.',
+      network_error: 'Impossible de contacter le serveur, réessayez dans un instant.'
+    }[code] || 'Une erreur est survenue, merci de réessayer.';
+  }
+  async emailLogin() {
     const s = this.state;
-    if (s.authMode === 'signup') {
-      if (!s.authEmail.trim() || !s.authPassword.trim()) {
-        this.setState({ popupMessage: 'Champ mail et mot de passe obligatoire' });
-        return;
-      }
-    }
-    if (!s.authEmail.trim()) {
-      this.setState({ popupMessage: 'Champ mail obligatoire' });
+    if (s.busy) return;
+    if (!s.authEmail.trim() || !s.authPassword.trim()) {
+      this.setState({ popupMessage: 'Champ mail et mot de passe obligatoire' });
       return;
     }
     if (!this._isValidEmail(s.authEmail)) {
       this.setState({ popupMessage: "Format d'email invalide" });
       return;
     }
-    if (!s.captchaChecked) {
-      this.setState({ popupMessage: 'Merci de cocher le captcha « Je ne suis pas un robot ».' });
+    if (s.authMode === 'signup' && !this._isValidPassword(s.authPassword)) {
+      this.setState({ popupMessage: 'Le mot de passe doit contenir au moins 8 caractères, 1 majuscule et 1 caractère spécial.' });
       return;
     }
-    if (s.authMode === 'login' && s.authEmail === Component.ADMIN_EMAIL && s.authPassword === Component.ADMIN_PASSWORD) {
+    this.setState({ busy: true });
+    const api = await this._api();
+    const res = s.authMode === 'signup'
+      ? await api.signup(s.authEmail, s.authPassword)
+      : await api.login(s.authEmail, s.authPassword);
+    this.setState({ busy: false });
+    if (!res.ok) {
+      this.setState({ popupMessage: this._errorMessage(res.data) });
+      return;
+    }
+    const u = res.data.user;
+    if (u.role === 'ADMIN') {
       window.location.href = 'Admin.dc.html';
       return;
     }
-    if (s.authMode === 'login' && s.authEmail === Component.TEST_EMAIL && s.authPassword === Component.TEST_PASSWORD) {
-      this.setState({ loggedIn: true, authEmail: s.authEmail, accountPassword: s.authPassword, view: 'dashboard' });
-      return;
-    }
-    if (s.authMode === 'signup') {
-      if (!this._isValidPassword(s.authPassword)) {
-        this.setState({ popupMessage: 'Le mot de passe doit contenir au moins 8 caractères, 1 majuscule et 1 caractère spécial.' });
-        return;
-      }
-      localStorage.setItem(Component.DEMO_ACCOUNT_KEY, JSON.stringify({ email: s.authEmail, password: s.authPassword }));
-      this.setState({ loggedIn: true, authEmail: s.authEmail, accountPassword: s.authPassword, view: 'dashboard' });
-      return;
-    }
-    // login mode: check against the demo account created via signup
-    let demo = null;
-    try { demo = JSON.parse(localStorage.getItem(Component.DEMO_ACCOUNT_KEY)); } catch (e) {}
-    if (!demo || demo.email !== s.authEmail || demo.password !== s.authPassword) {
-      this.setState({ popupMessage: 'Aucun compte trouvé, vérifiez le mail/mot de passe' });
-      return;
-    }
-    this.setState({ loggedIn: true, authEmail: s.authEmail, accountPassword: s.authPassword, view: 'dashboard' });
+    this.setState({ loggedIn: true, authEmail: u.email, customerNo: u.customerNo, authPassword: '', view: 'dashboard' });
   }
   toggleShowPassword() {
     this.setState(s => ({ showPassword: !s.showPassword }));
   }
-  toggleCaptcha() {
-    this.setState(s => ({ captchaChecked: !s.captchaChecked }));
-  }
-  forgotPassword() {
+  async forgotPassword() {
     const email = this.state.authEmail;
     if (!this._isValidEmail(email)) {
-      this.setState({ popupMessage: 'Champ mail obligatoire' });
+      this.setState({ popupMessage: "Entrez d'abord votre adresse e-mail dans le champ ci-dessus." });
       return;
     }
-    this.setState({ popupMessage: 'Un email a été envoyé à ' + email + ' pour réinitialiser votre mot de passe.' });
+    const api = await this._api();
+    await api.forgotPassword(email);
+    // Same message whether or not the address is registered — avoids
+    // revealing which emails have an account.
+    this.setState({ popupMessage: "Si un compte existe avec cette adresse, un e-mail de réinitialisation vient d'être envoyé." });
+  }
+  async submitResetPassword() {
+    const s = this.state;
+    if (s.busy) return;
+    if (!this._isValidPassword(s.resetNewPwd)) {
+      this.setState({ popupMessage: 'Le mot de passe doit contenir au moins 8 caractères, 1 majuscule et 1 caractère spécial.' });
+      return;
+    }
+    if (s.resetNewPwd !== s.resetConfirmPwd) {
+      this.setState({ popupMessage: 'Les deux mots de passe ne correspondent pas.' });
+      return;
+    }
+    this.setState({ busy: true });
+    const api = await this._api();
+    const res = await api.resetPassword(s.resetToken, s.resetNewPwd);
+    this.setState({ busy: false });
+    if (!res.ok) {
+      this.setState({ popupMessage: this._errorMessage(res.data) });
+      return;
+    }
+    window.history.replaceState({}, '', 'Account.dc.html');
+    this.setState({
+      resetToken: null, resetNewPwd: '', resetConfirmPwd: '',
+      authMode: 'login', popupMessage: 'Mot de passe mis à jour, vous pouvez vous connecter.'
+    });
   }
   closePopup() {
     this.setState({ popupMessage: null, popupConfirm: null });
   }
-  logout() {
-    this.setState({ loggedIn: false, authMode: 'login', view: 'dashboard', authPassword: '', newEmail: '', curPwd: '', newPwd: '', confirmPwd: '', captchaChecked: false });
+  async logout() {
+    const api = await this._api();
+    await api.logout();
+    this.setState({
+      loggedIn: false, authMode: 'login', view: 'dashboard', authEmail: '', authPassword: '',
+      customerNo: '', newEmail: '', emailCurPwd: '', curPwd: '', newPwd: '', confirmPwd: '', deletePwd: ''
+    });
   }
   goSettings() { this.setState({ view: 'settings' }); }
-  goDashboard() { this.setState({ view: 'dashboard', newEmail: '', curPwd: '', newPwd: '', confirmPwd: '' }); }
-  _syncDemoStore(email, password) {
-    let demo = null;
-    try { demo = JSON.parse(localStorage.getItem(Component.DEMO_ACCOUNT_KEY)); } catch (e) {}
-    if (demo && demo.email === this.state.authEmail) {
-      localStorage.setItem(Component.DEMO_ACCOUNT_KEY, JSON.stringify({ email: email || demo.email, password: password || demo.password }));
-    }
-  }
-  changeEmail() {
+  goDashboard() { this.setState({ view: 'dashboard', newEmail: '', emailCurPwd: '', curPwd: '', newPwd: '', confirmPwd: '', deletePwd: '' }); }
+  async changeEmail() {
     const s = this.state;
+    if (s.busy) return;
     if (!this._isValidEmail(s.newEmail)) {
       this.setState({ popupMessage: "Merci d'entrer une adresse e-mail valide." });
       return;
     }
-    this._syncDemoStore(s.newEmail, null);
-    this.setState({ authEmail: s.newEmail, newEmail: '', popupMessage: 'Votre adresse e-mail a été mise à jour : ' + s.newEmail });
-  }
-  changePassword() {
-    const s = this.state;
-    if (s.curPwd !== s.accountPassword) {
-      this.setState({ popupMessage: 'Le mot de passe actuel est incorrect.' });
+    if (!s.emailCurPwd) {
+      this.setState({ popupMessage: 'Merci de confirmer avec votre mot de passe actuel.' });
       return;
     }
+    this.setState({ busy: true });
+    const api = await this._api();
+    const res = await api.changeEmail(s.newEmail, s.emailCurPwd);
+    this.setState({ busy: false });
+    if (!res.ok) {
+      this.setState({ popupMessage: this._errorMessage(res.data) });
+      return;
+    }
+    this.setState({ authEmail: s.newEmail, newEmail: '', emailCurPwd: '', popupMessage: 'Votre adresse e-mail a été mise à jour : ' + s.newEmail });
+  }
+  async changePassword() {
+    const s = this.state;
+    if (s.busy) return;
     if (!this._isValidPassword(s.newPwd)) {
       this.setState({ popupMessage: 'Le nouveau mot de passe doit contenir au moins 8 caractères, 1 majuscule et 1 caractère spécial.' });
       return;
@@ -353,28 +414,44 @@ class Component extends DCLogic {
       this.setState({ popupMessage: 'Les deux mots de passe ne correspondent pas.' });
       return;
     }
-    this._syncDemoStore(null, s.newPwd);
-    this.setState({ accountPassword: s.newPwd, curPwd: '', newPwd: '', confirmPwd: '', popupMessage: 'Votre mot de passe a été modifié avec succès.' });
+    this.setState({ busy: true });
+    const api = await this._api();
+    const res = await api.changePassword(s.curPwd, s.newPwd);
+    this.setState({ busy: false });
+    if (!res.ok) {
+      this.setState({ popupMessage: this._errorMessage(res.data) });
+      return;
+    }
+    this.setState({ curPwd: '', newPwd: '', confirmPwd: '', popupMessage: 'Votre mot de passe a été modifié avec succès.' });
   }
   deleteAccount() {
+    if (!this.state.deletePwd) {
+      this.setState({ popupMessage: 'Entrez votre mot de passe actuel pour confirmer la suppression.' });
+      return;
+    }
     this.setState({
       popupMessage: 'Supprimer définitivement votre compte ? Vos commandes et factures ne seront plus accessibles. Cette action est irréversible.',
       popupConfirm: 'delete'
     });
   }
-  confirmPopup() {
+  async confirmPopup() {
     if (this.state.popupConfirm === 'delete') {
-      try {
-        const demo = JSON.parse(localStorage.getItem(Component.DEMO_ACCOUNT_KEY));
-        if (demo && demo.email === this.state.authEmail) localStorage.removeItem(Component.DEMO_ACCOUNT_KEY);
-      } catch (e) {}
-      this.setState({ loggedIn: false, authMode: 'login', view: 'dashboard', authEmail: '', authPassword: '', accountPassword: '', popupMessage: null, popupConfirm: null });
+      const api = await this._api();
+      const res = await api.deleteAccount(this.state.deletePwd);
+      if (!res.ok) {
+        this.setState({ popupMessage: this._errorMessage(res.data), popupConfirm: null, deletePwd: '' });
+        return;
+      }
+      this.setState({
+        loggedIn: false, authMode: 'login', view: 'dashboard', authEmail: '', authPassword: '',
+        customerNo: '', deletePwd: '', popupMessage: null, popupConfirm: null
+      });
       return;
     }
     this.setState({ popupMessage: null, popupConfirm: null });
   }
   toggleAuthMode() {
-    this.setState(s => ({ authMode: s.authMode === 'login' ? 'signup' : 'login', captchaChecked: false }));
+    this.setState(s => ({ authMode: s.authMode === 'login' ? 'signup' : 'login' }));
   }
   renderVals() {
     const s = this.state;
@@ -402,7 +479,11 @@ class Component extends DCLogic {
       { ref: 'N3D-2712', desc: 'Pièce PETG x4', date: '18 mai 2026', status: 'Livré', price: '52.40', statusStyle: { font: "600 10px 'Inter',sans-serif", color: '#8fd19e', background: 'rgba(143,209,158,.12)', borderRadius: '5px', padding: '4px 9px' } },
       { ref: 'N3D-2650', desc: 'Initiation — formule Standard', date: '03 mai 2026', status: 'Livré', price: '225.00', statusStyle: { font: "600 10px 'Inter',sans-serif", color: '#8fd19e', background: 'rgba(143,209,158,.12)', borderRadius: '5px', padding: '4px 9px' } }
     ];
-    const customerNo = 'CUS-' + (Array.from(s.authEmail).reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 1000000, 7) + '').padStart(6, '0');
+    // TODO(phase commandes/factures): remplacer par de vraies données issues
+    // de GET /orders et GET /invoices une fois ces endpoints construits —
+    // customerNo est déjà réel (renvoyé par l'API à la connexion), le reste
+    // ci-dessous est encore un aperçu statique.
+    const customerNo = s.customerNo;
     const MONTHS = { 'janvier': '01', 'février': '02', 'fevrier': '02', 'mars': '03', 'avril': '04', 'mai': '05', 'juin': '06', 'juillet': '07', 'août': '08', 'aout': '08', 'septembre': '09', 'octobre': '10', 'novembre': '11', 'décembre': '12', 'decembre': '12' };
     const invRaw = [
       { order: 'N3D-2790', date: '02 juin 2026', amount: '68.00' },
@@ -424,10 +505,17 @@ class Component extends DCLogic {
         onDownload: () => this.setState({ popupMessage: 'Facture ' + ref + ' — téléchargement du PDF (démo). Le document définitif sera généré à la mise en production.' })
       };
     });
+    const isResetPassword = !!s.resetToken;
     return {
       cartCount: s.cartCount,
-      isLoggedOut: !s.loggedIn,
-      isLoggedIn: s.loggedIn,
+      isResetPassword,
+      resetNewPwd: s.resetNewPwd,
+      resetConfirmPwd: s.resetConfirmPwd,
+      onResetNewPwd: (e) => this.setState({ resetNewPwd: e.target.value }),
+      onResetConfirmPwd: (e) => this.setState({ resetConfirmPwd: e.target.value }),
+      submitResetPassword: () => this.submitResetPassword(),
+      isLoggedOut: !s.loggedIn && !isResetPassword,
+      isLoggedIn: s.loggedIn && !isResetPassword,
       authModeLabel: s.authMode === 'login' ? 'Connexion' : 'Inscription',
       authTitle: s.authMode === 'login' ? 'Content de vous revoir' : 'Créer un compte',
       authEmail: s.authEmail,
@@ -444,7 +532,6 @@ class Component extends DCLogic {
       hasPopup: !!s.popupMessage,
       popupMessage: s.popupMessage,
       closePopup: () => this.closePopup(),
-      googleLogin: () => this.googleLogin(),
       emailLogin: () => this.emailLogin(),
       authSubmitLabel: s.authMode === 'login' ? 'Se connecter' : "S'inscrire",
       authSubmitStyle: {
@@ -454,16 +541,7 @@ class Component extends DCLogic {
       authSwitchPrompt: s.authMode === 'login' ? 'Pas encore de compte ?' : 'Déjà un compte ?',
       authSwitchAction: s.authMode === 'login' ? "S'inscrire" : 'Se connecter',
       toggleAuthMode: () => this.toggleAuthMode(),
-      captchaChecked: s.captchaChecked,
       customerNo,
-      toggleCaptcha: () => this.toggleCaptcha(),
-      captchaCheckMark: s.captchaChecked ? '✓' : '',
-      captchaBoxStyle: {
-        width: '16px', height: '16px', borderRadius: '4px', flex: 'none',
-        border: '1px solid ' + (s.captchaChecked ? '#ff5a3c' : 'rgba(255,255,255,.35)'),
-        background: s.captchaChecked ? '#ff5a3c' : 'transparent',
-        color: '#161514', font: "700 11px/16px 'Inter',sans-serif", textAlign: 'center'
-      },
       logout: () => this.logout(),
       orderSteps,
       orderHistory,
@@ -473,13 +551,17 @@ class Component extends DCLogic {
       goSettings: () => this.goSettings(),
       goDashboard: () => this.goDashboard(),
       newEmail: s.newEmail,
+      emailCurPwd: s.emailCurPwd,
       curPwd: s.curPwd,
       newPwd: s.newPwd,
       confirmPwd: s.confirmPwd,
+      deletePwd: s.deletePwd,
       onNewEmail: (e) => this.setState({ newEmail: e.target.value }),
+      onEmailCurPwd: (e) => this.setState({ emailCurPwd: e.target.value }),
       onCurPwd: (e) => this.setState({ curPwd: e.target.value }),
       onNewPwd: (e) => this.setState({ newPwd: e.target.value }),
       onConfirmPwd: (e) => this.setState({ confirmPwd: e.target.value }),
+      onDeletePwd: (e) => this.setState({ deletePwd: e.target.value }),
       changeEmail: () => this.changeEmail(),
       changePassword: () => this.changePassword(),
       deleteAccount: () => this.deleteAccount(),

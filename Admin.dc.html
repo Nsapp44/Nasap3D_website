@@ -35,6 +35,21 @@ a:hover{color:#ff7a5c}
     <a href="Account.dc.html" style="text-decoration:none;color:rgba(255,255,255,.6);font:500 12px 'Inter',sans-serif">Retour au compte client</a>
   </div>
 
+  <!-- ACCESS GUARD (client-side only — the real protection is the requireAdmin
+       check on each admin API route; this just avoids flashing the admin UI
+       to a non-admin visitor while those routes are still being built) -->
+  <sc-if value="{{ checkingAuth }}" hint-placeholder-val="{{ true }}">
+    <div style="max-width:1000px;margin:0 auto;padding:60px 24px;text-align:center;font:500 12px 'Inter',sans-serif;color:rgba(255,255,255,.4)">Vérification des droits d'accès…</div>
+  </sc-if>
+  <sc-if value="{{ authDenied }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:600px;margin:60px auto;padding:0 24px;text-align:center">
+      <div style="font:700 20px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:10px">Accès réservé</div>
+      <div style="font:400 12px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:20px">Cette page est réservée aux administrateurs.</div>
+      <a href="Account.dc.html" style="text-decoration:none;display:inline-block;background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:10px 18px;border-radius:7px">Aller à mon compte</a>
+    </div>
+  </sc-if>
+  <sc-if value="{{ authorized }}" hint-placeholder-val="{{ false }}">
+
   <!-- VACATION / QUOTE TOGGLE -->
   <div style="max-width:1000px;margin:0 auto;padding:24px 24px 0">
     <div style="{{ quoteBarStyle }}">
@@ -119,12 +134,15 @@ a:hover{color:#ff7a5c}
     </div>
   </sc-if>
 
+  </sc-if>
+
 </div>
 
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
   state = {
+    authStatus: 'checking',
     tab: 'orders',
     orderFilter: 'all',
     quoteEnabled: true,
@@ -142,6 +160,13 @@ class Component extends DCLogic {
     window.addEventListener('nasap3d-stock-changed', this._stockListener);
     this._quoteListener = () => { if (this._stock) this.setState({ quoteEnabled: this._stock.isQuoteEnabled() }); };
     window.addEventListener('nasap3d-quote-changed', this._quoteListener);
+    this._checkAuth();
+  }
+  async _checkAuth() {
+    const mod = await import('./api-client.js');
+    const res = await mod.api.me();
+    const user = res.ok ? res.data && res.data.user : null;
+    this.setState({ authStatus: user && user.role === 'ADMIN' ? 'ok' : 'denied' });
   }
   componentWillUnmount() {
     window.removeEventListener('nasap3d-stock-changed', this._stockListener);
@@ -239,6 +264,9 @@ class Component extends DCLogic {
       }))
     }));
     return {
+      checkingAuth: s.authStatus === 'checking',
+      authDenied: s.authStatus === 'denied',
+      authorized: s.authStatus === 'ok',
       isOrdersTab: s.tab === 'orders',
       isStockTab: s.tab === 'stock',
       goOrders: () => this.setState({ tab: 'orders' }),
