@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
-import argon2 from "argon2";
+import { nextCustomerNo } from "../src/lib/counter.js";
+import { hashPassword } from "../src/lib/password.js";
 
 const prisma = new PrismaClient();
 
@@ -111,15 +112,6 @@ const DISCOUNT_TIERS = [
   { minQty: 500, pct: 30 },
 ];
 
-async function nextCounter(key: string): Promise<number> {
-  const row = await prisma.counter.upsert({
-    where: { key },
-    create: { key, value: 1 },
-    update: { value: { increment: 1 } },
-  });
-  return row.value;
-}
-
 async function main() {
   console.log("Seeding materials, colors, quality profiles, discount tiers...");
   for (const m of MATERIALS) {
@@ -180,15 +172,14 @@ async function main() {
 
   const adminEmail = process.env.SEED_ADMIN_EMAIL || "admin@nasap3d.com";
   const adminPassword = process.env.SEED_ADMIN_PASSWORD || "Ugz9Pb7VrVLjQEN538-8!";
-  const adminHash = await argon2.hash(adminPassword, { type: argon2.argon2id });
+  const adminHash = await hashPassword(adminPassword);
   const adminExisting = await prisma.user.findUnique({ where: { email: adminEmail } });
   if (!adminExisting) {
-    const seq = await nextCounter("customerNo");
     await prisma.user.create({
       data: {
         email: adminEmail,
         passwordHash: adminHash,
-        customerNo: "CUS-" + String(seq).padStart(6, "0"),
+        customerNo: await nextCustomerNo(),
         role: "ADMIN",
       },
     });
@@ -202,15 +193,14 @@ async function main() {
   // by a real seeded row instead of localStorage.
   const testEmail = "client@nasap3d.com";
   const testPassword = "Client2026!";
-  const testHash = await argon2.hash(testPassword, { type: argon2.argon2id });
+  const testHash = await hashPassword(testPassword);
   const testExisting = await prisma.user.findUnique({ where: { email: testEmail } });
   if (!testExisting) {
-    const seq = await nextCounter("customerNo");
     await prisma.user.create({
       data: {
         email: testEmail,
         passwordHash: testHash,
-        customerNo: "CUS-" + String(seq).padStart(6, "0"),
+        customerNo: await nextCustomerNo(),
         role: "CLIENT",
       },
     });
