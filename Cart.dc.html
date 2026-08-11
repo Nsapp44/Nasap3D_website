@@ -36,6 +36,7 @@ a:hover{color:#ff7a5c}
 </style>
 <script src="./pageloader.js"></script>
 <script src="./navguard.js"></script>
+<script src="./vendor/boxtal-parcel-point-map.js"></script>
 </helmet>
 
 <div style="background:#161514;min-height:100vh">
@@ -118,7 +119,52 @@ a:hover{color:#ff7a5c}
         </sc-for>
       </div>
 
-      <div style="border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#1a1917;padding:22px;position:sticky;top:20px">
+      <div style="position:sticky;top:20px;display:flex;flex-direction:column;gap:16px">
+
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#1a1917;padding:22px">
+        <div style="font:700 15px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:14px">Livraison</div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+          <input value="{{ shipName }}" onChange="{{ onShipName }}" type="text" placeholder="Nom et prénom" style="width:100%;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+          <input value="{{ shipPhone }}" onChange="{{ onShipPhone }}" type="tel" placeholder="Téléphone" style="width:100%;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+          <input value="{{ shipAddress }}" onChange="{{ onShipAddress }}" type="text" placeholder="Adresse" style="width:100%;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+          <div style="display:flex;gap:8px">
+            <input value="{{ shipZipcode }}" onChange="{{ onShipZipcode }}" type="text" placeholder="Code postal" style="width:110px;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+            <input value="{{ shipCity }}" onChange="{{ onShipCity }}" type="text" placeholder="Ville" style="flex:1;min-width:0;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+          </div>
+        </div>
+
+        <div onClick="{{ onQuoteShipping }}" style="{{ quoteShippingButtonStyle }}">{{ quoteShippingButtonLabel }}</div>
+
+        <sc-if value="{{ hasShippingError }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:10px;font:600 11px 'Inter',sans-serif;color:#ff8a70">{{ shippingError }}</div>
+        </sc-if>
+
+        <sc-if value="{{ hasRates }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+            <sc-if value="{{ hasRelayOption }}" hint-placeholder-val="{{ false }}">
+              <div onClick="{{ selectRelay }}" style="{{ relayOptionStyle }}">
+                <span>Point Relais (Mondial Relay)</span><span>{{ relayPrice }} €</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ hasHomeOption }}" hint-placeholder-val="{{ false }}">
+              <div onClick="{{ selectHome }}" style="{{ homeOptionStyle }}">
+                <span>Livraison à domicile (Colissimo)</span><span>{{ homePrice }} €</span>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="{{ relayPickerWrapStyle }}">
+            <div style="font:600 11px 'Inter',sans-serif;color:rgba(255,255,255,.6);margin:14px 0 8px">Choisissez votre point relais</div>
+            <sc-if value="{{ hasRelayPoint }}" hint-placeholder-val="{{ false }}">
+              <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;margin-bottom:8px">{{ relayPointSummary }}</div>
+            </sc-if>
+            <div id="boxtal-relay-map" style="height:380px;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.1)"></div>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#1a1917;padding:22px">
         <div style="font:700 15px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:16px">Récapitulatif</div>
         <div style="display:flex;justify-content:space-between;font:400 11.5px 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:8px"><span>Sous-total</span><span>{{ subtotal }} €</span></div>
         <sc-if value="{{ hasDiscount }}" hint-placeholder-val="{{ false }}">
@@ -126,6 +172,9 @@ a:hover{color:#ff7a5c}
         </sc-if>
         <sc-if value="{{ hasSmallOrderFee }}" hint-placeholder-val="{{ false }}">
           <div style="display:flex;justify-content:space-between;font:600 11.5px 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:8px"><span>Frais petite commande</span><span>+{{ smallOrderFee }} €</span></div>
+        </sc-if>
+        <sc-if value="{{ hasSelectedShipping }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;justify-content:space-between;font:600 11.5px 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:8px"><span>Livraison</span><span>+{{ shippingPrice }} €</span></div>
         </sc-if>
         <div style="display:flex;justify-content:space-between;font:700 17px 'Space Grotesk',sans-serif;color:#f3f1ec;padding-top:12px;margin-top:8px;border-top:1px solid rgba(255,255,255,.1)"><span>Total HT</span><span>{{ total }} €</span></div>
         <sc-if value="{{ hasSmallOrderFee }}" hint-placeholder-val="{{ false }}">
@@ -182,6 +231,8 @@ a:hover{color:#ff7a5c}
         <div style="font:400 9.5px 'Inter',sans-serif;color:rgba(255,255,255,.35);margin-top:10px;text-align:center">Paiement sécurisé — carte, Apple Pay, Google Pay</div>
       </div>
 
+      </div>
+
     </div>
   </sc-if>
 
@@ -211,7 +262,10 @@ class Component extends DCLogic {
   state = {
     cart: { lines: [], subtotalCents: 0, discountCents: 0, smallOrderFeeCents: 0, totalCents: 0, hasExpired: false, minOrderCents: 2000 },
     loaded: false, loggedIn: false, authChecked: false,
-    checkoutState: 'idle', checkoutError: null
+    checkoutState: 'idle', checkoutError: null,
+    shipName: '', shipPhone: '', shipAddress: '', shipCity: '', shipZipcode: '',
+    ratesState: 'idle', rates: null, shippingError: null,
+    shipMode: null, relayPoint: null
   };
 
   componentDidMount() {
@@ -258,15 +312,89 @@ class Component extends DCLogic {
     const res = await api.removeCartItem(id);
     if (res.ok) this.setState({ cart: res.data });
   }
+  _updateShipField(key, value) {
+    // Any address edit invalidates a previously fetched rate/selection —
+    // the price and the relay-point list are both tied to the address.
+    this.setState({ [key]: value, rates: null, ratesState: 'idle', shipMode: null, relayPoint: null, shippingError: null });
+  }
+  async quoteShipping() {
+    const s = this.state;
+    if (!s.shipName.trim() || !s.shipPhone.trim() || !s.shipAddress.trim() || !s.shipCity.trim() || !s.shipZipcode.trim()) {
+      this.setState({ shippingError: 'Renseignez le nom, téléphone, adresse, code postal et ville.' });
+      return;
+    }
+    this.setState({ ratesState: 'loading', shippingError: null, shipMode: null, relayPoint: null });
+    const api = await this._api();
+    const res = await api.getShippingRates({ address: s.shipAddress, city: s.shipCity, zipcode: s.shipZipcode, country: 'FR' });
+    if (!res.ok || !res.data) {
+      const messages = {
+        empty_cart: 'Votre panier est vide.',
+        shipping_not_configured: 'La livraison n’est pas encore configurée, réessayez plus tard.',
+        shipping_provider_error: 'Le calcul des frais de livraison a échoué, réessayez.',
+        no_offer_available: 'Aucune offre de livraison disponible pour cette adresse.',
+      };
+      this.setState({ ratesState: 'error', shippingError: messages[res.data && res.data.error] || 'Le calcul des frais de livraison a échoué.' });
+      return;
+    }
+    this.setState({ ratesState: 'ready', rates: res.data });
+  }
+  selectHome() {
+    if (!this.state.rates || !this.state.rates.home) return;
+    this.setState({ shipMode: 'HOME' });
+  }
+  async selectRelay() {
+    if (!this.state.rates || !this.state.rates.relay) return;
+    this.setState({ shipMode: 'RELAY' });
+    await this._loadRelayMap();
+  }
+  async _loadRelayMap() {
+    if (!this._map) {
+      this._map = new window.BoxtalParcelPointMap({
+        domToLoadMap: '#boxtal-relay-map',
+        accessToken: await this._apiToken(),
+        config: { locale: 'fr', options: { autoSelectNearestParcelPoint: false, primaryColor: '#ff5a3c' } }
+      });
+    }
+    const s = this.state;
+    this._map.searchParcelPoints(
+      { country: 'FR', zipCode: s.shipZipcode, city: s.shipCity, street: s.shipAddress },
+      (point) => {
+        this.setState({
+          relayPoint: {
+            code: point.code,
+            name: point.name,
+            address: point.location.street || s.shipAddress,
+            city: point.location.city,
+            zipcode: point.location.zipCode
+          }
+        });
+      }
+    );
+  }
+  async _apiToken() {
+    const mod = await import('./api-client.js');
+    return mod.BOXTAL_MAP_ACCESS_TOKEN;
+  }
   async startCheckout() {
     if (!this.state.loggedIn) return;
+    const s = this.state;
+    if (!s.shipMode || (s.shipMode === 'RELAY' && !s.relayPoint)) return;
     this.setState({ checkoutState: 'redirecting', checkoutError: null });
     const api = await this._api();
-    const res = await api.checkout();
+    const shipping = {
+      mode: s.shipMode,
+      recipient: { name: s.shipName, phone: s.shipPhone, address: s.shipAddress, city: s.shipCity, zipcode: s.shipZipcode, country: 'FR' },
+      relayPoint: s.shipMode === 'RELAY' ? s.relayPoint : undefined
+    };
+    const res = await api.checkout(shipping);
     if (!res.ok || !res.data || !res.data.url) {
       const messages = {
         empty_cart: 'Votre panier est vide.',
         quote_expired_in_cart: 'Un devis a expiré — retirez la ligne concernée et refaites un devis.',
+        missing_relay_point: 'Choisissez un point relais avant de payer.',
+        shipping_not_configured: 'La livraison n’est pas encore configurée, réessayez plus tard.',
+        shipping_provider_error: 'Le calcul des frais de livraison a échoué, réessayez.',
+        shipping_offer_unavailable: 'Cette offre de livraison n’est plus disponible, recalculez les frais.',
       };
       this.setState({
         checkoutState: 'idle',
@@ -294,10 +422,52 @@ class Component extends DCLogic {
       onRemove: () => this.removeItem(l.id)
     }));
     const subtotal = c.subtotalCents / 100;
-    const total = c.totalCents / 100;
     const discountAmount = c.discountCents / 100;
-    const canCheckout = s.loggedIn && !c.hasExpired && c.lines.length > 0;
+    const rates = s.rates;
+    const selectedRate = s.shipMode === 'RELAY' ? (rates && rates.relay) : s.shipMode === 'HOME' ? (rates && rates.home) : null;
+    const shippingCents = selectedRate ? selectedRate.cents : 0;
+    const total = (c.totalCents + shippingCents) / 100;
+    const shippingReady = !!s.shipMode && (s.shipMode !== 'RELAY' || !!s.relayPoint);
+    const canCheckout = s.loggedIn && !c.hasExpired && c.lines.length > 0 && shippingReady;
+    const quoteShippingReady = s.shipName.trim() && s.shipPhone.trim() && s.shipAddress.trim() && s.shipCity.trim() && s.shipZipcode.trim();
+    const optionStyle = (selected) => ({
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      padding: '10px 12px', borderRadius: '7px', cursor: 'pointer',
+      border: selected ? '1px solid #ff5a3c' : '1px solid rgba(255,255,255,.15)',
+      background: selected ? 'rgba(255,90,60,.1)' : 'transparent',
+      font: "600 11.5px 'Inter',sans-serif", color: selected ? '#ff5a3c' : '#e8e6e1'
+    });
     return {
+      shipName: s.shipName, onShipName: (e) => this._updateShipField('shipName', e.target.value),
+      shipPhone: s.shipPhone, onShipPhone: (e) => this._updateShipField('shipPhone', e.target.value),
+      shipAddress: s.shipAddress, onShipAddress: (e) => this._updateShipField('shipAddress', e.target.value),
+      shipCity: s.shipCity, onShipCity: (e) => this._updateShipField('shipCity', e.target.value),
+      shipZipcode: s.shipZipcode, onShipZipcode: (e) => this._updateShipField('shipZipcode', e.target.value),
+      onQuoteShipping: () => this.quoteShipping(),
+      quoteShippingButtonLabel: s.ratesState === 'loading' ? 'Calcul en cours…' : 'Calculer les frais de livraison',
+      quoteShippingButtonStyle: {
+        background: quoteShippingReady ? '#2a2926' : '#211f1c',
+        color: quoteShippingReady ? '#e8e6e1' : 'rgba(255,255,255,.35)',
+        border: '1px solid rgba(255,255,255,.15)', borderRadius: '7px', padding: '10px',
+        textAlign: 'center', font: "600 11.5px 'Inter',sans-serif",
+        cursor: quoteShippingReady ? 'pointer' : 'not-allowed'
+      },
+      hasShippingError: !!s.shippingError,
+      shippingError: s.shippingError,
+      hasRates: s.ratesState === 'ready' && !!rates,
+      hasRelayOption: !!(rates && rates.relay),
+      hasHomeOption: !!(rates && rates.home),
+      relayPrice: rates && rates.relay ? (rates.relay.cents / 100).toFixed(2) : '',
+      homePrice: rates && rates.home ? (rates.home.cents / 100).toFixed(2) : '',
+      relayOptionStyle: optionStyle(s.shipMode === 'RELAY'),
+      homeOptionStyle: optionStyle(s.shipMode === 'HOME'),
+      selectRelay: () => this.selectRelay(),
+      selectHome: () => this.selectHome(),
+      relayPickerWrapStyle: { height: s.shipMode === 'RELAY' ? 'auto' : '0px', overflow: s.shipMode === 'RELAY' ? 'visible' : 'hidden' },
+      hasRelayPoint: !!s.relayPoint,
+      relayPointSummary: s.relayPoint ? `${s.relayPoint.name} — ${s.relayPoint.address}, ${s.relayPoint.zipcode} ${s.relayPoint.city}` : '',
+      hasSelectedShipping: !!selectedRate,
+      shippingPrice: selectedRate ? (selectedRate.cents / 100).toFixed(2) : '',
       cartCount: c.lines.reduce((n, l) => n + l.qty, 0),
       itemCountLabel: c.lines.length ? c.lines.length + ' article' + (c.lines.length > 1 ? 's' : '') : 'Panier',
       isEmpty: s.loaded && c.lines.length === 0 && s.checkoutState !== 'paid',

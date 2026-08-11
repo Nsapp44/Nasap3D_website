@@ -3,10 +3,8 @@
 Back-end réel du site Nasap3D (Fastify + TypeScript + PostgreSQL/Prisma), destiné à remplacer
 progressivement l'état simulé en `localStorage` du front-end statique (`../*.dc.html`).
 
-Statut actuel : **schéma de données + migrations + seed en place**. Les routes métier (auth,
-devis serveur, stock, commandes, Stripe, factures) arrivent dans les étapes suivantes — voir
-`../HANDOFF_CLAUDE_CODE.md` pour la feuille de route complète. `src/index.ts` n'expose pour
-l'instant qu'un `GET /health`.
+Voir `PRICING.md` pour la formule de prix des pièces imprimées et `SHIPPING.md` pour
+l'intégration Boxtal (simulation de tarif + point relais).
 
 ## Prérequis
 

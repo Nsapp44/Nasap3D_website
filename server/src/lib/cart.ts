@@ -81,6 +81,17 @@ export async function getCartSummary(identity: { userId: string } | { sessionId:
   };
 }
 
+// Total physical weight of everything currently in the cart — the input to
+// the shipping rate simulation (server/src/lib/boxtal.ts adds the 20%
+// packaging margin on top of this).
+export async function getCartTotalWeightG(identity: { userId: string } | { sessionId: string }): Promise<number> {
+  const items = await prisma.cartItem.findMany({
+    where: identity,
+    include: { quoteJob: { select: { weightG: true } } },
+  });
+  return items.reduce((sum, item) => sum + (item.quoteJob.weightG ?? 0) * item.qty, 0);
+}
+
 // Called right after a successful login/signup: an anonymous visitor's cart
 // (grouped by the guest session cookie) becomes theirs instead of vanishing.
 export async function mergeGuestCartIntoUser(sessionId: string, userId: string): Promise<void> {

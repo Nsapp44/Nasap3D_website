@@ -1,12 +1,40 @@
 import type { FastifyInstance } from "fastify";
 import Stripe from "stripe";
+import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { getSessionUser, requireAuth } from "../lib/session.js";
-import { getCartSummary } from "../lib/cart.js";
+import { getCartSummary, getCartTotalWeightG } from "../lib/cart.js";
 import { stripe } from "../lib/stripeClient.js";
-import { createOrderFromCart, EmptyCartError, ExpiredCartError } from "../lib/orders.js";
+import {
+  createOrderFromCart,
+  packShippingMetadata,
+  shippingFromStripeMetadata,
+  EmptyCartError,
+  ExpiredCartError,
+  type ShippingSelection,
+} from "../lib/orders.js";
+import { quoteShippingRates, BoxtalConfigError, BoxtalApiError } from "../lib/boxtal.js";
 import { nextCounter } from "../lib/counter.js";
 import { saveFile } from "../lib/storage.js";
+
+const checkoutShippingSchema = z.object({
+  mode: z.enum(["RELAY", "HOME"]),
+  recipient: z.object({
+    name: z.string().trim().min(2).max(80),
+    phone: z.string().trim().min(6).max(20),
+    address: z.string().trim().min(3).max(120),
+    city: z.string().trim().min(1).max(80),
+    zipcode: z.string().trim().min(2).max(12),
+    country: z.string().trim().length(2).default("FR"),
+  }),
+  relayPoint: z.object({
+    code: z.string().trim().min(1).max(30),
+    name: z.string().trim().min(1).max(80),
+    address: z.string().trim().min(1).max(120),
+    city: z.string().trim().min(1).max(80),
+    zipcode: z.string().trim().min(1).max(12),
+  }).optional(),
+});
 
 // Checkout requires an account (not guest) — an Invoice is always tied to a
 // User in the schema, and "download my invoice from my account" only makes
@@ -17,6 +45,37 @@ export async function checkoutRoutes(app: FastifyInstance) {
     const summary = await getCartSummary({ userId: user.id });
     if (summary.lines.length === 0) return reply.code(400).send({ error: "empty_cart" });
     if (summary.hasExpired) return reply.code(409).send({ error: "quote_expired_in_cart" });
+
+    const body = z.object({ shipping: checkoutShippingSchema }).safeParse(request.body);
+    if (!body.success) return reply.code(400).send({ error: "invalid_body" });
+    const { shipping: requested } = body.data;
+    if (requested.mode === "RELAY" && !requested.relayPoint) {
+      return reply.code(400).send({ error: "missing_relay_point" });
+    }
+
+    // The shipping price is NEVER trusted from the client — same principle
+    // as the print quote itself (see server/PRICING.md). We re-run the real
+    // Boxtal rate simulation server-side, right here, and only ever charge
+    // the cents it just returned for the requested carrier.
+    const weightG = await getCartTotalWeightG({ userId: user.id });
+    let rates;
+    try {
+      rates = await quoteShippingRates(requested.recipient, weightG);
+    } catch (err) {
+      if (err instanceof BoxtalConfigError) return reply.code(503).send({ error: "shipping_not_configured" });
+      if (err instanceof BoxtalApiError) return reply.code(502).send({ error: "shipping_provider_error" });
+      throw err;
+    }
+    const rate = requested.mode === "RELAY" ? rates.relay : rates.home;
+    if (!rate) return reply.code(409).send({ error: "shipping_offer_unavailable" });
+
+    const shipping: ShippingSelection = {
+      mode: requested.mode,
+      rate,
+      weightG: rates.weightUsedG,
+      recipient: requested.recipient,
+      relayPoint: requested.relayPoint,
+    };
 
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = summary.lines.map((l) => ({
       quantity: 1,
@@ -38,6 +97,14 @@ export async function checkoutRoutes(app: FastifyInstance) {
         },
       });
     }
+    lineItems.push({
+      quantity: 1,
+      price_data: {
+        currency: "eur",
+        unit_amount: rate.cents,
+        product_data: { name: `Livraison — ${rate.label}` },
+      },
+    });
 
     const session = await stripe().checkout.sessions.create({
       mode: "payment",
@@ -46,7 +113,7 @@ export async function checkoutRoutes(app: FastifyInstance) {
       invoice_creation: { enabled: true },
       success_url: `${process.env.FRONT_URL}/Cart.dc.html?paid=1`,
       cancel_url: `${process.env.FRONT_URL}/Cart.dc.html?canceled=1`,
-      metadata: { userId: user.id },
+      metadata: { userId: user.id, ...packShippingMetadata(shipping) },
     });
 
     return reply.send({ url: session.url });
@@ -82,9 +149,10 @@ export async function stripeWebhookRoutes(app: FastifyInstance) {
         return reply.send({ ok: true });
       }
 
+      const shipping = shippingFromStripeMetadata(session.metadata);
       let created;
       try {
-        created = await createOrderFromCart(userId);
+        created = await createOrderFromCart(userId, shipping);
       } catch (err) {
         if (err instanceof EmptyCartError || err instanceof ExpiredCartError) {
           request.log.error(err, "could not create order from cart at webhook time");

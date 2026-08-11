@@ -35,6 +35,11 @@ async function request(method, path, body) {
 // tag must be present on the page (added to each helmet that needs it).
 const RECAPTCHA_SITE_KEY = '6Lc-5X4tAAAAAKV1mRgZz7YEzvqBT4lEbqvsOTGi';
 
+// Boxtal Map widget access token — meant to run client-side (sent to the map
+// iframe via postMessage, see vendor/boxtal-parcel-point-map.js), same
+// category of "public" key as the reCAPTCHA site key above.
+export const BOXTAL_MAP_ACCESS_TOKEN = 'ON9K1CQK9NO0KKDGPSC4S5K93PVV2NV4MZNEH9D7';
+
 function getRecaptchaToken(action) {
   return new Promise((resolve) => {
     const g = typeof window !== 'undefined' ? window.grecaptcha : null;
@@ -145,8 +150,11 @@ export const api = {
   async removeCartItem(id) {
     return request('DELETE', '/cart/' + id);
   },
-  async checkout() {
-    return request('POST', '/checkout');
+  async getShippingRates(recipient) {
+    return request('POST', '/shipping/rates', recipient);
+  },
+  async checkout(shipping) {
+    return request('POST', '/checkout', { shipping });
   },
   async getOrders() {
     return request('GET', '/orders');

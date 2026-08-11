@@ -19,6 +19,11 @@ enum OrderStatus {
   DELIVERED
 }
 
+enum ShippingMode {
+  RELAY
+  HOME
+}
+
 enum QuoteJobStatus {
   DRAFT
   ANALYZED
@@ -179,20 +184,41 @@ model CartItem {
 }
 
 model Order {
-  id                    String      @id @default(cuid())
-  ref                   String      @unique
+  id                    String       @id @default(cuid())
+  ref                   String       @unique
   userId                String
-  user                  User        @relation(fields: [userId], references: [id])
-  status                OrderStatus @default(PENDING)
+  user                  User         @relation(fields: [userId], references: [id])
+  status                OrderStatus  @default(PENDING)
   subtotalCents         Int
   discountCents         Int
+  shippingCents         Int          @default(0)
   totalCents            Int
-  stripePaymentIntentId String?     @unique
+  stripePaymentIntentId String?      @unique
   printingAt            DateTime?
   readyAt               DateTime?
   deliveredAt           DateTime?
-  createdAt             DateTime    @default(now())
-  updatedAt             DateTime    @updatedAt
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  // Livraison (Boxtal) — tarif figé au moment du paiement (voir
+  // server/src/lib/boxtal.ts), jamais recalculé après coup. relayPoint* est
+  // nul pour une livraison à domicile (shippingMode = HOME).
+  shippingMode        ShippingMode?
+  shippingCarrierCode String?
+  shippingServiceCode String?
+  shippingLabel       String?
+  shippingWeightG     Float?
+  recipientName       String?
+  recipientPhone      String?
+  recipientAddress    String?
+  recipientCity       String?
+  recipientZipcode    String?
+  recipientCountry    String?
+  relayPointCode      String?
+  relayPointName      String?
+  relayPointAddress   String?
+  relayPointCity      String?
+  relayPointZipcode   String?
 
   items   OrderItem[]
   invoice Invoice?

@@ -10,6 +10,7 @@ import { quoteRoutes } from "./routes/quotes.js";
 import { materialRoutes } from "./routes/materials.js";
 import { adminRoutes } from "./routes/admin.js";
 import { cartRoutes } from "./routes/cart.js";
+import { shippingRoutes } from "./routes/shipping.js";
 import { checkoutRoutes, stripeWebhookRoutes } from "./routes/checkout.js";
 import { customerOrderRoutes } from "./routes/orders.js";
 
@@ -44,6 +45,7 @@ await app.register(quoteRoutes);
 await app.register(materialRoutes);
 await app.register(adminRoutes);
 await app.register(cartRoutes);
+await app.register(shippingRoutes);
 await app.register(checkoutRoutes);
 await app.register(customerOrderRoutes);
 // Own encapsulated scope: registers a raw-buffer body parser needed to
