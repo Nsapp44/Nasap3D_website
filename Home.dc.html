@@ -719,9 +719,9 @@ class Component extends DCLogic {
     if (res.ok && res.data && res.data.tiers.length) this.setState({ discountTiersData: res.data.tiers });
   }
   async _loadCart() {
-    const mod = await import('./cart.js');
-    this._cart = mod;
-    this.setState({ cartCount: mod.cartCount() });
+    const api = await this._api();
+    const res = await api.getCart();
+    if (res.ok && res.data) this.setState({ cartCount: res.data.lines.reduce((n, l) => n + l.qty, 0) });
   }
   _initMeshBg() {
     const canvas = document.getElementById('nasap-mesh-canvas');
@@ -843,21 +843,15 @@ class Component extends DCLogic {
     this.setState({ cfgMaterial: key, cfgColorId: firstColor ? firstColor.id : null, cfgAnalysisReady: false, cfgQuote: null });
   }
   async addToCart() {
-    if (!this._cart) await this._loadCart();
     const q = this.state.cfgQuote;
     if (!q) return;
-    this._cart.addItem({
-      name: 'Pièce personnalisée (STL)',
-      material: q.materialLabel,
-      colorHex: q.colorHex,
-      infill: q.infillPct,
-      quality: q.qualityLabel,
-      qty: q.quantity,
-      unitPrice: q.unitPriceCents / 100,
-      quoteId: q.id,
-      thumb: 'stl'
-    });
-    this.setState({ cartCount: this._cart.cartCount(), showAddedToast: true });
+    const api = await this._api();
+    const res = await api.addCartItem(q.id, q.quantity);
+    if (!res.ok) {
+      this.setState({ cfgAnalysisError: 'Impossible d’ajouter au panier — le devis a peut-être expiré, relancez l’analyse.' });
+      return;
+    }
+    this.setState({ cartCount: res.data.lines.reduce((n, l) => n + l.qty, 0), showAddedToast: true });
     clearTimeout(this._toastTimer);
     this._toastTimer = setTimeout(() => this.setState({ showAddedToast: false }), 4000);
   }

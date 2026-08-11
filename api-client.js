@@ -132,4 +132,26 @@ export const api = {
   async adminUpdateSettings(patch) {
     return request('PATCH', '/admin/settings', patch);
   },
+  // ---- Cart / checkout ----
+  async getCart() {
+    return request('GET', '/cart');
+  },
+  async addCartItem(quoteJobId, qty) {
+    return request('POST', '/cart', { quoteJobId, qty });
+  },
+  async updateCartItem(id, qty) {
+    return request('PATCH', '/cart/' + id, { qty });
+  },
+  async removeCartItem(id) {
+    return request('DELETE', '/cart/' + id);
+  },
+  async checkout() {
+    return request('POST', '/checkout');
+  },
+  async getOrders() {
+    return request('GET', '/orders');
+  },
+  async getInvoices() {
+    return request('GET', '/invoices');
+  },
 };

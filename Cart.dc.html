@@ -96,8 +96,11 @@ a:hover{color:#ff7a5c}
               </div>
             </div>
             <div>
-              <div style="font:600 13px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">{{ item.name }}</div>
+              <div style="font:600 13px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Pièce personnalisée (STL)</div>
               <div style="font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.5);margin-bottom:8px">{{ item.material }} · remplissage {{ item.infill }}% · qualité {{ item.quality }}</div>
+              <sc-if value="{{ item.expired }}" hint-placeholder-val="{{ false }}">
+                <div style="font:600 10px 'Inter',sans-serif;color:#ff8a70;margin-bottom:8px">Devis expiré — retirez cette ligne et relancez un devis pour ce fichier.</div>
+              </sc-if>
               <div style="display:flex;align-items:center;gap:8px">
                 <span onClick="{{ item.onDec }}" style="width:20px;height:20px;border:1px solid rgba(255,255,255,.25);border-radius:5px;text-align:center;line-height:18px;font:12px 'Inter',sans-serif;color:#e8e6e1;cursor:pointer">–</span>
                 <span style="font:600 12px 'Inter',sans-serif;color:#f3f1ec;min-width:16px;text-align:center">{{ item.qty }}</span>
@@ -121,10 +124,26 @@ a:hover{color:#ff7a5c}
         <sc-if value="{{ hasDiscount }}" hint-placeholder-val="{{ false }}">
           <div style="display:flex;justify-content:space-between;font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;margin-bottom:8px"><span>Remise quantité</span><span>−{{ discountAmount }} €</span></div>
         </sc-if>
+        <sc-if value="{{ hasSmallOrderFee }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;justify-content:space-between;font:600 11.5px 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:8px"><span>Frais petite commande</span><span>+{{ smallOrderFee }} €</span></div>
+        </sc-if>
         <div style="display:flex;justify-content:space-between;font:700 17px 'Space Grotesk',sans-serif;color:#f3f1ec;padding-top:12px;margin-top:8px;border-top:1px solid rgba(255,255,255,.1)"><span>Total HT</span><span>{{ total }} €</span></div>
+        <sc-if value="{{ hasSmallOrderFee }}" hint-placeholder-val="{{ false }}">
+          <div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.4);margin-top:8px">En dessous de {{ minOrder }} €, des frais s'appliquent — ajoutez des pièces pour les éviter.</div>
+        </sc-if>
 
+        <sc-if value="{{ hasExpiredItem }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:16px;font:600 11px 'Inter',sans-serif;color:#ff8a70;text-align:center">Un ou plusieurs devis ont expiré — retirez-les pour continuer.</div>
+        </sc-if>
+        <sc-if value="{{ hasCheckoutError }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:16px;font:600 11px 'Inter',sans-serif;color:#ff8a70;text-align:center">{{ checkoutError }}</div>
+        </sc-if>
+
+        <sc-if value="{{ needsLogin }}" hint-placeholder-val="{{ false }}">
+          <a href="Account.dc.html" style="text-decoration:none;display:flex;margin-top:18px;background:#635bff;color:#fff;font:600 13px 'Inter',sans-serif;padding:12px;border-radius:7px;text-align:center;align-items:center;justify-content:center">Se connecter pour payer</a>
+        </sc-if>
         <sc-if value="{{ isIdle }}" hint-placeholder-val="{{ true }}">
-          <div onClick="{{ startCheckout }}" style="margin-top:18px;background:#635bff;color:#fff;font:600 13px 'Inter',sans-serif;padding:12px;border-radius:7px;text-align:center;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+          <div onClick="{{ startCheckout }}" style="{{ checkoutButtonStyle }}">
             <span>Payer avec Stripe</span>
           </div>
         </sc-if>
@@ -166,29 +185,6 @@ a:hover{color:#ff7a5c}
     </div>
   </sc-if>
 
-  <!-- MOCK STRIPE CHECKOUT OVERLAY -->
-  <sc-if value="{{ isCheckoutOpen }}" hint-placeholder-val="{{ false }}">
-    <div style="position:fixed;inset:0;background:rgba(10,10,10,.7);display:flex;align-items:center;justify-content:center;z-index:50;animation:popupBackdropIn .2s ease">
-      <div style="width:400px;max-width:90vw;background:#fff;border-radius:12px;overflow:hidden;font-family:'Inter',sans-serif;animation:popupModalIn .35s cubic-bezier(.2,.9,.3,1.1)">
-        <div style="padding:20px 24px;border-bottom:1px solid #eee;display:flex;align-items:center;gap:8px">
-          <span style="font:800 16px 'Space Grotesk',sans-serif;color:#635bff">stripe</span>
-          <span style="font:500 11px 'Inter',sans-serif;color:#888">checkout (démo)</span>
-        </div>
-        <div style="padding:24px">
-          <div style="font:600 11px 'Inter',sans-serif;color:#333;margin-bottom:4px">Nasap3D</div>
-          <div style="font:700 22px 'Space Grotesk',sans-serif;color:#111;margin-bottom:18px">{{ total }} €</div>
-          <div style="border:1px solid #ddd;border-radius:6px;padding:10px 12px;font:12px 'Inter',sans-serif;color:#999;margin-bottom:10px">4242 4242 4242 4242</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-            <div style="border:1px solid #ddd;border-radius:6px;padding:10px 12px;font:12px 'Inter',sans-serif;color:#999">MM / AA</div>
-            <div style="border:1px solid #ddd;border-radius:6px;padding:10px 12px;font:12px 'Inter',sans-serif;color:#999">CVC</div>
-          </div>
-          <div onClick="{{ confirmCheckout }}" style="background:#635bff;color:#fff;font:600 13px 'Inter',sans-serif;padding:12px;border-radius:7px;text-align:center;cursor:pointer">Payer {{ total }} €</div>
-          <div onClick="{{ cancelCheckout }}" style="text-align:center;margin-top:12px;font:500 11px 'Inter',sans-serif;color:#888;cursor:pointer">← Retour à la boutique</div>
-        </div>
-      </div>
-    </div>
-  </sc-if>
-
   <!-- SUCCESS -->
   <sc-if value="{{ isPaid }}" hint-placeholder-val="{{ false }}">
     <div style="max-width:900px;margin:0 auto;padding:0 24px 60px;text-align:center">
@@ -212,75 +208,124 @@ a:hover{color:#ff7a5c}
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  state = { items: [], checkoutState: 'idle' };
+  state = {
+    cart: { lines: [], subtotalCents: 0, discountCents: 0, smallOrderFeeCents: 0, totalCents: 0, hasExpired: false, minOrderCents: 2000 },
+    loaded: false, loggedIn: false, authChecked: false,
+    checkoutState: 'idle', checkoutError: null
+  };
 
   componentDidMount() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('paid') === '1') this.setState({ checkoutState: 'paid' });
+    if (params.get('canceled') === '1') this.setState({ checkoutError: 'Paiement annulé — votre panier est toujours là.' });
+    window.history.replaceState({}, '', 'Cart.dc.html');
+
     this._loadCart();
     this._listener = () => this._loadCart();
     window.addEventListener('nasap3d-cart-changed', this._listener);
+    this._checkAuth();
   }
   componentWillUnmount() {
     window.removeEventListener('nasap3d-cart-changed', this._listener);
-    clearTimeout(this._redirectTimer);
+  }
+  async _api() {
+    if (!this._apiMod) this._apiMod = (await import('./api-client.js')).api;
+    return this._apiMod;
+  }
+  async _checkAuth() {
+    const api = await this._api();
+    const res = await api.me();
+    this.setState({ loggedIn: !!(res.ok && res.data && res.data.user), authChecked: true });
   }
   async _loadCart() {
-    const mod = await import('./cart.js');
-    this._cart = mod;
-    this.setState({ items: mod.getCart() });
+    const api = await this._api();
+    const res = await api.getCart();
+    if (res.ok && res.data) this.setState({ cart: res.data, loaded: true });
   }
-  startCheckout() {
-    this.setState({ checkoutState: 'redirecting' });
-    clearTimeout(this._redirectTimer);
-    this._redirectTimer = setTimeout(() => this.setState({ checkoutState: 'checkout' }), 1200);
+  async incQty(id, qty) {
+    const api = await this._api();
+    const res = await api.updateCartItem(id, qty + 1);
+    if (res.ok) this.setState({ cart: res.data });
   }
-  cancelCheckout() {
-    this.setState({ checkoutState: 'idle' });
+  async decQty(id, qty) {
+    if (qty <= 1) return;
+    const api = await this._api();
+    const res = await api.updateCartItem(id, qty - 1);
+    if (res.ok) this.setState({ cart: res.data });
   }
-  confirmCheckout() {
-    if (this._cart) this._cart.clearCart();
-    this.setState({ checkoutState: 'paid', items: [] });
+  async removeItem(id) {
+    const api = await this._api();
+    const res = await api.removeCartItem(id);
+    if (res.ok) this.setState({ cart: res.data });
+  }
+  async startCheckout() {
+    if (!this.state.loggedIn) return;
+    this.setState({ checkoutState: 'redirecting', checkoutError: null });
+    const api = await this._api();
+    const res = await api.checkout();
+    if (!res.ok || !res.data || !res.data.url) {
+      const messages = {
+        empty_cart: 'Votre panier est vide.',
+        quote_expired_in_cart: 'Un devis a expiré — retirez la ligne concernée et refaites un devis.',
+      };
+      this.setState({
+        checkoutState: 'idle',
+        checkoutError: messages[res.data && res.data.error] || 'Le paiement n’a pas pu démarrer, réessayez.'
+      });
+      return;
+    }
+    window.location.href = res.data.url;
   }
   renderVals() {
     const s = this.state;
-    const cart = this._cart;
-    const items = s.items.map(it => {
-      const pct = cart ? cart.discountFor(it.qty) : 0;
-      const total = cart ? cart.lineTotal(it) : it.unitPrice * it.qty;
-      return {
-        name: it.name,
-        material: it.material,
-        infill: it.infill,
-        quality: it.quality,
-        qty: it.qty,
-        colorHex: it.colorHex || '#ff5a3c',
-        hasDiscount: pct > 0,
-        discountPct: pct,
-        lineTotal: total.toFixed(2),
-        onInc: () => { cart.updateQty(it.id, it.qty + 1); },
-        onDec: () => { cart.updateQty(it.id, it.qty - 1); },
-        onRemove: () => { cart.removeItem(it.id); }
-      };
-    });
-    const subtotal = cart ? cart.cartSubtotal() : 0;
-    const total = cart ? cart.cartTotal() : 0;
-    const discountAmount = subtotal - total;
+    const c = s.cart;
+    const items = c.lines.map(l => ({
+      material: l.material,
+      infill: l.infillPct,
+      quality: l.quality,
+      qty: l.qty,
+      colorHex: l.colorHex || '#ff5a3c',
+      hasDiscount: l.discountPct > 0,
+      discountPct: l.discountPct,
+      expired: l.expired,
+      lineTotal: (l.lineTotalCents / 100).toFixed(2),
+      onInc: () => this.incQty(l.id, l.qty),
+      onDec: () => this.decQty(l.id, l.qty),
+      onRemove: () => this.removeItem(l.id)
+    }));
+    const subtotal = c.subtotalCents / 100;
+    const total = c.totalCents / 100;
+    const discountAmount = c.discountCents / 100;
+    const canCheckout = s.loggedIn && !c.hasExpired && c.lines.length > 0;
     return {
-      cartCount: cart ? cart.cartCount() : 0,
-      itemCountLabel: s.items.length ? s.items.length + ' article' + (s.items.length > 1 ? 's' : '') : 'Panier',
-      isEmpty: s.items.length === 0 && s.checkoutState !== 'paid',
-      hasItems: s.items.length > 0 && s.checkoutState !== 'paid',
+      cartCount: c.lines.reduce((n, l) => n + l.qty, 0),
+      itemCountLabel: c.lines.length ? c.lines.length + ' article' + (c.lines.length > 1 ? 's' : '') : 'Panier',
+      isEmpty: s.loaded && c.lines.length === 0 && s.checkoutState !== 'paid',
+      hasItems: c.lines.length > 0 && s.checkoutState !== 'paid',
       items,
+      hasExpiredItem: c.hasExpired,
+      hasSmallOrderFee: c.smallOrderFeeCents > 0,
+      smallOrderFee: (c.smallOrderFeeCents / 100).toFixed(2),
+      minOrder: (c.minOrderCents / 100).toFixed(2),
+      needsLogin: s.authChecked && !s.loggedIn,
+      hasCheckoutError: !!s.checkoutError,
+      checkoutError: s.checkoutError,
+      checkoutButtonStyle: {
+        marginTop: '18px',
+        background: canCheckout ? '#635bff' : '#3a3936',
+        color: canCheckout ? '#fff' : 'rgba(255,255,255,.4)',
+        font: "600 13px 'Inter',sans-serif", padding: '12px', borderRadius: '7px',
+        textAlign: 'center', cursor: canCheckout ? 'pointer' : 'not-allowed',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+      },
       subtotal: subtotal.toFixed(2),
       total: total.toFixed(2),
       discountAmount: discountAmount.toFixed(2),
       hasDiscount: discountAmount > 0.001,
       isIdle: s.checkoutState === 'idle',
       isRedirecting: s.checkoutState === 'redirecting',
-      isCheckoutOpen: s.checkoutState === 'checkout',
       isPaid: s.checkoutState === 'paid',
-      startCheckout: () => this.startCheckout(),
-      cancelCheckout: () => this.cancelCheckout(),
-      confirmCheckout: () => this.confirmCheckout()
+      startCheckout: () => this.startCheckout()
     };
   }
 }
