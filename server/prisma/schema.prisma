@@ -108,14 +108,20 @@ model DiscountTier {
 }
 
 model Settings {
-  id                 Int      @id @default(1)
-  quoteEnabled       Boolean  @default(true)
-  hourlyRateCents    Int
-  marginPct          Float
-  setupFeeCents      Int
-  quoteExpiryMinutes Int      @default(60)
-  recaptchaMinScore  Float    @default(0.5)
-  updatedAt          DateTime @updatedAt
+  id                  Int      @id @default(1)
+  quoteEnabled        Boolean  @default(true)
+  hourlyRateCents     Int
+  marginPct           Float
+  setupFeeCents       Int
+  quoteExpiryMinutes  Int      @default(60)
+  recaptchaMinScore   Float    @default(0.5)
+  // Panier minimum : sous ce montant, smallOrderFeeCents s'ajoute au total
+  // au lieu de bloquer la commande (le front affiche un message invitant à
+  // ajouter des articles pour l'éviter) — appliqué au checkout (phase
+  // Stripe), pas au devis lui-même.
+  minOrderCents       Int      @default(2000)
+  smallOrderFeeCents  Int      @default(500)
+  updatedAt           DateTime @updatedAt
 }
 
 model Counter {

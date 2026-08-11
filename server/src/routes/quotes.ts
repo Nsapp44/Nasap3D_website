@@ -109,6 +109,7 @@ export async function quoteRoutes(app: FastifyInstance) {
       const sliced = await sliceModel(tmpPath, {
         printer,
         materialKey: material.key,
+        qualityKey: quality.key,
         densityGCm3: material.densityGCm3,
         layerHeightMm: quality.layerHeightMm,
         infillPct,

@@ -6,17 +6,35 @@ import path from "node:path";
 
 const execFileAsync = promisify(execFile);
 
-// Typical nozzle/bed temperatures per material family. These only need to be
-// "plausible enough that the slicer inserts sane heat/cool timing" — unlike
-// pricePerKgCents they don't move the price and so aren't admin-configurable.
+// Nozzle/bed temperatures per material family. Sourced from Bambu Lab's own
+// official BambuStudio filament profiles (bambulab/BambuStudio, resources/
+// profiles/BBL/filament/), fetched and read directly — not guessed. PP has
+// no official Bambu profile, kept as a placeholder. These don't move the
+// price (only weight/time do), so precision here matters less than for
+// densities/speeds below.
 const MATERIAL_TEMPS: Record<string, { nozzle: number; bed: number }> = {
-  PLA: { nozzle: 210, bed: 60 },
-  PETG: { nozzle: 240, bed: 80 },
-  ABS: { nozzle: 250, bed: 100 },
-  ASA: { nozzle: 250, bed: 100 },
-  TPU: { nozzle: 220, bed: 50 },
-  Nylon: { nozzle: 260, bed: 80 },
-  PP: { nozzle: 240, bed: 100 },
+  PLA: { nozzle: 220, bed: 55 },
+  PETG: { nozzle: 245, bed: 70 },
+  ABS: { nozzle: 270, bed: 90 },
+  ASA: { nozzle: 270, bed: 100 },
+  TPU: { nozzle: 230, bed: 50 },
+  Nylon: { nozzle: 280, bed: 80 }, // Bambu PA-CF @base — closest official profile to our carbon-fiber nylon colors
+  PP: { nozzle: 240, bed: 100 }, // no official Bambu profile — placeholder
+};
+
+// Wall/infill/travel speeds and acceleration per quality tier, read from
+// Bambu Lab's own H2C process profiles (0.20mm Standard, 0.12mm High
+// Quality — closest match for "Rapide" is their 0.24mm Standard tier, since
+// 0.4mm nozzles don't have an official 0.28mm preset). Used as the
+// reference for all three machines per the user's instruction, since X1C/
+// X2D-specific exports weren't fetched.
+const QUALITY_SPEEDS: Record<string, {
+  outerWall: number; innerWall: number; infill: number; solidInfill: number;
+  topSurface: number; travel: number; firstLayer: number; accel: number;
+}> = {
+  Rapide: { outerWall: 200, innerWall: 300, infill: 350, solidInfill: 250, topSurface: 200, travel: 1000, firstLayer: 50, accel: 8000 },
+  Standard: { outerWall: 200, innerWall: 300, infill: 350, solidInfill: 250, topSurface: 200, travel: 1000, firstLayer: 50, accel: 8000 },
+  Fine: { outerWall: 60, innerWall: 120, infill: 100, solidInfill: 100, topSurface: 60, travel: 500, firstLayer: 30, accel: 4000 },
 };
 
 export interface ModelInfo {
@@ -107,6 +125,7 @@ function parseGcodeVolume(gcode: string): number | null {
 export interface SliceOptions {
   printer: PrinterProfile;
   materialKey: string;
+  qualityKey: string;
   densityGCm3: number;
   layerHeightMm: number;
   infillPct: number;
@@ -120,6 +139,7 @@ export interface SliceResult {
 
 export async function sliceModel(filePath: string, opts: SliceOptions): Promise<SliceResult> {
   const temps = MATERIAL_TEMPS[opts.materialKey] || MATERIAL_TEMPS.PLA;
+  const speeds = QUALITY_SPEEDS[opts.qualityKey] || QUALITY_SPEEDS.Standard;
   const printerIni = await readFile(opts.printer.iniPath, "utf8");
 
   const dir = await mkdtemp(path.join(tmpdir(), "nasap3d-slice-"));
@@ -137,6 +157,19 @@ export async function sliceModel(filePath: string, opts: SliceOptions): Promise<
       `perimeters = 2`,
       `top_solid_layers = 4`,
       `bottom_solid_layers = 4`,
+      // Vitesses/accélération réelles Bambu Lab (H2C, voir MATERIAL_TEMPS/
+      // QUALITY_SPEEDS ci-dessus pour la source) — remplacent les vitesses
+      // par défaut de PrusaSlicer, bien trop lentes pour ces machines.
+      `external_perimeter_speed = ${speeds.outerWall}`,
+      `perimeter_speed = ${speeds.innerWall}`,
+      `infill_speed = ${speeds.infill}`,
+      `solid_infill_speed = ${speeds.solidInfill}`,
+      `top_solid_infill_speed = ${speeds.topSurface}`,
+      `travel_speed = ${speeds.travel}`,
+      `first_layer_speed = ${speeds.firstLayer}`,
+      `default_acceleration = ${speeds.accel}`,
+      `perimeter_acceleration = ${speeds.accel}`,
+      `infill_acceleration = ${speeds.accel}`,
     ].join("\n");
     const configPath = path.join(dir, "config.ini");
     await writeFile(configPath, configLines);

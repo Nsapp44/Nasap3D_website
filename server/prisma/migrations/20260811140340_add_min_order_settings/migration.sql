@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Settings" ADD COLUMN     "minOrderCents" INTEGER NOT NULL DEFAULT 2000,
+ADD COLUMN     "smallOrderFeeCents" INTEGER NOT NULL DEFAULT 500;

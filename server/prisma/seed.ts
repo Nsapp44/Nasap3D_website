@@ -18,7 +18,7 @@ const MATERIALS: {
   {
     key: "PLA",
     label: "PLA",
-    densityGCm3: 1.24,
+    densityGCm3: 1.26,
     pricePerKgCents: 2200,
     colors: [
       ["Jade White", "#f4f4ef"], ["Beige", "#dcc6a0"], ["Green", "#00744d"],
@@ -34,7 +34,7 @@ const MATERIALS: {
   {
     key: "PETG",
     label: "PETG HF",
-    densityGCm3: 1.27,
+    densityGCm3: 1.28,
     pricePerKgCents: 2600,
     colors: [
       ["White", "#f4f4ef"], ["Black", "#0f0f0f"], ["Gray", "#8e9089"],
@@ -58,7 +58,7 @@ const MATERIALS: {
   {
     key: "ASA",
     label: "ASA",
-    densityGCm3: 1.07,
+    densityGCm3: 1.05,
     pricePerKgCents: 2800,
     colors: [
       ["White", "#f4f4ef"], ["Black", "#0f0f0f"], ["Gray", "#8e9089"],
@@ -68,7 +68,7 @@ const MATERIALS: {
   {
     key: "TPU",
     label: "TPU 95A",
-    densityGCm3: 1.21,
+    densityGCm3: 1.22,
     pricePerKgCents: 3200,
     colors: [
       ["Black", "#0f0f0f"], ["White", "#f4f4ef"], ["Red", "#c0141b"],
@@ -78,7 +78,7 @@ const MATERIALS: {
   {
     key: "Nylon",
     label: "PA (Nylon)",
-    densityGCm3: 1.14,
+    densityGCm3: 1.09,
     pricePerKgCents: 4500,
     colors: [
       ["Black (CF)", "#0f0f0f"], ["Gray (CF)", "#6b6d66"], ["Natural", "#d8d3c8"],
@@ -164,6 +164,8 @@ async function main() {
       setupFeeCents: 300,
       quoteExpiryMinutes: 60,
       recaptchaMinScore: 0.5,
+      minOrderCents: 2000,
+      smallOrderFeeCents: 500,
     },
     update: {},
   });
