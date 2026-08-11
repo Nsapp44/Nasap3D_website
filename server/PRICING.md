@@ -62,6 +62,10 @@ plus honnête :
   matériau) et peut aussi influencer le temps si vous réglez des vitesses
   différentes par matériau plus tard.
 
+*Exemples régénérés après intégration des données officielles Bambu Lab
+(vitesses/accélérations H2C, températures/densités matériaux) — voir
+« Limites connues » plus bas pour la source.*
+
 ## Exemple chiffré n°1 — petite pièce, PLA, qualité Standard
 
 Cube de test 30×30×30mm, PLA, remplissage 40%, qualité Standard (couche
@@ -69,19 +73,19 @@ Cube de test 30×30×30mm, PLA, remplissage 40%, qualité Standard (couche
 
 | Mesure par le slicer | Valeur |
 |---|---|
-| Poids | 16,98 g |
-| Temps estimé | 33,7 min |
+| Poids | 17,25 g |
+| Temps estimé | 35,3 min |
 
 | Calcul | Détail | Résultat |
 |---|---|---|
-| Coût matière | 16,98 g ÷ 1000 × 22,00 €/kg | 0,374 € |
-| Coût machine | 33,7 min ÷ 60 × 15,00 €/h | 8,425 € |
+| Coût matière | 17,25 g ÷ 1000 × 22,00 €/kg | 0,380 € |
+| Coût machine | 35,3 min ÷ 60 × 15,00 €/h | 8,825 € |
 | Frais fixes | — | 3,00 € |
-| Avant marge | 0,374 + 8,425 + 3,00 | 11,80 € |
-| Prix unitaire | 11,80 € × 1,30 (marge 30%) | **15,34 €** |
-| Sous-total (×3) | 15,34 € × 3 | 46,02 € |
+| Avant marge | 0,380 + 8,825 + 3,00 | 12,21 € |
+| Prix unitaire | 12,21 € × 1,30 (marge 30%) | **15,87 €** |
+| Sous-total (×3) | 15,87 € × 3 | 47,61 € |
 | Remise | qté 3 < 5 → 0% | — |
-| **Total** | | **46,02 €** |
+| **Total** | | **47,61 €** |
 
 ## Exemple chiffré n°2 — pièce plus grosse, PETG, qualité Fine
 
@@ -90,16 +94,21 @@ Cube de test 50×50×50mm, PETG, remplissage 60%, qualité Fine (couche
 
 | Mesure par le slicer | Valeur |
 |---|---|
-| Poids | 102,36 g |
-| Temps estimé | 241,47 min (4h01) |
+| Poids | 103,16 g |
+| Temps estimé | 348,9 min (5h49) |
 
 | Calcul | Détail | Résultat |
 |---|---|---|
-| Coût matière | 102,36 g ÷ 1000 × 26,00 €/kg | 2,661 € |
-| Coût machine | 241,47 min ÷ 60 × 15,00 €/h | 60,367 € |
+| Coût matière | 103,16 g ÷ 1000 × 26,00 €/kg | 2,682 € |
+| Coût machine | 348,9 min ÷ 60 × 15,00 €/h | 87,221 € |
 | Frais fixes | — | 3,00 € |
-| Avant marge | 2,661 + 60,367 + 3,00 | 66,03 € |
-| **Total (qté 1)** | 66,03 € × 1,30 | **85,84 €** |
+| Avant marge | 2,682 + 87,221 + 3,00 | 92,90 € |
+| **Total (qté 1)** | 92,90 € × 1,30 | **120,77 €** |
+
+On voit ici l'effet des vraies vitesses Bambu : en qualité Fine, la machine
+ralentit beaucoup (couches fines = bien plus de passes) — 5h49 contre les
+~4h qu'aurait donné une estimation à vitesse « Standard », ce qui aurait
+sous-facturé le temps machine réel.
 
 On voit bien ici que c'est le **temps machine qui domine largement** le prix
 sur une pièce volumineuse en qualité fine — cohérent avec la réalité d'un
@@ -122,11 +131,17 @@ admin de prix branché (prochaine étape), ajustez-les à vos chiffres réels.
 
 ## Limites connues
 
-- **Vitesses d'impression approximées.** Les profils PrusaSlicer utilisent des
-  vitesses génériques « imprimante CoreXY rapide », pas un calibrage réel de
-  vos machines. Vous nous avez proposé de fournir vos réglages BambuStudio
-  réels (au moins pour la H2C) — une fois reçus, `server/slicer-profiles/`
-  sera mis à jour pour coller à vos temps réels.
+- **Vitesses d'impression : données officielles Bambu Lab, mais génériques.**
+  Les vitesses/accélérations viennent directement des profils BambuStudio
+  publiés par Bambu Lab eux-mêmes (dépôt public `bambulab/BambuStudio`,
+  profils H2C — pris comme référence pour les 3 machines) : ce ne sont donc
+  plus des estimations inventées, mais les vraies valeurs d'usine. Elles
+  restent génériques (pas *vos* réglages personnels calibrés dans
+  BambuStudio) — vous avez proposé de nous fournir votre bundle de config
+  exporté ; on pourra affiner encore avec si besoin.
+- **PP sans profil officiel.** Bambu Lab ne publie pas de profil pour le PP —
+  ses températures restent une estimation raisonnable, pas une donnée
+  constructeur.
 - **Assemblages multi-pièces complexes** (ex. un fichier CAO avec plusieurs
   corps mal positionnés) peuvent échouer à l'analyse — l'API renvoie une
   erreur claire plutôt qu'un prix faux.
