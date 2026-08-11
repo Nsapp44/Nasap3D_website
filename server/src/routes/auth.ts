@@ -16,6 +16,9 @@ import {
 import { publicUser } from "../lib/serialize.js";
 import { generateToken, hashToken } from "../lib/tokens.js";
 import { sendMail } from "../lib/mailer.js";
+import { mergeGuestCartIntoUser } from "../lib/cart.js";
+
+const GUEST_COOKIE = "n3d_guest";
 
 const credentialsSchema = z.object({
   email: z.string(),
@@ -52,6 +55,9 @@ export async function authRoutes(app: FastifyInstance) {
       },
     });
 
+    const guestSessionId = request.cookies[GUEST_COOKIE];
+    if (guestSessionId) await mergeGuestCartIntoUser(guestSessionId, user.id);
+
     const { raw, expiresAt } = await createSession(user.id);
     setSessionCookie(reply, raw, expiresAt);
     return reply.code(201).send({ user: publicUser(user) });
@@ -72,6 +78,9 @@ export async function authRoutes(app: FastifyInstance) {
     if (!user || user.deletedAt || !(await verifyPassword(user.passwordHash, password))) {
       return reply.code(401).send({ error: "invalid_credentials" });
     }
+
+    const guestSessionId = request.cookies[GUEST_COOKIE];
+    if (guestSessionId) await mergeGuestCartIntoUser(guestSessionId, user.id);
 
     const { raw, expiresAt } = await createSession(user.id);
     setSessionCookie(reply, raw, expiresAt);

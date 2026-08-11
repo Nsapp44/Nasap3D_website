@@ -11,3 +11,6 @@ dist/
 .env
 .env.local
 server/uploads/
+# Local-only PrusaSlicer install used for dev/testing (see server/README.md) —
+# not part of the app, never committed; production installs it via Docker.
+server/.tools/
