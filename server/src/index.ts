@@ -10,6 +10,8 @@ import { quoteRoutes } from "./routes/quotes.js";
 import { materialRoutes } from "./routes/materials.js";
 import { adminRoutes } from "./routes/admin.js";
 import { cartRoutes } from "./routes/cart.js";
+import { checkoutRoutes, stripeWebhookRoutes } from "./routes/checkout.js";
+import { customerOrderRoutes } from "./routes/orders.js";
 
 const app = Fastify({ logger: true });
 
@@ -42,6 +44,11 @@ await app.register(quoteRoutes);
 await app.register(materialRoutes);
 await app.register(adminRoutes);
 await app.register(cartRoutes);
+await app.register(checkoutRoutes);
+await app.register(customerOrderRoutes);
+// Own encapsulated scope: registers a raw-buffer body parser needed to
+// verify Stripe's webhook signature, without affecting any other route.
+await app.register(stripeWebhookRoutes);
 
 const port = Number(process.env.PORT || 3000);
 app
