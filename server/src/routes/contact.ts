@@ -36,11 +36,18 @@ export async function contactRoutes(app: FastifyInstance) {
 
     const notify = process.env.CONTACT_NOTIFY_EMAIL;
     if (notify) {
-      await sendMail(
-        notify,
-        `[Contact Nasap3D] ${body.data.subject}`,
-        `De : ${body.data.name} <${body.data.email}>\n\n${body.data.message || "(pas de message)"}`,
-      );
+      // The message is already saved above — a mail hiccup (SMTP down,
+      // misconfigured) must not turn into a 500 for someone who just
+      // successfully submitted the form.
+      try {
+        await sendMail(
+          notify,
+          `[Contact Nasap3D] ${body.data.subject}`,
+          `De : ${body.data.name} <${body.data.email}>\n\n${body.data.message || "(pas de message)"}`,
+        );
+      } catch (err) {
+        request.log.error(err, "contact notification email failed");
+      }
     }
 
     return reply.send({ ok: true });

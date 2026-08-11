@@ -1,4 +1,4 @@
-import { randomBytes, createHash } from "node:crypto";
+import { randomBytes, randomInt, createHash } from "node:crypto";
 
 // Opaque bearer tokens (session/refresh/password-reset): the raw value is
 // handed to the client once and never stored — only its SHA-256 hash is
@@ -10,4 +10,11 @@ export function generateToken(): string {
 
 export function hashToken(raw: string): string {
   return createHash("sha256").update(raw).digest("hex");
+}
+
+// Email verification code: short enough to type by hand. Low entropy on its
+// own (1 in 1,000,000) — safe only because the routes using it also enforce
+// a short expiry and a small max-attempts count (see src/routes/auth.ts).
+export function generateNumericCode(): string {
+  return String(randomInt(100000, 1000000));
 }

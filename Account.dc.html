@@ -114,6 +114,17 @@ a:hover{color:#ff7a5c}
             <div onClick="{{ confirmPopup }}" style="background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:9px 18px;border-radius:6px;cursor:pointer">Supprimer</div>
           </div>
         </sc-if>
+        <sc-if value="{{ isCodePopup }}" hint-placeholder-val="{{ false }}">
+          <input value="{{ verifyCode }}" onChange="{{ onVerifyCode }}" type="text" inputmode="numeric" maxlength="6" placeholder="123456" style="width:140px;box-sizing:border-box;height:40px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:16px ui-monospace,monospace;letter-spacing:4px;text-align:center;color:#e8e6e1;outline:none;margin-bottom:12px" />
+          <sc-if value="{{ hasVerifyMessage }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-bottom:12px;font:600 11px 'Inter',sans-serif;color:{{ verifyMessageColor }}">{{ verifyMessage }}</div>
+          </sc-if>
+          <div style="display:flex;gap:10px;justify-content:center;margin-bottom:12px">
+            <div onClick="{{ closePopup }}" style="border:1px solid rgba(255,255,255,.2);color:#f3f1ec;font:600 12px 'Inter',sans-serif;padding:9px 18px;border-radius:6px;cursor:pointer">Annuler</div>
+            <div onClick="{{ onVerifySubmit }}" style="{{ verifySubmitStyle }}">Confirmer</div>
+          </div>
+          <div onClick="{{ onResendCode }}" style="font:500 11px 'Inter',sans-serif;color:rgba(255,255,255,.5);cursor:pointer;text-decoration:underline">Renvoyer le code</div>
+        </sc-if>
       </div>
     </div>
   </sc-if>
@@ -133,6 +144,13 @@ a:hover{color:#ff7a5c}
           <div onClick="{{ logout }}" style="border:1px solid rgba(255,255,255,.2);color:#f3f1ec;font:500 12px 'Inter',sans-serif;padding:9px 16px;border-radius:6px;cursor:pointer">Se déconnecter</div>
         </div>
       </div>
+
+      <sc-if value="{{ needsEmailVerification }}" hint-placeholder-val="{{ false }}">
+      <div style="border:1px solid rgba(255,90,60,.3);background:rgba(255,90,60,.06);border-radius:10px;padding:15px 18px;margin-bottom:32px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+        <div style="font:400 11.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.6)"><strong style="color:#f3f1ec;font-weight:600">Adresse email non vérifiée.</strong> Un code vous a été envoyé à {{ authEmail }}.</div>
+        <div onClick="{{ openVerifyPopup }}" style="flex:none;background:#ff5a3c;color:#161514;font:600 11.5px 'Inter',sans-serif;padding:8px 16px;border-radius:6px;cursor:pointer">Entrer le code</div>
+      </div>
+      </sc-if>
 
       <div style="border:1px solid rgba(255,90,60,.3);background:rgba(255,90,60,.06);border-radius:10px;padding:15px 18px;margin-bottom:32px;display:flex;gap:12px;align-items:flex-start">
         <span style="color:#ff5a3c;flex:none;margin-top:1px"><svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span>
@@ -253,7 +271,8 @@ class Component extends DCLogic {
     view: 'dashboard', customerNo: '',
     newEmail: '', emailCurPwd: '', curPwd: '', newPwd: '', confirmPwd: '', deletePwd: '',
     resetToken: null, resetNewPwd: '', resetConfirmPwd: '',
-    orders: [], rawInvoices: []
+    orders: [], rawInvoices: [],
+    emailVerified: true, verifyCode: '', verifyMessage: null, verifyMessageOk: false, verifyBusy: false, verifyPurpose: null
   };
 
   componentDidMount() {
@@ -285,7 +304,7 @@ class Component extends DCLogic {
     const res = await api.me();
     if (res.ok && res.data && res.data.user) {
       const u = res.data.user;
-      this.setState({ loggedIn: true, authEmail: u.email, customerNo: u.customerNo, view: 'dashboard' });
+      this.setState({ loggedIn: true, authEmail: u.email, customerNo: u.customerNo, view: 'dashboard', emailVerified: u.emailVerified });
       this._loadOrdersAndInvoices();
     }
   }
@@ -346,7 +365,84 @@ class Component extends DCLogic {
       window.location.href = 'Admin.dc.html';
       return;
     }
-    this.setState({ loggedIn: true, authEmail: u.email, customerNo: u.customerNo, authPassword: '', view: 'dashboard' });
+    this.setState({ loggedIn: true, authEmail: u.email, customerNo: u.customerNo, authPassword: '', view: 'dashboard', emailVerified: u.emailVerified });
+    if (s.authMode === 'signup' && !u.emailVerified) this.openVerifyPopup();
+  }
+  openVerifyPopup() {
+    this.setState({
+      popupMessage: 'Un code à 6 chiffres a été envoyé à ' + this.state.authEmail + '. Saisissez-le pour vérifier votre adresse.',
+      popupConfirm: 'verify-code', verifyPurpose: 'signup', verifyCode: '', verifyMessage: null
+    });
+  }
+  async submitVerify() {
+    const s = this.state;
+    if (s.verifyBusy || s.verifyCode.trim().length !== 6) return;
+    this.setState({ verifyBusy: true, verifyMessage: null });
+    const api = await this._api();
+
+    if (s.verifyPurpose === 'signup') {
+      const res = await api.verifyEmail(s.verifyCode.trim());
+      this.setState({ verifyBusy: false });
+      if (res.ok && res.data && res.data.ok) {
+        this.setState({ emailVerified: true, popupMessage: 'Adresse email vérifiée.', popupConfirm: null, verifyPurpose: null, verifyCode: '' });
+        return;
+      }
+      this.setState({ verifyMessage: this._verifyErrorMessage(res.data), verifyMessageOk: false });
+      return;
+    }
+
+    if (s.verifyPurpose === 'email') {
+      const res = await api.confirmEmailChange(s.verifyCode.trim());
+      this.setState({ verifyBusy: false });
+      if (res.ok && res.data && res.data.user) {
+        this.setState({
+          authEmail: res.data.user.email, emailVerified: true, newEmail: '', emailCurPwd: '',
+          popupMessage: 'Votre adresse e-mail a été mise à jour : ' + res.data.user.email,
+          popupConfirm: null, verifyPurpose: null, verifyCode: ''
+        });
+        return;
+      }
+      this.setState({ verifyMessage: this._verifyErrorMessage(res.data), verifyMessageOk: false });
+      return;
+    }
+
+    if (s.verifyPurpose === 'password') {
+      const res = await api.confirmPasswordChange(s.verifyCode.trim());
+      this.setState({ verifyBusy: false });
+      if (res.ok && res.data && res.data.ok) {
+        this.setState({
+          curPwd: '', newPwd: '', confirmPwd: '',
+          popupMessage: 'Votre mot de passe a été modifié avec succès.',
+          popupConfirm: null, verifyPurpose: null, verifyCode: ''
+        });
+        return;
+      }
+      this.setState({ verifyMessage: this._verifyErrorMessage(res.data), verifyMessageOk: false });
+    }
+  }
+  _verifyErrorMessage(data) {
+    const messages = {
+      wrong_code: 'Code incorrect.',
+      no_pending_code: 'Aucun code en attente — cliquez sur "Renvoyer le code".',
+      too_many_attempts: 'Trop de tentatives — cliquez sur "Renvoyer le code" pour en obtenir un nouveau.',
+      email_taken: 'Cette adresse e-mail est déjà utilisée par un autre compte.',
+    };
+    return messages[data && data.error] || 'Une erreur est survenue.';
+  }
+  async resendCode() {
+    const s = this.state;
+    const api = await this._api();
+    this.setState({ verifyMessage: null });
+    let res;
+    if (s.verifyPurpose === 'email') res = await api.requestEmailChange(s.newEmail, s.emailCurPwd);
+    else if (s.verifyPurpose === 'password') res = await api.requestPasswordChange(s.curPwd, s.newPwd);
+    else res = await api.resendVerification();
+    if (res.ok) {
+      this.setState({ verifyMessage: 'Un nouveau code a été envoyé.', verifyMessageOk: true });
+    } else {
+      const messages = { too_soon: 'Patientez un instant avant de redemander un code.' };
+      this.setState({ verifyMessage: messages[res.data && res.data.error] || 'Une erreur est survenue.', verifyMessageOk: false });
+    }
   }
   toggleShowPassword() {
     this.setState(s => ({ showPassword: !s.showPassword }));
@@ -389,7 +485,7 @@ class Component extends DCLogic {
     });
   }
   closePopup() {
-    this.setState({ popupMessage: null, popupConfirm: null });
+    this.setState({ popupMessage: null, popupConfirm: null, verifyPurpose: null, verifyCode: '', verifyMessage: null });
   }
   async logout() {
     const api = await this._api();
@@ -401,7 +497,7 @@ class Component extends DCLogic {
   }
   goSettings() { this.setState({ view: 'settings' }); }
   goDashboard() { this.setState({ view: 'dashboard', newEmail: '', emailCurPwd: '', curPwd: '', newPwd: '', confirmPwd: '', deletePwd: '' }); }
-  async changeEmail() {
+  async requestEmailChange() {
     const s = this.state;
     if (s.busy) return;
     if (!this._isValidEmail(s.newEmail)) {
@@ -414,15 +510,18 @@ class Component extends DCLogic {
     }
     this.setState({ busy: true });
     const api = await this._api();
-    const res = await api.changeEmail(s.newEmail, s.emailCurPwd);
+    const res = await api.requestEmailChange(s.newEmail, s.emailCurPwd);
     this.setState({ busy: false });
     if (!res.ok) {
       this.setState({ popupMessage: this._errorMessage(res.data) });
       return;
     }
-    this.setState({ authEmail: s.newEmail, newEmail: '', emailCurPwd: '', popupMessage: 'Votre adresse e-mail a été mise à jour : ' + s.newEmail });
+    this.setState({
+      popupMessage: 'Un code à 6 chiffres a été envoyé à ' + s.newEmail + '. Saisissez-le pour confirmer ce changement.',
+      popupConfirm: 'verify-code', verifyPurpose: 'email', verifyCode: '', verifyMessage: null
+    });
   }
-  async changePassword() {
+  async requestPasswordChange() {
     const s = this.state;
     if (s.busy) return;
     if (!this._isValidPassword(s.newPwd)) {
@@ -435,13 +534,16 @@ class Component extends DCLogic {
     }
     this.setState({ busy: true });
     const api = await this._api();
-    const res = await api.changePassword(s.curPwd, s.newPwd);
+    const res = await api.requestPasswordChange(s.curPwd, s.newPwd);
     this.setState({ busy: false });
     if (!res.ok) {
       this.setState({ popupMessage: this._errorMessage(res.data) });
       return;
     }
-    this.setState({ curPwd: '', newPwd: '', confirmPwd: '', popupMessage: 'Votre mot de passe a été modifié avec succès.' });
+    this.setState({
+      popupMessage: 'Un code à 6 chiffres a été envoyé à ' + s.authEmail + '. Saisissez-le pour confirmer ce changement.',
+      popupConfirm: 'verify-code', verifyPurpose: 'password', verifyCode: '', verifyMessage: null
+    });
   }
   deleteAccount() {
     if (!this.state.deletePwd) {
@@ -523,9 +625,24 @@ class Component extends DCLogic {
       pdfUrl: this._apiMod ? this._apiMod.invoicePdfUrl(inv.id) : '#'
     }));
     const isResetPassword = !!s.resetToken;
+    const verifyReady = s.verifyCode.trim().length === 6 && !s.verifyBusy;
     return {
       cartCount: s.cartCount,
       isResetPassword,
+      needsEmailVerification: s.loggedIn && !s.emailVerified,
+      verifyCode: s.verifyCode,
+      onVerifyCode: (e) => this.setState({ verifyCode: e.target.value.replace(/\D/g, '').slice(0, 6) }),
+      onVerifySubmit: () => this.submitVerify(),
+      onResendCode: () => this.resendCode(),
+      verifySubmitStyle: {
+        background: verifyReady ? '#ff5a3c' : '#3a3936',
+        color: verifyReady ? '#161514' : 'rgba(255,255,255,.4)',
+        font: "600 12px 'Inter',sans-serif", padding: '9px 16px', borderRadius: '6px',
+        cursor: verifyReady ? 'pointer' : 'not-allowed'
+      },
+      hasVerifyMessage: !!s.verifyMessage,
+      verifyMessage: s.verifyMessage,
+      verifyMessageColor: s.verifyMessageOk ? '#4ade80' : '#ff8a70',
       resetNewPwd: s.resetNewPwd,
       resetConfirmPwd: s.resetConfirmPwd,
       onResetNewPwd: (e) => this.setState({ resetNewPwd: e.target.value }),
@@ -584,10 +701,12 @@ class Component extends DCLogic {
       onNewPwd: (e) => this.setState({ newPwd: e.target.value }),
       onConfirmPwd: (e) => this.setState({ confirmPwd: e.target.value }),
       onDeletePwd: (e) => this.setState({ deletePwd: e.target.value }),
-      changeEmail: () => this.changeEmail(),
-      changePassword: () => this.changePassword(),
+      changeEmail: () => this.requestEmailChange(),
+      changePassword: () => this.requestPasswordChange(),
       deleteAccount: () => this.deleteAccount(),
-      hasPopupConfirm: !!s.popupConfirm,
+      openVerifyPopup: () => this.openVerifyPopup(),
+      hasPopupConfirm: s.popupConfirm === 'delete',
+      isCodePopup: s.popupConfirm === 'verify-code',
       isPlainPopup: !s.popupConfirm,
       confirmPopup: () => this.confirmPopup()
     };

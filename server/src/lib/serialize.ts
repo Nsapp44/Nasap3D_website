@@ -9,6 +9,7 @@ export function publicUser(user: User) {
     email: user.email,
     customerNo: user.customerNo,
     role: user.role,
+    emailVerified: user.emailVerifiedAt != null,
     createdAt: user.createdAt,
   };
 }

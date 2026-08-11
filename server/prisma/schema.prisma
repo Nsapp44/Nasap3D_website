@@ -32,21 +32,23 @@ enum QuoteJobStatus {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  passwordHash String
-  customerNo   String    @unique
-  role         Role      @default(CLIENT)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime?
+  id              String    @id @default(cuid())
+  email           String    @unique
+  passwordHash    String
+  customerNo      String    @unique
+  role            Role      @default(CLIENT)
+  emailVerifiedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
 
-  orders        Order[]
-  invoices      Invoice[]
-  quoteJobs     QuoteJob[]
-  cartItems     CartItem[]
-  refreshTokens RefreshToken[]
-  resetTokens   PasswordResetToken[]
+  orders             Order[]
+  invoices           Invoice[]
+  quoteJobs          QuoteJob[]
+  cartItems          CartItem[]
+  refreshTokens      RefreshToken[]
+  resetTokens        PasswordResetToken[]
+  verificationCodes  VerificationCode[]
 }
 
 model RefreshToken {
@@ -71,6 +73,37 @@ model PasswordResetToken {
   createdAt DateTime  @default(now())
 
   @@index([userId])
+}
+
+enum VerificationPurpose {
+  SIGNUP
+  EMAIL_CHANGE
+  PASSWORD_CHANGE
+}
+
+// A 6-digit code rather than an emailed link (simpler UX: type the code
+// instead of switching to the email app and clicking through) — shared by
+// three flows: verifying a new account, confirming a new email address, and
+// confirming a password change (see src/lib/verification.ts). `payload`
+// carries whatever the confirm step needs to apply once the code checks out
+// (the new email, or the new password's hash) — nothing sensitive lives
+// here that isn't already what the change itself would store.
+// codeHash is intentionally not unique — a coincidence between two users'
+// codes is expected and harmless; verification is scoped by userId+purpose
+// (the endpoint requires an active session) plus expiresAt/attempts.
+model VerificationCode {
+  id        String              @id @default(cuid())
+  userId    String
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purpose   VerificationPurpose
+  codeHash  String
+  payload   String?
+  attempts  Int                 @default(0)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime            @default(now())
+
+  @@index([userId, purpose])
 }
 
 model Material {

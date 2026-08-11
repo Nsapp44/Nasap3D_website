@@ -72,11 +72,23 @@ export const api = {
   async resetPassword(token, newPassword) {
     return request('POST', '/auth/reset-password', { token, newPassword });
   },
-  async changeEmail(newEmail, currentPassword) {
-    return request('PATCH', '/account/email', { newEmail, currentPassword });
+  async verifyEmail(code) {
+    return request('POST', '/auth/verify-email', { code });
   },
-  async changePassword(currentPassword, newPassword) {
-    return request('PATCH', '/account/password', { currentPassword, newPassword });
+  async resendVerification() {
+    return request('POST', '/auth/resend-verification');
+  },
+  async requestEmailChange(newEmail, currentPassword) {
+    return request('POST', '/account/email/request-change', { newEmail, currentPassword });
+  },
+  async confirmEmailChange(code) {
+    return request('POST', '/account/email/confirm-change', { code });
+  },
+  async requestPasswordChange(currentPassword, newPassword) {
+    return request('POST', '/account/password/request-change', { currentPassword, newPassword });
+  },
+  async confirmPasswordChange(code) {
+    return request('POST', '/account/password/confirm-change', { code });
   },
   async deleteAccount(currentPassword) {
     return request('DELETE', '/account', { currentPassword });

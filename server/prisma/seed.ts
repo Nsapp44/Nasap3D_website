@@ -183,6 +183,9 @@ async function main() {
         passwordHash: adminHash,
         customerNo: await nextCustomerNo(),
         role: "ADMIN",
+        // Seeded, not signed up through the real flow — no verification
+        // email was ever sent, so there's nothing to confirm.
+        emailVerifiedAt: new Date(),
       },
     });
     console.log(`  created admin account: ${adminEmail}`);
@@ -204,6 +207,7 @@ async function main() {
         passwordHash: testHash,
         customerNo: await nextCustomerNo(),
         role: "CLIENT",
+        emailVerifiedAt: new Date(),
       },
     });
     console.log(`  created test account: ${testEmail}`);

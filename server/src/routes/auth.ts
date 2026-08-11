@@ -17,6 +17,15 @@ import { publicUser } from "../lib/serialize.js";
 import { generateToken, hashToken } from "../lib/tokens.js";
 import { sendMail } from "../lib/mailer.js";
 import { mergeGuestCartIntoUser } from "../lib/cart.js";
+import { requireAuth } from "../lib/session.js";
+import {
+  createAndSendVerificationCode,
+  consumeVerificationCode,
+  canResend,
+  WrongCodeError,
+  NoPendingCodeError,
+  TooManyAttemptsError,
+} from "../lib/verification.js";
 
 const GUEST_COOKIE = "n3d_guest";
 
@@ -29,6 +38,16 @@ const credentialsSchema = z.object({
 async function currentRecaptchaMinScore() {
   const settings = await prisma.settings.findUnique({ where: { id: 1 } });
   return settings?.recaptchaMinScore ?? 0.5;
+}
+
+function sendSignupVerification(userId: string, email: string) {
+  return createAndSendVerificationCode(
+    userId,
+    "SIGNUP",
+    email,
+    "Votre code de vérification Nasap3D",
+    "Bienvenue chez Nasap3D ! Saisissez ce code pour vérifier votre adresse email.",
+  );
 }
 
 export async function authRoutes(app: FastifyInstance) {
@@ -58,9 +77,44 @@ export async function authRoutes(app: FastifyInstance) {
     const guestSessionId = request.cookies[GUEST_COOKIE];
     if (guestSessionId) await mergeGuestCartIntoUser(guestSessionId, user.id);
 
+    await sendSignupVerification(user.id, user.email);
+
     const { raw, expiresAt } = await createSession(user.id);
     setSessionCookie(reply, raw, expiresAt);
     return reply.code(201).send({ user: publicUser(user) });
+  });
+
+  // Requires an active session — the code verifies "this logged-in
+  // account", it isn't a bearer credential mailed as a link. That also lets
+  // us scope attempts per account instead of per anonymous request.
+  app.post("/auth/verify-email", { preHandler: requireAuth }, async (request, reply) => {
+    const user = request.user!;
+    if (user.emailVerifiedAt) return reply.send({ ok: true, alreadyVerified: true });
+
+    const schema = z.object({ code: z.string().trim().length(6) });
+    const body = schema.safeParse(request.body);
+    if (!body.success) return reply.code(400).send({ error: "invalid_body" });
+
+    try {
+      await consumeVerificationCode(user.id, "SIGNUP", body.data.code);
+    } catch (err) {
+      if (err instanceof NoPendingCodeError) return reply.code(400).send({ error: "no_pending_code" });
+      if (err instanceof TooManyAttemptsError) return reply.code(429).send({ error: "too_many_attempts" });
+      if (err instanceof WrongCodeError) return reply.code(400).send({ error: "wrong_code" });
+      throw err;
+    }
+
+    await prisma.user.update({ where: { id: user.id }, data: { emailVerifiedAt: new Date() } });
+    return reply.send({ ok: true });
+  });
+
+  app.post("/auth/resend-verification", { preHandler: requireAuth }, async (request, reply) => {
+    const user = request.user!;
+    if (user.emailVerifiedAt) return reply.send({ ok: true, alreadyVerified: true });
+    if (!(await canResend(user.id, "SIGNUP"))) return reply.code(429).send({ error: "too_soon" });
+
+    await sendSignupVerification(user.id, user.email);
+    return reply.send({ ok: true });
   });
 
   app.post("/auth/login", async (request, reply) => {

@@ -1,7 +1,40 @@
-// TODO: plug in a real transactional email provider (OVH SMTP, Brevo,
-// Resend, ...) — no provider has been chosen yet. Until then this only logs
-// the email to the server console, so the reset-password flow stays fully
-// testable end-to-end without one.
+import nodemailer from "nodemailer";
+
+// Real transactional email via SMTP (OVH mail hosting, or any other SMTP
+// account — nothing here is OVH-specific). Falls back to logging the email
+// to the console when SMTP isn't configured, so every mail-sending flow
+// (password reset, email verification, ...) stays testable in dev without
+// real credentials — see server/README.md.
+let transporter: ReturnType<typeof nodemailer.createTransport> | null = null;
+
+function getTransporter() {
+  if (transporter) return transporter;
+  const host = process.env.SMTP_HOST;
+  const port = process.env.SMTP_PORT;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASSWORD;
+  if (!host || !port || !user || !pass) return null;
+
+  transporter = nodemailer.createTransport({
+    host,
+    port: Number(port),
+    // Port 465 is implicit TLS; 587/25 use STARTTLS negotiated after connect.
+    secure: Number(port) === 465,
+    auth: { user, pass },
+  });
+  return transporter;
+}
+
 export async function sendMail(to: string, subject: string, body: string) {
-  console.log(`[mailer] (stub — no provider configured) to=${to} subject="${subject}"\n${body}`);
+  const t = getTransporter();
+  if (!t) {
+    console.log(`[mailer] (SMTP not configured — see SMTP_* in .env) to=${to} subject="${subject}"\n${body}`);
+    return;
+  }
+  await t.sendMail({
+    from: process.env.MAIL_FROM || "Nasap3D <noreply@nasap3d.com>",
+    to,
+    subject,
+    text: body,
+  });
 }
