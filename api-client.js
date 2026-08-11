@@ -154,4 +154,7 @@ export const api = {
   async getInvoices() {
     return request('GET', '/invoices');
   },
+  invoicePdfUrl(id) {
+    return apiBase() + '/invoices/' + id + '/pdf';
+  },
 };

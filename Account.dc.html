@@ -139,11 +139,12 @@ a:hover{color:#ff7a5c}
         <div style="font:400 11.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.6)">Un souci avec une commande ou une demande d'annulation suite à une erreur ? Passez par le <a href="Contact.dc.html">formulaire de contact</a> en indiquant le <strong style="color:#f3f1ec;font-weight:600">numéro de commande dans l'objet</strong> de votre demande.</div>
       </div>
 
+      <sc-if value="{{ hasActiveOrder }}" hint-placeholder-val="{{ false }}">
       <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">Commande en cours</div>
       <div style="border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#1a1917;padding:24px;margin-bottom:36px">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:20px">
-          <div style="font:600 13px 'Space Grotesk',sans-serif;color:#f3f1ec">Commande #N3D-2841</div>
-          <div style="font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.45)">Pièce personnalisée (STL) · PLA · x2</div>
+          <div style="font:600 13px 'Space Grotesk',sans-serif;color:#f3f1ec">Commande #{{ activeOrderRef }}</div>
+          <div style="font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.45)">{{ activeOrderDesc }}</div>
         </div>
         <div style="display:flex;align-items:center;gap:0">
           <sc-for list="{{ orderSteps }}" as="step" hint-placeholder-count="3">
@@ -159,6 +160,7 @@ a:hover{color:#ff7a5c}
           </sc-for>
         </div>
       </div>
+      </sc-if>
 
       <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">Historique des commandes</div>
       <div style="display:flex;flex-direction:column;gap:10px">
@@ -174,6 +176,9 @@ a:hover{color:#ff7a5c}
             </div>
           </div>
         </sc-for>
+        <sc-if value="{{ noOrders }}" hint-placeholder-val="{{ false }}">
+          <div style="border:1px dashed rgba(255,255,255,.15);border-radius:10px;padding:24px;text-align:center;font:500 12px 'Inter',sans-serif;color:rgba(255,255,255,.4)">Aucune commande pour l'instant.</div>
+        </sc-if>
       </div>
 
       <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:1px;margin:36px 0 14px">Factures</div>
@@ -186,10 +191,13 @@ a:hover{color:#ff7a5c}
             </div>
             <div style="display:flex;align-items:center;gap:16px">
               <span style="font:700 13px 'Space Grotesk',sans-serif;color:#f3f1ec">{{ inv.amount }} €</span>
-              <div onClick="{{ inv.onDownload }}" style="display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.2);color:#f3f1ec;font:600 10.5px 'Inter',sans-serif;padding:7px 12px;border-radius:6px;cursor:pointer;transition:border-color .2s ease,color .2s ease" style-hover="border-color:#ff5a3c;color:#ff5a3c"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>PDF</div>
+              <a href="{{ inv.pdfUrl }}" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.2);color:#f3f1ec;font:600 10.5px 'Inter',sans-serif;padding:7px 12px;border-radius:6px;cursor:pointer;transition:border-color .2s ease,color .2s ease" style-hover="border-color:#ff5a3c;color:#ff5a3c"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>PDF</a>
             </div>
           </div>
         </sc-for>
+        <sc-if value="{{ noInvoices }}" hint-placeholder-val="{{ false }}">
+          <div style="border:1px dashed rgba(255,255,255,.15);border-radius:10px;padding:24px;text-align:center;font:500 12px 'Inter',sans-serif;color:rgba(255,255,255,.4)">Aucune facture pour l'instant.</div>
+        </sc-if>
       </div>
       </sc-if>
 
@@ -244,7 +252,8 @@ class Component extends DCLogic {
     popupMessage: null, popupConfirm: null, showPassword: false, busy: false,
     view: 'dashboard', customerNo: '',
     newEmail: '', emailCurPwd: '', curPwd: '', newPwd: '', confirmPwd: '', deletePwd: '',
-    resetToken: null, resetNewPwd: '', resetConfirmPwd: ''
+    resetToken: null, resetNewPwd: '', resetConfirmPwd: '',
+    orders: [], rawInvoices: []
   };
 
   componentDidMount() {
@@ -263,8 +272,9 @@ class Component extends DCLogic {
     window.removeEventListener('nasap3d-cart-changed', this._listener);
   }
   async _loadCart() {
-    const mod = await import('./cart.js');
-    this.setState({ cartCount: mod.cartCount() });
+    const api = await this._api();
+    const res = await api.getCart();
+    if (res.ok && res.data) this.setState({ cartCount: res.data.lines.reduce((n, l) => n + l.qty, 0) });
   }
   async _api() {
     if (!this._apiMod) this._apiMod = (await import('./api-client.js')).api;
@@ -276,7 +286,16 @@ class Component extends DCLogic {
     if (res.ok && res.data && res.data.user) {
       const u = res.data.user;
       this.setState({ loggedIn: true, authEmail: u.email, customerNo: u.customerNo, view: 'dashboard' });
+      this._loadOrdersAndInvoices();
     }
+  }
+  async _loadOrdersAndInvoices() {
+    const api = await this._api();
+    const [ordersRes, invoicesRes] = await Promise.all([api.getOrders(), api.getInvoices()]);
+    this.setState({
+      orders: ordersRes.ok && ordersRes.data ? ordersRes.data.orders : [],
+      rawInvoices: invoicesRes.ok && invoicesRes.data ? invoicesRes.data.invoices : []
+    });
   }
   _isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -455,11 +474,25 @@ class Component extends DCLogic {
   }
   renderVals() {
     const s = this.state;
+    const customerNo = s.customerNo;
+    const STATUS_LABELS = { PENDING: 'Devis reçu', PRINTING: 'En impression', READY: 'Expédié / Prêt', DELIVERED: 'Livré' };
+    const STATUS_STYLE = (status) => {
+      const isDelivered = status === 'DELIVERED';
+      return {
+        font: "600 10px 'Inter',sans-serif",
+        color: isDelivered ? '#8fd19e' : '#ff5a3c',
+        background: isDelivered ? 'rgba(143,209,158,.12)' : 'rgba(255,90,60,.12)',
+        borderRadius: '5px', padding: '4px 9px'
+      };
+    };
+    const fmtDate = (iso) => new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    const activeOrder = s.orders.find(o => o.status !== 'DELIVERED');
     const orderStepsRaw = ['Devis reçu', 'En impression', 'Expédié / Prêt'];
-    const currentStep = 1;
+    const activeOrderStepIdx = activeOrder ? { PENDING: 0, PRINTING: 1, READY: 2 }[activeOrder.status] ?? 0 : 0;
     const orderSteps = orderStepsRaw.map((label, i) => {
-      const done = i < currentStep;
-      const active = i === currentStep;
+      const done = i < activeOrderStepIdx;
+      const active = i === activeOrderStepIdx;
       return {
         label,
         icon: done ? '✓' : String(i + 1),
@@ -471,40 +504,24 @@ class Component extends DCLogic {
         },
         labelStyle: { font: "600 10.5px 'Inter',sans-serif", color: active ? '#f3f1ec' : (done ? 'rgba(255,255,255,.7)' : 'rgba(255,255,255,.4)'), textAlign: 'center' },
         hasLine: i < orderStepsRaw.length - 1,
-        lineStyle: { flex: 1, height: '2px', background: i < currentStep ? '#ff5a3c' : 'rgba(255,255,255,.15)', marginBottom: '24px' }
+        lineStyle: { flex: 1, height: '2px', background: i < activeOrderStepIdx ? '#ff5a3c' : 'rgba(255,255,255,.15)', marginBottom: '24px' }
       };
     });
-    const orderHistory = [
-      { ref: 'N3D-2790', desc: 'Rétro-conception — support cassé', date: '02 juin 2026', status: 'Livré', price: '68.00', statusStyle: { font: "600 10px 'Inter',sans-serif", color: '#8fd19e', background: 'rgba(143,209,158,.12)', borderRadius: '5px', padding: '4px 9px' } },
-      { ref: 'N3D-2712', desc: 'Pièce PETG x4', date: '18 mai 2026', status: 'Livré', price: '52.40', statusStyle: { font: "600 10px 'Inter',sans-serif", color: '#8fd19e', background: 'rgba(143,209,158,.12)', borderRadius: '5px', padding: '4px 9px' } },
-      { ref: 'N3D-2650', desc: 'Initiation — formule Standard', date: '03 mai 2026', status: 'Livré', price: '225.00', statusStyle: { font: "600 10px 'Inter',sans-serif", color: '#8fd19e', background: 'rgba(143,209,158,.12)', borderRadius: '5px', padding: '4px 9px' } }
-    ];
-    // TODO(phase commandes/factures): remplacer par de vraies données issues
-    // de GET /orders et GET /invoices une fois ces endpoints construits —
-    // customerNo est déjà réel (renvoyé par l'API à la connexion), le reste
-    // ci-dessous est encore un aperçu statique.
-    const customerNo = s.customerNo;
-    const MONTHS = { 'janvier': '01', 'février': '02', 'fevrier': '02', 'mars': '03', 'avril': '04', 'mai': '05', 'juin': '06', 'juillet': '07', 'août': '08', 'aout': '08', 'septembre': '09', 'octobre': '10', 'novembre': '11', 'décembre': '12', 'decembre': '12' };
-    const invRaw = [
-      { order: 'N3D-2790', date: '02 juin 2026', amount: '68.00' },
-      { order: 'N3D-2712', date: '18 mai 2026', amount: '52.40' },
-      { order: 'N3D-2650', date: '03 mai 2026', amount: '225.00' }
-    ];
-    const dayCounts = {};
-    const invoices = invRaw.map(inv => {
-      const parts = inv.date.split(' ');
-      const dd = parts[0].padStart(2, '0');
-      const mm = MONTHS[parts[1].toLowerCase()] || '00';
-      const yyyy = parts[2];
-      const key = yyyy + mm + dd;
-      dayCounts[key] = (dayCounts[key] || 0) + 1;
-      const seq = String(dayCounts[key]).padStart(3, '0');
-      const ref = 'FA' + seq + '-' + yyyy + '_' + mm + '_' + dd + '_' + customerNo;
-      return {
-        ref: ref, order: inv.order, date: inv.date, amount: inv.amount,
-        onDownload: () => this.setState({ popupMessage: 'Facture ' + ref + ' — téléchargement du PDF (démo). Le document définitif sera généré à la mise en production.' })
-      };
-    });
+    const orderHistory = s.orders.map(o => ({
+      ref: o.ref,
+      desc: o.items.map(i => i.nameSnapshot + ' · ' + i.materialSnapshot + ' · x' + i.qty).join(' + '),
+      date: fmtDate(o.createdAt),
+      status: STATUS_LABELS[o.status] || o.status,
+      price: (o.totalCents / 100).toFixed(2),
+      statusStyle: STATUS_STYLE(o.status)
+    }));
+    const invoices = s.rawInvoices.map(inv => ({
+      ref: inv.ref,
+      order: inv.orderRef,
+      date: fmtDate(inv.issuedAt),
+      amount: (inv.amountCents / 100).toFixed(2),
+      pdfUrl: this._apiMod ? this._apiMod.invoicePdfUrl(inv.id) : '#'
+    }));
     const isResetPassword = !!s.resetToken;
     return {
       cartCount: s.cartCount,
@@ -543,9 +560,14 @@ class Component extends DCLogic {
       toggleAuthMode: () => this.toggleAuthMode(),
       customerNo,
       logout: () => this.logout(),
+      hasActiveOrder: !!activeOrder,
+      activeOrderRef: activeOrder ? activeOrder.ref : '',
+      activeOrderDesc: activeOrder ? activeOrder.items.map(i => i.nameSnapshot + ' · ' + i.materialSnapshot + ' · x' + i.qty).join(' + ') : '',
       orderSteps,
       orderHistory,
+      noOrders: s.orders.length === 0,
       invoices,
+      noInvoices: s.rawInvoices.length === 0,
       isDashboard: s.view === 'dashboard',
       isSettings: s.view === 'settings',
       goSettings: () => this.goSettings(),
