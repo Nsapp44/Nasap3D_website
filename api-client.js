@@ -80,4 +80,31 @@ export const api = {
     const recaptchaToken = await getRecaptchaToken('contact');
     return request('POST', '/contact', { name, email, subject, message, fileKey, recaptchaToken });
   },
+  async getMaterials() {
+    return request('GET', '/materials');
+  },
+  async submitQuote({ file, material, colorId, quality, infillPct, quantity }) {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    form.append('material', material);
+    form.append('colorId', colorId);
+    form.append('quality', quality);
+    form.append('infillPct', String(infillPct));
+    form.append('quantity', String(quantity));
+    let res;
+    try {
+      res = await fetch(apiBase() + '/quotes', { method: 'POST', credentials: 'include', body: form });
+    } catch (e) {
+      return { ok: false, status: 0, data: { error: 'network_error' } };
+    }
+    let data = null;
+    try { data = await res.json(); } catch (e) {}
+    return { ok: res.ok, status: res.status, data };
+  },
+  async getQuote(id) {
+    return request('GET', '/quotes/' + id);
+  },
+  async getDiscountTiers() {
+    return request('GET', '/discount-tiers');
+  },
 };

@@ -129,7 +129,7 @@ a:hover{color:#ff7a5c}
             <sc-if value="{{ cfgFileReady }}" hint-placeholder-val="{{ false }}">
               <div style="border:1px solid rgba(255,90,60,.3);background:#101010;border-radius:8px;padding:14px;margin-bottom:16px;animation:cfgFadeUp .35s ease">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-                  <span style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,.5)">piece.stl — aperçu 3D</span>
+                  <span style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,.5)">{{ cfgFileName }}</span>
                   <span style="width:16px;height:16px;border-radius:50%;background:#ff5a3c;color:#161514;font:700 10px/16px 'Inter',sans-serif;text-align:center">✓</span>
                 </div>
                 <div style="height:150px;display:flex;align-items:center;justify-content:center;perspective:400px;background:radial-gradient(ellipse at center, rgba(255,90,60,.08), transparent 70%)">
@@ -148,43 +148,15 @@ a:hover{color:#ff7a5c}
                 <div onClick="{{ cfgNext }}" style="background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:10px 20px;border-radius:6px;cursor:pointer">Suivant →</div>
               </div>
             </sc-if>
-            <sc-if value="{{ cfgLoading }}" hint-placeholder-val="{{ false }}">
-              <div style="border:1.5px dashed rgba(255,255,255,.25);border-radius:8px;padding:34px;text-align:center">
-                <div style="width:64px;height:64px;margin:0 auto 16px;color:#ff5a3c;--pl-nozzle-fill:#1a1917"><svg viewBox="0 0 100 100" class="printer-loader-svg">
-<defs>
-<linearGradient id="plFadeH1" x1="0" y1="0" x2="0" y2="1">
-<stop offset="65%" stop-color="white" stop-opacity="1"></stop>
-<stop offset="90%" stop-color="white" stop-opacity="0"></stop>
-</linearGradient>
-<mask id="plMaskH1">
-<rect x="0" y="0" width="100" height="100" fill="url(#plFadeH1)"></rect>
-</mask>
-</defs>
-<g mask="url(#plMaskH1)">
-<g class="stack">
-<path class="filament" d="M 75 105 L 25 105 A 5 5 0 0 1 25 95 L 75 95 A 5 5 0 0 0 75 85 L 25 85 A 5 5 0 0 1 25 75 L 75 75 A 5 5 0 0 0 75 65 L 25 65 A 5 5 0 0 1 25 55"></path>
-<path class="filament line-lr" d="M 25 55 L 75 55"></path>
-<path class="filament arc-r" d="M 75 55 A 5 5 0 0 0 75 45"></path>
-<path class="filament line-rl" d="M 75 45 L 25 45"></path>
-<path class="filament arc-l" d="M 25 45 A 5 5 0 0 1 25 35"></path>
-</g>
-</g>
-<g class="nozzle">
-<rect x="40" y="15" width="20" height="15" rx="1"></rect>
-<line x1="38" y1="20" x2="62" y2="20"></line>
-<line x1="38" y1="25" x2="62" y2="25"></line>
-<polygon points="35,30 65,30 65,42 35,42"></polygon>
-<polygon points="35,42 65,42 53,55 47,55"></polygon>
-</g>
-</svg></div>
-                <div style="font:600 12px 'Inter',sans-serif;color:#f3f1ec">Analyse du fichier en cours…</div>
-              </div>
-            </sc-if>
             <sc-if value="{{ isCfgIdle }}" hint-placeholder-val="{{ true }}">
-              <div onClick="{{ dropFile }}" style="border:1.5px dashed rgba(255,255,255,.25);border-radius:8px;padding:26px;text-align:center;cursor:pointer">
-                <div style="font:600 12.5px 'Inter',sans-serif;color:#f3f1ec;margin-bottom:4px">Glissez votre fichier .STL ici</div>
-                <div style="font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.4)">ou cliquez pour parcourir</div>
+              <input ref="{{ fileInputRef }}" type="file" accept=".stl,.3mf,.obj,.step,.stp" onChange="{{ onFileInputChange }}" style="display:none">
+              <div onClick="{{ dropFile }}" onDragOver="{{ onCfgDragOver }}" onDragLeave="{{ onCfgDragLeave }}" onDrop="{{ onCfgDrop }}" style="{{ cfgDropStyle }}">
+                <div style="font:600 12.5px 'Inter',sans-serif;color:#f3f1ec;margin-bottom:4px">Glissez votre fichier .STL / .3MF / .OBJ / .STEP ici</div>
+                <div style="font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.4)">ou cliquez pour parcourir — 50 Mo max</div>
               </div>
+              <sc-if value="{{ cfgHasFileError }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:10px;font:600 11px 'Inter',sans-serif;color:#ff8a70">{{ cfgFileError }}</div>
+              </sc-if>
             </sc-if>
           </sc-if>
 
@@ -287,12 +259,18 @@ a:hover{color:#ff7a5c}
                 <div style="font:600 12px 'Inter',sans-serif;color:#f3f1ec">Analyse de votre besoin en cours…</div>
               </div>
             </sc-if>
+            <sc-if value="{{ cfgAnalysisError }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1px solid rgba(255,90,60,.3);background:rgba(255,90,60,.08);border-radius:8px;padding:24px;text-align:center">
+                <div style="font:600 13px 'Inter',sans-serif;color:#f3f1ec;margin-bottom:8px">{{ cfgAnalysisError }}</div>
+                <div onClick="{{ cfgRetryAnalysis }}" style="display:inline-block;border:1px solid rgba(255,255,255,.25);color:#f3f1ec;font:600 12px 'Inter',sans-serif;padding:9px 16px;border-radius:6px;cursor:pointer">Réessayer</div>
+              </div>
+            </sc-if>
           </sc-if>
 
           <sc-if value="{{ isCfgStep4 }}">
             <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;font:10px 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:20px">
-              <div style="background:#161514;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:10px"><div style="color:rgba(255,255,255,.4);font-size:9px;text-transform:uppercase;margin-bottom:3px">Volume</div>14,2 cm³</div>
-              <div style="background:#161514;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:10px"><div style="color:rgba(255,255,255,.4);font-size:9px;text-transform:uppercase;margin-bottom:3px">Poids total</div>17 g</div>
+              <div style="background:#161514;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:10px"><div style="color:rgba(255,255,255,.4);font-size:9px;text-transform:uppercase;margin-bottom:3px">Volume</div>{{ cfgVolume }} cm³</div>
+              <div style="background:#161514;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:10px"><div style="color:rgba(255,255,255,.4);font-size:9px;text-transform:uppercase;margin-bottom:3px">Poids total</div>{{ cfgWeight }} g</div>
               <div style="background:#161514;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:10px"><div style="color:rgba(255,255,255,.4);font-size:9px;text-transform:uppercase;margin-bottom:3px">Filament</div><div style="display:flex;align-items:center;gap:6px"><span style="{{ cfgSelColorStyle }}"></span>{{ cfgSelMaterial }} · {{ cfgSelColorName }}</div></div>
               <div style="background:#161514;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:10px"><div style="color:rgba(255,255,255,.4);font-size:9px;text-transform:uppercase;margin-bottom:3px">Définition d'impression</div>{{ cfgSelQuality }}</div>
             </div>
@@ -652,20 +630,25 @@ a:hover{color:#ff7a5c}
 class Component extends DCLogic {
   state = {
     rot: 0, realIdx: 0, reviewIdx: 0, hoveredService: null, hoveredReal: null,
-    cfgStep: 1, cfgLoading: false, cfgFileReady: false, cfgMaterial: 'PLA', cfgColor: 0, cfgQty: 1, cfgInfill: 40, cfgQuality: 'Standard',
+    cfgStep: 1, cfgFile: null, cfgFileError: null, cfgDragging: false,
+    cfgMaterial: 'PLA', cfgColorId: null, cfgQty: 1, cfgInfill: 40, cfgQuality: 'Standard',
     cfgShowDiscountInfo: false, quoteEnabled: true,
     realWrapW: 0,
     stepLoading: true,
-    cfgAnalyzing: false, cfgAnalysisReady: false,
+    cfgAnalyzing: false, cfgAnalysisReady: false, cfgAnalysisError: null, cfgQuote: null,
+    discountTiersData: [
+      { minQty: 5, pct: 5 }, { minQty: 15, pct: 10 }, { minQty: 50, pct: 15 }, { minQty: 100, pct: 20 }, { minQty: 500, pct: 30 }
+    ],
     activeNav: 'accueil',
     contactName: '', contactEmail: '', contactObjet: '', contactMessage: '', contactFileState: 'none', contactFileName: '', contactSent: false, contactDragging: false,
     contactSubmitting: false, contactError: null,
     hoveredBanner: false,
     parallax: { x: 0, y: 0 },
     cartCount: 0, showAddedToast: false,
-    availableMaterials: ['PLA', 'PETG', 'ABS', 'ASA', 'TPU', 'PP', 'Nylon'],
-    availableColors: []
+    materials: []
   };
+  static ALLOWED_EXT = ['.stl', '.3mf', '.obj', '.step', '.stp'];
+  fileInputRef = React.createRef();
   heroCanvasRef = React.createRef();
   heroRef = React.createRef();
   mapRef = React.createRef();
@@ -703,18 +686,37 @@ class Component extends DCLogic {
     window.addEventListener('nasap3d-stock-changed', this._stockListener);
     this._quoteListener = () => { if (this._stock) this.setState({ quoteEnabled: this._stock.isQuoteEnabled() }); };
     window.addEventListener('nasap3d-quote-changed', this._quoteListener);
+    this._loadMaterials();
+    this._loadDiscountTiers();
   }
+  // Mode vacances : la vraie source de vérité est déjà côté serveur (POST
+  // /quotes refuse tout si Settings.quoteEnabled est faux) ; ce drapeau local
+  // ne sert qu'à masquer le configurateur dans l'UI en attendant que l'écran
+  // admin pilote Settings directement au lieu de ce flag localStorage.
   async _loadStock() {
     const mod = await import('./stock.js');
     this._stock = mod;
     this.setState({ quoteEnabled: mod.isQuoteEnabled() });
-    const materials = mod.materialsInStock();
+  }
+  async _api() {
+    if (!this._apiMod) this._apiMod = (await import('./api-client.js')).api;
+    return this._apiMod;
+  }
+  async _loadMaterials() {
+    const api = await this._api();
+    const res = await api.getMaterials();
+    if (!res.ok || !res.data) return;
+    const materials = res.data.materials.filter(m => m.colors.some(c => c.inStock));
     this.setState(s => {
-      const material = materials.includes(s.cfgMaterial) ? s.cfgMaterial : (materials[0] || s.cfgMaterial);
-      const colors = mod.colorsInStock(material);
-      const colorIdx = s.cfgColor < colors.length ? s.cfgColor : 0;
-      return { availableMaterials: materials, availableColors: colors, cfgMaterial: material, cfgColor: colorIdx };
+      const material = materials.find(m => m.key === s.cfgMaterial) || materials[0];
+      const firstColor = material ? material.colors.find(c => c.inStock) : null;
+      return { materials, cfgMaterial: material ? material.key : s.cfgMaterial, cfgColorId: firstColor ? firstColor.id : null };
     });
+  }
+  async _loadDiscountTiers() {
+    const api = await this._api();
+    const res = await api.getDiscountTiers();
+    if (res.ok && res.data && res.data.tiers.length) this.setState({ discountTiersData: res.data.tiers });
   }
   async _loadCart() {
     const mod = await import('./cart.js');
@@ -835,24 +837,24 @@ class Component extends DCLogic {
     init();
     animate();
   }
-  _selectMaterial(m) {
-    const colors = this._stock ? this._stock.colorsInStock(m) : [];
-    this.setState({ cfgMaterial: m, availableColors: colors, cfgColor: 0 });
+  _selectMaterial(key) {
+    const material = this.state.materials.find(m => m.key === key);
+    const firstColor = material ? material.colors.find(c => c.inStock) : null;
+    this.setState({ cfgMaterial: key, cfgColorId: firstColor ? firstColor.id : null, cfgAnalysisReady: false, cfgQuote: null });
   }
   async addToCart() {
     if (!this._cart) await this._loadCart();
-    const s = this.state;
-    const pct = this._discountFor(s.cfgQty);
-    const unit = 14 * (1 - pct / 100);
-    const chosenColor = s.availableColors[s.cfgColor];
+    const q = this.state.cfgQuote;
+    if (!q) return;
     this._cart.addItem({
       name: 'Pièce personnalisée (STL)',
-      material: s.cfgMaterial,
-      colorHex: chosenColor ? chosenColor.colorHex : '#ff5a3c',
-      infill: s.cfgInfill,
-      quality: s.cfgQuality,
-      qty: s.cfgQty,
-      unitPrice: unit,
+      material: q.materialLabel,
+      colorHex: q.colorHex,
+      infill: q.infillPct,
+      quality: q.qualityLabel,
+      qty: q.quantity,
+      unitPrice: q.unitPriceCents / 100,
+      quoteId: q.id,
       thumb: 'stl'
     });
     this.setState({ cartCount: this._cart.cartCount(), showAddedToast: true });
@@ -1094,25 +1096,73 @@ class Component extends DCLogic {
     this.setState(s => ({ reviewIdx: (s.reviewIdx + delta + 2) % 2 }));
     this._startAuto();
   }
+  _extOk(name) {
+    const lower = name.toLowerCase();
+    return Component.ALLOWED_EXT.some(ext => lower.endsWith(ext));
+  }
+  _setFile(file) {
+    if (!file) return;
+    if (!this._extOk(file.name)) {
+      this.setState({ cfgFileError: 'Format non supporté — utilisez .stl, .3mf, .obj ou .step' });
+      return;
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      this.setState({ cfgFileError: 'Fichier trop volumineux (50 Mo max)' });
+      return;
+    }
+    this.setState({ cfgFile: file, cfgFileError: null });
+  }
   dropFile() {
-    if (this.state.cfgLoading || this.state.cfgFileReady) return;
-    this.setState({ cfgLoading: true });
-    clearTimeout(this._loadTimer);
-    this._loadTimer = setTimeout(() => {
-      this.setState({ cfgLoading: false, cfgFileReady: true });
-    }, 1600);
+    if (this.state.cfgFile) return;
+    if (this.fileInputRef.current) this.fileInputRef.current.click();
+  }
+  onFileInputChange(e) {
+    this._setFile(e.target.files && e.target.files[0]);
+  }
+  onCfgDragOver(e) { e.preventDefault(); if (!this.state.cfgDragging) this.setState({ cfgDragging: true }); }
+  onCfgDragLeave(e) { e.preventDefault(); this.setState({ cfgDragging: false }); }
+  onCfgDrop(e) {
+    e.preventDefault();
+    this.setState({ cfgDragging: false });
+    this._setFile(e.dataTransfer.files && e.dataTransfer.files[0]);
   }
   cfgNext() {
     this.setState(s => ({ cfgStep: Math.min(4, s.cfgStep + 1) }), () => {
-      if (this.state.cfgStep === 3 && !this.state.cfgAnalysisReady) this._startAnalysis();
+      if (this.state.cfgStep === 3 && !this.state.cfgAnalysisReady && !this.state.cfgAnalyzing) this._submitQuote();
     });
   }
-  _startAnalysis() {
-    this.setState({ cfgAnalyzing: true });
-    clearTimeout(this._analysisTimer);
-    this._analysisTimer = setTimeout(() => {
-      this.setState({ cfgAnalyzing: false, cfgAnalysisReady: true });
-    }, 1500);
+  cfgRetryAnalysis() {
+    this.setState({ cfgAnalysisError: null });
+    this._submitQuote();
+  }
+  async _submitQuote() {
+    const s = this.state;
+    if (!s.cfgFile || !s.cfgColorId) {
+      this.setState({ cfgAnalysisError: 'Options incomplètes — retournez à l’étape précédente.' });
+      return;
+    }
+    this.setState({ cfgAnalyzing: true, cfgAnalysisError: null });
+    const api = await this._api();
+    const res = await api.submitQuote({
+      file: s.cfgFile, material: s.cfgMaterial, colorId: s.cfgColorId,
+      quality: s.cfgQuality, infillPct: s.cfgInfill, quantity: s.cfgQty
+    });
+    if (!res.ok) {
+      const messages = {
+        quote_disabled: "Le devis instantané est momentanément indisponible.",
+        part_too_large: 'Cette pièce dépasse le volume imprimable de toutes nos machines (max 350×320×325mm).',
+        non_manifold_model: 'Le modèle contient des erreurs de géométrie (maillage non étanche) — vérifiez le fichier dans votre logiciel de CAO.',
+        unreadable_file: 'Fichier illisible — vérifiez qu’il s’agit bien d’un .stl, .3mf, .obj ou .step valide.',
+        slicing_failed: 'L’analyse a échoué pour ce fichier. Contactez-nous si le problème persiste.',
+        color_out_of_stock: 'Cette couleur vient de passer en rupture de stock — choisissez-en une autre.',
+      };
+      this.setState({
+        cfgAnalyzing: false,
+        cfgAnalysisError: messages[res.data && res.data.error] || 'Une erreur est survenue pendant l’analyse, réessayez.'
+      });
+      return;
+    }
+    this.setState({ cfgAnalyzing: false, cfgAnalysisReady: true, cfgQuote: res.data.quote });
   }
   setContactField(field, value) {
     this.setState({ [field]: value });
@@ -1214,16 +1264,9 @@ class Component extends DCLogic {
   cfgGoStep(n) {
     if (n < this.state.cfgStep) this.setState({ cfgStep: n });
   }
-  static DISCOUNT_TIERS = [
-    { min: 5, pct: 5 },
-    { min: 15, pct: 10 },
-    { min: 50, pct: 15 },
-    { min: 100, pct: 20 },
-    { min: 500, pct: 30 }
-  ];
   _discountFor(qty) {
     let pct = 0;
-    for (const t of Component.DISCOUNT_TIERS) if (qty >= t.min) pct = t.pct;
+    for (const t of this.state.discountTiersData) if (qty >= t.minQty) pct = Math.max(pct, t.pct);
     return pct;
   }
   renderVals() {
@@ -1314,21 +1357,23 @@ class Component extends DCLogic {
         text: label
       };
     };
-    const materials = s.availableMaterials.map(m => ({
-      label: m,
-      onClick: () => this._selectMaterial(m),
+    const materials = s.materials.map(m => ({
+      label: m.key,
+      onClick: () => this._selectMaterial(m.key),
       chipStyle: {
         padding: '6px 12px', borderRadius: '6px', font: "600 10.5px 'Inter',sans-serif", cursor: 'pointer',
-        background: s.cfgMaterial === m ? '#ff5a3c' : 'transparent',
-        color: s.cfgMaterial === m ? '#161514' : '#e8e6e1',
-        border: '1px solid ' + (s.cfgMaterial === m ? '#ff5a3c' : 'rgba(255,255,255,.2)')
+        background: s.cfgMaterial === m.key ? '#ff5a3c' : 'transparent',
+        color: s.cfgMaterial === m.key ? '#161514' : '#e8e6e1',
+        border: '1px solid ' + (s.cfgMaterial === m.key ? '#ff5a3c' : 'rgba(255,255,255,.2)')
       }
     }));
-    const colors = s.availableColors.map((c, i) => ({
-      onClick: () => this.setState({ cfgColor: i }),
+    const selectedMaterial = s.materials.find(m => m.key === s.cfgMaterial);
+    const availableColors = selectedMaterial ? selectedMaterial.colors.filter(c => c.inStock) : [];
+    const colors = availableColors.map(c => ({
+      onClick: () => this.setState({ cfgColorId: c.id, cfgAnalysisReady: false, cfgQuote: null }),
       style: {
         width: '20px', height: '20px', borderRadius: '50%', background: c.colorHex, cursor: 'pointer',
-        border: s.cfgColor === i ? '2px solid #f3f1ec' : '1px solid rgba(255,255,255,.3)'
+        border: s.cfgColorId === c.id ? '2px solid #f3f1ec' : '1px solid rgba(255,255,255,.3)'
       }
     }));
     const infillHints = {
@@ -1341,7 +1386,7 @@ class Component extends DCLogic {
     };
     const infills = [15, 30, 40, 60, 80, 100].map(v => ({
       label: v + '%',
-      onClick: () => this.setState({ cfgInfill: v }),
+      onClick: () => this.setState({ cfgInfill: v, cfgAnalysisReady: false, cfgQuote: null }),
       chipStyle: {
         padding: '6px 11px', borderRadius: '6px', font: "600 10.5px 'Inter',sans-serif", cursor: 'pointer',
         background: s.cfgInfill === v ? '#ff5a3c' : 'transparent',
@@ -1356,7 +1401,7 @@ class Component extends DCLogic {
     };
     const qualities = ['Rapide', 'Standard', 'Fine'].map(q => ({
       label: q,
-      onClick: () => this.setState({ cfgQuality: q }),
+      onClick: () => this.setState({ cfgQuality: q, cfgAnalysisReady: false, cfgQuote: null }),
       chipStyle: {
         padding: '6px 14px', borderRadius: '6px', font: "600 11px 'Inter',sans-serif", cursor: 'pointer',
         background: s.cfgQuality === q ? '#ff5a3c' : 'transparent',
@@ -1369,11 +1414,26 @@ class Component extends DCLogic {
       isCfgStep2: s.cfgStep === 2,
       isCfgStep3: s.cfgStep === 3,
       isCfgStep4: s.cfgStep === 4,
-      cfgLoading: s.cfgLoading,
-      cfgFileReady: s.cfgFileReady,
+      cfgFileReady: !!s.cfgFile,
+      cfgFileName: s.cfgFile ? s.cfgFile.name : '',
       cfgAnalyzing: s.cfgAnalyzing,
       cfgAnalysisReady: s.cfgAnalysisReady,
-      isCfgIdle: !s.cfgLoading && !s.cfgFileReady,
+      cfgAnalysisError: s.cfgAnalysisError,
+      cfgRetryAnalysis: () => this.cfgRetryAnalysis(),
+      isCfgIdle: !s.cfgFile,
+      fileInputRef: this.fileInputRef,
+      onFileInputChange: (e) => this.onFileInputChange(e),
+      onCfgDragOver: (e) => this.onCfgDragOver(e),
+      onCfgDragLeave: (e) => this.onCfgDragLeave(e),
+      onCfgDrop: (e) => this.onCfgDrop(e),
+      cfgHasFileError: !!s.cfgFileError,
+      cfgFileError: s.cfgFileError,
+      cfgDropStyle: {
+        border: '1.5px dashed ' + (s.cfgDragging ? '#ff5a3c' : 'rgba(255,255,255,.25)'),
+        borderRadius: '8px', padding: '26px', textAlign: 'center', cursor: 'pointer',
+        background: s.cfgDragging ? 'rgba(255,90,60,.08)' : 'transparent',
+        transition: 'border-color .2s ease, background .2s ease'
+      },
       cfgRail1: railStep(1, 'Fichier STL'),
       cfgRail2: railStep(2, 'Options'),
       cfgRail3: railStep(3, 'Analyse auto'),
@@ -1384,11 +1444,13 @@ class Component extends DCLogic {
       qualities, qualityHint: qualityHints[s.cfgQuality],
       cfgSelMaterial: s.cfgMaterial,
       cfgSelQuality: s.cfgQuality,
-      cfgSelColorName: (s.availableColors[s.cfgColor] || {}).colorName || '—',
-      cfgSelColorStyle: { width: '11px', height: '11px', borderRadius: '50%', background: (s.availableColors[s.cfgColor] || {}).colorHex || '#ff5a3c', border: '1px solid rgba(255,255,255,.25)', flex: 'none' },
+      cfgSelColorName: (availableColors.find(c => c.id === s.cfgColorId) || {}).colorName || '—',
+      cfgSelColorStyle: { width: '11px', height: '11px', borderRadius: '50%', background: (availableColors.find(c => c.id === s.cfgColorId) || {}).colorHex || '#ff5a3c', border: '1px solid rgba(255,255,255,.25)', flex: 'none' },
+      cfgVolume: s.cfgQuote ? s.cfgQuote.volumeCm3.toFixed(1) : '—',
+      cfgWeight: s.cfgQuote ? s.cfgQuote.weightG.toFixed(0) : '—',
       cfgQty: s.cfgQty,
-      cfgIncQty: () => this.setState(st => ({ cfgQty: st.cfgQty + 1 })),
-      cfgDecQty: () => this.setState(st => ({ cfgQty: Math.max(1, st.cfgQty - 1) })),
+      cfgIncQty: () => this.setState(st => ({ cfgQty: st.cfgQty + 1, cfgAnalysisReady: false, cfgQuote: null })),
+      cfgDecQty: () => this.setState(st => ({ cfgQty: Math.max(1, st.cfgQty - 1), cfgAnalysisReady: false, cfgQuote: null })),
       dropFile: () => this.dropFile(),
       cfgNext: () => this.cfgNext(),
       ...this._buildPrice(),
@@ -1432,22 +1494,26 @@ class Component extends DCLogic {
   }
   _buildDiscountTiers() {
     const qty = this.state.cfgQty;
-    return Component.DISCOUNT_TIERS.map(t => ({
-      label: '≥ ' + t.min + ' : −' + t.pct + '%',
+    return this.state.discountTiersData.map(t => ({
+      label: '≥ ' + t.minQty + ' : −' + t.pct + '%',
       rowStyle: {
         display: 'flex', justifyContent: 'space-between', gap: '10px',
         padding: '3px 0',
-        color: qty >= t.min ? '#ff5a3c' : 'rgba(255,255,255,.5)',
-        font: (qty >= t.min ? '700' : '500') + " 10px 'Inter',sans-serif"
+        color: qty >= t.minQty ? '#ff5a3c' : 'rgba(255,255,255,.5)',
+        font: (qty >= t.minQty ? '700' : '500') + " 10px 'Inter',sans-serif"
       }
     }));
   }
   _buildPrice() {
+    // Le prix n'est connu qu'une fois le fichier réellement analysé par le
+    // serveur (étape 3) — avant ça ces valeurs restent à 0, elles ne sont de
+    // toute façon affichées qu'à l'étape 4 du configurateur.
+    const q = this.state.cfgQuote;
     const qty = this.state.cfgQty;
-    const unit = 14;
-    const rawTotal = unit * qty;
-    const pct = this._discountFor(qty);
-    const finalTotal = rawTotal * (1 - pct / 100);
+    const unitPriceEuros = q ? q.unitPriceCents / 100 : 0;
+    const rawTotal = unitPriceEuros * qty;
+    const pct = q ? q.discountPct : this._discountFor(qty);
+    const finalTotal = q ? q.totalPriceCents / 100 : 0;
     return {
       cfgDiscountPct: pct,
       cfgRawPrice: rawTotal.toFixed(2),
