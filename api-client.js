@@ -107,4 +107,29 @@ export const api = {
   async getDiscountTiers() {
     return request('GET', '/discount-tiers');
   },
+  // ---- Admin ----
+  async adminGetMaterials() {
+    return request('GET', '/admin/materials');
+  },
+  async adminUpdateMaterialPrice(materialId, pricePerKgCents) {
+    return request('PATCH', '/admin/materials/' + materialId, { pricePerKgCents });
+  },
+  async adminUpdateColorStock(materialId, colorId, inStock) {
+    return request('PATCH', '/admin/materials/' + materialId + '/colors/' + colorId, { inStock });
+  },
+  async adminGetOrders(status) {
+    return request('GET', '/admin/orders' + (status ? '?status=' + status : ''));
+  },
+  async adminUpdateOrderStatus(orderId, status) {
+    return request('PATCH', '/admin/orders/' + orderId, { status });
+  },
+  async adminRejectOrder(orderId) {
+    return request('DELETE', '/admin/orders/' + orderId);
+  },
+  async adminGetSettings() {
+    return request('GET', '/admin/settings');
+  },
+  async adminUpdateSettings(patch) {
+    return request('PATCH', '/admin/settings', patch);
+  },
 };

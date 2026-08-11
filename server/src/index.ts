@@ -8,6 +8,7 @@ import { accountRoutes } from "./routes/account.js";
 import { contactRoutes } from "./routes/contact.js";
 import { quoteRoutes } from "./routes/quotes.js";
 import { materialRoutes } from "./routes/materials.js";
+import { adminRoutes } from "./routes/admin.js";
 
 const app = Fastify({ logger: true });
 
@@ -38,6 +39,7 @@ await app.register(accountRoutes);
 await app.register(contactRoutes);
 await app.register(quoteRoutes);
 await app.register(materialRoutes);
+await app.register(adminRoutes);
 
 const port = Number(process.env.PORT || 3000);
 app
