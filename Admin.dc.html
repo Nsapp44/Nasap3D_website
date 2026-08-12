@@ -32,7 +32,7 @@ a:hover{color:#ff7a5c}
       <span style="{{ tabStyleOrders }}" onClick="{{ goOrders }}">Commandes</span>
       <span style="{{ tabStyleStock }}" onClick="{{ goStock }}">Stock filament</span>
     </div>
-    <a href="Account.dc.html" style="text-decoration:none;color:rgba(255,255,255,.6);font:500 12px 'Inter',sans-serif">Retour au compte client</a>
+    <span onClick="{{ adminLogout }}" style="cursor:pointer;color:rgba(255,255,255,.6);font:500 12px 'Inter',sans-serif;transition:color .2s ease" style-hover="color:#ff5a3c">Déconnexion</span>
   </div>
 
   <!-- ACCESS GUARD (client-side only — the real protection is the requireAdmin
@@ -206,6 +206,11 @@ class Component extends DCLogic {
   async _api() {
     if (!this._apiMod) this._apiMod = (await import('./api-client.js')).api;
     return this._apiMod;
+  }
+  async adminLogout() {
+    const api = await this._api();
+    await api.logout();
+    window.location.href = 'Account.dc.html';
   }
   async _checkAuth() {
     const api = await this._api();
@@ -409,6 +414,7 @@ class Component extends DCLogic {
       isStockTab: s.tab === 'stock',
       goOrders: () => this.setState({ tab: 'orders' }),
       goStock: () => this.setState({ tab: 'stock' }),
+      adminLogout: () => this.adminLogout(),
       tabStyleOrders: { cursor: 'pointer', paddingBottom: '4px', color: s.tab === 'orders' ? '#f3f1ec' : 'rgba(255,255,255,.5)', fontWeight: s.tab === 'orders' ? 600 : 500, borderBottom: s.tab === 'orders' ? '2px solid #ff5a3c' : '2px solid transparent' },
       tabStyleStock: { cursor: 'pointer', paddingBottom: '4px', color: s.tab === 'stock' ? '#f3f1ec' : 'rgba(255,255,255,.5)', fontWeight: s.tab === 'stock' ? 600 : 500, borderBottom: s.tab === 'stock' ? '2px solid #ff5a3c' : '2px solid transparent' },
       orders,
