@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { hashPassword, verifyPassword, isValidEmail, isValidPassword } from "../lib/password.js";
 import { nextCustomerNo } from "../lib/counter.js";
-import { verifyRecaptcha } from "../lib/recaptcha.js";
+import { verifyCaptcha } from "../lib/captcha.js";
 import {
   createSession,
   revokeSession,
@@ -32,13 +32,8 @@ const GUEST_COOKIE = "n3d_guest";
 const credentialsSchema = z.object({
   email: z.string(),
   password: z.string(),
-  recaptchaToken: z.string().optional(),
+  captchaToken: z.string().optional(),
 });
-
-async function currentRecaptchaMinScore() {
-  const settings = await prisma.settings.findUnique({ where: { id: 1 } });
-  return settings?.recaptchaMinScore ?? 0.5;
-}
 
 function sendSignupVerification(userId: string, email: string) {
   return createAndSendVerificationCode(
@@ -54,10 +49,10 @@ export async function authRoutes(app: FastifyInstance) {
   app.post("/auth/signup", async (request, reply) => {
     const body = credentialsSchema.safeParse(request.body);
     if (!body.success) return reply.code(400).send({ error: "invalid_body" });
-    const { email, password, recaptchaToken } = body.data;
+    const { email, password, captchaToken } = body.data;
 
-    const rc = await verifyRecaptcha(recaptchaToken, "signup", await currentRecaptchaMinScore());
-    if (!rc.ok) return reply.code(400).send({ error: "recaptcha_failed", reason: rc.reason });
+    const rc = await verifyCaptcha(captchaToken);
+    if (!rc.ok) return reply.code(400).send({ error: "captcha_failed", reason: rc.reason });
 
     if (!isValidEmail(email)) return reply.code(400).send({ error: "invalid_email" });
     if (!isValidPassword(password)) return reply.code(400).send({ error: "weak_password" });
@@ -120,10 +115,10 @@ export async function authRoutes(app: FastifyInstance) {
   app.post("/auth/login", async (request, reply) => {
     const body = credentialsSchema.safeParse(request.body);
     if (!body.success) return reply.code(400).send({ error: "invalid_body" });
-    const { email, password, recaptchaToken } = body.data;
+    const { email, password, captchaToken } = body.data;
 
-    const rc = await verifyRecaptcha(recaptchaToken, "login", await currentRecaptchaMinScore());
-    if (!rc.ok) return reply.code(400).send({ error: "recaptcha_failed", reason: rc.reason });
+    const rc = await verifyCaptcha(captchaToken);
+    if (!rc.ok) return reply.code(400).send({ error: "captcha_failed", reason: rc.reason });
 
     const user = await prisma.user.findUnique({ where: { email } });
     // Same generic error whether the email is unknown or the password is
@@ -154,12 +149,12 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   app.post("/auth/forgot-password", async (request, reply) => {
-    const schema = z.object({ email: z.string(), recaptchaToken: z.string().optional() });
+    const schema = z.object({ email: z.string(), captchaToken: z.string().optional() });
     const body = schema.safeParse(request.body);
     if (!body.success) return reply.code(400).send({ error: "invalid_body" });
 
-    const rc = await verifyRecaptcha(body.data.recaptchaToken, "forgot_password", await currentRecaptchaMinScore());
-    if (!rc.ok) return reply.code(400).send({ error: "recaptcha_failed", reason: rc.reason });
+    const rc = await verifyCaptcha(body.data.captchaToken);
+    if (!rc.ok) return reply.code(400).send({ error: "captcha_failed", reason: rc.reason });
 
     const user = await prisma.user.findUnique({ where: { email: body.data.email } });
     // Always the same response — do not reveal whether the address exists.

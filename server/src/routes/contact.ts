@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { isValidEmail } from "../lib/password.js";
-import { verifyRecaptcha } from "../lib/recaptcha.js";
+import { verifyCaptcha } from "../lib/captcha.js";
 import { sendMail } from "../lib/mailer.js";
 import { newFileKey, saveFile, readFileByKey } from "../lib/storage.js";
 import { requireAdmin } from "../lib/session.js";
@@ -42,15 +42,14 @@ export async function contactRoutes(app: FastifyInstance) {
       message: z.string().max(1000).optional().default(""),
       fileKey: z.string().optional(),
       fileName: z.string().optional(),
-      recaptchaToken: z.string().optional(),
+      captchaToken: z.string().optional(),
     });
     const body = schema.safeParse(request.body);
     if (!body.success) return reply.code(400).send({ error: "invalid_body" });
     if (!isValidEmail(body.data.email)) return reply.code(400).send({ error: "invalid_email" });
 
-    const settings = await prisma.settings.findUnique({ where: { id: 1 } });
-    const rc = await verifyRecaptcha(body.data.recaptchaToken, "contact", settings?.recaptchaMinScore ?? 0.5);
-    if (!rc.ok) return reply.code(400).send({ error: "recaptcha_failed", reason: rc.reason });
+    const rc = await verifyCaptcha(body.data.captchaToken);
+    if (!rc.ok) return reply.code(400).send({ error: "captcha_failed", reason: rc.reason });
 
     const created = await prisma.contactMessage.create({
       data: {
@@ -60,7 +59,6 @@ export async function contactRoutes(app: FastifyInstance) {
         message: body.data.message,
         fileKey: body.data.fileKey,
         fileName: body.data.fileName,
-        recaptchaScore: rc.score,
       },
     });
 

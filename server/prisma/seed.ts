@@ -162,7 +162,6 @@ async function main() {
       hourlyRateCents: 500,
       minUnitPriceCents: 890,
       quoteExpiryMinutes: 60,
-      recaptchaMinScore: 0.5,
       minOrderCents: 1800,
       smallOrderFeeCents: 500,
     },

@@ -89,7 +89,7 @@ a:hover{color:#ff7a5c}
           <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;background:#1a1917;padding:14px;display:grid;grid-template-columns:96px 1fr auto;gap:14px;align-items:center">
             <div ref="{{ item.thumbRef }}" style="width:96px;height:96px;border-radius:8px;background:radial-gradient(circle at 35% 30%, #ddd9d2, #b5b1a8);border:1px solid rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:inset 0 -6px 10px rgba(0,0,0,.12)"></div>
             <div>
-              <div style="font:600 13px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Pièce personnalisée (STL)</div>
+              <div style="font:600 13px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ item.fileName }}</div>
               <div style="font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.5);margin-bottom:8px">{{ item.material }} · remplissage {{ item.infill }}% · qualité {{ item.quality }}</div>
               <sc-if value="{{ item.expired }}" hint-placeholder-val="{{ false }}">
                 <div style="font:600 10px 'Inter',sans-serif;color:#ff8a70;margin-bottom:8px">Devis expiré — retirez cette ligne et relancez un devis pour ce fichier.</div>
@@ -439,6 +439,7 @@ class Component extends DCLogic {
     const s = this.state;
     const c = s.cart;
     const items = c.lines.map(l => ({
+      fileName: l.fileName,
       material: l.material,
       infill: l.infillPct,
       quality: l.quality,

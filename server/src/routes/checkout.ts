@@ -84,7 +84,7 @@ export async function checkoutRoutes(app: FastifyInstance) {
         currency: "eur",
         unit_amount: l.lineTotalCents,
         product_data: {
-          name: `Pièce personnalisée — ${l.material}, ${l.quality}, ${l.infillPct}% (×${l.qty}${l.discountPct ? `, -${l.discountPct}%` : ""})`,
+          name: `${l.fileName} — ${l.material}, ${l.quality}, ${l.infillPct}% (×${l.qty}${l.discountPct ? `, -${l.discountPct}%` : ""})`,
         },
       },
     }));

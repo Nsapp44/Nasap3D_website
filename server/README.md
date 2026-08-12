@@ -61,7 +61,7 @@ correspondent au `docker-compose.yml` à la racine du projet.
 | Notifications | `CONTACT_NOTIFY_EMAIL`, `ORDER_NOTIFY_EMAIL` | Les notifications (contact, nouvelle commande) ne sont juste pas envoyées. |
 | Email (SMTP) | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM` | Chaque email (codes de vérification, reset mot de passe, notifications) s'affiche dans les logs au lieu de partir réellement. Rien n'est bloqué. |
 | Auth | `ARGON2_MEMORY_COST`, `ARGON2_TIME_COST`, `ARGON2_PARALLELISM` | Valeurs par défaut OWASP raisonnables — à ne durcir que si le matériel de prod le permet. |
-| reCAPTCHA | `RECAPTCHA_SITE_KEY`, `RECAPTCHA_SECRET_KEY` | Sans `RECAPTCHA_SECRET_KEY`, la vérification anti-robot est **désactivée automatiquement en dev** (`NODE_ENV != production`) et **bloque tout en prod** — voir `src/lib/recaptcha.ts`. |
+| Anti-robot (hCaptcha) | `HCAPTCHA_SITE_KEY`, `HCAPTCHA_SECRET_KEY` | Sans `HCAPTCHA_SECRET_KEY`, la vérification anti-robot est **désactivée automatiquement en dev** (`NODE_ENV != production`) et **bloque tout en prod** — voir `src/lib/captcha.ts`. |
 | Devis (PrusaSlicer) | `PRUSASLICER_BIN` | `POST /quotes` échoue avec `slicing_failed`. |
 | Livraison (Boxtal) | `BOXTAL_API_KEY_V1/_SECRET_V1`, `BOXTAL_SHIPPER_*` | `POST /shipping/rates` et `POST /checkout` échouent avec `shipping_not_configured`. |
 | Paiement (Stripe) | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | `POST /checkout` échoue. Utilisez une clé `sk_test_...`, jamais `sk_live_...` en développement. |
@@ -177,7 +177,7 @@ dédiée) que vous administrez vous-même — pensez aux sauvegardes et à activ
 sur `DATABASE_URL` si l'API et la base ne sont pas sur le même réseau privé.
 
 Avant de passer en production, vérifier concrètement :
-- `NODE_ENV=production` (active le fail-closed du reCAPTCHA, entre autres).
+- `NODE_ENV=production` (active le fail-closed de la vérification anti-robot, entre autres).
 - `STRIPE_SECRET_KEY` est bien une clé `sk_live_...` (et pas la clé de test utilisée en dev).
 - `SMTP_*` est configuré — sans ça, les codes de vérification et notifications ne partent jamais
   réellement, seulement dans les logs.

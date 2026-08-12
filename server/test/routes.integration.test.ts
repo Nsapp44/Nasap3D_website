@@ -37,8 +37,8 @@ describe("routes (integration, real DB)", () => {
   });
 
   it("rejects a weak password on signup before ever touching the database", async () => {
-    const previousSecret = process.env.RECAPTCHA_SECRET_KEY;
-    delete process.env.RECAPTCHA_SECRET_KEY; // dev bypass — isolates this test from recaptcha_failed
+    const previousSecret = process.env.HCAPTCHA_SECRET_KEY;
+    delete process.env.HCAPTCHA_SECRET_KEY; // dev bypass — isolates this test from captcha_failed
     try {
       const res = await app.inject({
         method: "POST",
@@ -48,16 +48,16 @@ describe("routes (integration, real DB)", () => {
       expect(res.statusCode).toBe(400);
       expect(res.json().error).toBe("weak_password");
     } finally {
-      if (previousSecret !== undefined) process.env.RECAPTCHA_SECRET_KEY = previousSecret;
+      if (previousSecret !== undefined) process.env.HCAPTCHA_SECRET_KEY = previousSecret;
     }
   });
 
   it("full signup -> email verification code -> confirm flow", async () => {
-    // No RECAPTCHA_SECRET_KEY in the test environment's effective config for
-    // this call -> dev bypass (see recaptcha.test.ts) so this test doesn't
+    // No HCAPTCHA_SECRET_KEY in the test environment's effective config for
+    // this call -> dev bypass (see captcha.test.ts) so this test doesn't
     // depend on a real token.
-    const previousSecret = process.env.RECAPTCHA_SECRET_KEY;
-    delete process.env.RECAPTCHA_SECRET_KEY;
+    const previousSecret = process.env.HCAPTCHA_SECRET_KEY;
+    delete process.env.HCAPTCHA_SECRET_KEY;
 
     const logSpy = vi.spyOn(console, "log");
     try {
@@ -104,7 +104,7 @@ describe("routes (integration, real DB)", () => {
       expect(meRes.json().user.emailVerified).toBe(true);
     } finally {
       logSpy.mockRestore();
-      if (previousSecret !== undefined) process.env.RECAPTCHA_SECRET_KEY = previousSecret;
+      if (previousSecret !== undefined) process.env.HCAPTCHA_SECRET_KEY = previousSecret;
     }
   });
 });

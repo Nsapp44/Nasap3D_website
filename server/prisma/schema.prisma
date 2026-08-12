@@ -156,7 +156,6 @@ model Settings {
   // s'affiche directement à ce montant, sans ligne "frais minimum" visible.
   minUnitPriceCents   Int      @default(890)
   quoteExpiryMinutes  Int      @default(60)
-  recaptchaMinScore   Float    @default(0.5)
   // Panier minimum : sous ce montant, smallOrderFeeCents s'ajoute au total
   // au lieu de bloquer la commande (le front affiche un message invitant à
   // ajouter des articles pour l'éviter) — appliqué au checkout (phase
@@ -311,6 +310,5 @@ model ContactMessage {
   message        String
   fileKey        String?
   fileName       String?
-  recaptchaScore Float?
   createdAt      DateTime @default(now())
 }

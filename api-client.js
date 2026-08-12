@@ -30,34 +30,24 @@ async function request(method, path, body) {
   return { ok: res.ok, status: res.status, data };
 }
 
-// reCAPTCHA v3 is invisible — no checkbox, just a token minted per action.
-// The <script src="https://www.google.com/recaptcha/api.js?render=SITE_KEY">
-// tag must be present on the page (added to each helmet that needs it).
-const RECAPTCHA_SITE_KEY = '6Lc-5X4tAAAAAKV1mRgZz7YEzvqBT4lEbqvsOTGi';
+// hCaptcha requires a real, visible, user-solved widget — unlike reCAPTCHA
+// v3 there is no invisible auto-minted token. Pages render the widget
+// themselves (via <div class="h-captcha" data-sitekey="..."> + the
+// https://js.hcaptcha.com/1/api.js script, added to each helmet that needs
+// it) and pass the resulting token into these calls.
+export const HCAPTCHA_SITE_KEY = '8874894e-8ac6-4344-bb7e-67541fec27b8';
 
 // Boxtal Map widget access token — meant to run client-side (sent to the map
 // iframe via postMessage, see vendor/boxtal-parcel-point-map.js), same
-// category of "public" key as the reCAPTCHA site key above.
+// category of "public" key as the hCaptcha site key above.
 export const BOXTAL_MAP_ACCESS_TOKEN = 'ON9K1CQK9NO0KKDGPSC4S5K93PVV2NV4MZNEH9D7';
 
-function getRecaptchaToken(action) {
-  return new Promise((resolve) => {
-    const g = typeof window !== 'undefined' ? window.grecaptcha : null;
-    if (!g) { resolve(undefined); return; }
-    g.ready(() => {
-      g.execute(RECAPTCHA_SITE_KEY, { action }).then(resolve).catch(() => resolve(undefined));
-    });
-  });
-}
-
 export const api = {
-  async signup(email, password) {
-    const recaptchaToken = await getRecaptchaToken('signup');
-    return request('POST', '/auth/signup', { email, password, recaptchaToken });
+  async signup(email, password, captchaToken) {
+    return request('POST', '/auth/signup', { email, password, captchaToken });
   },
-  async login(email, password) {
-    const recaptchaToken = await getRecaptchaToken('login');
-    return request('POST', '/auth/login', { email, password, recaptchaToken });
+  async login(email, password, captchaToken) {
+    return request('POST', '/auth/login', { email, password, captchaToken });
   },
   async logout() {
     return request('POST', '/auth/logout');
@@ -65,9 +55,8 @@ export const api = {
   async me() {
     return request('GET', '/auth/me');
   },
-  async forgotPassword(email) {
-    const recaptchaToken = await getRecaptchaToken('forgot_password');
-    return request('POST', '/auth/forgot-password', { email, recaptchaToken });
+  async forgotPassword(email, captchaToken) {
+    return request('POST', '/auth/forgot-password', { email, captchaToken });
   },
   async resetPassword(token, newPassword) {
     return request('POST', '/auth/reset-password', { token, newPassword });
@@ -93,9 +82,8 @@ export const api = {
   async deleteAccount(currentPassword) {
     return request('DELETE', '/account', { currentPassword });
   },
-  async submitContact({ name, email, subject, message, fileKey, fileName }) {
-    const recaptchaToken = await getRecaptchaToken('contact');
-    return request('POST', '/contact', { name, email, subject, message, fileKey, fileName, recaptchaToken });
+  async submitContact({ name, email, subject, message, fileKey, fileName, captchaToken }) {
+    return request('POST', '/contact', { name, email, subject, message, fileKey, fileName, captchaToken });
   },
   async uploadContactFile(file) {
     const form = new FormData();

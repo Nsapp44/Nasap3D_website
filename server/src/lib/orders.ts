@@ -141,7 +141,7 @@ export async function createOrderFromCart(
               const line = summary.lines.find((l) => l.id === item.id)!;
               return {
                 quoteJobId: item.quoteJobId,
-                nameSnapshot: "Pièce personnalisée (STL)",
+                nameSnapshot: item.quoteJob.fileName,
                 materialSnapshot: item.quoteJob.material.label,
                 colorNameSnapshot: item.quoteJob.color.colorName,
                 colorHexSnapshot: item.quoteJob.color.colorHex,

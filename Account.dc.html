@@ -20,7 +20,7 @@ a:hover{color:#ff7a5c}
 </style>
 <script src="./pageloader.js"></script>
 <script src="./navguard.js"></script>
-<script src="https://www.google.com/recaptcha/api.js?render=6Lc-5X4tAAAAAKV1mRgZz7YEzvqBT4lEbqvsOTGi"></script>
+<script src="https://js.hcaptcha.com/1/api.js?render=explicit" async defer></script>
 </helmet>
 
 <div style="background:#161514;min-height:100vh">
@@ -94,6 +94,7 @@ a:hover{color:#ff7a5c}
         <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
           <div style="text-align:right;margin-bottom:12px"><span onClick="{{ forgotPassword }}" style="font:500 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.45);cursor:pointer">Mot de passe oublié ?</span></div>
         </sc-if>
+        <div ref="{{ captchaRef }}" style="display:flex;justify-content:center;margin-bottom:14px"></div>
         <div onClick="{{ emailLogin }}" style="{{ authSubmitStyle }}">{{ authSubmitLabel }}</div>
         <div style="text-align:center;margin-top:16px;font:400 11px 'Inter',sans-serif;color:rgba(255,255,255,.45)">{{ authSwitchPrompt }} <span onClick="{{ toggleAuthMode }}" style="color:#ff5a3c;cursor:pointer;font-weight:600">{{ authSwitchAction }}</span></div>
       </div>
@@ -272,8 +273,11 @@ class Component extends DCLogic {
     newEmail: '', emailCurPwd: '', curPwd: '', newPwd: '', confirmPwd: '', deletePwd: '',
     resetToken: null, resetNewPwd: '', resetConfirmPwd: '',
     orders: [], rawInvoices: [],
-    emailVerified: true, verifyCode: '', verifyMessage: null, verifyMessageOk: false, verifyBusy: false, verifyPurpose: null
+    emailVerified: true, verifyCode: '', verifyMessage: null, verifyMessageOk: false, verifyBusy: false, verifyPurpose: null,
+    captchaToken: ''
   };
+
+  captchaRef = React.createRef();
 
   componentDidMount() {
     this._loadCart();
@@ -286,6 +290,22 @@ class Component extends DCLogic {
     } else {
       this._checkSession();
     }
+    this._mountCaptcha();
+  }
+  async _mountCaptcha() {
+    const [{ HCAPTCHA_SITE_KEY }, { renderHcaptcha }] = await Promise.all([
+      import('./api-client.js'), import('./hcaptcha-widget.js')
+    ]);
+    this._captchaWidgetId = await renderHcaptcha(this.captchaRef.current, {
+      sitekey: HCAPTCHA_SITE_KEY,
+      onToken: (token) => this.setState({ captchaToken: token }),
+      onExpire: () => this.setState({ captchaToken: '' })
+    });
+  }
+  async _resetCaptcha() {
+    const { resetHcaptcha } = await import('./hcaptcha-widget.js');
+    resetHcaptcha(this._captchaWidgetId);
+    this.setState({ captchaToken: '' });
   }
   componentWillUnmount() {
     window.removeEventListener('nasap3d-cart-changed', this._listener);
@@ -330,7 +350,7 @@ class Component extends DCLogic {
       weak_password: 'Le mot de passe doit contenir au moins 8 caractères, 1 majuscule et 1 caractère spécial.',
       invalid_email: "Format d'email invalide.",
       wrong_password: 'Le mot de passe actuel est incorrect.',
-      recaptcha_failed: 'Vérification anti-robot échouée, merci de réessayer.',
+      captcha_failed: 'Vérification anti-robot échouée, merci de cocher la case et réessayer.',
       invalid_or_expired_token: 'Ce lien de réinitialisation est invalide ou a expiré.',
       network_error: 'Impossible de contacter le serveur, réessayez dans un instant.'
     }[code] || 'Une erreur est survenue, merci de réessayer.';
@@ -350,12 +370,17 @@ class Component extends DCLogic {
       this.setState({ popupMessage: 'Le mot de passe doit contenir au moins 8 caractères, 1 majuscule et 1 caractère spécial.' });
       return;
     }
+    if (!s.captchaToken) {
+      this.setState({ popupMessage: 'Merci de valider la case de vérification anti-robot.' });
+      return;
+    }
     this.setState({ busy: true });
     const api = await this._api();
     const res = s.authMode === 'signup'
-      ? await api.signup(s.authEmail, s.authPassword)
-      : await api.login(s.authEmail, s.authPassword);
+      ? await api.signup(s.authEmail, s.authPassword, s.captchaToken)
+      : await api.login(s.authEmail, s.authPassword, s.captchaToken);
     this.setState({ busy: false });
+    this._resetCaptcha();
     if (!res.ok) {
       this.setState({ popupMessage: this._errorMessage(res.data) });
       return;
@@ -453,8 +478,13 @@ class Component extends DCLogic {
       this.setState({ popupMessage: "Entrez d'abord votre adresse e-mail dans le champ ci-dessus." });
       return;
     }
+    if (!this.state.captchaToken) {
+      this.setState({ popupMessage: 'Merci de valider la case de vérification anti-robot.' });
+      return;
+    }
     const api = await this._api();
-    await api.forgotPassword(email);
+    await api.forgotPassword(email, this.state.captchaToken);
+    this._resetCaptcha();
     // Same message whether or not the address is registered — avoids
     // revealing which emails have an account.
     this.setState({ popupMessage: "Si un compte existe avec cette adresse, un e-mail de réinitialisation vient d'être envoyé." });
@@ -657,6 +687,7 @@ class Component extends DCLogic {
       passwordInputType: s.showPassword ? 'text' : 'password',
       showPassword: s.showPassword,
       passwordHidden: !s.showPassword,
+      captchaRef: this.captchaRef,
       toggleShowPassword: () => this.toggleShowPassword(),
       onAuthEmail: (e) => this.setState({ authEmail: e.target.value }),
       onAuthPassword: (e) => this.setState({ authPassword: e.target.value }),
