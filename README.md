@@ -34,29 +34,31 @@ dans `server/`.
 └── HANDOFF_CLAUDE_CODE.md  Brief d'origine ayant cadré la construction du back-end
 ```
 
-## Démarrer en local
+## Déploiement (OVH)
+
+`.github/workflows/docker-publish.yml` build et publie l'image de l'API sur GitHub Container
+Registry (`ghcr.io/nsapp44/nasap3d-api`) à chaque push sur `master` qui touche `server/`. Le
+serveur OVH n'a donc besoin que de Docker installé, pas de Node/npm/PrusaSlicer — il récupère
+l'image déjà construite :
 
 ```bash
-# 1. Base de données + API (conteneurs Docker — le build inclut PrusaSlicer,
-#    donc le devis instantané tranche réellement, comme en prod)
-cp server/.env.example server/.env   # puis remplir les variables (voir server/README.md)
-docker compose --profile full up -d --build   # http://localhost:3000
+cp server/.env.example server/.env   # remplir les variables de prod (voir server/README.md)
+docker compose --profile full pull
+docker compose --profile full up -d   # API sur :3000, PostgreSQL en conteneur
 
-# 2. Migrations + données de départ (une fois, depuis server/)
-cd server
-npm install
-npx prisma migrate deploy
-npm run seed
-
-# 3. Front-end statique (autre terminal, à la racine du dépôt)
-python -m http.server 8080   # http://localhost:8080/Home.dc.html
+# Migrations + données de départ (une fois, depuis server/)
+cd server && npm install && npx prisma migrate deploy && npm run seed
 ```
 
-`--build` peut être remplacé par `pull` pour récupérer l'image déjà construite
-(`ghcr.io/nsapp44/nasap3d-api`) au lieu de la reconstruire localement.
+Le paquet GHCR est **public** (pas d'authentification nécessaire pour le `pull` depuis OVH), mais
+reste à rendre public manuellement après le tout premier push réussi (GitHub → *Packages* →
+`nasap3d-api` → *Package settings* → *Change visibility* → *Public*).
 
-Détails complets (variables d'environnement, comptes de test, tests automatisés, déploiement) :
-voir [`server/README.md`](server/README.md).
+Le front-end statique (`*.dc.html`) est servi indépendamment de l'API — checklist de mise en
+prod complète (variables obligatoires, PrusaSlicer dans l'image Docker, PostgreSQL non managé par
+OVH) : voir [`server/README.md`](server/README.md#déploiement-ovh).
+
+Pour développer en local plutôt qu'en déployer, voir [`server/README.md`](server/README.md).
 
 ## Documents associés
 
