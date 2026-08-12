@@ -37,20 +37,23 @@ dans `server/`.
 ## Démarrer en local
 
 ```bash
-# 1. Base de données
-docker compose up -d db
+# 1. Base de données + API (conteneurs Docker — le build inclut PrusaSlicer,
+#    donc le devis instantané tranche réellement, comme en prod)
+cp server/.env.example server/.env   # puis remplir les variables (voir server/README.md)
+docker compose --profile full up -d --build   # http://localhost:3000
 
-# 2. API
+# 2. Migrations + données de départ (une fois, depuis server/)
 cd server
 npm install
-cp .env.example .env   # puis remplir les variables (voir server/README.md)
 npx prisma migrate deploy
 npm run seed
-npm run dev             # http://localhost:3000
 
 # 3. Front-end statique (autre terminal, à la racine du dépôt)
 python -m http.server 8080   # http://localhost:8080/Home.dc.html
 ```
+
+`--build` peut être remplacé par `pull` pour récupérer l'image déjà construite
+(`ghcr.io/nsapp44/nasap3d-api`) au lieu de la reconstruire localement.
 
 Détails complets (variables d'environnement, comptes de test, tests automatisés, déploiement) :
 voir [`server/README.md`](server/README.md).

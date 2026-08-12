@@ -20,11 +20,18 @@ function waitForHcaptcha(timeoutMs = 10000) {
 
 // Renders the widget into `container` and returns its widgetId (needed to
 // reset it after each submit attempt, since a solved token is single-use).
-export async function renderHcaptcha(container, { sitekey, onToken, onExpire }) {
+// hCaptcha only offers "normal" (~huge next to our compact forms) or
+// "compact" (narrower but taller) — neither fits well, so the "normal"
+// widget is rendered into an inner wrapper and scaled down uniformly with
+// CSS, then the outer container is resized to the scaled height so no blank
+// gap is left below it (CSS transform doesn't affect flow layout sizing).
+export async function renderHcaptcha(container, { sitekey, onToken, onExpire, scale = 0.8 }) {
   if (!container) return null;
   const hcaptcha = await waitForHcaptcha();
   container.innerHTML = '';
-  return hcaptcha.render(container, {
+  const inner = document.createElement('div');
+  container.appendChild(inner);
+  const widgetId = hcaptcha.render(inner, {
     sitekey,
     theme: 'dark',
     hl: 'fr',
@@ -32,6 +39,15 @@ export async function renderHcaptcha(container, { sitekey, onToken, onExpire }) 
     'expired-callback': () => { if (onExpire) onExpire(); },
     'error-callback': () => { if (onExpire) onExpire(); },
   });
+  requestAnimationFrame(() => {
+    const h = inner.offsetHeight;
+    if (!h) return;
+    inner.style.transform = `scale(${scale})`;
+    inner.style.transformOrigin = 'center top';
+    container.style.height = `${Math.ceil(h * scale)}px`;
+    container.style.overflow = 'hidden';
+  });
+  return widgetId;
 }
 
 export async function resetHcaptcha(widgetId) {
