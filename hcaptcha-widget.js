@@ -27,6 +27,7 @@ export async function renderHcaptcha(container, { sitekey, onToken, onExpire }) 
   return hcaptcha.render(container, {
     sitekey,
     theme: 'dark',
+    hl: 'fr',
     callback: (token) => { if (onToken) onToken(token); },
     'expired-callback': () => { if (onExpire) onExpire(); },
     'error-callback': () => { if (onExpire) onExpire(); },
