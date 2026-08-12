@@ -528,6 +528,7 @@ a:hover{color:#ff7a5c}
             <div style="font:9px ui-monospace,monospace;color:rgba(255,255,255,.3);margin-top:3px;text-align:right">{{ contactMessage.length }} / 1000 caractères</div>
           </div>
           <div>
+            <input ref="{{ contactFileInputRef }}" type="file" onChange="{{ onContactFileInputChange }}" style="display:none">
             <sc-if value="{{ contactFileNone }}" hint-placeholder-val="{{ true }}">
               <div onClick="{{ attachContactFile }}" onDragOver="{{ onContactDragOver }}" onDragLeave="{{ onContactDragLeave }}" onDrop="{{ onContactDrop }}" style="{{ contactDropStyle }}">+ Joindre un fichier</div>
             </sc-if>
@@ -565,7 +566,10 @@ a:hover{color:#ff7a5c}
             <sc-if value="{{ contactFileReady }}" hint-placeholder-val="{{ false }}">
               <div style="border:1px solid rgba(255,90,60,.35);background:rgba(255,90,60,.08);border-radius:6px;padding:10px;font:11px 'Inter',sans-serif;color:#f3f1ec;text-align:center">✓ {{ contactFileName }}</div>
             </sc-if>
-            <div style="font:9px ui-monospace,monospace;color:rgba(255,255,255,.3);margin-top:3px">.stl .step .pdf .jpg — 10 Mo max</div>
+            <sc-if value="{{ hasContactFileError }}" hint-placeholder-val="{{ false }}">
+              <div style="font:600 10.5px 'Inter',sans-serif;color:#ff8a70;margin-top:6px">{{ contactFileError }}</div>
+            </sc-if>
+            <div style="font:9px ui-monospace,monospace;color:rgba(255,255,255,.3);margin-top:3px">.stl .step .pdf .jpg — 50 Mo max</div>
           </div>
           <div onClick="{{ submitContact }}" style="{{ contactSendStyle }}">
             <sc-if value="{{ contactFileUploading }}" hint-placeholder-val="{{ false }}">
@@ -638,7 +642,7 @@ class Component extends DCLogic {
       { minQty: 5, pct: 5 }, { minQty: 15, pct: 10 }, { minQty: 50, pct: 15 }, { minQty: 100, pct: 20 }, { minQty: 500, pct: 30 }
     ],
     activeNav: 'accueil',
-    contactName: '', contactEmail: '', contactObjet: '', contactMessage: '', contactFileState: 'none', contactFileName: '', contactSent: false, contactDragging: false,
+    contactName: '', contactEmail: '', contactObjet: '', contactMessage: '', contactFileState: 'none', contactFileName: '', contactFileKey: null, contactFileError: null, contactSent: false, contactDragging: false,
     contactSubmitting: false, contactError: null,
     hoveredBanner: false,
     parallax: { x: 0, y: 0 },
@@ -648,6 +652,7 @@ class Component extends DCLogic {
   static ALLOWED_EXT = ['.stl', '.obj', '.step', '.stp'];
   fileInputRef = React.createRef();
   previewRef = React.createRef();
+  contactFileInputRef = React.createRef();
   heroCanvasRef = React.createRef();
   heroRef = React.createRef();
   mapRef = React.createRef();
@@ -1177,15 +1182,27 @@ class Component extends DCLogic {
   setContactField(field, value) {
     this.setState({ [field]: value });
   }
-  // TODO(devis serveur / upload S3): l'attachement est encore simulé
-  // (aucun fichier n'est réellement envoyé) en attendant l'endpoint d'upload
-  // partagé avec le configurateur de devis.
   attachContactFile() {
-    this.setState({ contactFileState: 'uploading' });
-    clearTimeout(this._contactFileTimer);
-    this._contactFileTimer = setTimeout(() => {
-      this.setState({ contactFileState: 'ready', contactFileName: 'piece-jointe.stl' });
-    }, 1400);
+    if (this.state.contactFileState !== 'none') return;
+    if (this.contactFileInputRef.current) this.contactFileInputRef.current.click();
+  }
+  onContactFileInputChange(e) {
+    const file = e.target.files && e.target.files[0];
+    if (file) this._uploadContactFile(file);
+  }
+  async _uploadContactFile(file) {
+    if (file.size > 50 * 1024 * 1024) {
+      this.setState({ contactFileError: 'Fichier trop volumineux (50 Mo max).' });
+      return;
+    }
+    this.setState({ contactFileState: 'uploading', contactFileError: null });
+    const api = await this._api();
+    const res = await api.uploadContactFile(file);
+    if (!res.ok || !res.data) {
+      this.setState({ contactFileState: 'none', contactFileError: "Échec de l'envoi du fichier, réessayez." });
+      return;
+    }
+    this.setState({ contactFileState: 'ready', contactFileName: res.data.fileName, contactFileKey: res.data.fileKey });
   }
   _isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -1202,7 +1219,8 @@ class Component extends DCLogic {
     this.setState({ contactSubmitting: true, contactError: null });
     const api = await this._api();
     const res = await api.submitContact({
-      name: s.contactName, email: s.contactEmail, subject: s.contactObjet, message: s.contactMessage
+      name: s.contactName, email: s.contactEmail, subject: s.contactObjet, message: s.contactMessage,
+      fileKey: s.contactFileKey, fileName: s.contactFileName
     });
     if (!res.ok) {
       this.setState({
@@ -1213,7 +1231,7 @@ class Component extends DCLogic {
       });
       return;
     }
-    this.setState({ contactSubmitting: false, contactSent: true, contactName: '', contactEmail: '', contactObjet: '', contactMessage: '', contactFileState: 'none' });
+    this.setState({ contactSubmitting: false, contactSent: true, contactName: '', contactEmail: '', contactObjet: '', contactMessage: '', contactFileState: 'none', contactFileKey: null, contactFileName: '' });
     clearTimeout(this._contactSentTimer);
     this._contactSentTimer = setTimeout(() => this.setState({ contactSent: false }), 5000);
   }
@@ -1248,7 +1266,16 @@ class Component extends DCLogic {
       },
       onContactDragOver: (e) => { e.preventDefault(); if (!this.state.contactDragging) this.setState({ contactDragging: true }); },
       onContactDragLeave: (e) => { e.preventDefault(); this.setState({ contactDragging: false }); },
-      onContactDrop: (e) => { e.preventDefault(); this.setState({ contactDragging: false }); this.attachContactFile(); },
+      onContactDrop: (e) => {
+        e.preventDefault();
+        this.setState({ contactDragging: false });
+        const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (file && this.state.contactFileState === 'none') this._uploadContactFile(file);
+      },
+      onContactFileInputChange: (e) => this.onContactFileInputChange(e),
+      contactFileInputRef: this.contactFileInputRef,
+      hasContactFileError: !!s.contactFileError,
+      contactFileError: s.contactFileError,
       showSentMessage: s.contactSent,
       hasError: !!s.contactError,
       errorMessage: s.contactError,
