@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 function client() {
   return new S3Client({
@@ -25,4 +25,8 @@ export async function getObject(key: string): Promise<Buffer> {
   const chunks: Buffer[] = [];
   for await (const chunk of res.Body as AsyncIterable<Buffer>) chunks.push(chunk as Buffer);
   return Buffer.concat(chunks);
+}
+
+export async function deleteObject(key: string): Promise<void> {
+  await client().send(new DeleteObjectCommand({ Bucket: process.env.S3_BUCKET, Key: key }));
 }

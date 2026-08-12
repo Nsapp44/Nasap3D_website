@@ -10,7 +10,7 @@ import { getModelInfo, pickPrinter, sliceModel } from "../lib/slicer.js";
 import { computePrice } from "../lib/pricing.js";
 
 const ALLOWED_EXT = new Set([".stl", ".3mf", ".obj", ".step", ".stp"]);
-const MAX_FILE_BYTES = 50 * 1024 * 1024;
+const MAX_FILE_BYTES = 150 * 1024 * 1024;
 
 function quotePublicView(q: {
   id: string; fileName: string; volumeCm3: number | null; weightG: number | null;

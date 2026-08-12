@@ -98,6 +98,24 @@ a:hover{color:#ff7a5c}
                 </div>
               </sc-if>
             </div>
+            <sc-if value="{{ order.hasFiles }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:6px">
+                <sc-for list="{{ order.files }}" as="file" hint-placeholder-count="1">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                    <span style="font:400 10.5px ui-monospace,monospace;color:rgba(255,255,255,.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ file.label }}</span>
+                    <div style="display:flex;gap:6px;flex:none">
+                      <sc-if value="{{ file.available }}" hint-placeholder-val="{{ true }}">
+                        <a href="{{ file.downloadUrl }}" style="text-decoration:none;border:1px solid rgba(255,255,255,.2);color:#f3f1ec;font:500 10px 'Inter',sans-serif;padding:5px 10px;border-radius:5px">Télécharger</a>
+                        <span onClick="{{ file.onDelete }}" style="border:1px solid rgba(255,90,60,.35);color:#ff8a70;font:500 10px 'Inter',sans-serif;padding:5px 10px;border-radius:5px;cursor:pointer">Supprimer</span>
+                      </sc-if>
+                      <sc-if value="{{ file.unavailable }}" hint-placeholder-val="{{ false }}">
+                        <span style="font:500 10px 'Inter',sans-serif;color:rgba(255,255,255,.3)">Fichier supprimé</span>
+                      </sc-if>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
           </div>
         </sc-for>
         <sc-if value="{{ ordersEmpty }}" hint-placeholder-val="{{ false }}">
@@ -220,6 +238,11 @@ class Component extends DCLogic {
     await api.adminRejectOrder(id);
     this._loadOrders();
   }
+  async deleteOrderFile(orderId, itemId) {
+    const api = await this._api();
+    const res = await api.adminDeleteOrderFile(orderId, itemId);
+    if (res.ok) this._loadOrders();
+  }
   async toggleSpool(materialId, colorId, inStock) {
     const api = await this._api();
     await api.adminUpdateColorStock(materialId, colorId, !inStock);
@@ -272,6 +295,14 @@ class Component extends DCLogic {
       needsAcceptance: o.status === 'PENDING',
       onAccept: () => this.setOrderStatus(o.id, 'PRINTING'),
       onReject: () => this.rejectOrder(o.id),
+      hasFiles: o.items.some(i => i.fileName),
+      files: o.items.filter(i => i.fileName).map(i => ({
+        label: i.fileName,
+        available: i.fileAvailable,
+        unavailable: !i.fileAvailable,
+        downloadUrl: i.fileAvailable && this._apiMod ? this._apiMod.adminOrderFileUrl(o.id, i.id) : '#',
+        onDelete: () => this.deleteOrderFile(o.id, i.id)
+      })),
       statusOptions: statusDefs.map(def => {
         const active = o.status === def.key;
         return {

@@ -16,6 +16,7 @@ import {
 import { quoteShippingRates, BoxtalConfigError, BoxtalApiError } from "../lib/boxtal.js";
 import { nextCounter } from "../lib/counter.js";
 import { saveFile } from "../lib/storage.js";
+import { sendMail } from "../lib/mailer.js";
 
 const checkoutShippingSchema = z.object({
   mode: z.enum(["RELAY", "HOME"]),
@@ -167,10 +168,25 @@ export async function stripeWebhookRoutes(app: FastifyInstance) {
       });
 
       await createInvoiceFromStripeSession(session, created.orderId, userId, created.totalCents);
+      await notifyNewOrder(created.ref, session.customer_email, created.totalCents);
     }
 
     return reply.send({ ok: true });
   });
+}
+
+async function notifyNewOrder(ref: string, customerEmail: string | null | undefined, totalCents: number) {
+  const notify = process.env.ORDER_NOTIFY_EMAIL;
+  if (!notify) return;
+  try {
+    await sendMail(
+      notify,
+      `Nouvelle commande ${ref} — ${(totalCents / 100).toFixed(2)} €`,
+      `Nouvelle commande payée sur nasap3d.com.\n\nRéférence : ${ref}\nClient : ${customerEmail || "(email inconnu)"}\nTotal : ${(totalCents / 100).toFixed(2)} €\n\nVoir dans l'admin : ${process.env.FRONT_URL}/Admin.dc.html`,
+    );
+  } catch (err) {
+    console.error("[checkout] new order notification email failed", err);
+  }
 }
 
 async function createInvoiceFromStripeSession(

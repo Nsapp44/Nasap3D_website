@@ -173,6 +173,11 @@ model QuoteJob {
   user             User?          @relation(fields: [userId], references: [id])
   sessionId        String?
   fileKey          String
+  // Set once an admin deletes the original upload from storage (see
+  // POST /admin/orders/:orderId/items/:itemId/delete-file) to keep storage
+  // from growing unbounded — fileKey is left in place as a historical
+  // record even though it no longer resolves to a real object.
+  fileDeletedAt    DateTime?
   fileName         String
   fileSizeBytes    Int
   materialId       String

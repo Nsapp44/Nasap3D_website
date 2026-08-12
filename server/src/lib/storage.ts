@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { mkdir, writeFile, readFile } from "node:fs/promises";
+import { mkdir, writeFile, readFile, unlink } from "node:fs/promises";
 import path from "node:path";
 
 // S3-compatible storage for uploads + generated invoice PDFs, with a local-disk
@@ -32,4 +32,19 @@ export async function readFileByKey(key: string): Promise<Buffer> {
     return getObject(key);
   }
   return readFile(path.join(LOCAL_DIR, key));
+}
+
+// Used by the admin "delete STL" action (see routes/admin.ts) — the
+// original upload is only needed while a piece is being sliced/printed;
+// once that's done, keeping it around indefinitely just grows storage for
+// no benefit.
+export async function deleteFile(key: string): Promise<void> {
+  if (s3Configured()) {
+    const { deleteObject } = await import("./s3.js");
+    await deleteObject(key);
+    return;
+  }
+  await unlink(path.join(LOCAL_DIR, key)).catch((err) => {
+    if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+  });
 }

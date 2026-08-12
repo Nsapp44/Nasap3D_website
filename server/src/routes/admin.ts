@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../lib/session.js";
+import { readFileByKey, deleteFile } from "../lib/storage.js";
 
 const ORDER_STATUSES = ["PENDING", "PRINTING", "READY", "DELIVERED"] as const;
 
@@ -60,7 +61,10 @@ export async function adminRoutes(app: FastifyInstance) {
       prisma.order.findMany({
         where: status ? { status } : undefined,
         orderBy: { createdAt: "desc" },
-        include: { items: true, user: { select: { email: true, customerNo: true } } },
+        include: {
+          items: { include: { quoteJob: { select: { fileName: true, fileDeletedAt: true } } } },
+          user: { select: { email: true, customerNo: true } },
+        },
       }),
       prisma.order.groupBy({ by: ["status"], _count: true }),
     ]);
@@ -78,9 +82,12 @@ export async function adminRoutes(app: FastifyInstance) {
         totalCents: o.totalCents,
         createdAt: o.createdAt,
         items: o.items.map((i) => ({
+          id: i.id,
           nameSnapshot: i.nameSnapshot,
           materialSnapshot: i.materialSnapshot,
           qty: i.qty,
+          fileName: i.quoteJob?.fileName ?? null,
+          fileAvailable: !!i.quoteJob && !i.quoteJob.fileDeletedAt,
         })),
       })),
       counts: {
@@ -88,6 +95,36 @@ export async function adminRoutes(app: FastifyInstance) {
         ...countByStatus,
       },
     });
+  });
+
+  // Original STL/3MF upload for one order line — kept only as long as it's
+  // needed for printing. See deleteFile() below to reclaim the storage
+  // afterward.
+  app.get("/admin/orders/:orderId/items/:itemId/file", async (request, reply) => {
+    const { orderId, itemId } = request.params as { orderId: string; itemId: string };
+    const item = await prisma.orderItem.findUnique({ where: { id: itemId }, include: { quoteJob: true } });
+    if (!item || item.orderId !== orderId || !item.quoteJob || item.quoteJob.fileDeletedAt) {
+      return reply.code(404).send({ error: "not_found" });
+    }
+
+    const buffer = await readFileByKey(item.quoteJob.fileKey);
+    return reply
+      .header("Content-Disposition", `attachment; filename="${item.quoteJob.fileName.replace(/"/g, "")}"`)
+      .header("Content-Type", "application/octet-stream")
+      .send(buffer);
+  });
+
+  app.delete("/admin/orders/:orderId/items/:itemId/file", async (request, reply) => {
+    const { orderId, itemId } = request.params as { orderId: string; itemId: string };
+    const item = await prisma.orderItem.findUnique({ where: { id: itemId }, include: { quoteJob: true } });
+    if (!item || item.orderId !== orderId || !item.quoteJob) {
+      return reply.code(404).send({ error: "not_found" });
+    }
+    if (item.quoteJob.fileDeletedAt) return reply.send({ ok: true });
+
+    await deleteFile(item.quoteJob.fileKey);
+    await prisma.quoteJob.update({ where: { id: item.quoteJob.id }, data: { fileDeletedAt: new Date() } });
+    return reply.send({ ok: true });
   });
 
   app.patch("/admin/orders/:id", async (request, reply) => {

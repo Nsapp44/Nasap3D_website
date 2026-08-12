@@ -143,6 +143,12 @@ export const api = {
   async adminRejectOrder(orderId) {
     return request('DELETE', '/admin/orders/' + orderId);
   },
+  adminOrderFileUrl(orderId, itemId) {
+    return apiBase() + '/admin/orders/' + orderId + '/items/' + itemId + '/file';
+  },
+  async adminDeleteOrderFile(orderId, itemId) {
+    return request('DELETE', '/admin/orders/' + orderId + '/items/' + itemId + '/file');
+  },
   async adminGetSettings() {
     return request('GET', '/admin/settings');
   },
