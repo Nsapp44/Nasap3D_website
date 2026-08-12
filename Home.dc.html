@@ -564,7 +564,10 @@ a:hover{color:#ff7a5c}
               </div>
             </sc-if>
             <sc-if value="{{ contactFileReady }}" hint-placeholder-val="{{ false }}">
-              <div style="border:1px solid rgba(255,90,60,.35);background:rgba(255,90,60,.08);border-radius:6px;padding:10px;font:11px 'Inter',sans-serif;color:#f3f1ec;text-align:center">✓ {{ contactFileName }}</div>
+              <div style="border:1px solid rgba(255,90,60,.35);background:rgba(255,90,60,.08);border-radius:6px;padding:10px;font:11px 'Inter',sans-serif;color:#f3f1ec;display:flex;align-items:center;justify-content:space-between;gap:10px">
+                <span>✓ {{ contactFileName }}</span>
+                <span onClick="{{ removeContactFile }}" style="flex:none;cursor:pointer;color:rgba(255,255,255,.5);font:600 10px 'Inter',sans-serif;text-decoration:underline">Retirer</span>
+              </div>
             </sc-if>
             <sc-if value="{{ hasContactFileError }}" hint-placeholder-val="{{ false }}">
               <div style="font:600 10.5px 'Inter',sans-serif;color:#ff8a70;margin-top:6px">{{ contactFileError }}</div>
@@ -1186,6 +1189,10 @@ class Component extends DCLogic {
     if (this.state.contactFileState !== 'none') return;
     if (this.contactFileInputRef.current) this.contactFileInputRef.current.click();
   }
+  removeContactFile() {
+    if (this.contactFileInputRef.current) this.contactFileInputRef.current.value = '';
+    this.setState({ contactFileState: 'none', contactFileKey: null, contactFileName: '', contactFileError: null });
+  }
   onContactFileInputChange(e) {
     const file = e.target.files && e.target.files[0];
     if (file) this._uploadContactFile(file);
@@ -1254,6 +1261,7 @@ class Component extends DCLogic {
       onContactObjet: (e) => this.setContactField('contactObjet', e.target.value),
       onContactMessage: (e) => this.setContactField('contactMessage', e.target.value),
       attachContactFile: () => this.attachContactFile(),
+      removeContactFile: () => this.removeContactFile(),
       contactDropStyle: {
         border: '1.5px dashed ' + (s.contactDragging ? '#ff5a3c' : 'rgba(255,255,255,.25)'),
         borderRadius: '6px', padding: '10px', font: "11px 'Inter',sans-serif",
