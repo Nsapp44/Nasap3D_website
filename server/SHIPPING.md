@@ -16,21 +16,45 @@ Le prix de livraison n'est **jamais** fourni par le navigateur : à l'étape
 que le montant qu'elle vient de renvoyer — même principe que pour le prix
 d'une pièce imprimée (voir `PRICING.md`).
 
-## Ce qui n'est PAS fait (hors périmètre pour l'instant)
+## Achat de l'étiquette d'expédition
 
-L'**achat de l'étiquette d'expédition** (`POST api/v1/order` chez Boxtal —
-argent réel, crée une vraie expédition facturée) n'est pas implémenté. Une
-fois une commande payée, il n'y a aujourd'hui aucun bouton "générer
-l'étiquette" côté admin — c'est une suite logique à ajouter plus tard,
-quand il faudra vraiment expédier les colis.
+Sur chaque commande ayant des informations de livraison complètes,
+l'admin (`Admin.dc.html`) a un bouton **"Créer l'étiquette"** (avec une
+confirmation navigateur avant l'appel, puisque ça facture réellement le
+compte Boxtal). Ça appelle `POST /admin/orders/:id/shipping-label`, qui :
+
+1. refuse si une étiquette a déjà été achetée pour cette commande
+   (`boxtalOrderRef` déjà rempli — garde-fou anti-double-achat, `409`) ;
+2. appelle réellement `api/v1/order` chez Boxtal (`purchaseShippingLabel()`
+   dans `src/lib/boxtal.ts`), avec le **même** poids/transporteur/service
+   que ceux figés au moment du paiement (jamais recalculés) ;
+3. stocke la référence Boxtal et l'URL de l'étiquette sur la commande.
+
+Certains transporteurs génèrent l'étiquette de façon asynchrone : si
+`labels/label` est vide dans la réponse de `api/v1/order`, l'admin voit
+"Étiquette en cours de génération…" avec un bouton "Vérifier" qui appelle
+`GET /admin/orders/:id/shipping-label` (`checkLabelStatus()`, poll
+`api/v1/order_status/{reference}/informations`).
+
+**Identité expéditeur** : `api/v1/order` a besoin d'un contact nommé (pas
+juste une adresse comme pour la cotation) — voir `BOXTAL_SHIPPER_FIRSTNAME
+/_LASTNAME/_COMPANY/_EMAIL/_PHONE` dans `.env`.
+
+**Pas de bac à sable sur ce compte** : comme pour la cotation, seul l'hôte
+de production authentifie avec ces clés — `test.envoimoinscher.com` renvoie
+401. Contrairement à la cotation (gratuite, sans effet de bord), `api/v1/
+order` engage de l'argent réel à chaque appel. Demander à Boxtal des
+identifiants sandbox séparés pour ce compte avant de tester ce flux pour de
+vrai sans facturation.
 
 ## Pourquoi l'API v1 (et pas la v3 "webservice")
 
-Boxtal fournit deux paires de clés (v1 et v3). La v1 est celle qui expose
-la simulation de tarif ("cotation") et la liste des transporteurs — c'est
-la seule dont on a eu besoin ici. La v3 (clés `BOXTAL_API_KEY_V3` /
-`BOXTAL_API_SECRET_V3`, stockées mais inutilisées) sert probablement à
-l'achat d'étiquette côté v3 — à vérifier le jour où ce chantier est lancé.
+Boxtal fournit deux paires de clés (v1 et v3). La v1 est celle utilisée ici
+pour tout : simulation de tarif (`api/v1/cotation`) **et** achat
+d'étiquette (`api/v1/order`) — le client PHP officiel confirme que les deux
+actions vivent sur la même API v1, avec la même authentification. La v3
+(clés `BOXTAL_API_KEY_V3` / `BOXTAL_API_SECRET_V3`, stockées mais
+inutilisées) n'a jamais été nécessaire.
 
 La documentation officielle (`developer.boxtal.com`) est une SPA qu'on n'a
 pas pu récupérer en texte brut. À la place, l'intégration a été construite
@@ -80,7 +104,7 @@ d'étape de build front-end). Il affiche une carte dans un iframe Boxtal et
 renvoie le point choisi par `postMessage` — voir `Cart.dc.html`.
 
 `BOXTAL_MAP_API_KEY` sert de jeton d'accès côté navigateur (même catégorie
-que la clé de site reCAPTCHA : pensée pour être publique). Le secret
+que la clé de site hCaptcha : pensée pour être publique). Le secret
 correspondant (`BOXTAL_MAP_API_SECRET`) est stocké mais non utilisé — rien
 dans le widget officiel n'en a besoin.
 

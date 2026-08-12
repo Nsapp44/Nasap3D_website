@@ -153,6 +153,12 @@ export const api = {
   async adminDeleteOrderFile(orderId, itemId) {
     return request('DELETE', '/admin/orders/' + orderId + '/items/' + itemId + '/file');
   },
+  async adminBuyShippingLabel(orderId) {
+    return request('POST', '/admin/orders/' + orderId + '/shipping-label');
+  },
+  async adminCheckShippingLabel(orderId) {
+    return request('GET', '/admin/orders/' + orderId + '/shipping-label');
+  },
   async adminGetSettings() {
     return request('GET', '/admin/settings');
   },

@@ -261,6 +261,14 @@ model Order {
   relayPointCity      String?
   relayPointZipcode   String?
 
+  // Achat réel de l'étiquette d'expédition (voir purchaseShippingLabel()
+  // dans boxtal.ts) — argent réel dépensé sur le compte Boxtal, déclenché
+  // manuellement par l'admin. boxtalOrderRef non-nul = déjà acheté, sert de
+  // garde-fou anti-double-achat.
+  boxtalOrderRef   String?   @unique
+  shippingLabelUrl String?
+  labelPurchasedAt DateTime?
+
   items   OrderItem[]
   invoice Invoice?
 

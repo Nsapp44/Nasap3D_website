@@ -116,6 +116,22 @@ a:hover{color:#ff7a5c}
                 </sc-for>
               </div>
             </sc-if>
+            <sc-if value="{{ order.canBuyLabel }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)">
+                <span onClick="{{ order.onBuyLabel }}" style="border:1px solid rgba(255,255,255,.2);color:#f3f1ec;font:500 10.5px 'Inter',sans-serif;padding:6px 12px;border-radius:5px;cursor:pointer">{{ order.buyLabelText }}</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ order.hasLabel }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)">
+                <a href="{{ order.labelUrl }}" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,90,60,.35);color:#ff5a3c;font:600 10.5px 'Inter',sans-serif;padding:6px 12px;border-radius:5px">Télécharger l'étiquette</a>
+              </div>
+            </sc-if>
+            <sc-if value="{{ order.labelPending }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px">
+                <span style="font:500 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.45)">Étiquette en cours de génération…</span>
+                <span onClick="{{ order.onCheckLabel }}" style="border:1px solid rgba(255,255,255,.2);color:#f3f1ec;font:500 10px 'Inter',sans-serif;padding:5px 10px;border-radius:5px;cursor:pointer">Vérifier</span>
+              </div>
+            </sc-if>
           </div>
         </sc-for>
         <sc-if value="{{ ordersEmpty }}" hint-placeholder-val="{{ false }}">
@@ -198,7 +214,8 @@ class Component extends DCLogic {
     priceDrafts: {},
     priceSaved: {},
     hourlyRateDraft: '', minPriceDraft: '',
-    hourlyRateSaved: false, minPriceSaved: false
+    hourlyRateSaved: false, minPriceSaved: false,
+    labelBusy: {}
   };
   componentDidMount() {
     this._checkAuth();
@@ -298,6 +315,40 @@ class Component extends DCLogic {
     const res = await api.adminDeleteOrderFile(orderId, itemId);
     if (res.ok) this._loadOrders();
   }
+  async buyShippingLabel(orderId) {
+    if (this.state.labelBusy[orderId]) return;
+    if (!window.confirm("Ceci achète réellement une étiquette d'expédition auprès de Boxtal (facturé au compte). Confirmer ?")) return;
+    this.setState(s => ({ labelBusy: { ...s.labelBusy, [orderId]: true } }));
+    const api = await this._api();
+    const res = await api.adminBuyShippingLabel(orderId);
+    this.setState(s => ({ labelBusy: { ...s.labelBusy, [orderId]: false } }));
+    if (!res.ok) {
+      const messages = {
+        label_already_purchased: 'Une étiquette a déjà été achetée pour cette commande.',
+        missing_shipping_info: "Informations de livraison incomplètes pour cette commande.",
+        missing_relay_point: 'Aucun point relais enregistré pour cette commande.',
+        boxtal_not_configured: 'Boxtal non configuré côté serveur.',
+        boxtal_order_failed: "Échec de l'achat auprès de Boxtal : " + ((res.data && res.data.reason) || 'raison inconnue')
+      };
+      window.alert(messages[res.data && res.data.error] || "Échec de l'achat de l'étiquette.");
+      return;
+    }
+    this._loadOrders();
+  }
+  async checkShippingLabel(orderId) {
+    if (this.state.labelBusy[orderId]) return;
+    this.setState(s => ({ labelBusy: { ...s.labelBusy, [orderId]: true } }));
+    const api = await this._api();
+    const res = await api.adminCheckShippingLabel(orderId);
+    this.setState(s => ({ labelBusy: { ...s.labelBusy, [orderId]: false } }));
+    if (res.ok && res.data && res.data.shippingLabelUrl) {
+      this._loadOrders();
+    } else if (res.ok) {
+      window.alert("Étiquette pas encore prête chez Boxtal, réessayez dans un instant.");
+    } else {
+      window.alert("Échec de la vérification du statut de l'étiquette.");
+    }
+  }
   async toggleSpool(materialId, colorId, inStock) {
     const api = await this._api();
     await api.adminUpdateColorStock(materialId, colorId, !inStock);
@@ -358,6 +409,14 @@ class Component extends DCLogic {
         downloadUrl: i.fileAvailable && this._apiMod ? this._apiMod.adminOrderFileUrl(o.id, i.id) : '#',
         onDelete: () => this.deleteOrderFile(o.id, i.id)
       })),
+      canBuyLabel: o.canBuyLabel && !o.shippingLabelUrl,
+      hasLabel: !!o.shippingLabelUrl,
+      labelPending: !!o.boxtalOrderRef && !o.shippingLabelUrl,
+      labelUrl: o.shippingLabelUrl,
+      labelBusy: !!s.labelBusy[o.id],
+      buyLabelText: s.labelBusy[o.id] ? 'Achat en cours…' : "Créer l'étiquette",
+      onBuyLabel: () => this.buyShippingLabel(o.id),
+      onCheckLabel: () => this.checkShippingLabel(o.id),
       statusOptions: statusDefs.map(def => {
         const active = o.status === def.key;
         return {

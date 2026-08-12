@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../lib/session.js";
 import { readFileByKey, deleteFile } from "../lib/storage.js";
+import { purchaseShippingLabel, checkLabelStatus, BoxtalConfigError, BoxtalApiError } from "../lib/boxtal.js";
 
 const ORDER_STATUSES = ["PENDING", "PRINTING", "READY", "DELIVERED"] as const;
 
@@ -81,6 +82,10 @@ export async function adminRoutes(app: FastifyInstance) {
         status: o.status,
         totalCents: o.totalCents,
         createdAt: o.createdAt,
+        shippingMode: o.shippingMode,
+        canBuyLabel: !!o.shippingMode && !!o.shippingCarrierCode && !!o.shippingServiceCode && !!o.shippingWeightG,
+        boxtalOrderRef: o.boxtalOrderRef,
+        shippingLabelUrl: o.shippingLabelUrl,
         items: o.items.map((i) => ({
           id: i.id,
           nameSnapshot: i.nameSnapshot,
@@ -125,6 +130,97 @@ export async function adminRoutes(app: FastifyInstance) {
     await deleteFile(item.quoteJob.fileKey);
     await prisma.quoteJob.update({ where: { id: item.quoteJob.id }, data: { fileDeletedAt: new Date() } });
     return reply.send({ ok: true });
+  });
+
+  // Achat RÉEL de l'étiquette d'expédition (Boxtal api/v1/order) — argent
+  // réel, jamais déclenché automatiquement. boxtalOrderRef déjà rempli =
+  // garde-fou anti-double-achat (409, pas de nouvel appel à Boxtal).
+  app.post("/admin/orders/:id/shipping-label", async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const order = await prisma.order.findUnique({ where: { id }, include: { user: { select: { email: true } } } });
+    if (!order) return reply.code(404).send({ error: "not_found" });
+    if (order.boxtalOrderRef) return reply.code(409).send({ error: "label_already_purchased" });
+    if (
+      !order.shippingMode ||
+      !order.shippingCarrierCode ||
+      !order.shippingServiceCode ||
+      !order.shippingWeightG ||
+      !order.recipientName ||
+      !order.recipientPhone ||
+      !order.recipientAddress ||
+      !order.recipientCity ||
+      !order.recipientZipcode ||
+      !order.recipientCountry
+    ) {
+      return reply.code(409).send({ error: "missing_shipping_info" });
+    }
+    if (order.shippingMode === "RELAY" && !order.relayPointCode) {
+      return reply.code(409).send({ error: "missing_relay_point" });
+    }
+
+    try {
+      const result = await purchaseShippingLabel({
+        recipient: {
+          fullName: order.recipientName,
+          phone: order.recipientPhone,
+          email: order.user.email,
+          address: order.recipientAddress,
+          city: order.recipientCity,
+          zipcode: order.recipientZipcode,
+          country: order.recipientCountry,
+        },
+        weightG: order.shippingWeightG,
+        operatorCode: order.shippingCarrierCode,
+        serviceCode: order.shippingServiceCode,
+        mode: order.shippingMode,
+        relayPointCode: order.relayPointCode,
+      });
+      const updated = await prisma.order.update({
+        where: { id },
+        data: {
+          boxtalOrderRef: result.boxtalOrderRef,
+          shippingLabelUrl: result.labelUrl,
+          labelPurchasedAt: new Date(),
+        },
+      });
+      return reply.send({
+        boxtalOrderRef: updated.boxtalOrderRef,
+        shippingLabelUrl: updated.shippingLabelUrl,
+        labelPending: !updated.shippingLabelUrl,
+      });
+    } catch (err) {
+      if (err instanceof BoxtalConfigError) return reply.code(500).send({ error: "boxtal_not_configured" });
+      if (err instanceof BoxtalApiError) {
+        request.log.error({ err }, "boxtal label purchase failed");
+        return reply.code(502).send({ error: "boxtal_order_failed", reason: err.message });
+      }
+      throw err;
+    }
+  });
+
+  // Si l'achat n'a pas renvoyé l'étiquette immédiatement (génération
+  // asynchrone chez certains transporteurs), permet de la re-vérifier.
+  app.get("/admin/orders/:id/shipping-label", async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const order = await prisma.order.findUnique({ where: { id } });
+    if (!order) return reply.code(404).send({ error: "not_found" });
+    if (!order.boxtalOrderRef) return reply.code(409).send({ error: "label_not_purchased" });
+    if (order.shippingLabelUrl) return reply.send({ shippingLabelUrl: order.shippingLabelUrl, labelPending: false });
+
+    try {
+      const status = await checkLabelStatus(order.boxtalOrderRef);
+      if (status.labelUrl) {
+        await prisma.order.update({ where: { id }, data: { shippingLabelUrl: status.labelUrl } });
+      }
+      return reply.send({ shippingLabelUrl: status.labelUrl, labelPending: !status.labelUrl });
+    } catch (err) {
+      if (err instanceof BoxtalConfigError) return reply.code(500).send({ error: "boxtal_not_configured" });
+      if (err instanceof BoxtalApiError) {
+        request.log.error({ err }, "boxtal label status check failed");
+        return reply.code(502).send({ error: "boxtal_status_failed", reason: err.message });
+      }
+      throw err;
+    }
   });
 
   app.patch("/admin/orders/:id", async (request, reply) => {

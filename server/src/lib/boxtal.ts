@@ -8,9 +8,12 @@
 // PRODUCTION host (www.envoimoinscher.com) — test.envoimoinscher.com returned
 // 401 for these credentials (it needs separate sandbox credentials Boxtal
 // hasn't issued for this account). A rate simulation ("cotation") is a free,
-// read-only call with no side effect, so this is safe to call from dev too —
-// but nothing in this file ever calls the label-purchase endpoint
-// (api/v1/order), which is real money and is deliberately out of scope here.
+// read-only call with no side effect, so this is safe to call from dev too.
+//
+// purchaseShippingLabel() below is different: it calls api/v1/order, which
+// is REAL MONEY (creates a real shipment, billed to the Boxtal account) —
+// there is no sandbox for it on this account. It is only ever invoked from
+// an explicit admin action (see routes/admin.ts), never automatically.
 import { XMLParser } from "fast-xml-parser";
 
 const BASE_URL = "https://www.envoimoinscher.com/";
@@ -70,7 +73,40 @@ function shipperAddress(): ShippingAddress {
   return { country, zipcode, city, address };
 }
 
-const xmlParser = new XMLParser({ ignoreAttributes: true, isArray: (name) => name === "offer" });
+// Only needed for a real order (api/v1/order) — the free cotation call
+// doesn't need a named contact, but a real shipment does.
+interface ShipperIdentity {
+  firstname: string;
+  lastname: string;
+  company: string;
+  email: string;
+  phone: string;
+}
+
+function shipperIdentity(): ShipperIdentity {
+  const firstname = process.env.BOXTAL_SHIPPER_FIRSTNAME;
+  const lastname = process.env.BOXTAL_SHIPPER_LASTNAME;
+  const company = process.env.BOXTAL_SHIPPER_COMPANY;
+  const email = process.env.BOXTAL_SHIPPER_EMAIL;
+  const phone = process.env.BOXTAL_SHIPPER_PHONE;
+  if (!firstname || !lastname || !company || !email || !phone) {
+    throw new BoxtalConfigError("BOXTAL_SHIPPER_FIRSTNAME/LASTNAME/COMPANY/EMAIL/PHONE not configured in .env");
+  }
+  return { firstname, lastname, company, email, phone };
+}
+
+// Boxtal's person object only takes one name field each way — split the
+// single "full name" collected at checkout on the first space. Good enough
+// for a shipping label; if there's no space, treat the whole thing as the
+// first name and leave the last name blank rather than guess.
+function splitFullName(fullName: string): { firstname: string; lastname: string } {
+  const trimmed = fullName.trim();
+  const spaceIdx = trimmed.indexOf(" ");
+  if (spaceIdx === -1) return { firstname: trimmed, lastname: "" };
+  return { firstname: trimmed.slice(0, spaceIdx), lastname: trimmed.slice(spaceIdx + 1) };
+}
+
+const xmlParser = new XMLParser({ ignoreAttributes: true, isArray: (name) => name === "offer" || name === "label" });
 
 // Packaging margin agreed with the business owner: real piece weight + 20%
 // to account for box/filling material, used to pick the right carrier
@@ -148,4 +184,129 @@ export async function quoteShippingRates(recipient: ShippingAddress, pieceWeight
   }
 
   return { relay, home, weightUsedG: Math.round(weightKg * 1000) };
+}
+
+export interface LabelRecipient {
+  fullName: string;
+  phone: string;
+  email: string;
+  address: string;
+  city: string;
+  zipcode: string;
+  country: string;
+}
+
+export interface LabelPurchaseInput {
+  recipient: LabelRecipient;
+  weightG: number;
+  operatorCode: string;
+  serviceCode: string;
+  mode: "RELAY" | "HOME";
+  relayPointCode?: string | null;
+}
+
+export interface LabelPurchaseResult {
+  boxtalOrderRef: string;
+  labelUrl: string | null;
+}
+
+// Real purchase of a shipping label (api/v1/order) — REAL MONEY, billed to
+// the Boxtal account, no sandbox available on this account (see the file
+// header). Reuses the same weight/packaging/content-code conventions as
+// quoteShippingRates() above, so the label matches what was actually
+// quoted and charged to the customer at checkout.
+export async function purchaseShippingLabel(input: LabelPurchaseInput): Promise<LabelPurchaseResult> {
+  const shipper = shipperAddress();
+  const shipperId = shipperIdentity();
+  const { firstname, lastname } = splitFullName(input.recipient.fullName);
+  const weightKg = Math.max(0.05, input.weightG / 1000);
+
+  const params = new URLSearchParams({
+    "shipper.country": shipper.country,
+    "shipper.zipcode": shipper.zipcode,
+    "shipper.city": shipper.city,
+    "shipper.address": shipper.address,
+    "shipper.type": "company",
+    "shipper.firstname": shipperId.firstname,
+    "shipper.lastname": shipperId.lastname,
+    "shipper.societe": shipperId.company,
+    "shipper.email": shipperId.email,
+    "shipper.phone": shipperId.phone,
+    "recipient.country": input.recipient.country,
+    "recipient.zipcode": input.recipient.zipcode,
+    "recipient.city": input.recipient.city,
+    "recipient.address": input.recipient.address,
+    "recipient.type": "individual",
+    "recipient.firstname": firstname,
+    "recipient.lastname": lastname,
+    "recipient.email": input.recipient.email,
+    "recipient.phone": input.recipient.phone,
+    "colis_1.poids": weightKg.toFixed(3),
+    "colis_1.longueur": String(DEFAULT_PARCEL_CM.length),
+    "colis_1.largeur": String(DEFAULT_PARCEL_CM.width),
+    "colis_1.hauteur": String(DEFAULT_PARCEL_CM.height),
+    collection_date: new Date().toISOString().slice(0, 10),
+    delay: "aucun",
+    content_code: CONTENT_CODE,
+    operator: input.operatorCode,
+    service: input.serviceCode,
+    platform: "nasap3d",
+    platform_version: "1.0",
+    module_version: "1.0",
+  });
+  if (input.mode === "RELAY") {
+    if (!input.relayPointCode) throw new BoxtalApiError("relayPointCode required for a RELAY shipment");
+    params.set("retrait.pointrelais", input.relayPointCode);
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}api/v1/order`, {
+      method: "POST",
+      headers: {
+        "Accept-Language": "fr-FR",
+        "Api-Version": API_VERSION,
+        Authorization: authHeader(),
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
+    });
+  } catch (err) {
+    throw new BoxtalApiError(`boxtal order request failed: ${(err as Error).message}`);
+  }
+  const xml = await res.text();
+  if (!res.ok) throw new BoxtalApiError(`boxtal order http ${res.status}: ${xml.slice(0, 500)}`);
+
+  const doc = xmlParser.parse(xml);
+  if (doc?.error) throw new BoxtalApiError(`boxtal order error: ${JSON.stringify(doc.error).slice(0, 500)}`);
+
+  const reference: string | undefined = doc?.order?.shipment?.reference;
+  if (!reference || !/^[0-9a-zA-Z]{20}$/.test(reference)) {
+    throw new BoxtalApiError(`boxtal order: no valid reference in response: ${xml.slice(0, 500)}`);
+  }
+
+  const labels: string[] = doc?.order?.shipment?.labels?.label ?? [];
+  return { boxtalOrderRef: reference, labelUrl: labels[0] ?? null };
+}
+
+// Label generation can be asynchronous for some carriers — call this if
+// purchaseShippingLabel() didn't return a label URL immediately.
+export async function checkLabelStatus(boxtalOrderRef: string): Promise<{ labelAvailable: boolean; labelUrl: string | null }> {
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}api/v1/order_status/${encodeURIComponent(boxtalOrderRef)}/informations`, {
+      headers: { "Accept-Language": "fr-FR", "Api-Version": API_VERSION, Authorization: authHeader() },
+    });
+  } catch (err) {
+    throw new BoxtalApiError(`boxtal order_status request failed: ${(err as Error).message}`);
+  }
+  const xml = await res.text();
+  if (!res.ok) throw new BoxtalApiError(`boxtal order_status http ${res.status}: ${xml.slice(0, 500)}`);
+
+  const doc = xmlParser.parse(xml);
+  if (doc?.error) throw new BoxtalApiError(`boxtal order_status error: ${JSON.stringify(doc.error).slice(0, 500)}`);
+
+  const labelAvailable = String(doc?.order?.label_available).toLowerCase() === "true";
+  const labelUrl: string | null = doc?.order?.label_url || null;
+  return { labelAvailable, labelUrl };
 }
