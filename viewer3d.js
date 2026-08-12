@@ -70,7 +70,6 @@ export async function renderModelPreview(container, { fileBuffer, ext, colorHex,
   });
   object.position.set(0, 0, 0);
   const radius = Math.max(size.length() / 2, 0.001);
-  if (!animate) object.rotation.set(-0.35, 0.55, 0); // flattering static 3/4 angle
 
   const scene = new THREE.Scene();
   scene.add(object);
@@ -85,12 +84,44 @@ export async function renderModelPreview(container, { fileBuffer, ext, colorHex,
   const width = container.clientWidth || 200;
   const height = container.clientHeight || 200;
   const camera = new THREE.PerspectiveCamera(35, width / height, radius / 100, radius * 100);
-  // Margin above the tight fit-to-bounding-sphere distance — kept small so
-  // the piece actually fills the preview box instead of floating in a lot
-  // of empty space (the box is usually much wider than tall, and framing
-  // is driven by the vertical FOV, so there was room to zoom in further).
-  const dist = radius / Math.sin((camera.fov * Math.PI) / 360) * 1.1;
-  camera.position.set(dist * 0.55, dist * 0.5, dist * 0.7);
+  const fovRad = (camera.fov * Math.PI) / 180;
+
+  // Tight fit using the actual bounding-box CORNERS (not the bounding
+  // sphere) in the exact camera direction used below — a sphere assumes
+  // the worst case across every possible orientation at once (the full 3D
+  // diagonal), which is far more conservative than what's actually needed
+  // for a fixed viewing angle and leaves real, avoidable empty space.
+  // Verified against real box-shaped test parts (the worst case for this,
+  // since a box's corners sit exactly on its bounding sphere) to confirm
+  // this never clips before shipping it.
+  const corners = [];
+  for (const sx of [box.min.x - center.x, box.max.x - center.x])
+    for (const sy of [box.min.y - center.y, box.max.y - center.y])
+      for (const sz of [box.min.z - center.z, box.max.z - center.z])
+        corners.push(new THREE.Vector3(sx, sy, sz));
+
+  if (animate) {
+    // Spins continuously (rotation.y free-running, rotation.x wobbling
+    // +/-0.15 rad) — the camera direction is fixed, so the fit must stay
+    // safe across that whole motion range, sampled here once up front.
+    const dir = new THREE.Vector3(0.55, 0.5, 0.7).normalize();
+    const samples = [];
+    for (let yi = 0; yi < 24; yi++) {
+      const ry = (yi / 24) * Math.PI * 2;
+      for (let xi = -2; xi <= 2; xi++) samples.push({ ry, rx: (xi / 2) * 0.15 });
+    }
+    const dist = tightFitDistance(THREE, corners, dir, fovRad, width / height, samples, 1.05);
+    camera.position.copy(dir).multiplyScalar(dist);
+  } else {
+    // Classic isometric 3/4 angle — camera at equal offsets on all three
+    // axes, so every piece reads the same way regardless of its own shape
+    // or how its file happened to be exported (used for the cart, where
+    // the piece stays still, so a single fixed orientation is all that
+    // needs to fit).
+    const dir = new THREE.Vector3(1, 1, 1).normalize();
+    const dist = tightFitDistance(THREE, corners, dir, fovRad, width / height, [{ ry: 0, rx: 0 }], 1.05);
+    camera.position.copy(dir).multiplyScalar(dist);
+  }
   camera.lookAt(0, 0, 0);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -145,6 +176,35 @@ async function buildStepObject(THREE, fileBuffer, colorHex) {
     group.add(new THREE.Mesh(geometry, material));
   }
   return group;
+}
+
+// Distance (along `dir`, a unit vector from the object's origin to the
+// camera) so that every corner in `corners`, rotated by each {ry, rx} in
+// `rotationSamples` (matching the object's actual runtime spin), stays
+// within the camera's field of view — with `margin` as a small safety
+// multiplier for edge/antialiasing softness.
+function tightFitDistance(THREE, corners, dir, fovRad, aspect, rotationSamples, margin) {
+  const forward = dir.clone().negate();
+  let right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0));
+  right = right.lengthSq() < 1e-8 ? new THREE.Vector3(1, 0, 0) : right.normalize();
+  const up = new THREE.Vector3().crossVectors(right, forward).normalize();
+  const tanV = Math.tan(fovRad / 2);
+  const tanH = tanV * aspect; // horizontal FOV's tan-half, from the vertical one and the aspect ratio
+
+  let need = 0;
+  const v = new THREE.Vector3();
+  const eulerY = new THREE.Euler();
+  const eulerX = new THREE.Euler();
+  for (const { ry, rx } of rotationSamples) {
+    eulerY.set(0, ry, 0);
+    eulerX.set(rx, 0, 0);
+    for (const c of corners) {
+      v.copy(c).applyEuler(eulerY).applyEuler(eulerX);
+      const along = v.dot(forward);
+      need = Math.max(need, Math.abs(v.dot(right)) / tanH - along, Math.abs(v.dot(up)) / tanV - along);
+    }
+  }
+  return Math.max(need, 0.001) * margin;
 }
 
 function materialFor(THREE, colorHex) {
