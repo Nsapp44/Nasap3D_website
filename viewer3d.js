@@ -85,7 +85,11 @@ export async function renderModelPreview(container, { fileBuffer, ext, colorHex,
   const width = container.clientWidth || 200;
   const height = container.clientHeight || 200;
   const camera = new THREE.PerspectiveCamera(35, width / height, radius / 100, radius * 100);
-  const dist = radius / Math.sin((camera.fov * Math.PI) / 360) * 1.35;
+  // Margin above the tight fit-to-bounding-sphere distance — kept small so
+  // the piece actually fills the preview box instead of floating in a lot
+  // of empty space (the box is usually much wider than tall, and framing
+  // is driven by the vertical FOV, so there was room to zoom in further).
+  const dist = radius / Math.sin((camera.fov * Math.PI) / 360) * 1.1;
   camera.position.set(dist * 0.55, dist * 0.5, dist * 0.7);
   camera.lookAt(0, 0, 0);
 
