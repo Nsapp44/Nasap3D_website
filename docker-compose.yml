@@ -26,6 +26,11 @@ services:
       - ./server/.env
     environment:
       DATABASE_URL: postgresql://nasap3d:nasap3d_dev_only@db:5432/nasap3d
+      # server/.env's PRUSASLICER_BIN is the Windows dev path (for `npm run
+      # dev` outside Docker) — override it here so the container always
+      # uses the Linux binary server/Dockerfile actually installs, no
+      # matter what's in the .env file used for local dev.
+      PRUSASLICER_BIN: /usr/local/bin/prusa-slicer
     ports:
       - "3000:3000"
     profiles:

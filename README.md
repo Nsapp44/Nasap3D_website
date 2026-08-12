@@ -57,8 +57,11 @@ voir [`server/README.md`](server/README.md).
 
 ## État connu
 
-Le tranchage PrusaSlicer tourne aujourd'hui côté serveur en local (jamais chez le client) ; son
-intégration dans l'image Docker de production reste à finaliser (voir `server/Dockerfile`).
+Le tranchage PrusaSlicer tourne côté serveur (jamais chez le client). `server/Dockerfile` installe
+PrusaSlicer pour l'image de production, mais **cette installation n'a jamais été construite ni
+testée pour de vrai** (aucun Docker disponible dans l'environnement où elle a été écrite) — à
+vérifier avant d'ouvrir le devis instantané au public, voir la section dédiée dans
+`server/README.md`.
 
 ## Documents associés
 

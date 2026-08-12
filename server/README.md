@@ -181,5 +181,39 @@ Avant de passer en production, vérifier concrètement :
 - `STRIPE_SECRET_KEY` est bien une clé `sk_live_...` (et pas la clé de test utilisée en dev).
 - `SMTP_*` est configuré — sans ça, les codes de vérification et notifications ne partent jamais
   réellement, seulement dans les logs.
-- `BOXTAL_SHIPPER_*` correspond à la vraie adresse de départ des colis.
+- `BOXTAL_SHIPPER_*` (adresse **et** identité — un vrai achat d'étiquette a besoin d'un contact
+  nommé, contrairement à la simple simulation de tarif) correspond à la vraie entreprise.
 - `S3_*` est configuré — le repli sur disque local ne survit pas à un redéploiement de conteneur.
+- **PrusaSlicer CLI dans l'image Docker n'a jamais été testé pour de vrai** (voir la section
+  ci-dessous) — à vérifier en premier sur un déploiement de test avant d'ouvrir le site au public.
+
+### PrusaSlicer dans l'image Docker (IMPORTANT — à vérifier avant la mise en prod)
+
+Le client n'a jamais PrusaSlicer sur sa machine — le devis instantané tranche réellement le
+fichier reçu **côté serveur**, jamais chez le client (voir `src/lib/slicer.ts`). `server/Dockerfile`
+installe PrusaSlicer pour ça : PrusaSlicer n'a plus de build Linux officiel prêt à l'emploi depuis
+la 2.8.1 (dépendance à WebKit qui a compliqué sa distribution — voir les notes de version et
+prusa3d/PrusaSlicer#13653), donc le Dockerfile télécharge l'AppImage communautaire
+[probonopd/PrusaSlicer.AppImage](https://github.com/probonopd/PrusaSlicer.AppImage) (entièrement
+autonome, n'a besoin ni de libfuse ni des libs du système), l'extrait au moment du build
+(`--appimage-extract`, pas besoin de FUSE au runtime), et l'expose via un petit script
+`/usr/local/bin/prusa-slicer` qui l'enveloppe avec `xvfb-run` par prudence.
+
+**Ceci n'a jamais été construit ni exécuté pour de vrai** — écrit à partir de la documentation
+officielle et d'un projet Docker communautaire équivalent qui fonctionne
+([Billa05/prusaslicer-cli-docker](https://github.com/Billa05/prusaslicer-cli-docker)), mais aucun
+Docker n'était disponible dans l'environnement où ce Dockerfile a été écrit pour le construire et
+le tester réellement. **Avant d'ouvrir le devis instantané au public**, construire l'image et
+lancer un vrai devis dessus :
+
+```bash
+docker compose --profile full up -d --build
+curl -F "file=@test.stl" -F material=PLA -F colorId=... -F quality=Standard \
+     -F infillPct=40 -F quantity=1 http://localhost:3000/quotes
+```
+
+Si `--info`/`--export-gcode` échouent avec une erreur liée à `$DISPLAY` ou à une librairie
+manquante, regarder les logs du conteneur (`docker compose logs api`) — l'erreur précise dira quoi
+ajuster (bibliothèque runtime manquante à ajouter dans le `apt-get install` de l'étape finale du
+Dockerfile, par exemple). La version de l'AppImage (`2.9.1` dans le Dockerfile) peut aussi être à
+remonter — vérifier les releases du dépôt communautaire ci-dessus.
