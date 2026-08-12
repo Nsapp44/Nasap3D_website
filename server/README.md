@@ -166,11 +166,24 @@ suffit).
 
 ## Déploiement (OVH)
 
-`docker-compose.yml` (racine du projet) inclut un service `api` derrière le profil `full` :
+`docker-compose.yml` (racine du projet) inclut un service `api` derrière le profil `full`.
+`.github/workflows/docker-publish.yml` build et publie l'image sur GitHub Container Registry
+(`ghcr.io/nsapp44/nasap3d-api`) à chaque push sur `master` qui touche `server/`. Le serveur OVH
+n'a donc besoin que de Docker installé, pas de Node/npm/PrusaSlicer — il récupère l'image déjà
+construite :
 
 ```bash
-docker compose --profile full up -d --build
+docker compose --profile full pull
+docker compose --profile full up -d
 ```
+
+(`--build` reste possible pour builder localement à la place — utile en dev, voir plus haut.)
+
+Le paquet GHCR est **public** (choix fait pour ce projet — pas besoin d'authentification pour le
+`pull` depuis le serveur OVH), mais reste à rendre public manuellement après le tout premier push
+réussi : sur GitHub → onglet **Packages** du repo → `nasap3d-api` → *Package settings* → *Change
+visibility* → *Public* (comportement par défaut de GHCR : un paquet publié via `GITHUB_TOKEN` est
+privé au premier push, quelle que soit la visibilité du repo).
 
 Le PostgreSQL n'est pas managé par OVH dans ce schéma : c'est un conteneur (ou une instance
 dédiée) que vous administrez vous-même — pensez aux sauvegardes et à activer `sslmode=require`
@@ -184,10 +197,9 @@ Avant de passer en production, vérifier concrètement :
 - `BOXTAL_SHIPPER_*` (adresse **et** identité — un vrai achat d'étiquette a besoin d'un contact
   nommé, contrairement à la simple simulation de tarif) correspond à la vraie entreprise.
 - `S3_*` est configuré — le repli sur disque local ne survit pas à un redéploiement de conteneur.
-- **PrusaSlicer CLI dans l'image Docker n'a jamais été testé pour de vrai** (voir la section
-  ci-dessous) — à vérifier en premier sur un déploiement de test avant d'ouvrir le site au public.
+- **PrusaSlicer CLI dans l'image Docker** — testé et fonctionnel (voir la section ci-dessous).
 
-### PrusaSlicer dans l'image Docker (IMPORTANT — à vérifier avant la mise en prod)
+### PrusaSlicer dans l'image Docker
 
 Le client n'a jamais PrusaSlicer sur sa machine — le devis instantané tranche réellement le
 fichier reçu **côté serveur**, jamais chez le client (voir `src/lib/slicer.ts`). `server/Dockerfile`
@@ -197,14 +209,17 @@ prusa3d/PrusaSlicer#13653), donc le Dockerfile télécharge l'AppImage communaut
 [probonopd/PrusaSlicer.AppImage](https://github.com/probonopd/PrusaSlicer.AppImage) (entièrement
 autonome, n'a besoin ni de libfuse ni des libs du système), l'extrait au moment du build
 (`--appimage-extract`, pas besoin de FUSE au runtime), et l'expose via un petit script
-`/usr/local/bin/prusa-slicer` qui l'enveloppe avec `xvfb-run` par prudence.
+`/usr/local/bin/prusa-slicer` qui l'enveloppe avec `xvfb-run`.
 
-**Ceci n'a jamais été construit ni exécuté pour de vrai** — écrit à partir de la documentation
-officielle et d'un projet Docker communautaire équivalent qui fonctionne
-([Billa05/prusaslicer-cli-docker](https://github.com/Billa05/prusaslicer-cli-docker)), mais aucun
-Docker n'était disponible dans l'environnement où ce Dockerfile a été écrit pour le construire et
-le tester réellement. **Avant d'ouvrir le devis instantané au public**, construire l'image et
-lancer un vrai devis dessus :
+**Construit et testé pour de vrai le 2026-08-12** (`docker compose --profile full up -d --build`
+puis un vrai `POST /quotes` avec plusieurs STL réels, plusieurs qualités/infill). Deux bugs
+trouvés et corrigés à cette occasion :
+- `xvfb-run` a besoin du paquet `xauth` (`xvfb-run: error: xauth command not found`) — ajouté à
+  côté de `xvfb` dans l'`apt-get install`.
+- `slicer-profiles/` (contient `h2c.ini`) n'était pas copié dans l'image finale (seuls `dist` et
+  `prisma` l'étaient) — ajouté un `COPY --from=build /app/slicer-profiles ./slicer-profiles`.
+
+Pour retester après une modification du Dockerfile ou une montée de version de l'AppImage :
 
 ```bash
 docker compose --profile full up -d --build
@@ -214,6 +229,5 @@ curl -F "file=@test.stl" -F material=PLA -F colorId=... -F quality=Standard \
 
 Si `--info`/`--export-gcode` échouent avec une erreur liée à `$DISPLAY` ou à une librairie
 manquante, regarder les logs du conteneur (`docker compose logs api`) — l'erreur précise dira quoi
-ajuster (bibliothèque runtime manquante à ajouter dans le `apt-get install` de l'étape finale du
-Dockerfile, par exemple). La version de l'AppImage (`2.9.1` dans le Dockerfile) peut aussi être à
-remonter — vérifier les releases du dépôt communautaire ci-dessus.
+ajuster. La version de l'AppImage (`2.9.1` dans le Dockerfile) peut aussi être à remonter —
+vérifier les releases du dépôt communautaire ci-dessus.

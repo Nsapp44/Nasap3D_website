@@ -30,14 +30,11 @@ FROM node:20-bookworm-slim
 WORKDIR /app
 ENV NODE_ENV=production
 
-# PrusaSlicer's CLI mode (--info / --export-gcode, see slicer.ts) is
-# documented to run without ever opening a window, but nothing in this
-# environment could actually confirm that empirically end-to-end — no
-# Docker available to build/run this image (see server/README.md). Wrapping
-# the call in xvfb-run removes the risk of a missing-$DISPLAY failure for
-# the cost of a small, harmless dependency; drop it later if real testing
-# shows it's unnecessary.
-RUN apt-get update && apt-get install -y --no-install-recommends xvfb && rm -rf /var/lib/apt/lists/*
+# PrusaSlicer's CLI mode (--info / --export-gcode, see slicer.ts) needs
+# xvfb-run despite never opening a real window — confirmed by building and
+# running this image end-to-end (see server/README.md). xauth is xvfb-run's
+# own dependency (fails with "xauth command not found" without it).
+RUN apt-get update && apt-get install -y --no-install-recommends xvfb xauth && rm -rf /var/lib/apt/lists/*
 COPY --from=prusaslicer /opt/prusaslicer/squashfs-root /opt/prusaslicer/squashfs-root
 RUN printf '#!/bin/sh\nexec xvfb-run --auto-servernum -- /opt/prusaslicer/squashfs-root/AppRun "$@"\n' > /usr/local/bin/prusa-slicer \
     && chmod +x /usr/local/bin/prusa-slicer
@@ -47,6 +44,7 @@ COPY package.json package-lock.json* ./
 RUN npm install --omit=dev
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/slicer-profiles ./slicer-profiles
 RUN npx prisma generate
 EXPOSE 3000
 CMD ["node", "dist/index.js"]

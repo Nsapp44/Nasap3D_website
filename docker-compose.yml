@@ -17,6 +17,11 @@ services:
       retries: 10
 
   api:
+    # Pulled from GHCR by default (built by .github/workflows/docker-publish.yml
+    # on every push to master) — `docker compose --profile full pull` on the
+    # OVH server, no local build needed. `--build` (local dev) still works:
+    # it builds from ./server and tags the result with this same name.
+    image: ghcr.io/nsapp44/nasap3d-api:latest
     build: ./server
     restart: unless-stopped
     depends_on:
