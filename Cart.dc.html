@@ -49,6 +49,7 @@ a:hover{color:#ff7a5c}
     <div style="display:flex;gap:26px;font:500 13px 'Inter',sans-serif;color:rgba(255,255,255,.62)">
       <a href="Home.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Accueil</a>
       <a href="Services.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Services</a>
+      <a href="Devis Instantane.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Devis instantané</a>
       <a href="About.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">À propos</a>
       <a href="Realisations.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Réalisations</a>
       <a href="Machines.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Machines</a>
@@ -85,17 +86,8 @@ a:hover{color:#ff7a5c}
 
       <div style="display:flex;flex-direction:column;gap:12px">
         <sc-for list="{{ items }}" as="item" hint-placeholder-count="2">
-          <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;background:#1a1917;padding:14px;display:grid;grid-template-columns:72px 1fr auto;gap:14px;align-items:center">
-            <div style="width:72px;height:72px;border-radius:8px;background:radial-gradient(circle at 35% 30%, #ddd9d2, #b5b1a8);border:1px solid rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;perspective:150px;overflow:hidden;box-shadow:inset 0 -6px 10px rgba(0,0,0,.12)">
-              <div style="width:34px;height:34px;position:relative;transform-style:preserve-3d;transform:rotateX(-25deg) rotateY(-35deg)">
-                <div style="position:absolute;inset:0;transform:translateZ(17px);background:{{ item.colorHex }};border:0.5px solid rgba(0,0,0,.18)"></div>
-                <div style="position:absolute;inset:0;transform:rotateY(180deg) translateZ(17px);background:{{ item.colorHex }};filter:brightness(.62);border:0.5px solid rgba(0,0,0,.18)"></div>
-                <div style="position:absolute;inset:0;transform:rotateY(90deg) translateZ(17px);background:{{ item.colorHex }};filter:brightness(.5);border:0.5px solid rgba(0,0,0,.18)"></div>
-                <div style="position:absolute;inset:0;transform:rotateY(-90deg) translateZ(17px);background:{{ item.colorHex }};filter:brightness(.5);border:0.5px solid rgba(0,0,0,.18)"></div>
-                <div style="position:absolute;inset:0;transform:rotateX(90deg) translateZ(17px);background:{{ item.colorHex }};filter:brightness(1.45);border:0.5px solid rgba(0,0,0,.18)"></div>
-                <div style="position:absolute;inset:0;transform:rotateX(-90deg) translateZ(17px);background:{{ item.colorHex }};filter:brightness(.4);border:0.5px solid rgba(0,0,0,.18)"></div>
-              </div>
-            </div>
+          <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;background:#1a1917;padding:14px;display:grid;grid-template-columns:96px 1fr auto;gap:14px;align-items:center">
+            <div ref="{{ item.thumbRef }}" style="width:96px;height:96px;border-radius:8px;background:radial-gradient(circle at 35% 30%, #ddd9d2, #b5b1a8);border:1px solid rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:inset 0 -6px 10px rgba(0,0,0,.12)"></div>
             <div>
               <div style="font:600 13px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Pièce personnalisée (STL)</div>
               <div style="font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.5);margin-bottom:8px">{{ item.material }} · remplissage {{ item.infill }}% · qualité {{ item.quality }}</div>
@@ -281,6 +273,7 @@ class Component extends DCLogic {
   }
   componentWillUnmount() {
     window.removeEventListener('nasap3d-cart-changed', this._listener);
+    if (this._previewHandles) for (const handle of this._previewHandles.values()) handle.dispose();
   }
   async _api() {
     if (!this._apiMod) this._apiMod = (await import('./api-client.js')).api;
@@ -294,7 +287,45 @@ class Component extends DCLogic {
   async _loadCart() {
     const api = await this._api();
     const res = await api.getCart();
-    if (res.ok && res.data) this.setState({ cart: res.data, loaded: true });
+    if (res.ok && res.data) this.setState({ cart: res.data, loaded: true }, () => this._renderLinePreviews());
+  }
+  // Stable per-line ref, reused across re-renders (a fresh React.createRef()
+  // per render would lose the mounted node) — see _renderLinePreviews.
+  _getLineRef(id) {
+    this._lineRefs = this._lineRefs || new Map();
+    if (!this._lineRefs.has(id)) this._lineRefs.set(id, React.createRef());
+    return this._lineRefs.get(id);
+  }
+  // Renders each cart line's real uploaded geometry (not a placeholder) in
+  // its chosen color — see viewer3d.js. Fetches the original file once per
+  // line and skips lines already rendered; disposes lines no longer in the
+  // cart.
+  async _renderLinePreviews() {
+    const lines = this.state.cart.lines;
+    this._previewHandles = this._previewHandles || new Map();
+    const activeIds = new Set(lines.map(l => l.id));
+    for (const [id, handle] of this._previewHandles) {
+      if (!activeIds.has(id)) { handle.dispose(); this._previewHandles.delete(id); }
+    }
+    if (!lines.length) return;
+    const { isRenderableExt, renderModelPreview } = await import('./viewer3d.js');
+    const api = await this._api();
+    for (const line of lines) {
+      if (this._previewHandles.has(line.id) || line.expired) continue;
+      const ref = this._getLineRef(line.id);
+      if (!ref.current) continue;
+      const ext = '.' + line.fileName.split('.').pop().toLowerCase();
+      if (!isRenderableExt(ext)) continue; // STEP etc. — leave the neutral background
+      let res;
+      try {
+        res = await fetch(api.quoteFileUrl(line.quoteJobId), { credentials: 'include' });
+      } catch (e) { continue; }
+      if (!res.ok || !ref.current) continue;
+      const buffer = await res.arrayBuffer();
+      if (!ref.current) continue; // unmounted while the file was downloading
+      const handle = await renderModelPreview(ref.current, { fileBuffer: buffer, ext, colorHex: line.colorHex });
+      if (handle) this._previewHandles.set(line.id, handle);
+    }
   }
   async incQty(id, qty) {
     const api = await this._api();
@@ -310,7 +341,7 @@ class Component extends DCLogic {
   async removeItem(id) {
     const api = await this._api();
     const res = await api.removeCartItem(id);
-    if (res.ok) this.setState({ cart: res.data });
+    if (res.ok) this.setState({ cart: res.data }, () => this._renderLinePreviews());
   }
   _updateShipField(key, value) {
     // Any address edit invalidates a previously fetched rate/selection —
@@ -417,6 +448,7 @@ class Component extends DCLogic {
       discountPct: l.discountPct,
       expired: l.expired,
       lineTotal: (l.lineTotalCents / 100).toFixed(2),
+      thumbRef: this._getLineRef(l.id),
       onInc: () => this.incQty(l.id, l.qty),
       onDec: () => this.decQty(l.id, l.qty),
       onRemove: () => this.removeItem(l.id)

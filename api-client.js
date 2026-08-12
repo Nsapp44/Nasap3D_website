@@ -93,9 +93,22 @@ export const api = {
   async deleteAccount(currentPassword) {
     return request('DELETE', '/account', { currentPassword });
   },
-  async submitContact({ name, email, subject, message, fileKey }) {
+  async submitContact({ name, email, subject, message, fileKey, fileName }) {
     const recaptchaToken = await getRecaptchaToken('contact');
-    return request('POST', '/contact', { name, email, subject, message, fileKey, recaptchaToken });
+    return request('POST', '/contact', { name, email, subject, message, fileKey, fileName, recaptchaToken });
+  },
+  async uploadContactFile(file) {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    let res;
+    try {
+      res = await fetch(apiBase() + '/contact/upload', { method: 'POST', credentials: 'include', body: form });
+    } catch (e) {
+      return { ok: false, status: 0, data: { error: 'network_error' } };
+    }
+    let data = null;
+    try { data = await res.json(); } catch (e) {}
+    return { ok: res.ok, status: res.status, data };
   },
   async getMaterials() {
     return request('GET', '/materials');
@@ -120,6 +133,9 @@ export const api = {
   },
   async getQuote(id) {
     return request('GET', '/quotes/' + id);
+  },
+  quoteFileUrl(id) {
+    return apiBase() + '/quotes/' + id + '/file';
   },
   async getDiscountTiers() {
     return request('GET', '/discount-tiers');

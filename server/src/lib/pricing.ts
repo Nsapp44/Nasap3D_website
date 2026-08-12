@@ -2,14 +2,21 @@
 // worked examples. Kept as a pure function (no DB/network access) so it can
 // be unit-tested directly: same inputs always produce the same price, which
 // is exactly the property that makes server-side pricing trustworthy.
+//
+// Formula (explicit business decision, deliberately simple): unit price =
+// hourly workshop rate x print time + material cost. No separate margin
+// multiplier, no fixed setup fee — the hourly rate itself is where any
+// margin/overhead lives, adjustable from the admin settings screen.
 
 export interface PricingInputs {
   weightG: number;
   estimatedTimeMin: number;
   pricePerKgCents: number;
   hourlyRateCents: number;
-  setupFeeCents: number;
-  marginPct: number;
+  // Discreet per-piece price floor — a piece that computes below this just
+  // shows this price, no visible "minimum fee" line (unlike the cart-level
+  // small-order fee, which IS shown to the customer with an explanation).
+  minUnitPriceCents: number;
   quantity: number;
   discountTiers: { minQty: number; pct: number }[];
 }
@@ -17,7 +24,6 @@ export interface PricingInputs {
 export interface PricingResult {
   materialCostCents: number;
   machineCostCents: number;
-  setupFeeCents: number;
   unitPriceCents: number;
   discountPct: number;
   subtotalCents: number;
@@ -34,8 +40,7 @@ export function discountForQty(qty: number, tiers: { minQty: number; pct: number
 export function computePrice(inputs: PricingInputs): PricingResult {
   const materialCostCents = (inputs.weightG / 1000) * inputs.pricePerKgCents;
   const machineCostCents = (inputs.estimatedTimeMin / 60) * inputs.hourlyRateCents;
-  const beforeMargin = materialCostCents + machineCostCents + inputs.setupFeeCents;
-  const unitPriceCents = Math.round(beforeMargin * (1 + inputs.marginPct / 100));
+  const unitPriceCents = Math.max(inputs.minUnitPriceCents, Math.round(materialCostCents + machineCostCents));
 
   const subtotalCents = unitPriceCents * inputs.quantity;
   const discountPct = discountForQty(inputs.quantity, inputs.discountTiers);
@@ -44,7 +49,6 @@ export function computePrice(inputs: PricingInputs): PricingResult {
   return {
     materialCostCents: Math.round(materialCostCents),
     machineCostCents: Math.round(machineCostCents),
-    setupFeeCents: inputs.setupFeeCents,
     unitPriceCents,
     discountPct,
     subtotalCents,

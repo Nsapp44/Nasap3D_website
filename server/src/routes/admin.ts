@@ -175,8 +175,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const schema = z.object({
       quoteEnabled: z.boolean().optional(),
       hourlyRateCents: z.number().int().positive().optional(),
-      marginPct: z.number().min(0).optional(),
-      setupFeeCents: z.number().int().min(0).optional(),
+      minUnitPriceCents: z.number().int().min(0).optional(),
       quoteExpiryMinutes: z.number().int().positive().optional(),
       minOrderCents: z.number().int().min(0).optional(),
       smallOrderFeeCents: z.number().int().min(0).optional(),

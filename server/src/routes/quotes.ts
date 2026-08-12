@@ -5,11 +5,11 @@ import path from "node:path";
 import { prisma } from "../lib/prisma.js";
 import { getSessionUser } from "../lib/session.js";
 import { getOrCreateGuestSessionId } from "../lib/guestSession.js";
-import { newFileKey, saveFile } from "../lib/storage.js";
+import { newFileKey, saveFile, readFileByKey } from "../lib/storage.js";
 import { getModelInfo, pickPrinter, sliceModel } from "../lib/slicer.js";
 import { computePrice } from "../lib/pricing.js";
 
-const ALLOWED_EXT = new Set([".stl", ".3mf", ".obj", ".step", ".stp"]);
+const ALLOWED_EXT = new Set([".stl", ".obj", ".step", ".stp"]);
 const MAX_FILE_BYTES = 150 * 1024 * 1024;
 
 function quotePublicView(q: {
@@ -125,8 +125,7 @@ export async function quoteRoutes(app: FastifyInstance) {
         estimatedTimeMin: sliced.estimatedTimeMin,
         pricePerKgCents: material.pricePerKgCents,
         hourlyRateCents: settings.hourlyRateCents,
-        setupFeeCents: settings.setupFeeCents,
-        marginPct: settings.marginPct,
+        minUnitPriceCents: settings.minUnitPriceCents,
         quantity,
         discountTiers: tiers,
       });
@@ -185,5 +184,24 @@ export async function quoteRoutes(app: FastifyInstance) {
     const tiers = await prisma.discountTier.findMany({ orderBy: { minQty: "asc" } });
     const discountPct = tiers.reduce((acc, t) => (quoteJob.quantity >= t.minQty ? Math.max(acc, t.pct) : acc), 0);
     return reply.send({ quote: quotePublicView(quoteJob, discountPct) });
+  });
+
+  // The original upload, for the owner only — powers the real-geometry
+  // preview in the cart (see viewer3d.js) instead of a placeholder cube.
+  app.get("/quotes/:id/file", async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const quoteJob = await prisma.quoteJob.findUnique({ where: { id } });
+    if (!quoteJob) return reply.code(404).send({ error: "not_found" });
+
+    const user = await getSessionUser(request);
+    const sessionId = request.cookies["n3d_guest"];
+    const owns = (user && quoteJob.userId === user.id) || (!user && sessionId && quoteJob.sessionId === sessionId);
+    if (!owns) return reply.code(404).send({ error: "not_found" });
+
+    const buffer = await readFileByKey(quoteJob.fileKey);
+    return reply
+      .header("Content-Disposition", `inline; filename="${quoteJob.fileName.replace(/"/g, "")}"`)
+      .header("Content-Type", "application/octet-stream")
+      .send(buffer);
   });
 }

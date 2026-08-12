@@ -4,8 +4,36 @@ import { prisma } from "../lib/prisma.js";
 import { isValidEmail } from "../lib/password.js";
 import { verifyRecaptcha } from "../lib/recaptcha.js";
 import { sendMail } from "../lib/mailer.js";
+import { newFileKey, saveFile, readFileByKey } from "../lib/storage.js";
+import { requireAdmin } from "../lib/session.js";
+
+const MAX_CONTACT_FILE_BYTES = 50 * 1024 * 1024;
 
 export async function contactRoutes(app: FastifyInstance) {
+  // Real upload for the contact form's attachment — the file is stored (not
+  // emailed: most mailboxes reject/strip attachments over ~25MB, well under
+  // our 50MB cap here), and the notification email links to the admin
+  // download route below instead.
+  app.post("/contact/upload", async (request, reply) => {
+    const parts = request.parts({ limits: { fileSize: MAX_CONTACT_FILE_BYTES } });
+    let fileBuffer: Buffer | null = null;
+    let fileName = "";
+    for await (const part of parts) {
+      if (part.type === "file") {
+        fileName = part.filename;
+        const chunks: Buffer[] = [];
+        for await (const chunk of part.file) chunks.push(chunk as Buffer);
+        fileBuffer = Buffer.concat(chunks);
+        if (part.file.truncated) return reply.code(413).send({ error: "file_too_large" });
+      }
+    }
+    if (!fileBuffer || !fileName) return reply.code(400).send({ error: "missing_file" });
+
+    const fileKey = newFileKey(fileName);
+    await saveFile(fileKey, fileBuffer);
+    return reply.code(201).send({ fileKey, fileName });
+  });
+
   app.post("/contact", async (request, reply) => {
     const schema = z.object({
       name: z.string().min(1).max(60),
@@ -13,6 +41,7 @@ export async function contactRoutes(app: FastifyInstance) {
       subject: z.string().min(1).max(80),
       message: z.string().max(1000).optional().default(""),
       fileKey: z.string().optional(),
+      fileName: z.string().optional(),
       recaptchaToken: z.string().optional(),
     });
     const body = schema.safeParse(request.body);
@@ -23,13 +52,14 @@ export async function contactRoutes(app: FastifyInstance) {
     const rc = await verifyRecaptcha(body.data.recaptchaToken, "contact", settings?.recaptchaMinScore ?? 0.5);
     if (!rc.ok) return reply.code(400).send({ error: "recaptcha_failed", reason: rc.reason });
 
-    await prisma.contactMessage.create({
+    const created = await prisma.contactMessage.create({
       data: {
         name: body.data.name,
         email: body.data.email,
         subject: body.data.subject,
         message: body.data.message,
         fileKey: body.data.fileKey,
+        fileName: body.data.fileName,
         recaptchaScore: rc.score,
       },
     });
@@ -40,10 +70,13 @@ export async function contactRoutes(app: FastifyInstance) {
       // misconfigured) must not turn into a 500 for someone who just
       // successfully submitted the form.
       try {
+        const attachmentLine = created.fileKey
+          ? `\n\nPièce jointe (${body.data.fileName}) : ${process.env.API_BASE_URL || "http://localhost:3000"}/admin/contact-messages/${created.id}/file (connecté en admin)`
+          : "";
         await sendMail(
           notify,
           `[Contact Nasap3D] ${body.data.subject}`,
-          `De : ${body.data.name} <${body.data.email}>\n\n${body.data.message || "(pas de message)"}`,
+          `De : ${body.data.name} <${body.data.email}>\n\n${body.data.message || "(pas de message)"}${attachmentLine}`,
         );
       } catch (err) {
         request.log.error(err, "contact notification email failed");
@@ -51,5 +84,17 @@ export async function contactRoutes(app: FastifyInstance) {
     }
 
     return reply.send({ ok: true });
+  });
+
+  app.get("/admin/contact-messages/:id/file", { preHandler: requireAdmin }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const msg = await prisma.contactMessage.findUnique({ where: { id } });
+    if (!msg || !msg.fileKey) return reply.code(404).send({ error: "not_found" });
+
+    const buffer = await readFileByKey(msg.fileKey);
+    return reply
+      .header("Content-Disposition", `attachment; filename="${(msg.fileName || "piece-jointe").replace(/"/g, "")}"`)
+      .header("Content-Type", "application/octet-stream")
+      .send(buffer);
   });
 }

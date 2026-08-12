@@ -8,6 +8,7 @@ export interface CartLine {
   discountPct: number;
   lineTotalCents: number;
   expired: boolean;
+  quoteJobId: string;
   fileName: string;
   material: string;
   colorName: string;
@@ -54,6 +55,7 @@ export async function getCartSummary(identity: { userId: string } | { sessionId:
       discountPct,
       lineTotalCents,
       expired,
+      quoteJobId: item.quoteJobId,
       fileName: q.fileName,
       material: q.material.label,
       colorName: q.color.colorName,

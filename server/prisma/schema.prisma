@@ -148,16 +148,20 @@ model DiscountTier {
 model Settings {
   id                  Int      @id @default(1)
   quoteEnabled        Boolean  @default(true)
+  // Prix pièce = hourlyRateCents x temps d'impression (mesuré par le
+  // slicer) + prix matière (poids x prix/kg du matériau) — pas de marge ni
+  // de frais fixe séparés, voir PRICING.md. Réglable ici, en admin.
   hourlyRateCents     Int
-  marginPct           Float
-  setupFeeCents       Int
+  // Plancher de prix discret par pièce : un prix calculé en dessous
+  // s'affiche directement à ce montant, sans ligne "frais minimum" visible.
+  minUnitPriceCents   Int      @default(890)
   quoteExpiryMinutes  Int      @default(60)
   recaptchaMinScore   Float    @default(0.5)
   // Panier minimum : sous ce montant, smallOrderFeeCents s'ajoute au total
   // au lieu de bloquer la commande (le front affiche un message invitant à
   // ajouter des articles pour l'éviter) — appliqué au checkout (phase
   // Stripe), pas au devis lui-même.
-  minOrderCents       Int      @default(2000)
+  minOrderCents       Int      @default(1800)
   smallOrderFeeCents  Int      @default(500)
   updatedAt           DateTime @updatedAt
 }
@@ -306,6 +310,7 @@ model ContactMessage {
   subject        String
   message        String
   fileKey        String?
+  fileName       String?
   recaptchaScore Float?
   createdAt      DateTime @default(now())
 }

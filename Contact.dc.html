@@ -51,6 +51,7 @@ a:hover{color:#ff7a5c}
     <div style="display:flex;gap:26px;font:500 13px 'Inter',sans-serif;color:rgba(255,255,255,.62)">
       <a href="Home.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Accueil</a>
       <a href="Services.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Services</a>
+      <a href="Devis Instantane.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Devis instantané</a>
       <a href="About.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">À propos</a>
       <a href="Realisations.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Réalisations</a>
       <a href="Machines.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Machines</a>
@@ -99,8 +100,12 @@ a:hover{color:#ff7a5c}
             <div style="font:9px ui-monospace,monospace;color:rgba(255,255,255,.3);margin-top:3px;text-align:right">{{ contactMessage.length }} / 1000 caractères</div>
           </div>
           <div>
+            <input ref="{{ fileInputRef }}" type="file" onChange="{{ onFileInputChange }}" style="display:none">
             <sc-if value="{{ contactFileNone }}" hint-placeholder-val="{{ true }}">
               <div onClick="{{ attachContactFile }}" onDragOver="{{ onContactDragOver }}" onDragLeave="{{ onContactDragLeave }}" onDrop="{{ onContactDrop }}" style="{{ contactDropStyle }}">+ Joindre un fichier (pièce cassée, plan, photo…)</div>
+            </sc-if>
+            <sc-if value="{{ hasContactFileError }}" hint-placeholder-val="{{ false }}">
+              <div style="font:600 10.5px 'Inter',sans-serif;color:#ff8a70;margin-top:6px">{{ contactFileError }}</div>
             </sc-if>
             <sc-if value="{{ contactFileUploading }}" hint-placeholder-val="{{ false }}">
               <div style="border:1.5px dashed rgba(255,90,60,.4);border-radius:6px;padding:32px 14px;font:13px 'Inter',sans-serif;color:rgba(255,255,255,.6);text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">
@@ -136,7 +141,7 @@ a:hover{color:#ff7a5c}
             <sc-if value="{{ contactFileReady }}" hint-placeholder-val="{{ false }}">
               <div style="border:1px solid rgba(255,90,60,.35);background:rgba(255,90,60,.08);border-radius:6px;padding:14px;font:12px 'Inter',sans-serif;color:#f3f1ec;text-align:center">✓ {{ contactFileName }}</div>
             </sc-if>
-            <div style="font:9px ui-monospace,monospace;color:rgba(255,255,255,.3);margin-top:3px">.stl .step .pdf .jpg .png — 10 Mo max</div>
+            <div style="font:9px ui-monospace,monospace;color:rgba(255,255,255,.3);margin-top:3px">.stl .step .pdf .jpg .png — 50 Mo max</div>
           </div>
           <div onClick="{{ submitContact }}" style="{{ contactSendStyle }}">
             <sc-if value="{{ contactFileUploading }}" hint-placeholder-val="{{ false }}">
@@ -206,10 +211,12 @@ a:hover{color:#ff7a5c}
 class Component extends DCLogic {
   state = {
     contactName: '', contactEmail: '', contactObjet: '', contactMessage: '',
-    contactFileState: 'none', contactFileName: '', sent: false, contactDragging: false,
+    contactFileState: 'none', contactFileName: '', contactFileKey: null, contactFileError: null,
+    sent: false, contactDragging: false,
     submitting: false, errorMessage: null
   };
   mapRef = React.createRef();
+  fileInputRef = React.createRef();
   componentDidMount() {
     this._initMap();
   }
@@ -236,20 +243,33 @@ class Component extends DCLogic {
     L.marker(coords, { icon: pulseIcon }).addTo(this._map).bindPopup('Nasap3D — Nantes (Canclaux)');
   }
   componentWillUnmount() {
-    clearTimeout(this._fileTimer);
     clearTimeout(this._sentTimer);
     if (this._map) { this._map.remove(); this._map = null; }
   }
   _isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
-  // TODO(devis serveur / upload S3): l'attachement est encore simulé
-  // (aucun fichier n'est réellement envoyé) en attendant l'endpoint d'upload
-  // partagé avec le configurateur de devis.
   attachContactFile() {
-    this.setState({ contactFileState: 'uploading' });
-    clearTimeout(this._fileTimer);
-    this._fileTimer = setTimeout(() => this.setState({ contactFileState: 'ready', contactFileName: 'piece-jointe.stl' }), 1400);
+    if (this.state.contactFileState !== 'none') return;
+    if (this.fileInputRef.current) this.fileInputRef.current.click();
+  }
+  onFileInputChange(e) {
+    const file = e.target.files && e.target.files[0];
+    if (file) this._uploadContactFile(file);
+  }
+  async _uploadContactFile(file) {
+    if (file.size > 50 * 1024 * 1024) {
+      this.setState({ contactFileError: 'Fichier trop volumineux (50 Mo max).' });
+      return;
+    }
+    this.setState({ contactFileState: 'uploading', contactFileError: null });
+    const api = await this._api();
+    const res = await api.uploadContactFile(file);
+    if (!res.ok || !res.data) {
+      this.setState({ contactFileState: 'none', contactFileError: "Échec de l'envoi du fichier, réessayez." });
+      return;
+    }
+    this.setState({ contactFileState: 'ready', contactFileName: res.data.fileName, contactFileKey: res.data.fileKey });
   }
   async _api() {
     if (!this._apiMod) this._apiMod = (await import('./api-client.js')).api;
@@ -263,7 +283,8 @@ class Component extends DCLogic {
     this.setState({ submitting: true, errorMessage: null });
     const api = await this._api();
     const res = await api.submitContact({
-      name: s.contactName, email: s.contactEmail, subject: s.contactObjet, message: s.contactMessage
+      name: s.contactName, email: s.contactEmail, subject: s.contactObjet, message: s.contactMessage,
+      fileKey: s.contactFileKey, fileName: s.contactFileName
     });
     if (!res.ok) {
       this.setState({
@@ -274,7 +295,7 @@ class Component extends DCLogic {
       });
       return;
     }
-    this.setState({ submitting: false, sent: true, contactName: '', contactEmail: '', contactObjet: '', contactMessage: '', contactFileState: 'none' });
+    this.setState({ submitting: false, sent: true, contactName: '', contactEmail: '', contactObjet: '', contactMessage: '', contactFileState: 'none', contactFileKey: null, contactFileName: '' });
     clearTimeout(this._sentTimer);
     this._sentTimer = setTimeout(() => this.setState({ sent: false }), 5000);
   }
@@ -311,7 +332,16 @@ class Component extends DCLogic {
       },
       onContactDragOver: (e) => { e.preventDefault(); if (!this.state.contactDragging) this.setState({ contactDragging: true }); },
       onContactDragLeave: (e) => { e.preventDefault(); this.setState({ contactDragging: false }); },
-      onContactDrop: (e) => { e.preventDefault(); this.setState({ contactDragging: false }); this.attachContactFile(); },
+      onContactDrop: (e) => {
+        e.preventDefault();
+        this.setState({ contactDragging: false });
+        const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (file && this.state.contactFileState === 'none') this._uploadContactFile(file);
+      },
+      onFileInputChange: (e) => this.onFileInputChange(e),
+      fileInputRef: this.fileInputRef,
+      hasContactFileError: !!s.contactFileError,
+      contactFileError: s.contactFileError,
       showSentMessage: s.sent,
       hasError: !!s.errorMessage,
       errorMessage: s.errorMessage,

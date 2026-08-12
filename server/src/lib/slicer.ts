@@ -22,12 +22,33 @@ const MATERIAL_TEMPS: Record<string, { nozzle: number; bed: number }> = {
   PP: { nozzle: 240, bed: 100 }, // no official Bambu profile — placeholder
 };
 
+// Max flow rate PrusaSlicer is allowed to push through the nozzle
+// (mm³/s) — read directly from Bambu Lab's own official H2C filament
+// profiles (bambulab/BambuStudio, resources/profiles/BBL/filament/*@BBL
+// H2C.json, `filament_max_volumetric_speed`, lowest of the profile's
+// listed values). This is what actually throttles a slow-flowing material
+// like TPU or PA-CF back down on infill/solid passes, even though
+// QUALITY_SPEEDS below requests the same linear mm/s for every material —
+// PrusaSlicer caps the real speed per-line once linear-speed × line-width ×
+// layer-height would exceed this volumetric limit.
+// TPU note: Bambu's own H2C profile reports 3.6 mm³/s; set to 3.2 mm³/s
+// per the value given for this specific setup — adjust here if your real
+// TPU spool behaves differently.
+const MATERIAL_MAX_VOLUMETRIC_SPEED: Record<string, number> = {
+  PLA: 25,
+  PETG: 21,
+  ABS: 20,
+  ASA: 20,
+  TPU: 3.2,
+  Nylon: 8, // Bambu PA-CF @BBL H2C
+  PP: 15, // no official Bambu profile — placeholder, similar range to ABS/PETG
+};
+
 // Wall/infill/travel speeds and acceleration per quality tier, read from
 // Bambu Lab's own H2C process profiles (0.20mm Standard, 0.12mm High
 // Quality — closest match for "Rapide" is their 0.24mm Standard tier, since
-// 0.4mm nozzles don't have an official 0.28mm preset). Used as the
-// reference for all three machines per the user's instruction, since X1C/
-// X2D-specific exports weren't fetched.
+// 0.4mm nozzles don't have an official 0.28mm preset). The instant quote
+// only ever slices against the H2C (see PRINTERS below).
 const QUALITY_SPEEDS: Record<string, {
   outerWall: number; innerWall: number; infill: number; solidInfill: number;
   topSurface: number; travel: number; firstLayer: number; accel: number;
@@ -57,22 +78,22 @@ export interface PrinterProfile {
 
 const PROFILES_DIR = path.resolve(process.cwd(), "slicer-profiles");
 
+// Simplified deliberately to just the H2C: it's the machine the instant
+// quote actually runs against, so there's no real fleet-picking logic to
+// maintain — a part either fits the H2C's bed/height or it doesn't.
 export const PRINTERS: PrinterProfile[] = [
-  { key: "x1c", label: "Bambu Lab X1C", bedXMm: 256, bedYMm: 256, heightMm: 256, iniPath: path.join(PROFILES_DIR, "x1c.ini") },
-  { key: "x2d", label: "Bambu Lab X2D", bedXMm: 256, bedYMm: 256, heightMm: 256, iniPath: path.join(PROFILES_DIR, "x2d.ini") },
   { key: "h2c", label: "Bambu Lab H2C", bedXMm: 350, bedYMm: 320, heightMm: 325, iniPath: path.join(PROFILES_DIR, "h2c.ini") },
 ];
 
-// Smallest machine the part fits on (with a couple mm of clearance), in the
-// order defined above. Matches the front-end FAQ's own printer list.
+// Rejects a part that doesn't fit the H2C's bed/height (with a couple mm of
+// clearance) instead of picking among several machines.
 export function pickPrinter(info: ModelInfo): PrinterProfile | null {
+  const p = PRINTERS[0];
   const dims = [info.sizeXMm, info.sizeYMm, info.sizeZMm].sort((a, b) => a - b);
-  for (const p of PRINTERS) {
-    const bed = [p.bedXMm, p.bedYMm].sort((a, b) => a - b);
-    // conservative fit check: try the part's two smallest dims against the
-    // bed's two dims (allows rotation on the plate), tallest dim vs height.
-    if (dims[0] <= bed[0] - 4 && dims[1] <= bed[1] - 4 && dims[2] <= p.heightMm - 4) return p;
-  }
+  const bed = [p.bedXMm, p.bedYMm].sort((a, b) => a - b);
+  // conservative fit check: try the part's two smallest dims against the
+  // bed's two dims (allows rotation on the plate), tallest dim vs height.
+  if (dims[0] <= bed[0] - 4 && dims[1] <= bed[1] - 4 && dims[2] <= p.heightMm - 4) return p;
   return null;
 }
 
@@ -140,6 +161,7 @@ export interface SliceResult {
 export async function sliceModel(filePath: string, opts: SliceOptions): Promise<SliceResult> {
   const temps = MATERIAL_TEMPS[opts.materialKey] || MATERIAL_TEMPS.PLA;
   const speeds = QUALITY_SPEEDS[opts.qualityKey] || QUALITY_SPEEDS.Standard;
+  const maxVolumetricSpeed = MATERIAL_MAX_VOLUMETRIC_SPEED[opts.materialKey] || MATERIAL_MAX_VOLUMETRIC_SPEED.PLA;
   const printerIni = await readFile(opts.printer.iniPath, "utf8");
 
   const dir = await mkdtemp(path.join(tmpdir(), "nasap3d-slice-"));
@@ -167,6 +189,11 @@ export async function sliceModel(filePath: string, opts: SliceOptions): Promise<
       `top_solid_infill_speed = ${speeds.topSurface}`,
       `travel_speed = ${speeds.travel}`,
       `first_layer_speed = ${speeds.firstLayer}`,
+      // Real per-material flow cap (see MATERIAL_MAX_VOLUMETRIC_SPEED) —
+      // this is what makes slow-flowing filaments like TPU/PA-CF actually
+      // print slower in the estimate, on top of (not instead of) the
+      // per-quality linear speeds above.
+      `filament_max_volumetric_speed = ${maxVolumetricSpeed}`,
       `default_acceleration = ${speeds.accel}`,
       `perimeter_acceleration = ${speeds.accel}`,
       `infill_acceleration = ${speeds.accel}`,

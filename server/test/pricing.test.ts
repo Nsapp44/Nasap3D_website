@@ -4,27 +4,37 @@ import { computePrice, discountForQty } from "../src/lib/pricing.js";
 // This is the anti-tampering core: the price a customer is charged must
 // come only from these pure functions, fed by server-side data (slicer
 // output, DB material price) — never from anything the client sends. See
-// server/PRICING.md for the formula writeup.
+// server/PRICING.md for the formula writeup: unit price = max(price floor,
+// hourly rate x print time + material cost). No separate margin/setup fee
+// (any margin lives directly in each material's price-per-kg instead).
 describe("computePrice", () => {
   const baseInputs = {
-    weightG: 10,
-    estimatedTimeMin: 30,
+    weightG: 100,
+    estimatedTimeMin: 120,
     pricePerKgCents: 2200,
-    hourlyRateCents: 600,
-    setupFeeCents: 150,
-    marginPct: 30,
+    hourlyRateCents: 500,
+    minUnitPriceCents: 890,
     quantity: 1,
     discountTiers: [],
   };
 
-  it("computes material + machine + setup cost before margin", () => {
+  it("computes material + machine cost with no margin or setup fee, above the floor", () => {
     const result = computePrice(baseInputs);
-    // material: 10g / 1000 * 2200 = 22c ; machine: 30/60 * 600 = 300c
-    expect(result.materialCostCents).toBe(22);
-    expect(result.machineCostCents).toBe(300);
-    expect(result.setupFeeCents).toBe(150);
-    // beforeMargin = 22 + 300 + 150 = 472 ; *1.30 = 613.6 -> round 614
-    expect(result.unitPriceCents).toBe(614);
+    // material: 100g / 1000 * 2200 = 220c ; machine: 120/60 * 500 = 1000c
+    expect(result.materialCostCents).toBe(220);
+    expect(result.machineCostCents).toBe(1000);
+    expect(result.unitPriceCents).toBe(1220);
+  });
+
+  it("floors the unit price at minUnitPriceCents for a small/quick piece, discreetly", () => {
+    // material: 8g/1000*2200=17.6 ; machine: 15/60*500=125 -> raw ~142.6, well under the 890 floor
+    const result = computePrice({ ...baseInputs, weightG: 8, estimatedTimeMin: 15 });
+    expect(result.unitPriceCents).toBe(890);
+  });
+
+  it("never goes below the floor even for a zero-weight, zero-time piece", () => {
+    const result = computePrice({ ...baseInputs, weightG: 0, estimatedTimeMin: 0 });
+    expect(result.unitPriceCents).toBe(890);
   });
 
   it("is deterministic — same inputs always produce the same price", () => {
@@ -36,14 +46,14 @@ describe("computePrice", () => {
   it("ignores any extra/unexpected fields on the input (no client price field can leak through)", () => {
     const tampered = { ...baseInputs, unitPriceCents: 1, totalCents: 1 } as typeof baseInputs;
     const result = computePrice(tampered);
-    expect(result.unitPriceCents).toBe(614);
+    expect(result.unitPriceCents).toBe(1220);
   });
 
   it("scales the subtotal linearly with quantity before discount", () => {
     const result = computePrice({ ...baseInputs, quantity: 3 });
-    expect(result.subtotalCents).toBe(614 * 3);
+    expect(result.subtotalCents).toBe(1220 * 3);
     expect(result.discountPct).toBe(0);
-    expect(result.totalCents).toBe(614 * 3);
+    expect(result.totalCents).toBe(1220 * 3);
   });
 
   it("applies the highest matching discount tier and nothing more", () => {
@@ -53,7 +63,7 @@ describe("computePrice", () => {
     ];
     const result = computePrice({ ...baseInputs, quantity: 10, discountTiers: tiers });
     expect(result.discountPct).toBe(20);
-    const subtotal = 614 * 10;
+    const subtotal = 1220 * 10;
     expect(result.subtotalCents).toBe(subtotal);
     expect(result.totalCents).toBe(Math.round(subtotal * 0.8));
     expect(result.discountCents).toBe(subtotal - result.totalCents);
@@ -66,11 +76,10 @@ describe("computePrice", () => {
     expect(result.totalCents).toBe(result.subtotalCents);
   });
 
-  it("rounds the unit price to the nearest cent rather than truncating", () => {
-    // beforeMargin chosen so the *1.x multiplication lands on a half-cent
-    const result = computePrice({ ...baseInputs, weightG: 1, estimatedTimeMin: 1, marginPct: 0 });
-    // material: 1/1000*2200=2.2 ; machine: 1/60*600=10 ; setup 150 -> 162.2 -> round 162
-    expect(result.unitPriceCents).toBe(162);
+  it("rounds the pre-floor unit price to the nearest cent rather than truncating", () => {
+    // material: 100/1000*2200=220 ; machine: 121/60*500=1008.33... -> 1228.33 -> round 1228
+    const result = computePrice({ ...baseInputs, estimatedTimeMin: 121 });
+    expect(result.unitPriceCents).toBe(1228);
   });
 });
 

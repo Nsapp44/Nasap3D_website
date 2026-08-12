@@ -132,27 +132,25 @@ a:hover{color:#ff7a5c}
                   <span style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,.5)">{{ cfgFileName }}</span>
                   <span style="width:16px;height:16px;border-radius:50%;background:#ff5a3c;color:#161514;font:700 10px/16px 'Inter',sans-serif;text-align:center">✓</span>
                 </div>
-                <div style="height:150px;display:flex;align-items:center;justify-content:center;perspective:400px;background:radial-gradient(ellipse at center, rgba(255,90,60,.08), transparent 70%)">
-                  <div style="width:64px;height:64px;position:relative;transform-style:preserve-3d;animation:cfgViewerSpin 5s linear infinite">
-                    <div style="position:absolute;inset:0;transform:translateZ(32px);background:rgba(255,90,60,.18);border:1px solid rgba(255,90,60,.6)"></div>
-                    <div style="position:absolute;inset:0;transform:rotateY(180deg) translateZ(32px);background:rgba(255,90,60,.1);border:1px solid rgba(255,90,60,.4)"></div>
-                    <div style="position:absolute;inset:0;transform:rotateY(90deg) translateZ(32px);background:rgba(255,90,60,.14);border:1px solid rgba(255,90,60,.5)"></div>
-                    <div style="position:absolute;inset:0;transform:rotateY(-90deg) translateZ(32px);background:rgba(255,90,60,.14);border:1px solid rgba(255,90,60,.5)"></div>
-                    <div style="position:absolute;inset:0;transform:rotateX(90deg) translateZ(32px);background:rgba(255,90,60,.22);border:1px solid rgba(255,90,60,.6)"></div>
-                    <div style="position:absolute;inset:0;transform:rotateX(-90deg) translateZ(32px);background:rgba(255,90,60,.08);border:1px solid rgba(255,90,60,.35)"></div>
-                  </div>
+                <div ref="{{ previewRef }}" style="height:150px;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center, rgba(255,90,60,.08), transparent 70%);border-radius:6px;overflow:hidden">
+                  <sc-if value="{{ cfgPreviewUnavailable }}" hint-placeholder-val="{{ false }}">
+                    <div style="text-align:center">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                      <div style="font:400 9.5px 'Inter',sans-serif;color:rgba(255,255,255,.35)">Aperçu non disponible pour ce format</div>
+                    </div>
+                  </sc-if>
                 </div>
-                <div style="font:400 9.5px 'Inter',sans-serif;color:rgba(255,255,255,.4);text-align:center;margin-top:8px">Fichier analysé avec succès</div>
+                <div style="font:400 9.5px 'Inter',sans-serif;color:rgba(255,255,255,.4);text-align:center;margin-top:8px">Fichier chargé avec succès</div>
               </div>
               <div style="display:flex;justify-content:flex-end;animation:cfgFadeUp .4s ease .05s both">
                 <div onClick="{{ cfgNext }}" style="background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:10px 20px;border-radius:6px;cursor:pointer">Suivant →</div>
               </div>
             </sc-if>
             <sc-if value="{{ isCfgIdle }}" hint-placeholder-val="{{ true }}">
-              <input ref="{{ fileInputRef }}" type="file" accept=".stl,.3mf,.obj,.step,.stp" onChange="{{ onFileInputChange }}" style="display:none">
+              <input ref="{{ fileInputRef }}" type="file" accept=".stl,.obj,.step,.stp" onChange="{{ onFileInputChange }}" style="display:none">
               <div onClick="{{ dropFile }}" onDragOver="{{ onCfgDragOver }}" onDragLeave="{{ onCfgDragLeave }}" onDrop="{{ onCfgDrop }}" style="{{ cfgDropStyle }}">
-                <div style="font:600 12.5px 'Inter',sans-serif;color:#f3f1ec;margin-bottom:4px">Glissez votre fichier .STL / .3MF / .OBJ / .STEP ici</div>
-                <div style="font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.4)">ou cliquez pour parcourir — 50 Mo max</div>
+                <div style="font:600 12.5px 'Inter',sans-serif;color:#f3f1ec;margin-bottom:4px">Glissez votre fichier .STL / .OBJ / .STEP ici</div>
+                <div style="font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.4)">ou cliquez pour parcourir — 150 Mo max</div>
               </div>
               <sc-if value="{{ cfgHasFileError }}" hint-placeholder-val="{{ false }}">
                 <div style="margin-top:10px;font:600 11px 'Inter',sans-serif;color:#ff8a70">{{ cfgFileError }}</div>
@@ -630,7 +628,7 @@ a:hover{color:#ff7a5c}
 class Component extends DCLogic {
   state = {
     rot: 0, realIdx: 0, reviewIdx: 0, hoveredService: null, hoveredReal: null,
-    cfgStep: 1, cfgFile: null, cfgFileError: null, cfgDragging: false,
+    cfgStep: 1, cfgFile: null, cfgFileError: null, cfgDragging: false, cfgPreviewUnavailable: false,
     cfgMaterial: 'PLA', cfgColorId: null, cfgQty: 1, cfgInfill: 40, cfgQuality: 'Standard',
     cfgShowDiscountInfo: false, quoteEnabled: true,
     realWrapW: 0,
@@ -647,8 +645,9 @@ class Component extends DCLogic {
     cartCount: 0, showAddedToast: false,
     materials: []
   };
-  static ALLOWED_EXT = ['.stl', '.3mf', '.obj', '.step', '.stp'];
+  static ALLOWED_EXT = ['.stl', '.obj', '.step', '.stp'];
   fileInputRef = React.createRef();
+  previewRef = React.createRef();
   heroCanvasRef = React.createRef();
   heroRef = React.createRef();
   mapRef = React.createRef();
@@ -840,7 +839,7 @@ class Component extends DCLogic {
   _selectMaterial(key) {
     const material = this.state.materials.find(m => m.key === key);
     const firstColor = material ? material.colors.find(c => c.inStock) : null;
-    this.setState({ cfgMaterial: key, cfgColorId: firstColor ? firstColor.id : null, cfgAnalysisReady: false, cfgQuote: null });
+    this.setState({ cfgMaterial: key, cfgColorId: firstColor ? firstColor.id : null, cfgAnalysisReady: false, cfgQuote: null }, () => this._renderPreview());
   }
   async addToCart() {
     const q = this.state.cfgQuote;
@@ -942,6 +941,23 @@ class Component extends DCLogic {
     }
     if (this._renderer) this._renderer.dispose();
     if (this._map) { this._map.remove(); this._map = null; }
+    if (this._previewHandle) this._previewHandle.dispose();
+  }
+  // Renders the real uploaded geometry (not a placeholder) into the "fichier
+  // chargé" preview box, in the currently selected color — see viewer3d.js.
+  async _renderPreview() {
+    const file = this.state.cfgFile;
+    if (this._previewHandle) { this._previewHandle.dispose(); this._previewHandle = null; }
+    if (!file || !this.previewRef.current) return;
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+    const { isRenderableExt, renderModelPreview } = await import('./viewer3d.js');
+    if (!isRenderableExt(ext)) { this.setState({ cfgPreviewUnavailable: true }); return; }
+    this.setState({ cfgPreviewUnavailable: false });
+    const buffer = await file.arrayBuffer();
+    if (this.state.cfgFile !== file || !this.previewRef.current) return;
+    const material = this.state.materials.find(m => m.key === this.state.cfgMaterial);
+    const color = material ? (material.colors.find(c => c.id === this.state.cfgColorId) || {}).colorHex : null;
+    this._previewHandle = await renderModelPreview(this.previewRef.current, { fileBuffer: buffer, ext, colorHex: color });
   }
   _initMap(attempt) {
     attempt = attempt || 0;
@@ -1097,14 +1113,14 @@ class Component extends DCLogic {
   _setFile(file) {
     if (!file) return;
     if (!this._extOk(file.name)) {
-      this.setState({ cfgFileError: 'Format non supporté — utilisez .stl, .3mf, .obj ou .step' });
+      this.setState({ cfgFileError: 'Format non supporté — utilisez .stl, .obj ou .step' });
       return;
     }
-    if (file.size > 50 * 1024 * 1024) {
-      this.setState({ cfgFileError: 'Fichier trop volumineux (50 Mo max)' });
+    if (file.size > 150 * 1024 * 1024) {
+      this.setState({ cfgFileError: 'Fichier trop volumineux (150 Mo max)' });
       return;
     }
-    this.setState({ cfgFile: file, cfgFileError: null });
+    this.setState({ cfgFile: file, cfgFileError: null }, () => this._renderPreview());
   }
   dropFile() {
     if (this.state.cfgFile) return;
@@ -1146,7 +1162,7 @@ class Component extends DCLogic {
         quote_disabled: "Le devis instantané est momentanément indisponible.",
         part_too_large: 'Cette pièce dépasse le volume imprimable de toutes nos machines (max 350×320×325mm).',
         non_manifold_model: 'Le modèle contient des erreurs de géométrie (maillage non étanche) — vérifiez le fichier dans votre logiciel de CAO.',
-        unreadable_file: 'Fichier illisible — vérifiez qu’il s’agit bien d’un .stl, .3mf, .obj ou .step valide.',
+        unreadable_file: 'Fichier illisible — vérifiez qu’il s’agit bien d’un .stl, .obj ou .step valide.',
         slicing_failed: 'L’analyse a échoué pour ce fichier. Contactez-nous si le problème persiste.',
         color_out_of_stock: 'Cette couleur vient de passer en rupture de stock — choisissez-en une autre.',
       };
@@ -1364,7 +1380,7 @@ class Component extends DCLogic {
     const selectedMaterial = s.materials.find(m => m.key === s.cfgMaterial);
     const availableColors = selectedMaterial ? selectedMaterial.colors.filter(c => c.inStock) : [];
     const colors = availableColors.map(c => ({
-      onClick: () => this.setState({ cfgColorId: c.id, cfgAnalysisReady: false, cfgQuote: null }),
+      onClick: () => this.setState({ cfgColorId: c.id, cfgAnalysisReady: false, cfgQuote: null }, () => this._renderPreview()),
       style: {
         width: '20px', height: '20px', borderRadius: '50%', background: c.colorHex, cursor: 'pointer',
         border: s.cfgColorId === c.id ? '2px solid #f3f1ec' : '1px solid rgba(255,255,255,.3)'
@@ -1410,6 +1426,7 @@ class Component extends DCLogic {
       isCfgStep4: s.cfgStep === 4,
       cfgFileReady: !!s.cfgFile,
       cfgFileName: s.cfgFile ? s.cfgFile.name : '',
+      previewRef: this.previewRef, cfgPreviewUnavailable: s.cfgPreviewUnavailable,
       cfgAnalyzing: s.cfgAnalyzing,
       cfgAnalysisReady: s.cfgAnalysisReady,
       cfgAnalysisError: s.cfgAnalysisError,

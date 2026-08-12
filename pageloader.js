@@ -1,18 +1,22 @@
 // Nasap3D page-load overlay — shows a clean full-screen loader (printer animation
-// on a uniform background) while a page is loading, and again when the visitor
-// clicks through to another page. Self-contained: injects its own styles.
+// on a uniform background) only when a page/navigation is actually slow enough to
+// notice. Fast loads never see it at all.
 //
-// Two things make it feel seamless (no "start then reboot"):
-//  1. It stays until the destination page has actually PAINTED its content
-//     (not just window 'load'), so there is no blank pop.
-//  2. The animation phase is carried across the navigation via a sessionStorage
-//     timestamp + negative animation-delay, so the loop continues instead of
-//     restarting from zero on the new page.
+// Three things make it feel right:
+//  1. It's on a delay (SHOW_DELAY_MS): if the destination content is ready before
+//     that delay elapses, the overlay is never mounted — no flash on a fast load.
+//  2. Once it IS shown, it stays for a minimum duration (MIN_VISIBLE_MS) so it
+//     never flickers in and immediately back out.
+//  3. It stays until the destination page has actually PAINTED its content
+//     (not just window 'load'), so there is no blank pop. The animation phase is
+//     carried across the navigation via a sessionStorage timestamp + negative
+//     animation-delay, so the loop continues instead of restarting from zero.
 (function () {
   var STYLE_ID = 'nasap-pageloader-style';
   var OV_ID = 'nasap-pageloader';
   var T0_KEY = 'nasap-nav-t0';
-  var MIN_MS = 350;
+  var SHOW_DELAY_MS = 220;
+  var MIN_VISIBLE_MS = 350;
   var PERIOD_MS = 2500;
   var SAFETY_MS = 5000;
 
@@ -78,7 +82,7 @@
     return ov;
   }
 
-  function show() {
+  function paint() {
     ensureStyle();
     var ov = document.getElementById(OV_ID);
     if (!ov) {
@@ -99,11 +103,25 @@
     setTimeout(function () { if (ov && ov.parentNode) ov.parentNode.removeChild(ov); }, 320);
   }
 
-  // Show immediately (covers the streaming render).
-  ensureStyle();
-  if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  // Only actually paints the overlay if it's still pending SHOW_DELAY_MS after
+  // being requested — a load/navigation that finishes before then never shows it.
+  var showTimer = null;
+  var shownAt = null;
+  function scheduleShow() {
+    if (showTimer || shownAt) return;
+    showTimer = setTimeout(function () {
+      showTimer = null;
+      shownAt = Date.now();
+      if (document.body) paint(); else document.addEventListener('DOMContentLoaded', paint);
+    }, SHOW_DELAY_MS);
+  }
+  function cancelPendingShow() {
+    if (showTimer) { clearTimeout(showTimer); showTimer = null; }
+  }
 
-  var start = Date.now();
+  ensureStyle();
+  scheduleShow();
+
   // The DC content mounts asynchronously AFTER window 'load'; wait until the app
   // root has actually painted before hiding, so there is no blank flash / pop.
   function contentReady() {
@@ -113,18 +131,27 @@
     try { h = root.getBoundingClientRect().height; } catch (e) {}
     return h > 48 && root.textContent.trim().length > 0;
   }
+  function finish() {
+    cancelPendingShow();
+    if (!shownAt) return; // never actually shown — nothing to hide
+    var visible = Date.now() - shownAt;
+    if (visible < MIN_VISIBLE_MS) { setTimeout(hide, MIN_VISIBLE_MS - visible); return; }
+    hide();
+  }
   function hideWhenReady() {
+    var start = Date.now();
     (function poll() {
-      var elapsed = Date.now() - start;
-      if (elapsed > SAFETY_MS || (elapsed >= MIN_MS && contentReady())) { hide(); return; }
+      if (Date.now() - start > SAFETY_MS || contentReady()) { finish(); return; }
       requestAnimationFrame(poll);
     })();
   }
   if (document.readyState === 'complete') hideWhenReady();
   else window.addEventListener('load', hideWhenReady);
 
-  // Re-show when navigating to another site page — stamp the phase so the next
-  // page's loader continues the same loop instead of restarting.
+  // Re-arm when navigating to another site page — stamp the phase so the next
+  // page's loader (if it ends up showing at all) continues the same loop
+  // instead of restarting. The overlay itself only appears if SHOW_DELAY_MS
+  // passes before the browser actually swaps documents.
   document.addEventListener('click', function (e) {
     var a = e.target && e.target.closest ? e.target.closest('a') : null;
     if (!a) return;
@@ -132,9 +159,14 @@
     if (!/\.dc\.html($|[?#])/.test(href)) return;
     if (a.target === '_blank' || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
     try { if (!sessionStorage.getItem(T0_KEY)) sessionStorage.setItem(T0_KEY, String(Date.now())); } catch (e2) {}
-    show();
+    scheduleShow();
   }, true);
 
   // Coming back via the browser's back/forward cache: never stay stuck.
-  window.addEventListener('pageshow', function (e) { if (e.persisted) hide(); });
+  window.addEventListener('pageshow', function (e) {
+    if (!e.persisted) return;
+    cancelPendingShow();
+    shownAt = null;
+    hide();
+  });
 })();

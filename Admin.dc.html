@@ -131,6 +131,25 @@ a:hover{color:#ff7a5c}
       <div style="font:600 12px 'Inter',sans-serif;letter-spacing:1.2px;color:#ff5a3c;text-transform:uppercase;margin-bottom:10px">Inventaire</div>
       <div style="font:700 26px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:28px">Stock filament</div>
 
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;background:#1a1917;padding:18px 20px;margin-bottom:32px">
+        <div style="font:600 12.5px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Tarification atelier</div>
+        <div style="font:400 10.5px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.45);margin-bottom:14px">Prix pièce = taux horaire × temps d'impression + prix matière (ci-dessous), avec un minimum discret par pièce.</div>
+        <div style="display:flex;gap:28px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font:400 10px 'Inter',sans-serif;color:rgba(255,255,255,.4)">Taux horaire</span>
+            <input value="{{ hourlyRateDraft }}" onChange="{{ onHourlyRateChange }}" style="width:70px;box-sizing:border-box;height:28px;border:1px solid rgba(255,255,255,.15);border-radius:5px;background:#161514;padding:0 8px;font:11px 'Inter',sans-serif;color:#e8e6e1;outline:none;text-align:right">
+            <span style="font:400 10px 'Inter',sans-serif;color:rgba(255,255,255,.4)">€/h</span>
+            <span onClick="{{ onHourlyRateSave }}" style="{{ hourlyRateSaveStyle }}">{{ hourlyRateSaveLabel }}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font:400 10px 'Inter',sans-serif;color:rgba(255,255,255,.4)">Prix minimum / pièce</span>
+            <input value="{{ minPriceDraft }}" onChange="{{ onMinPriceChange }}" style="width:70px;box-sizing:border-box;height:28px;border:1px solid rgba(255,255,255,.15);border-radius:5px;background:#161514;padding:0 8px;font:11px 'Inter',sans-serif;color:#e8e6e1;outline:none;text-align:right">
+            <span style="font:400 10px 'Inter',sans-serif;color:rgba(255,255,255,.4)">€</span>
+            <span onClick="{{ onMinPriceSave }}" style="{{ minPriceSaveStyle }}">{{ minPriceSaveLabel }}</span>
+          </div>
+        </div>
+      </div>
+
       <sc-for list="{{ groups }}" as="group" hint-placeholder-count="7">
         <div style="margin-bottom:30px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px">
@@ -177,7 +196,9 @@ class Component extends DCLogic {
     orderCounts: {},
     materials: [],
     priceDrafts: {},
-    priceSaved: {}
+    priceSaved: {},
+    hourlyRateDraft: '', minPriceDraft: '',
+    hourlyRateSaved: false, minPriceSaved: false
   };
   componentDidMount() {
     this._checkAuth();
@@ -202,7 +223,36 @@ class Component extends DCLogic {
   async _loadSettings() {
     const api = await this._api();
     const res = await api.adminGetSettings();
-    if (res.ok && res.data) this.setState({ quoteEnabled: res.data.settings.quoteEnabled });
+    if (res.ok && res.data) {
+      const s = res.data.settings;
+      this.setState({
+        quoteEnabled: s.quoteEnabled,
+        hourlyRateDraft: (s.hourlyRateCents / 100).toFixed(2),
+        minPriceDraft: (s.minUnitPriceCents / 100).toFixed(2)
+      });
+    }
+  }
+  async saveHourlyRate() {
+    const cents = Math.round(parseFloat(String(this.state.hourlyRateDraft).replace(',', '.')) * 100);
+    if (!Number.isFinite(cents) || cents <= 0) return;
+    const api = await this._api();
+    const res = await api.adminUpdateSettings({ hourlyRateCents: cents });
+    if (res.ok) {
+      this.setState({ hourlyRateSaved: true });
+      clearTimeout(this._hourlyRateSavedTimer);
+      this._hourlyRateSavedTimer = setTimeout(() => this.setState({ hourlyRateSaved: false }), 2000);
+    }
+  }
+  async saveMinPrice() {
+    const cents = Math.round(parseFloat(String(this.state.minPriceDraft).replace(',', '.')) * 100);
+    if (!Number.isFinite(cents) || cents < 0) return;
+    const api = await this._api();
+    const res = await api.adminUpdateSettings({ minUnitPriceCents: cents });
+    if (res.ok) {
+      this.setState({ minPriceSaved: true });
+      clearTimeout(this._minPriceSavedTimer);
+      this._minPriceSavedTimer = setTimeout(() => this.setState({ minPriceSaved: false }), 2000);
+    }
   }
   async _loadMaterials() {
     const api = await this._api();
@@ -365,6 +415,24 @@ class Component extends DCLogic {
       groups,
       orderFilters,
       ordersEmpty: orders.length === 0,
+      hourlyRateDraft: s.hourlyRateDraft,
+      onHourlyRateChange: (e) => this.setState({ hourlyRateDraft: e.target.value }),
+      onHourlyRateSave: () => this.saveHourlyRate(),
+      hourlyRateSaveLabel: s.hourlyRateSaved ? '✓' : 'OK',
+      hourlyRateSaveStyle: {
+        font: "600 10px 'Inter',sans-serif", padding: '5px 10px', borderRadius: '5px', cursor: 'pointer',
+        background: s.hourlyRateSaved ? 'rgba(143,209,158,.15)' : '#ff5a3c',
+        color: s.hourlyRateSaved ? '#8fd19e' : '#161514'
+      },
+      minPriceDraft: s.minPriceDraft,
+      onMinPriceChange: (e) => this.setState({ minPriceDraft: e.target.value }),
+      onMinPriceSave: () => this.saveMinPrice(),
+      minPriceSaveLabel: s.minPriceSaved ? '✓' : 'OK',
+      minPriceSaveStyle: {
+        font: "600 10px 'Inter',sans-serif", padding: '5px 10px', borderRadius: '5px', cursor: 'pointer',
+        background: s.minPriceSaved ? 'rgba(143,209,158,.15)' : '#ff5a3c',
+        color: s.minPriceSaved ? '#8fd19e' : '#161514'
+      },
       quoteEnabled: s.quoteEnabled,
       quoteStateLabel: s.quoteEnabled ? 'en ligne' : 'en pause',
       quoteBadgeLabel: s.quoteEnabled ? 'EN LIGNE' : 'EN PAUSE',
