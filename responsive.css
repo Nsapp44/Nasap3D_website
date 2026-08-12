@@ -9,48 +9,163 @@
    ([style*="..."]) + !important, ce qui permet de corriger le responsive sur
    toutes les pages sans toucher au JS/HTML de chacune.
 
+   IMPORTANT : ces sélecteurs matchent l'attribut style tel que le DOM le
+   sérialise réellement (lu via getAttribute('style') après que React l'a
+   appliqué), pas la chaîne telle qu'écrite dans le JSX. Le navigateur
+   normalise toujours : un espace après chaque ":" et ";", un espace après
+   chaque "," dans les fonctions/listes (rgba(a, b, c, d), repeat(n, 1fr)),
+   les décimales avec zéro (0.08 et non .08), et les familles de police
+   multi-mots entre guillemets doubles ("Space Grotesk") tandis qu'un nom
+   d'un seul mot (Inter) perd ses guillemets. Écrire les sélecteurs sans ces
+   espaces/formats ne matche jamais rien — vérifié en direct dans le DOM
+   avant d'écrire ce fichier. Si un futur changement de style inline ne
+   déclenche plus une règle ici, la première chose à vérifier est la
+   correspondance exacte avec getAttribute('style') sur l'élément concerné.
+
    Repères d'écran visés : fenêtre desktop réduite et tablette (<=900px),
    mobile (<=640px), petit mobile (<=420px, iPhone SE etc.).
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
    HEADER / NAVIGATION (identique sur toutes les pages publiques)
+
+   <=900px : seule la rangée de liens de nav (Accueil / Services / ...)
+   devient un panneau déroulant animé sous le header, ouvert/fermé par un
+   bouton hamburger fixe (injecté par mobile-nav.js, en dehors de l'arbre
+   React — voir ce fichier pour le pourquoi : un élément inséré dans le DOM
+   React serait effacé au prochain re-render). Compte et le panier restent
+   visibles dans le header, à gauche du bouton — le header réserve donc une
+   marge à droite pour ne pas passer sous le bouton fixe.
+
+   Le sélecteur de la rangée de nav utilise le combinateur ">" pour ne cibler
+   que celle qui est un enfant direct du header (et pas d'éventuelles autres
+   rangées ailleurs sur le site qui partageraient le même style inline, par
+   exemple les onglets de l'admin) : le panneau utilise position:absolute,
+   qui se positionnerait n'importe où si le sélecteur matchait un élément
+   hors du header.
    -------------------------------------------------------------------------- */
 @media (max-width: 900px) {
-  [style*="padding:16px 40px;border-bottom:1px solid rgba(255,255,255,.08)"] {
-    padding: 12px 16px !important;
-    flex-wrap: wrap !important;
-    row-gap: 10px !important;
+  [style*="padding: 16px 40px"][style*="border-bottom: 1px solid rgba(255, 255, 255, 0.08)"] {
+    padding: 12px 90px 12px 16px !important;
+    position: relative !important;
   }
-  /* rangée de liens de nav (Accueil / Devis / Services / ...) */
-  [style*="display:flex;gap:26px;font:500 13px 'Inter'"] {
-    gap: 8px 16px !important;
-    flex-wrap: wrap !important;
-    justify-content: center !important;
+  /* rangée Compte/Panier : un peu plus d'espace entre les deux, et par
+     rapport au bouton hamburger (padding-right ci-dessus) — le panier
+     était trop collé */
+  [style*="padding: 16px 40px"][style*="border-bottom: 1px solid rgba(255, 255, 255, 0.08)"] > [style*="gap: 18px; font: 500 12px Inter"] {
+    gap: 22px !important;
+  }
+  [style*="padding: 16px 40px"][style*="border-bottom: 1px solid rgba(255, 255, 255, 0.08)"] > [style*="gap: 26px; font: 500 13px Inter"] {
+    display: flex !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+    background: #161514 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35) !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    transform: scale(0.94) !important;
+    transform-origin: top center !important;
+    transition: max-height 0.28s ease, opacity 0.22s ease, transform 0.22s ease !important;
+    padding: 0 16px !important;
+    z-index: 50 !important;
+  }
+  html.nasap-nav-open [style*="padding: 16px 40px"][style*="border-bottom: 1px solid rgba(255, 255, 255, 0.08)"] > [style*="gap: 26px; font: 500 13px Inter"] {
+    max-height: 480px !important;
+    opacity: 1 !important;
+    transform: scale(1) !important;
+    padding: 8px 16px 14px !important;
+  }
+  /* items du menu (liens + item "page actuelle") : ligne pleine largeur,
+     séparateur, et sans transition — sur mobile on ne peut que taper, une
+     transition hover (héritée du style desktop) ne fait que retarder le
+     changement visuel au clic */
+  [style*="padding: 16px 40px"][style*="border-bottom: 1px solid rgba(255, 255, 255, 0.08)"] > [style*="gap: 26px; font: 500 13px Inter"] > * {
+    display: block !important;
     width: 100% !important;
-    order: 3 !important;
+    padding: 12px 4px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    transition: none !important;
+    transform: none !important;
   }
-  /* rangée d'actions à droite (Compte / Panier) passe avant la nav au wrap */
-  [style*="display:flex;align-items:center;gap:18px;font:500 12px 'Inter'"] {
-    order: 2 !important;
+  /* le survol tactile (tap) peut déclencher l'état :hover généré par
+     style-hover="transform:scale(1.18)..." (voir support.js) — inutile et
+     moche sur mobile où il n'y a pas de vraie souris, donc annulé même au
+     survol/tap dans le menu déroulant */
+  [style*="padding: 16px 40px"][style*="border-bottom: 1px solid rgba(255, 255, 255, 0.08)"] > [style*="gap: 26px; font: 500 13px Inter"] > *:hover {
+    transform: none !important;
   }
-  /* onglets Admin (Commandes / Stock filament) */
-  [style*="display:flex;gap:26px;font:500 13px 'Inter'"][style*="rgba(255,255,255,.62)"] {
-    justify-content: flex-start !important;
+  /* item "page actuelle" : texte en gras et plus grand que les autres, trait
+     rouge collé au texte au lieu du border-bottom pleine largeur hérité du
+     style desktop. Ciblé via le marqueur de page active lui-même (bordure
+     rouge) plutôt que via le tag (<span> vs <a>) : certaines pages (Home)
+     rendent même l'item actif comme un <a>, seul son style inline change. */
+  [style*="padding: 16px 40px"][style*="border-bottom: 1px solid rgba(255, 255, 255, 0.08)"] > [style*="gap: 26px; font: 500 13px Inter"] > [style*="border-bottom: 2px solid rgb(255, 90, 60)"] {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    font-weight: 700 !important;
+    font-size: 15.5px !important;
+    padding: 14px 4px !important;
+    text-decoration: underline !important;
+    text-decoration-color: rgb(255, 90, 60) !important;
+    text-decoration-thickness: 2px !important;
+    text-underline-offset: 6px !important;
   }
 }
-@media (max-width: 480px) {
-  [style*="display:flex;gap:26px;font:500 13px 'Inter'"] {
-    font-size: 11.5px !important;
-    gap: 6px 12px !important;
-  }
+
+/* Wrapper du bouton hamburger : position:relative, height:0 (n'affecte pas
+   la mise en page), inséré tout en haut de <body> par mobile-nav.js — il
+   défile normalement avec le reste du contenu (voir mobile-nav.js). */
+.nasap-nav-toggle-anchor {
+  position: relative;
+  height: 0;
+}
+/* Bouton hamburger : positionné en absolute par rapport à ce wrapper, donc
+   il défile avec la page et disparaît au scroll, exactement comme
+   Compte/Panier dans le header — pas collé à l'écran en permanence. */
+.nasap-nav-toggle {
+  display: none;
+  position: absolute;
+  top: 13px;
+  right: 26px;
+  z-index: 1000;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  background: rgba(22, 21, 20, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.nasap-nav-toggle span {
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  height: 2px;
+  background: #f3f1ec;
+  transition: transform 0.2s, opacity 0.2s, top 0.2s;
+}
+.nasap-nav-toggle span:nth-child(1) { top: 11px; }
+.nasap-nav-toggle span:nth-child(2) { top: 16px; }
+.nasap-nav-toggle span:nth-child(3) { top: 21px; }
+.nasap-nav-toggle.is-open span:nth-child(1) { top: 16px; transform: rotate(45deg); }
+.nasap-nav-toggle.is-open span:nth-child(2) { opacity: 0; }
+.nasap-nav-toggle.is-open span:nth-child(3) { top: 16px; transform: rotate(-45deg); }
+@media (max-width: 900px) {
+  .nasap-nav-toggle { display: flex !important; }
 }
 
 /* --------------------------------------------------------------------------
    FOOTER (identique sur toutes les pages)
    -------------------------------------------------------------------------- */
 @media (max-width: 640px) {
-  [style*="padding:20px 40px;border-top:1px solid rgba(255,255,255,.08)"] {
+  [style*="padding: 20px 40px"][style*="border-top: 1px solid rgba(255, 255, 255, 0.08)"] {
     flex-direction: column !important;
     gap: 8px !important;
     text-align: center !important;
@@ -63,46 +178,46 @@
    -------------------------------------------------------------------------- */
 @media (max-width: 900px) {
   /* sections deux-colonnes "sidebar/illustration + contenu" -> empilées */
-  [style*="grid-template-columns:170px 1fr"],
-  [style*="grid-template-columns:220px 1fr"],
-  [style*="grid-template-columns:140px 1fr"],
-  [style*="grid-template-columns:1.5fr 1fr"],
-  [style*="grid-template-columns:1.3fr 1fr"] {
+  [style*="grid-template-columns: 170px 1fr"],
+  [style*="grid-template-columns: 220px 1fr"],
+  [style*="grid-template-columns: 140px 1fr"],
+  [style*="grid-template-columns: 1.5fr 1fr"],
+  [style*="grid-template-columns: 1.3fr 1fr"] {
     grid-template-columns: 1fr !important;
   }
-  [style*="grid-template-columns:repeat(6,1fr)"],
-  [style*="grid-template-columns:repeat(5,1fr)"] {
-    grid-template-columns: repeat(3,1fr) !important;
+  [style*="grid-template-columns: repeat(6, 1fr)"],
+  [style*="grid-template-columns: repeat(5, 1fr)"] {
+    grid-template-columns: repeat(3, 1fr) !important;
   }
-  [style*="grid-template-columns:repeat(4,1fr)"] {
-    grid-template-columns: repeat(2,1fr) !important;
+  [style*="grid-template-columns: repeat(4, 1fr)"] {
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 }
 @media (max-width: 640px) {
-  [style*="grid-template-columns:repeat(3,1fr)"],
-  [style*="grid-template-columns:repeat(4,1fr)"],
-  [style*="grid-template-columns:repeat(5,1fr)"],
-  [style*="grid-template-columns:repeat(6,1fr)"] {
-    grid-template-columns: repeat(2,1fr) !important;
+  [style*="grid-template-columns: repeat(3, 1fr)"],
+  [style*="grid-template-columns: repeat(4, 1fr)"],
+  [style*="grid-template-columns: repeat(5, 1fr)"],
+  [style*="grid-template-columns: repeat(6, 1fr)"] {
+    grid-template-columns: repeat(2, 1fr) !important;
   }
-  [style*="grid-template-columns:1fr 1fr"] {
+  [style*="grid-template-columns: 1fr 1fr"] {
     grid-template-columns: 1fr !important;
   }
   /* ligne d'article panier (miniature / infos / prix+actions) */
-  [style*="grid-template-columns:72px 1fr auto"] {
+  [style*="grid-template-columns: 72px 1fr auto"] {
     grid-template-columns: 56px 1fr !important;
   }
-  [style*="grid-template-columns:72px 1fr auto"] > *:nth-child(3) {
+  [style*="grid-template-columns: 72px 1fr auto"] > *:nth-child(3) {
     grid-column: 1 / -1 !important;
     margin-top: 8px !important;
   }
 }
 @media (max-width: 420px) {
-  [style*="grid-template-columns:repeat(2,1fr)"],
-  [style*="grid-template-columns:repeat(3,1fr)"],
-  [style*="grid-template-columns:repeat(4,1fr)"],
-  [style*="grid-template-columns:repeat(5,1fr)"],
-  [style*="grid-template-columns:repeat(6,1fr)"] {
+  [style*="grid-template-columns: repeat(2, 1fr)"],
+  [style*="grid-template-columns: repeat(3, 1fr)"],
+  [style*="grid-template-columns: repeat(4, 1fr)"],
+  [style*="grid-template-columns: repeat(5, 1fr)"],
+  [style*="grid-template-columns: repeat(6, 1fr)"] {
     grid-template-columns: 1fr !important;
   }
 }
@@ -111,9 +226,9 @@
    TITRES — évite le débordement/les tailles disproportionnées sur mobile
    -------------------------------------------------------------------------- */
 @media (max-width: 480px) {
-  [style*="font:700 40px"] { font-size: 28px !important; }
-  [style*="font:700 32px"] { font-size: 24px !important; }
-  [style*="font:700 26px"] { font-size: 21px !important; }
+  [style*="font: 700 40px"] { font-size: 28px !important; }
+  [style*="font: 700 32px"] { font-size: 24px !important; }
+  [style*="font: 700 26px"] { font-size: 21px !important; }
 }
 
 /* --------------------------------------------------------------------------
