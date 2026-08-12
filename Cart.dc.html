@@ -334,13 +334,13 @@ class Component extends DCLogic {
   async incQty(id, qty) {
     const api = await this._api();
     const res = await api.updateCartItem(id, qty + 1);
-    if (res.ok) this.setState({ cart: res.data });
+    if (res.ok) this.setState({ cart: res.data }, () => this._renderLinePreviews());
   }
   async decQty(id, qty) {
     if (qty <= 1) return;
     const api = await this._api();
     const res = await api.updateCartItem(id, qty - 1);
-    if (res.ok) this.setState({ cart: res.data });
+    if (res.ok) this.setState({ cart: res.data }, () => this._renderLinePreviews());
   }
   async removeItem(id) {
     const api = await this._api();

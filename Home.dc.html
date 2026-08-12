@@ -681,10 +681,10 @@ class Component extends DCLogic {
     }
     this._navSections = ['accueil', 'services', 'apropos', 'realisations', 'machines', 'contact'];
     this._onScroll = () => {
-      this.setState({ rot: window.scrollY * 0.6 });
+      this.setState({ rot: document.body.scrollTop * 0.6 });
       this._updateActiveNav();
     };
-    window.addEventListener('scroll', this._onScroll, { passive: true });
+    document.body.addEventListener('scroll', this._onScroll, { passive: true });
     this._startAuto();
     this._initStepViewer();
     this._updateActiveNav();
@@ -879,8 +879,8 @@ class Component extends DCLogic {
   goToSection(key) {
     const el = document.getElementById('sec-' + key);
     if (!el) return;
-    const top = el.getBoundingClientRect().top + window.scrollY - 76;
-    window.scrollTo({ top, behavior: 'smooth' });
+    const top = el.getBoundingClientRect().top + document.body.scrollTop - 76;
+    document.body.scrollTo({ top, behavior: 'smooth' });
   }
   _initNPrint() {
     const nPath = document.getElementById('nasap-n-path');
@@ -890,7 +890,7 @@ class Component extends DCLogic {
     nPath.style.strokeDasharray = length;
     nPath.style.strokeDashoffset = length;
     this._onPrintScroll = () => this._handlePrintScroll();
-    window.addEventListener('scroll', this._onPrintScroll);
+    document.body.addEventListener('scroll', this._onPrintScroll);
     this._handlePrintScroll();
   }
   _handlePrintScroll() {
@@ -929,8 +929,8 @@ class Component extends DCLogic {
     extruder.style.transform = 'translate(' + (pt.x - 52.81) + 'px, ' + (pt.y - 1.85) + 'px)';
   }
   componentWillUnmount() {
-    window.removeEventListener('scroll', this._onScroll);
-    window.removeEventListener('scroll', this._onPrintScroll);
+    document.body.removeEventListener('scroll', this._onScroll);
+    document.body.removeEventListener('scroll', this._onPrintScroll);
     if (this._measureRealWrap) window.removeEventListener('resize', this._measureRealWrap);
     if (this._meshRaf) cancelAnimationFrame(this._meshRaf);
     if (this._onMeshResize) window.removeEventListener('resize', this._onMeshResize);
@@ -1059,7 +1059,7 @@ class Component extends DCLogic {
 
     const animate = () => {
       this._rafId = requestAnimationFrame(animate);
-      const baseY = window.scrollY * 0.004;
+      const baseY = document.body.scrollTop * 0.004;
       group.rotation.y = baseY + this._dragRotY;
       group.rotation.x = this._dragRotX;
       renderer.render(scene, camera);

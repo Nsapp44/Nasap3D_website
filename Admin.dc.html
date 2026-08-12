@@ -253,6 +253,13 @@ class Component extends DCLogic {
         hourlyRateDraft: (s.hourlyRateCents / 100).toFixed(2),
         minPriceDraft: (s.minUnitPriceCents / 100).toFixed(2)
       });
+      // Garde le flag localStorage (stock.js) en phase avec le vrai réglage
+      // serveur : c'est lui que lisent Home/Devis-Instantane pour masquer le
+      // configurateur côté client (le serveur refuse déjà POST /quotes de
+      // son côté, mais sans ça la home et la page dédiée continuent
+      // d'afficher le configurateur comme si de rien n'était).
+      const { setQuoteEnabled } = await import('./stock.js');
+      setQuoteEnabled(s.quoteEnabled);
     }
   }
   async saveHourlyRate() {
@@ -300,6 +307,11 @@ class Component extends DCLogic {
     this.setState({ quoteEnabled: next });
     const api = await this._api();
     await api.adminUpdateSettings({ quoteEnabled: next });
+    // Voir le commentaire dans _loadSettings : synchronise le flag local que
+    // lisent Home/Devis-Instantane, sinon seul le blocage serveur (à l'étape
+    // analyse) réagit et le reste de l'UI publique ne bouge pas.
+    const { setQuoteEnabled } = await import('./stock.js');
+    setQuoteEnabled(next);
   }
   async setOrderStatus(id, status) {
     const api = await this._api();
