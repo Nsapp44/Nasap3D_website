@@ -30,7 +30,6 @@ a:hover{color:#ff7a5c}
 @keyframes plDrawRl{0%,50%{stroke-dashoffset:100}88%,100%{stroke-dashoffset:50}}
 @keyframes plDrawArcL{0%,88%{stroke-dashoffset:100}100%{stroke-dashoffset:84.3}}
 @keyframes cfgFadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-@keyframes cfgViewerSpin{from{transform:rotateY(0deg) rotateX(-18deg)}to{transform:rotateY(360deg) rotateX(-18deg)}}
 </style>
 <script src="./pageloader.js"></script>
 <script src="./navguard.js"></script>
@@ -160,15 +159,13 @@ a:hover{color:#ff7a5c}
           <sc-if value="{{ cfgAnalysisReady }}" hint-placeholder-val="{{ false }}">
             <div style="border:1px solid rgba(255,90,60,.3);background:#101010;border-radius:8px;padding:14px;margin-bottom:16px;animation:cfgFadeUp .35s ease">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,.5)">Analyse terminée</span><span style="width:16px;height:16px;border-radius:50%;background:#ff5a3c;color:#161514;font:700 10px/16px 'Inter',sans-serif;text-align:center">✓</span></div>
-              <div style="height:150px;display:flex;align-items:center;justify-content:center;perspective:400px;background:radial-gradient(ellipse at center, rgba(255,90,60,.08), transparent 70%);border-radius:6px">
-                <div style="width:64px;height:64px;position:relative;transform-style:preserve-3d;animation:cfgViewerSpin 5s linear infinite">
-                  <div style="position:absolute;inset:0;transform:translateZ(32px);background:rgba(255,90,60,.18);border:1px solid rgba(255,90,60,.6)"></div>
-                  <div style="position:absolute;inset:0;transform:rotateY(180deg) translateZ(32px);background:rgba(255,90,60,.1);border:1px solid rgba(255,90,60,.4)"></div>
-                  <div style="position:absolute;inset:0;transform:rotateY(90deg) translateZ(32px);background:rgba(255,90,60,.14);border:1px solid rgba(255,90,60,.5)"></div>
-                  <div style="position:absolute;inset:0;transform:rotateY(-90deg) translateZ(32px);background:rgba(255,90,60,.14);border:1px solid rgba(255,90,60,.5)"></div>
-                  <div style="position:absolute;inset:0;transform:rotateX(90deg) translateZ(32px);background:rgba(255,90,60,.22);border:1px solid rgba(255,90,60,.6)"></div>
-                  <div style="position:absolute;inset:0;transform:rotateX(-90deg) translateZ(32px);background:rgba(255,90,60,.08);border:1px solid rgba(255,90,60,.35)"></div>
-                </div>
+              <div ref="{{ analysisPreviewRef }}" style="height:150px;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center, rgba(255,90,60,.08), transparent 70%);border-radius:6px;overflow:hidden">
+                <sc-if value="{{ cfgPreviewUnavailable }}" hint-placeholder-val="{{ false }}">
+                  <div style="text-align:center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    <div style="font:400 9.5px 'Inter',sans-serif;color:rgba(255,255,255,.35)">Aperçu non disponible pour ce fichier</div>
+                  </div>
+                </sc-if>
               </div>
             </div>
             <div style="display:flex;justify-content:flex-end;animation:cfgFadeUp .4s ease .05s both"><div onClick="{{ cfgNext }}" style="background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:10px 20px;border-radius:6px;cursor:pointer">Suivant →</div></div>
@@ -350,6 +347,7 @@ class Component extends DCLogic {
   static ALLOWED_EXT = ['.stl', '.obj', '.step', '.stp'];
   fileInputRef = React.createRef();
   previewRef = React.createRef();
+  analysisPreviewRef = React.createRef();
   componentDidMount() {
     this._loadCart();
     this._cartListener = () => this._loadCart();
@@ -368,22 +366,31 @@ class Component extends DCLogic {
     window.removeEventListener('nasap3d-quote-changed', this._quoteListener);
     clearTimeout(this._toastTimer);
     if (this._previewHandle) this._previewHandle.dispose();
+    if (this._analysisPreviewHandle) this._analysisPreviewHandle.dispose();
   }
-  // Renders the real uploaded geometry (not a placeholder) into the "fichier
-  // chargé" preview box, in the currently selected color — see viewer3d.js.
-  async _renderPreview() {
+  // Renders the real uploaded geometry (not a placeholder) into a preview
+  // box, in the currently selected color — see viewer3d.js. Shared by the
+  // step-1 "fichier chargé" box (previewRef) and the step-3 "analyse
+  // terminée" box (analysisPreviewRef), which show the same file/color.
+  async _renderInto(ref, handleKey) {
     const file = this.state.cfgFile;
-    if (this._previewHandle) { this._previewHandle.dispose(); this._previewHandle = null; }
-    if (!file || !this.previewRef.current) return;
+    if (this[handleKey]) { this[handleKey].dispose(); this[handleKey] = null; }
+    if (!file || !ref.current) return;
     const ext = '.' + file.name.split('.').pop().toLowerCase();
     const { isRenderableExt, renderModelPreview } = await import('./viewer3d.js');
     if (!isRenderableExt(ext)) { this.setState({ cfgPreviewUnavailable: true }); return; }
     this.setState({ cfgPreviewUnavailable: false });
     const buffer = await file.arrayBuffer();
-    if (this.state.cfgFile !== file || !this.previewRef.current) return; // stale by the time the read finished
+    if (this.state.cfgFile !== file || !ref.current) return; // stale by the time the read finished
     const material = this.state.materials.find(m => m.key === this.state.cfgMaterial);
     const color = material ? (material.colors.find(c => c.id === this.state.cfgColorId) || {}).colorHex : null;
-    this._previewHandle = await renderModelPreview(this.previewRef.current, { fileBuffer: buffer, ext, colorHex: color });
+    this[handleKey] = await renderModelPreview(ref.current, { fileBuffer: buffer, ext, colorHex: color });
+  }
+  _renderPreview() {
+    return this._renderInto(this.previewRef, '_previewHandle');
+  }
+  _renderAnalysisPreview() {
+    return this._renderInto(this.analysisPreviewRef, '_analysisPreviewHandle');
   }
   // Mode vacances : la source de vérité réelle est déjà côté serveur (POST
   // /quotes refuse tout si Settings.quoteEnabled est faux) ; ce flag local
@@ -498,7 +505,7 @@ class Component extends DCLogic {
       });
       return;
     }
-    this.setState({ cfgAnalyzing: false, cfgAnalysisReady: true, cfgQuote: res.data.quote });
+    this.setState({ cfgAnalyzing: false, cfgAnalysisReady: true, cfgQuote: res.data.quote }, () => this._renderAnalysisPreview());
   }
   async addToCart() {
     const q = this.state.cfgQuote;
@@ -617,7 +624,7 @@ class Component extends DCLogic {
       quotePaused: !s.quoteEnabled,
       isCfgStep1: s.cfgStep === 1, isCfgStep2: s.cfgStep === 2, isCfgStep3: s.cfgStep === 3, isCfgStep4: s.cfgStep === 4,
       cfgFileReady: !!s.cfgFile, cfgFileName: s.cfgFile ? s.cfgFile.name : '',
-      previewRef: this.previewRef, cfgPreviewUnavailable: s.cfgPreviewUnavailable,
+      previewRef: this.previewRef, analysisPreviewRef: this.analysisPreviewRef, cfgPreviewUnavailable: s.cfgPreviewUnavailable,
       cfgAnalyzing: s.cfgAnalyzing, cfgAnalysisReady: s.cfgAnalysisReady, cfgAnalysisError: s.cfgAnalysisError,
       cfgRetryAnalysis: () => this.cfgRetryAnalysis(),
       isCfgIdle: !s.cfgFile,

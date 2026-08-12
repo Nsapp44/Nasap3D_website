@@ -323,7 +323,7 @@ class Component extends DCLogic {
       if (!res.ok || !ref.current) continue;
       const buffer = await res.arrayBuffer();
       if (!ref.current) continue; // unmounted while the file was downloading
-      const handle = await renderModelPreview(ref.current, { fileBuffer: buffer, ext, colorHex: line.colorHex });
+      const handle = await renderModelPreview(ref.current, { fileBuffer: buffer, ext, colorHex: line.colorHex, animate: false });
       if (handle) this._previewHandles.set(line.id, handle);
     }
   }
