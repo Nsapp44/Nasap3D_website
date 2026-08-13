@@ -1,7 +1,7 @@
 import { prisma } from "./prisma.js";
 import { nextCounter } from "./counter.js";
 import { getCartSummary, type CartSummary } from "./cart.js";
-import type { ShippingRate } from "./boxtal.js";
+import type { ShippingRate, ParcelCm } from "./boxtal.js";
 
 export async function nextOrderRef(): Promise<string> {
   const seq = await nextCounter("orderRef");
@@ -9,12 +9,13 @@ export async function nextOrderRef(): Promise<string> {
 }
 
 export class EmptyCartError extends Error {}
-export class ExpiredCartError extends Error {}
 
 export interface ShippingSelection {
-  mode: "RELAY" | "HOME";
+  mode: "PICKUP" | "RELAY" | "HOME";
   rate: ShippingRate;
   weightG: number;
+  parcelCm: ParcelCm;
+  oversized: boolean;
   recipient: { name: string; phone: string; address: string; city: string; zipcode: string; country: string };
   relayPoint?: { code: string; name: string; address: string; city: string; zipcode: string };
 }
@@ -32,7 +33,12 @@ export function packShippingMetadata(s: ShippingSelection): Record<string, strin
     shipping_service: s.rate.serviceCode,
     shipping_label: s.rate.label,
     shipping_cents: String(s.rate.cents),
+    shipping_delivery_date: s.rate.estimatedDeliveryDate ?? "",
     shipping_weight_g: String(Math.round(s.weightG)),
+    shipping_parcel_l: String(s.parcelCm.length),
+    shipping_parcel_w: String(s.parcelCm.width),
+    shipping_parcel_h: String(s.parcelCm.height),
+    shipping_oversized: s.oversized ? "1" : "0",
     recipient_name: s.recipient.name,
     recipient_phone: s.recipient.phone,
     recipient_address: s.recipient.address,
@@ -52,7 +58,9 @@ export function packShippingMetadata(s: ShippingSelection): Record<string, strin
 
 function unpackShippingMetadata(metadata: Record<string, string>): ShippingSelection | null {
   if (!metadata.shipping_mode) return null;
-  const mode = metadata.shipping_mode === "RELAY" ? "RELAY" as const : "HOME" as const;
+  const mode =
+    metadata.shipping_mode === "PICKUP" ? "PICKUP" as const :
+    metadata.shipping_mode === "RELAY" ? "RELAY" as const : "HOME" as const;
   return {
     mode,
     rate: {
@@ -60,8 +68,15 @@ function unpackShippingMetadata(metadata: Record<string, string>): ShippingSelec
       serviceCode: metadata.shipping_service ?? "",
       label: metadata.shipping_label ?? "",
       cents: Number(metadata.shipping_cents) || 0,
+      estimatedDeliveryDate: metadata.shipping_delivery_date || null,
     },
     weightG: Number(metadata.shipping_weight_g) || 0,
+    parcelCm: {
+      length: Number(metadata.shipping_parcel_l) || 0,
+      width: Number(metadata.shipping_parcel_w) || 0,
+      height: Number(metadata.shipping_parcel_h) || 0,
+    },
+    oversized: metadata.shipping_oversized === "1",
     recipient: {
       name: metadata.recipient_name ?? "",
       phone: metadata.recipient_phone ?? "",
@@ -98,7 +113,6 @@ export async function createOrderFromCart(
 ): Promise<{ orderId: string; ref: string; totalCents: number }> {
   const summary: CartSummary = await getCartSummary({ userId });
   if (summary.lines.length === 0) throw new EmptyCartError();
-  if (summary.hasExpired) throw new ExpiredCartError();
 
   const shippingCents = shipping?.rate.cents ?? 0;
   const totalCents = summary.totalCents + shippingCents;
@@ -124,6 +138,10 @@ export async function createOrderFromCart(
         shippingServiceCode: shipping?.rate.serviceCode,
         shippingLabel: shipping?.rate.label,
         shippingWeightG: shipping?.weightG,
+        shippingParcelLengthCm: shipping?.parcelCm.length,
+        shippingParcelWidthCm: shipping?.parcelCm.width,
+        shippingParcelHeightCm: shipping?.parcelCm.height,
+        shippingOversized: shipping?.oversized ?? false,
         recipientName: shipping?.recipient.name,
         recipientPhone: shipping?.recipient.phone,
         recipientAddress: shipping?.recipient.address,

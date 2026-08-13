@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireAuth } from "../lib/session.js";
-import { getCartTotalWeightG } from "../lib/cart.js";
+import { getCartTotalWeightG, getCartParcelRequirement, getCartTotalPrintMinutes } from "../lib/cart.js";
 import { quoteShippingRates, BoxtalConfigError, BoxtalApiError } from "../lib/boxtal.js";
 
 const recipientSchema = z.object({
@@ -21,9 +21,11 @@ export async function shippingRoutes(app: FastifyInstance) {
 
     const weightG = await getCartTotalWeightG({ userId: request.user!.id });
     if (weightG <= 0) return reply.code(400).send({ error: "empty_cart" });
+    const parcelRequirement = await getCartParcelRequirement({ userId: request.user!.id });
+    const printMinutes = await getCartTotalPrintMinutes({ userId: request.user!.id });
 
     try {
-      const rates = await quoteShippingRates(body.data, weightG);
+      const rates = await quoteShippingRates(body.data, weightG, parcelRequirement, printMinutes);
       if (!rates.relay && !rates.home) return reply.code(502).send({ error: "no_offer_available" });
       return reply.send(rates);
     } catch (err) {

@@ -65,8 +65,8 @@ a:hover{color:#ff7a5c}
   <!-- HERO -->
   <div style="padding:48px 24px 24px">
     <div style="max-width:900px;margin:0 auto">
-      <div style="font:600 12px 'Inter',sans-serif;letter-spacing:1.2px;color:#ff5a3c;text-transform:uppercase;margin-bottom:10px">Panier</div>
-      <div style="font:700 30px/1.15 'Space Grotesk',sans-serif;color:#f3f1ec">{{ itemCountLabel }}</div>
+      <div style="font:600 12px 'Inter',sans-serif;letter-spacing:1.2px;color:#ff5a3c;text-transform:uppercase;margin-bottom:10px">{{ eyebrowLabel }}</div>
+      <div style="font:700 30px/1.15 'Space Grotesk',sans-serif;color:#f3f1ec">{{ heroTitle }}</div>
     </div>
   </div>
 
@@ -81,8 +81,8 @@ a:hover{color:#ff7a5c}
     </div>
   </sc-if>
 
-  <!-- CART CONTENT -->
-  <sc-if value="{{ hasItems }}" hint-placeholder-val="{{ false }}">
+  <!-- CART CONTENT : ÉTAPE 1 — panier éditable + résumé, avant connexion/paiement -->
+  <sc-if value="{{ isStepCart }}" hint-placeholder-val="{{ false }}">
     <div style="max-width:900px;margin:0 auto;padding:0 24px 60px;display:grid;grid-template-columns:1.5fr 1fr;gap:32px;align-items:start">
 
       <div style="display:flex;flex-direction:column;gap:12px">
@@ -95,9 +95,6 @@ a:hover{color:#ff7a5c}
                 <span style="flex:none;width:10px;height:10px;border-radius:50%;background:{{ item.colorHex }};border:1px solid rgba(255,255,255,.25)"></span>
                 <span>{{ item.material }} · {{ item.colorName }} · remplissage {{ item.infill }}% · qualité {{ item.quality }}</span>
               </div>
-              <sc-if value="{{ item.expired }}" hint-placeholder-val="{{ false }}">
-                <div style="font:600 10px 'Inter',sans-serif;color:#ff8a70;margin-bottom:8px">Devis expiré — retirez cette ligne et relancez un devis pour ce fichier.</div>
-              </sc-if>
               <div style="display:flex;align-items:center;gap:8px">
                 <span onClick="{{ item.onDec }}" style="width:20px;height:20px;border:1px solid rgba(255,255,255,.25);border-radius:5px;text-align:center;line-height:18px;font:12px 'Inter',sans-serif;color:#e8e6e1;cursor:pointer">–</span>
                 <span style="font:600 12px 'Inter',sans-serif;color:#f3f1ec;min-width:16px;text-align:center">{{ item.qty }}</span>
@@ -115,48 +112,137 @@ a:hover{color:#ff7a5c}
         </sc-for>
       </div>
 
-      <div style="position:sticky;top:20px;display:flex;flex-direction:column;gap:16px">
+      <div style="position:sticky;top:20px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#1a1917;padding:22px">
+        <div style="font:700 15px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:16px">Résumé</div>
+        <div style="display:flex;justify-content:space-between;font:400 11.5px 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:8px"><span>Sous-total</span><span>{{ subtotal }} €</span></div>
+        <sc-if value="{{ hasDiscount }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;justify-content:space-between;font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;margin-bottom:8px"><span>Remise quantité</span><span>−{{ discountAmount }} €</span></div>
+        </sc-if>
+        <sc-if value="{{ hasSmallOrderFee }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;justify-content:space-between;font:600 11.5px 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:8px"><span>Frais petite commande</span><span>+{{ smallOrderFee }} €</span></div>
+        </sc-if>
+        <div style="display:flex;justify-content:space-between;font:700 17px 'Space Grotesk',sans-serif;color:#f3f1ec;padding-top:12px;margin-top:8px;border-top:1px solid rgba(255,255,255,.1)"><span>Total HT</span><span>{{ totalNoShipping }} €</span></div>
+        <sc-if value="{{ hasSmallOrderFee }}" hint-placeholder-val="{{ false }}">
+          <div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.4);margin-top:8px">En dessous de {{ minOrder }} €, des frais s'appliquent — ajoutez des pièces pour les éviter.</div>
+        </sc-if>
+
+        <div style="display:flex;gap:8px;margin-top:18px">
+          <sc-if value="{{ needsLogin }}" hint-placeholder-val="{{ false }}">
+            <a href="Account.dc.html" style="flex:1;text-decoration:none;display:flex;background:#635bff;color:#fff;font:600 12.5px 'Inter',sans-serif;padding:12px;border-radius:7px;text-align:center;align-items:center;justify-content:center">Se connecter</a>
+          </sc-if>
+          <div onClick="{{ onGoToCheckout }}" style="{{ goToCheckoutStyle }}">Passer la commande</div>
+        </div>
+        <div style="font:400 9.5px 'Inter',sans-serif;color:rgba(255,255,255,.35);margin-top:10px;text-align:center">Livraison ou retrait à choisir à l'étape suivante</div>
+      </div>
+
+    </div>
+  </sc-if>
+
+  <!-- CART CONTENT : ÉTAPE 2 — panier verrouillé + livraison + paiement -->
+  <sc-if value="{{ isStepCheckout }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:900px;margin:0 auto;padding:0 24px 60px;display:flex;flex-direction:column;gap:20px">
+
+      <div>
+        <div onClick="{{ onBackToCart }}" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font:600 11.5px 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:14px">← Modifier le panier</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ items }}" as="item" hint-placeholder-count="2">
+            <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;background:#1a1917;padding:12px 14px;display:grid;grid-template-columns:60px 1fr auto;gap:14px;align-items:center">
+              <div ref="{{ item.thumbRef }}" style="width:60px;height:60px;border-radius:8px;background:radial-gradient(circle at 35% 30%, #ddd9d2, #b5b1a8);border:1px solid rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:inset 0 -6px 10px rgba(0,0,0,.12)"></div>
+              <div>
+                <div style="font:600 12.5px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ item.fileName }}</div>
+                <div style="display:flex;align-items:center;gap:6px;font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.5)">
+                  <span style="flex:none;width:9px;height:9px;border-radius:50%;background:{{ item.colorHex }};border:1px solid rgba(255,255,255,.25)"></span>
+                  <span>{{ item.material }} · {{ item.colorName }} · qté {{ item.qty }}</span>
+                </div>
+              </div>
+              <div style="text-align:right;font:700 13.5px 'Space Grotesk',sans-serif;color:#ff5a3c">{{ item.lineTotal }} €</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
 
       <div style="border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#1a1917;padding:22px">
         <div style="font:700 15px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:14px">Livraison</div>
 
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
-          <input value="{{ shipName }}" onChange="{{ onShipName }}" type="text" placeholder="Nom et prénom" style="width:100%;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
-          <input value="{{ shipPhone }}" onChange="{{ onShipPhone }}" type="tel" placeholder="Téléphone" style="width:100%;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
-          <input value="{{ shipAddress }}" onChange="{{ onShipAddress }}" type="text" placeholder="Adresse" style="width:100%;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
-          <div style="display:flex;gap:8px">
-            <input value="{{ shipZipcode }}" onChange="{{ onShipZipcode }}" type="text" placeholder="Code postal" style="width:110px;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
-            <input value="{{ shipCity }}" onChange="{{ onShipCity }}" type="text" placeholder="Ville" style="flex:1;min-width:0;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+          <div onClick="{{ onSelectPickup }}" style="{{ pickupOptionStyle }}">
+            <span>Retrait à l'atelier</span><span>Gratuit</span>
+          </div>
+          <div onClick="{{ onSelectShipping }}" style="{{ shippingOptionStyle }}">
+            <span>Expédition</span><span>À calculer</span>
           </div>
         </div>
 
-        <div onClick="{{ onQuoteShipping }}" style="{{ quoteShippingButtonStyle }}">{{ quoteShippingButtonLabel }}</div>
-
-        <sc-if value="{{ hasShippingError }}" hint-placeholder-val="{{ false }}">
-          <div style="margin-top:10px;font:600 11px 'Inter',sans-serif;color:#ff8a70">{{ shippingError }}</div>
+        <sc-if value="{{ isPickup }}" hint-placeholder-val="{{ false }}">
+          <div style="font:400 11px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:12px">Vous récupérez la commande directement à l'atelier, sur rendez-vous : <strong style="color:#e8e6e1">{{ workshopAddress }}</strong>.</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <input value="{{ shipName }}" onChange="{{ onShipName }}" type="text" placeholder="Nom et prénom" style="width:100%;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+            <input value="{{ shipPhone }}" onChange="{{ onShipPhone }}" type="tel" placeholder="Téléphone" style="width:100%;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+          </div>
         </sc-if>
 
-        <sc-if value="{{ hasRates }}" hint-placeholder-val="{{ false }}">
-          <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
-            <sc-if value="{{ hasRelayOption }}" hint-placeholder-val="{{ false }}">
-              <div onClick="{{ selectRelay }}" style="{{ relayOptionStyle }}">
-                <span>Point Relais (Mondial Relay)</span><span>{{ relayPrice }} €</span>
-              </div>
-            </sc-if>
-            <sc-if value="{{ hasHomeOption }}" hint-placeholder-val="{{ false }}">
-              <div onClick="{{ selectHome }}" style="{{ homeOptionStyle }}">
-                <span>Livraison à domicile (Colissimo)</span><span>{{ homePrice }} €</span>
-              </div>
-            </sc-if>
+        <sc-if value="{{ isShipping }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+            <input value="{{ shipName }}" onChange="{{ onShipName }}" type="text" placeholder="Nom et prénom" style="width:100%;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+            <input value="{{ shipPhone }}" onChange="{{ onShipPhone }}" type="tel" placeholder="Téléphone" style="width:100%;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+            <div style="position:relative">
+              <input value="{{ shipAddress }}" onChange="{{ onShipAddress }}" onFocus="{{ onShipAddressFocus }}" onBlur="{{ onShipAddressBlur }}" type="text" placeholder="Adresse" autocomplete="off" style="width:100%;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+              <sc-if value="{{ hasAddressSuggestions }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;left:0;right:0;top:38px;z-index:20;background:#211f1c;border:1px solid rgba(255,255,255,.15);border-radius:6px;overflow:hidden;box-shadow:0 8px 20px rgba(0,0,0,.35)">
+                  <sc-for list="{{ addressSuggestions }}" as="sugg" hint-placeholder-count="3">
+                    <div onClick="{{ sugg.onClick }}" style="padding:8px 12px;font:400 11px 'Inter',sans-serif;color:#e8e6e1;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.06)">{{ sugg.label }}</div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+            <div style="display:flex;gap:8px">
+              <input value="{{ shipZipcode }}" onChange="{{ onShipZipcode }}" type="text" placeholder="Code postal" style="width:110px;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+              <input value="{{ shipCity }}" onChange="{{ onShipCity }}" type="text" placeholder="Ville" style="flex:1;min-width:0;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+            </div>
+            <select value="{{ shipCountry }}" onChange="{{ onShipCountry }}" style="width:100%;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none">
+              <sc-for list="{{ countryOptions }}" as="c" hint-placeholder-count="27">
+                <option value="{{ c.code }}">{{ c.label }}</option>
+              </sc-for>
+            </select>
           </div>
 
-          <div style="{{ relayPickerWrapStyle }}">
-            <div style="font:600 11px 'Inter',sans-serif;color:rgba(255,255,255,.6);margin:14px 0 8px">Choisissez votre point relais</div>
-            <sc-if value="{{ hasRelayPoint }}" hint-placeholder-val="{{ false }}">
-              <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;margin-bottom:8px">{{ relayPointSummary }}</div>
-            </sc-if>
-            <div id="boxtal-relay-map" style="height:380px;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.1)"></div>
-          </div>
+          <div onClick="{{ onQuoteShipping }}" style="{{ quoteShippingButtonStyle }}">{{ quoteShippingButtonLabel }}</div>
+
+          <sc-if value="{{ hasShippingError }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:10px;font:600 11px 'Inter',sans-serif;color:#ff8a70">{{ shippingError }}</div>
+          </sc-if>
+
+          <sc-if value="{{ hasRates }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+              <sc-if value="{{ hasRelayOption }}" hint-placeholder-val="{{ false }}">
+                <div onClick="{{ selectRelay }}" style="{{ relayOptionStyle }}">
+                  <span>Point Relais (Mondial Relay)</span><span>{{ relayPrice }} €</span>
+                </div>
+                <sc-if value="{{ hasRelayDate }}" hint-placeholder-val="{{ false }}">
+                  <div style="font:400 10px 'Inter',sans-serif;color:rgba(255,255,255,.4);margin:-2px 2px 2px">Livraison estimée le {{ relayDate }}</div>
+                </sc-if>
+              </sc-if>
+              <sc-if value="{{ hasHomeOption }}" hint-placeholder-val="{{ false }}">
+                <div onClick="{{ selectHome }}" style="{{ homeOptionStyle }}">
+                  <span>Livraison à domicile (Colissimo)</span><span>{{ homePrice }} €</span>
+                </div>
+                <sc-if value="{{ hasHomeDate }}" hint-placeholder-val="{{ false }}">
+                  <div style="font:400 10px 'Inter',sans-serif;color:rgba(255,255,255,.4);margin:-2px 2px 2px">Livraison estimée le {{ homeDate }}</div>
+                </sc-if>
+              </sc-if>
+            </div>
+
+            <div style="{{ relayPickerWrapStyle }}">
+              <div style="font:600 11px 'Inter',sans-serif;color:rgba(255,255,255,.6);margin:14px 0 8px">Choisissez votre point relais</div>
+              <sc-if value="{{ hasRelayPoint }}" hint-placeholder-val="{{ false }}">
+                <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;margin-bottom:8px">{{ relayPointSummary }}</div>
+              </sc-if>
+              <sc-if value="{{ hasRelayMapNotice }}" hint-placeholder-val="{{ false }}">
+                <div style="font:600 11px 'Inter',sans-serif;color:#ff8a70;margin-bottom:8px">{{ relayMapNotice }}</div>
+              </sc-if>
+              <div id="boxtal-relay-map" style="height:380px;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.1)"></div>
+            </div>
+          </sc-if>
         </sc-if>
       </div>
 
@@ -170,16 +256,13 @@ a:hover{color:#ff7a5c}
           <div style="display:flex;justify-content:space-between;font:600 11.5px 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:8px"><span>Frais petite commande</span><span>+{{ smallOrderFee }} €</span></div>
         </sc-if>
         <sc-if value="{{ hasSelectedShipping }}" hint-placeholder-val="{{ false }}">
-          <div style="display:flex;justify-content:space-between;font:600 11.5px 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:8px"><span>Livraison</span><span>+{{ shippingPrice }} €</span></div>
+          <div style="display:flex;justify-content:space-between;font:600 11.5px 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:8px"><span>Livraison</span><span>{{ shippingPrice }}</span></div>
         </sc-if>
         <div style="display:flex;justify-content:space-between;font:700 17px 'Space Grotesk',sans-serif;color:#f3f1ec;padding-top:12px;margin-top:8px;border-top:1px solid rgba(255,255,255,.1)"><span>Total HT</span><span>{{ total }} €</span></div>
         <sc-if value="{{ hasSmallOrderFee }}" hint-placeholder-val="{{ false }}">
           <div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.4);margin-top:8px">En dessous de {{ minOrder }} €, des frais s'appliquent — ajoutez des pièces pour les éviter.</div>
         </sc-if>
 
-        <sc-if value="{{ hasExpiredItem }}" hint-placeholder-val="{{ false }}">
-          <div style="margin-top:16px;font:600 11px 'Inter',sans-serif;color:#ff8a70;text-align:center">Un ou plusieurs devis ont expiré — retirez-les pour continuer.</div>
-        </sc-if>
         <sc-if value="{{ hasCheckoutError }}" hint-placeholder-val="{{ false }}">
           <div style="margin-top:16px;font:600 11px 'Inter',sans-serif;color:#ff8a70;text-align:center">{{ checkoutError }}</div>
         </sc-if>
@@ -227,8 +310,6 @@ a:hover{color:#ff7a5c}
         <div style="font:400 9.5px 'Inter',sans-serif;color:rgba(255,255,255,.35);margin-top:10px;text-align:center">Paiement sécurisé — carte, Apple Pay, Google Pay</div>
       </div>
 
-      </div>
-
     </div>
   </sc-if>
 
@@ -254,14 +335,56 @@ a:hover{color:#ff7a5c}
 
 </x-dc>
 <script type="text/x-dc" data-dc-script>
+// UE-27 (pas le Royaume-Uni, sorti de l'UE) — France en tête puisque c'est
+// le choix par défaut. Boxtal choisit lui-même les bons codes d'offre
+// (CpourToi vs CpourToiEurope, etc. — voir boxtal.ts) selon ce pays, donc
+// pas besoin de logique différente ici au-delà de l'envoyer correctement.
+const EU_COUNTRIES = [
+  { code: 'FR', label: 'France' },
+  { code: 'DE', label: 'Allemagne' },
+  { code: 'AT', label: 'Autriche' },
+  { code: 'BE', label: 'Belgique' },
+  { code: 'BG', label: 'Bulgarie' },
+  { code: 'CY', label: 'Chypre' },
+  { code: 'HR', label: 'Croatie' },
+  { code: 'DK', label: 'Danemark' },
+  { code: 'ES', label: 'Espagne' },
+  { code: 'EE', label: 'Estonie' },
+  { code: 'FI', label: 'Finlande' },
+  { code: 'GR', label: 'Grèce' },
+  { code: 'HU', label: 'Hongrie' },
+  { code: 'IE', label: 'Irlande' },
+  { code: 'IT', label: 'Italie' },
+  { code: 'LV', label: 'Lettonie' },
+  { code: 'LT', label: 'Lituanie' },
+  { code: 'LU', label: 'Luxembourg' },
+  { code: 'MT', label: 'Malte' },
+  { code: 'NL', label: 'Pays-Bas' },
+  { code: 'PL', label: 'Pologne' },
+  { code: 'PT', label: 'Portugal' },
+  { code: 'RO', label: 'Roumanie' },
+  { code: 'SK', label: 'Slovaquie' },
+  { code: 'SI', label: 'Slovénie' },
+  { code: 'SE', label: 'Suède' },
+  { code: 'CZ', label: 'Tchéquie' },
+];
+
 class Component extends DCLogic {
   state = {
-    cart: { lines: [], subtotalCents: 0, discountCents: 0, smallOrderFeeCents: 0, totalCents: 0, hasExpired: false, minOrderCents: 2000 },
+    cart: { lines: [], subtotalCents: 0, discountCents: 0, smallOrderFeeCents: 0, totalCents: 0, minOrderCents: 2000 },
     loaded: false, loggedIn: false, authChecked: false,
+    // 'cart' = panier éditable + résumé sans livraison (étape 1).
+    // 'checkout' = panier verrouillé + livraison + paiement (étape 2), atteint
+    // via "Passer la commande" (connexion obligatoire — voir goToCheckout).
+    step: 'cart',
     checkoutState: 'idle', checkoutError: null,
-    shipName: '', shipPhone: '', shipAddress: '', shipCity: '', shipZipcode: '',
+    // Étape 1 du bloc Livraison : null (pas choisi), 'PICKUP' (gratuit, à
+    // l'atelier) ou 'SHIPPING' (révèle le formulaire d'adresse ci-dessous).
+    deliveryMode: null,
+    shipName: '', shipPhone: '', shipAddress: '', shipCity: '', shipZipcode: '', shipCountry: 'FR',
+    addressSuggestions: [], addressSearchBusy: false,
     ratesState: 'idle', rates: null, shippingError: null,
-    shipMode: null, relayPoint: null
+    shipMode: null, relayPoint: null, relayMapNotice: null
   };
 
   componentDidMount() {
@@ -274,6 +397,10 @@ class Component extends DCLogic {
     this._listener = () => this._loadCart();
     window.addEventListener('nasap3d-cart-changed', this._listener);
     this._checkAuth();
+    // Preloaded here (not on first keystroke) so it's already available
+    // synchronously in renderVals() by the time the user reaches the phone
+    // field.
+    import('./phone.js').then((mod) => { this._phoneMod = mod; this.setState({}); });
   }
   componentWillUnmount() {
     window.removeEventListener('nasap3d-cart-changed', this._listener);
@@ -315,7 +442,7 @@ class Component extends DCLogic {
     const { isRenderableExt, renderModelPreview } = await import('./viewer3d.js');
     const api = await this._api();
     for (const line of lines) {
-      if (this._previewHandles.has(line.id) || line.expired) continue;
+      if (this._previewHandles.has(line.id)) continue;
       const ref = this._getLineRef(line.id);
       if (!ref.current) continue;
       const ext = '.' + line.fileName.split('.').pop().toLowerCase();
@@ -347,20 +474,137 @@ class Component extends DCLogic {
     const res = await api.removeCartItem(id);
     if (res.ok) this.setState({ cart: res.data }, () => this._renderLinePreviews());
   }
+  // Étape 1 → étape 2. Chaque étape a sa propre carte de ligne (tailles
+  // différentes) montée/démontée par le sc-if — le ref d'une ligne pointe
+  // donc vers un tout nouveau nœud DOM en changeant d'étape. Sans réinitialiser
+  // _previewHandles, _renderLinePreviews croirait la ligne déjà rendue (elle
+  // l'était, mais dans le nœud de l'étape précédente, disposé avec elle) et
+  // laisserait la nouvelle carte vide.
+  goToCheckout() {
+    const s = this.state;
+    if (!s.loggedIn || s.cart.lines.length === 0) return;
+    this.setState({ step: 'checkout' }, () => { this._resetLinePreviews(); this._renderLinePreviews(); });
+  }
+  backToCart() {
+    this.setState({ step: 'cart' }, () => { this._resetLinePreviews(); this._renderLinePreviews(); });
+  }
+  _resetLinePreviews() {
+    if (!this._previewHandles) return;
+    for (const handle of this._previewHandles.values()) handle.dispose();
+    this._previewHandles.clear();
+  }
+  selectPickup() {
+    this.setState({ deliveryMode: 'PICKUP', rates: null, ratesState: 'idle', shipMode: null, relayPoint: null, shippingError: null });
+  }
+  selectShipping() {
+    this.setState({ deliveryMode: 'SHIPPING' });
+  }
+  async onPhoneChange(value) {
+    if (!this._phoneMod) this._phoneMod = await import('./phone.js');
+    this.setState({ shipPhone: this._phoneMod.formatPhoneAsYouType(value), shippingError: null });
+  }
   _updateShipField(key, value) {
     // Any address edit invalidates a previously fetched rate/selection —
     // the price and the relay-point list are both tied to the address.
     this.setState({ [key]: value, rates: null, ratesState: 'idle', shipMode: null, relayPoint: null, shippingError: null });
+    if (key === 'shipAddress') this._searchAddress(value);
+  }
+  onAddressFocus() {
+    this._addressFocused = true;
+  }
+  // Delay so a click on a suggestion (mousedown fires before the input's
+  // blur) still lands and runs selectAddressSuggestion first.
+  hideAddressSuggestionsSoon() {
+    this._addressFocused = false;
+    clearTimeout(this._hideSuggestionsTimer);
+    this._hideSuggestionsTimer = setTimeout(() => this.setState({ addressSuggestions: [] }), 150);
+  }
+  // Autocomplétion d'adresse — deux fournisseurs selon le pays choisi,
+  // chacun normalisé vers la même forme { displayLabel, address, city,
+  // postcode } (voir _normalizeSuggestion) pour que selectAddressSuggestion
+  // n'ait pas à savoir lequel a répondu :
+  // - France : api-adresse.data.gouv.fr (Base Adresse Nationale), la base
+  //   officielle française — gratuite, sans clé, la plus précise pour la FR.
+  // - Autres pays UE : Photon (photon.komoot.io, données OpenStreetMap),
+  //   gratuit et sans clé aussi, couvre toute l'Europe (la BAN ne couvre
+  //   que la France).
+  _searchAddress(query) {
+    clearTimeout(this._addressSearchTimer);
+    if (query.trim().length < 4) { this.setState({ addressSuggestions: [] }); return; }
+    const country = this.state.shipCountry;
+    this._addressSearchTimer = setTimeout(async () => {
+      this.setState({ addressSearchBusy: true });
+      try {
+        const url = country === 'FR'
+          ? 'https://api-adresse.data.gouv.fr/search/?limit=5&q=' + encodeURIComponent(query)
+          : 'https://photon.komoot.io/api/?limit=5&lang=fr&q=' + encodeURIComponent(query) + '&osm_tag=place&osm_tag=building&osm_tag=highway';
+        const res = await fetch(url);
+        const data = await res.json();
+        // The debounced request can resolve after the user already tabbed
+        // away (blur) — never re-show a dropdown for a field that's no
+        // longer focused, however late the network response lands.
+        if (!this._addressFocused) { this.setState({ addressSearchBusy: false }); return; }
+        const features = (data && data.features) || [];
+        // Les deux fournisseurs mélangent des résultats précis (avec numéro)
+        // et des résultats "rue seule" (sans numéro, ex: zone industrielle
+        // pas encore numérotée dans leur base) pour la même requête — sans
+        // tri, un résultat sans numéro peut apparaître avant celui avec le
+        // numéro que l'utilisateur a pourtant tapé, et un clic dessus efface
+        // silencieusement ce numéro. On garde les deux (le sans-numéro reste
+        // le seul choix possible dans les cas où l'adresse n'a réellement
+        // pas de numéro), mais les résultats avec numéro remontent en
+        // premier, et les autres sont explicitement annotés.
+        const suggestions = features
+          .map((f) => this._normalizeSuggestion(f, country))
+          .filter((s) => s.address)
+          .sort((a, b) => (b.hasNumber ? 1 : 0) - (a.hasNumber ? 1 : 0));
+        this.setState({ addressSuggestions: suggestions, addressSearchBusy: false });
+      } catch (e) {
+        this.setState({ addressSearchBusy: false });
+      }
+    }, 300);
+  }
+  _normalizeSuggestion(feature, country) {
+    const p = feature.properties;
+    if (country === 'FR') {
+      // BAN: name = "12 rue de Rivoli" quand p.type === 'housenumber', mais
+      // peut aussi être juste "Rue de Rivoli" (p.type === 'street', pas de
+      // numéro) — la même recherche renvoie souvent les deux.
+      const hasNumber = p.type === 'housenumber';
+      const displayLabel = hasNumber ? p.label : p.label + ' (sans numéro)';
+      return { displayLabel, address: p.name, city: p.city || '', postcode: p.postcode || '', hasNumber };
+    }
+    // Photon: no single "name"/"label" — built from parts (housenumber may
+    // be absent for a street-level-only match).
+    const hasNumber = !!p.housenumber;
+    const address = [p.housenumber, p.street || p.name].filter(Boolean).join(' ');
+    const displayLabel = [address, p.postcode, p.city].filter(Boolean).join(' ') + (hasNumber ? '' : ' (sans numéro)');
+    return { displayLabel, address, city: p.city || '', postcode: p.postcode || '', hasNumber };
+  }
+  selectAddressSuggestion(suggestion) {
+    clearTimeout(this._addressSearchTimer);
+    this.setState({
+      shipAddress: suggestion.address,
+      shipCity: suggestion.city,
+      shipZipcode: suggestion.postcode,
+      addressSuggestions: [],
+      rates: null, ratesState: 'idle', shipMode: null, relayPoint: null, shippingError: null
+    });
   }
   async quoteShipping() {
     const s = this.state;
-    if (!s.shipName.trim() || !s.shipPhone.trim() || !s.shipAddress.trim() || !s.shipCity.trim() || !s.shipZipcode.trim()) {
+    if (!this._phoneMod) this._phoneMod = await import('./phone.js');
+    if (!s.shipName.trim() || !s.shipAddress.trim() || !s.shipCity.trim() || !s.shipZipcode.trim()) {
       this.setState({ shippingError: 'Renseignez le nom, téléphone, adresse, code postal et ville.' });
+      return;
+    }
+    if (!this._phoneMod.isValidPhone(s.shipPhone)) {
+      this.setState({ shippingError: 'Numéro de téléphone invalide (10 chiffres, format français).' });
       return;
     }
     this.setState({ ratesState: 'loading', shippingError: null, shipMode: null, relayPoint: null });
     const api = await this._api();
-    const res = await api.getShippingRates({ address: s.shipAddress, city: s.shipCity, zipcode: s.shipZipcode, country: 'FR' });
+    const res = await api.getShippingRates({ address: s.shipAddress, city: s.shipCity, zipcode: s.shipZipcode, country: s.shipCountry });
     if (!res.ok || !res.data) {
       const messages = {
         empty_cart: 'Votre panier est vide.',
@@ -383,28 +627,63 @@ class Component extends DCLogic {
     await this._loadRelayMap();
   }
   async _loadRelayMap() {
+    const s = this.state;
+    // Toujours la version la plus récente des critères de recherche, même
+    // si la carte n'est pas encore prête à les recevoir (voir plus bas).
+    this._pendingRelaySearch = { country: s.shipCountry, zipCode: s.shipZipcode, city: s.shipCity, street: s.shipAddress };
+
     if (!this._map) {
-      this._map = new window.BoxtalParcelPointMap({
+      this._mapReady = false;
+      // debug:true + les deux callbacks ci-dessous : le widget ne remonte
+      // normalement AUCUN signal exploitable côté parent (searchParcelPoints
+      // n'a de callback que pour "un point a été cliqué", jamais pour "la
+      // recherche a échoué/n'a rien trouvé") — sans ça, une carte vide est
+      // indiscernable entre "aucun point à proximité" et "la requête vers
+      // l'iframe Boxtal a échoué". Voir SHIPPING.md pour ce qui a été
+      // diagnostiqué avec ces logs — et surtout : un appel à
+      // searchParcelPoints() avant que l'iframe Boxtal ait terminé sa
+      // poignée de main "ready" est silencieusement ignoré par le composant
+      // (this.communicationWindow n'existe pas encore côté vendor). C'est la
+      // cause confirmée de "aucun point relais ne s'affiche jamais" — d'où
+      // l'attente explicite de onMapLoaded avant le tout premier envoi.
+      this._map = new window.BoxtalParcelPointMap.BoxtalParcelPointMap({
         domToLoadMap: '#boxtal-relay-map',
         accessToken: await this._apiToken(),
-        config: { locale: 'fr', options: { autoSelectNearestParcelPoint: false, primaryColor: '#ff5a3c' } }
+        debug: true,
+        config: { locale: 'fr', options: { autoSelectNearestParcelPoint: false, primaryColor: '#ff5a3c' } },
+        onMapLoaded: () => {
+          console.info('[BoxtalMaps] carte chargée (iframe prête)');
+          this._mapReady = true;
+          this._runPendingRelaySearch();
+        }
       });
+      this._map.onSearchParcelPointsResponse((points) => {
+        console.info('[BoxtalMaps] réponse recherche points relais :', points);
+        const count = Array.isArray(points) ? points.length : (points && Array.isArray(points.results) ? points.results.length : null);
+        this.setState({ relayMapNotice: count === 0 ? 'Aucun point relais trouvé à proximité de cette adresse.' : null });
+      });
+      return; // premier appel : onMapLoaded déclenchera la recherche dès que prêt
     }
-    const s = this.state;
-    this._map.searchParcelPoints(
-      { country: 'FR', zipCode: s.shipZipcode, city: s.shipCity, street: s.shipAddress },
-      (point) => {
-        this.setState({
-          relayPoint: {
-            code: point.code,
-            name: point.name,
-            address: point.location.street || s.shipAddress,
-            city: point.location.city,
-            zipcode: point.location.zipCode
-          }
-        });
-      }
-    );
+    if (this._mapReady) this._runPendingRelaySearch();
+    // sinon : la carte est en cours de premier chargement, onMapLoaded
+    // utilisera _pendingRelaySearch (mis à jour ci-dessus) dès qu'il se
+    // déclenche — pas besoin de faire quoi que ce soit de plus ici.
+  }
+  _runPendingRelaySearch() {
+    const params = this._pendingRelaySearch;
+    if (!params) return;
+    this.setState({ relayMapNotice: null });
+    this._map.searchParcelPoints(params, (point) => {
+      this.setState({
+        relayPoint: {
+          code: point.code,
+          name: point.name,
+          address: point.location.street || params.street,
+          city: point.location.city,
+          zipcode: point.location.zipCode
+        }
+      });
+    });
   }
   async _apiToken() {
     const mod = await import('./api-client.js');
@@ -413,19 +692,27 @@ class Component extends DCLogic {
   async startCheckout() {
     if (!this.state.loggedIn) return;
     const s = this.state;
-    if (!s.shipMode || (s.shipMode === 'RELAY' && !s.relayPoint)) return;
+    if (!this._phoneMod) this._phoneMod = await import('./phone.js');
+    if (!this._phoneMod.isValidPhone(s.shipPhone)) return;
+    if (s.deliveryMode === 'PICKUP') {
+      if (!s.shipName.trim()) return;
+    } else {
+      if (!s.shipMode || (s.shipMode === 'RELAY' && !s.relayPoint)) return;
+    }
     this.setState({ checkoutState: 'redirecting', checkoutError: null });
     const api = await this._api();
-    const shipping = {
-      mode: s.shipMode,
-      recipient: { name: s.shipName, phone: s.shipPhone, address: s.shipAddress, city: s.shipCity, zipcode: s.shipZipcode, country: 'FR' },
-      relayPoint: s.shipMode === 'RELAY' ? s.relayPoint : undefined
-    };
+    const phone = this._phoneMod.phoneDigits(s.shipPhone);
+    const shipping = s.deliveryMode === 'PICKUP'
+      ? { mode: 'PICKUP', recipient: { name: s.shipName, phone } }
+      : {
+          mode: s.shipMode,
+          recipient: { name: s.shipName, phone, address: s.shipAddress, city: s.shipCity, zipcode: s.shipZipcode, country: s.shipCountry },
+          relayPoint: s.shipMode === 'RELAY' ? s.relayPoint : undefined
+        };
     const res = await api.checkout(shipping);
     if (!res.ok || !res.data || !res.data.url) {
       const messages = {
         empty_cart: 'Votre panier est vide.',
-        quote_expired_in_cart: 'Un devis a expiré — retirez la ligne concernée et refaites un devis.',
         missing_relay_point: 'Choisissez un point relais avant de payer.',
         shipping_not_configured: 'La livraison n’est pas encore configurée, réessayez plus tard.',
         shipping_provider_error: 'Le calcul des frais de livraison a échoué, réessayez.',
@@ -452,7 +739,6 @@ class Component extends DCLogic {
       colorName: l.colorName,
       hasDiscount: l.discountPct > 0,
       discountPct: l.discountPct,
-      expired: l.expired,
       lineTotal: (l.lineTotalCents / 100).toFixed(2),
       thumbRef: this._getLineRef(l.id),
       onInc: () => this.incQty(l.id, l.qty),
@@ -461,13 +747,24 @@ class Component extends DCLogic {
     }));
     const subtotal = c.subtotalCents / 100;
     const discountAmount = c.discountCents / 100;
+    const totalNoShipping = c.totalCents / 100;
+    const fmtDeliveryDate = (isoStr) => new Date(isoStr + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
     const rates = s.rates;
     const selectedRate = s.shipMode === 'RELAY' ? (rates && rates.relay) : s.shipMode === 'HOME' ? (rates && rates.home) : null;
     const shippingCents = selectedRate ? selectedRate.cents : 0;
     const total = (c.totalCents + shippingCents) / 100;
-    const shippingReady = !!s.shipMode && (s.shipMode !== 'RELAY' || !!s.relayPoint);
-    const canCheckout = s.loggedIn && !c.hasExpired && c.lines.length > 0 && shippingReady;
-    const quoteShippingReady = s.shipName.trim() && s.shipPhone.trim() && s.shipAddress.trim() && s.shipCity.trim() && s.shipZipcode.trim();
+    const isPickup = s.deliveryMode === 'PICKUP';
+    const isShipping = s.deliveryMode === 'SHIPPING';
+    const phoneValid = this._phoneMod ? this._phoneMod.isValidPhone(s.shipPhone) : false;
+    const shippingReady = isPickup
+      ? !!s.shipName.trim() && phoneValid
+      : phoneValid && !!s.shipMode && (s.shipMode !== 'RELAY' || !!s.relayPoint);
+    const canCheckout = s.loggedIn && c.lines.length > 0 && !!s.deliveryMode && shippingReady;
+    const canGoToCheckout = s.loggedIn && c.lines.length > 0;
+    const hasItems = c.lines.length > 0 && s.checkoutState !== 'paid';
+    const isStepCart = hasItems && s.step === 'cart';
+    const isStepCheckout = hasItems && s.step === 'checkout';
+    const quoteShippingReady = s.shipName.trim() && phoneValid && s.shipAddress.trim() && s.shipCity.trim() && s.shipZipcode.trim();
     const optionStyle = (selected) => ({
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       padding: '10px 12px', borderRadius: '7px', cursor: 'pointer',
@@ -476,11 +773,41 @@ class Component extends DCLogic {
       font: "600 11.5px 'Inter',sans-serif", color: selected ? '#ff5a3c' : '#e8e6e1'
     });
     return {
+      isStepCart, isStepCheckout,
+      eyebrowLabel: isStepCheckout ? 'Commande' : 'Panier',
+      heroTitle: isStepCheckout ? 'Finaliser la commande' : (c.lines.length ? c.lines.length + ' article' + (c.lines.length > 1 ? 's' : '') : 'Panier'),
+      totalNoShipping: totalNoShipping.toFixed(2),
+      onGoToCheckout: () => this.goToCheckout(),
+      onBackToCart: () => this.backToCart(),
+      goToCheckoutStyle: {
+        flex: 1,
+        background: canGoToCheckout ? '#ff5a3c' : '#3a3936',
+        color: canGoToCheckout ? '#161514' : 'rgba(255,255,255,.4)',
+        font: "600 12.5px 'Inter',sans-serif", padding: '12px', borderRadius: '7px',
+        textAlign: 'center', cursor: canGoToCheckout ? 'pointer' : 'not-allowed'
+      },
+      isPickup, isShipping,
+      hasDeliveryMode: !!s.deliveryMode,
+      pickupOptionStyle: optionStyle(isPickup),
+      shippingOptionStyle: optionStyle(isShipping),
+      onSelectPickup: () => this.selectPickup(),
+      onSelectShipping: () => this.selectShipping(),
+      workshopAddress: '29 rue Mellier, 44100 Nantes',
       shipName: s.shipName, onShipName: (e) => this._updateShipField('shipName', e.target.value),
-      shipPhone: s.shipPhone, onShipPhone: (e) => this._updateShipField('shipPhone', e.target.value),
+      shipPhone: s.shipPhone, onShipPhone: (e) => this.onPhoneChange(e.target.value),
       shipAddress: s.shipAddress, onShipAddress: (e) => this._updateShipField('shipAddress', e.target.value),
+      onShipAddressFocus: () => this.onAddressFocus(),
+      onShipAddressBlur: () => this.hideAddressSuggestionsSoon(),
       shipCity: s.shipCity, onShipCity: (e) => this._updateShipField('shipCity', e.target.value),
       shipZipcode: s.shipZipcode, onShipZipcode: (e) => this._updateShipField('shipZipcode', e.target.value),
+      shipCountry: s.shipCountry, onShipCountry: (e) => this._updateShipField('shipCountry', e.target.value),
+      countryOptions: EU_COUNTRIES,
+      hasAddressSuggestions: s.addressSuggestions.length > 0,
+      addressSuggestions: s.addressSuggestions.map((sugg, i) => ({
+        key: sugg.displayLabel + i,
+        label: sugg.displayLabel,
+        onClick: () => this.selectAddressSuggestion(sugg)
+      })),
       onQuoteShipping: () => this.quoteShipping(),
       quoteShippingButtonLabel: s.ratesState === 'loading' ? 'Calcul en cours…' : 'Calculer les frais de livraison',
       quoteShippingButtonStyle: {
@@ -497,6 +824,10 @@ class Component extends DCLogic {
       hasHomeOption: !!(rates && rates.home),
       relayPrice: rates && rates.relay ? (rates.relay.cents / 100).toFixed(2) : '',
       homePrice: rates && rates.home ? (rates.home.cents / 100).toFixed(2) : '',
+      hasRelayDate: !!(rates && rates.relay && rates.relay.estimatedDeliveryDate),
+      hasHomeDate: !!(rates && rates.home && rates.home.estimatedDeliveryDate),
+      relayDate: rates && rates.relay && rates.relay.estimatedDeliveryDate ? fmtDeliveryDate(rates.relay.estimatedDeliveryDate) : '',
+      homeDate: rates && rates.home && rates.home.estimatedDeliveryDate ? fmtDeliveryDate(rates.home.estimatedDeliveryDate) : '',
       relayOptionStyle: optionStyle(s.shipMode === 'RELAY'),
       homeOptionStyle: optionStyle(s.shipMode === 'HOME'),
       selectRelay: () => this.selectRelay(),
@@ -504,14 +835,13 @@ class Component extends DCLogic {
       relayPickerWrapStyle: { height: s.shipMode === 'RELAY' ? 'auto' : '0px', overflow: s.shipMode === 'RELAY' ? 'visible' : 'hidden' },
       hasRelayPoint: !!s.relayPoint,
       relayPointSummary: s.relayPoint ? `${s.relayPoint.name} — ${s.relayPoint.address}, ${s.relayPoint.zipcode} ${s.relayPoint.city}` : '',
-      hasSelectedShipping: !!selectedRate,
-      shippingPrice: selectedRate ? (selectedRate.cents / 100).toFixed(2) : '',
+      hasRelayMapNotice: !!s.relayMapNotice,
+      relayMapNotice: s.relayMapNotice || '',
+      hasSelectedShipping: !!selectedRate || isPickup,
+      shippingPrice: isPickup ? 'Gratuit' : selectedRate ? '+' + (selectedRate.cents / 100).toFixed(2) + ' €' : '',
       cartCount: c.lines.reduce((n, l) => n + l.qty, 0),
-      itemCountLabel: c.lines.length ? c.lines.length + ' article' + (c.lines.length > 1 ? 's' : '') : 'Panier',
       isEmpty: s.loaded && c.lines.length === 0 && s.checkoutState !== 'paid',
-      hasItems: c.lines.length > 0 && s.checkoutState !== 'paid',
       items,
-      hasExpiredItem: c.hasExpired,
       hasSmallOrderFee: c.smallOrderFeeCents > 0,
       smallOrderFee: (c.smallOrderFeeCents / 100).toFixed(2),
       minOrder: (c.minOrderCents / 100).toFixed(2),

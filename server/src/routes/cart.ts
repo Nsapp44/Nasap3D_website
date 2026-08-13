@@ -4,6 +4,7 @@ import { prisma } from "../lib/prisma.js";
 import { getSessionUser } from "../lib/session.js";
 import { getOrCreateGuestSessionId } from "../lib/guestSession.js";
 import { getCartSummary } from "../lib/cart.js";
+import { deleteQuoteJobFileIfOrphaned } from "../lib/quoteCleanup.js";
 
 async function identityFor(request: FastifyRequest, reply: FastifyReply) {
   const user = await getSessionUser(request);
@@ -32,7 +33,6 @@ export async function cartRoutes(app: FastifyInstance) {
     const owns = (user && quoteJob.userId === user.id) || (!user && quoteJob.sessionId === sessionId);
     if (!owns) return reply.code(403).send({ error: "forbidden" });
     if (quoteJob.status !== "ANALYZED") return reply.code(409).send({ error: "quote_not_ready" });
-    if (quoteJob.expiresAt && quoteJob.expiresAt < new Date()) return reply.code(409).send({ error: "quote_expired" });
 
     await prisma.cartItem.create({
       data: {
@@ -76,6 +76,7 @@ export async function cartRoutes(app: FastifyInstance) {
     if (!owns) return reply.code(404).send({ error: "not_found" });
 
     await prisma.cartItem.delete({ where: { id } });
+    await deleteQuoteJobFileIfOrphaned(item.quoteJobId);
     const summary = await getCartSummary(identity);
     return reply.send(summary);
   });

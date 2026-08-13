@@ -39,15 +39,27 @@ export async function renderHcaptcha(container, { sitekey, onToken, onExpire, sc
     'expired-callback': () => { if (onExpire) onExpire(); },
     'error-callback': () => { if (onExpire) onExpire(); },
   });
-  requestAnimationFrame(() => {
-    const h = inner.offsetHeight;
-    if (!h) return;
-    inner.style.transform = `scale(${scale})`;
-    inner.style.transformOrigin = 'center top';
-    container.style.height = `${Math.ceil(h * scale)}px`;
-    container.style.overflow = 'hidden';
-  });
+  applyScale(inner, container, scale);
   return widgetId;
+}
+
+// The widget's real size only settles once hCaptcha's iframe has loaded and
+// been sized by its own script — on a slow connection/device that can take
+// longer than a single animation frame. A one-shot rAF check (the original
+// approach) could catch offsetHeight still at 0 and give up, leaving the
+// widget unscaled and spilling out of its container. Poll instead, same
+// pattern as waitForHcaptcha above.
+function applyScale(inner, container, scale, attempt = 0) {
+  const h = inner.offsetHeight;
+  if (!h) {
+    if (attempt > 40) return; // ~4s — give up rather than loop forever
+    setTimeout(() => applyScale(inner, container, scale, attempt + 1), 100);
+    return;
+  }
+  inner.style.transform = `scale(${scale})`;
+  inner.style.transformOrigin = 'center top';
+  container.style.height = `${Math.ceil(h * scale)}px`;
+  container.style.overflow = 'hidden';
 }
 
 export async function resetHcaptcha(widgetId) {

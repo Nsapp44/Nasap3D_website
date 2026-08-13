@@ -17,11 +17,10 @@ import { publicUser } from "../lib/serialize.js";
 import { generateToken, hashToken } from "../lib/tokens.js";
 import { sendMail } from "../lib/mailer.js";
 import { mergeGuestCartIntoUser } from "../lib/cart.js";
-import { requireAuth } from "../lib/session.js";
 import {
-  createAndSendVerificationCode,
-  consumeVerificationCode,
-  canResend,
+  createPendingSignupCode,
+  consumePendingSignupCode,
+  resendPendingSignupCode,
   WrongCodeError,
   NoPendingCodeError,
   TooManyAttemptsError,
@@ -35,18 +34,18 @@ const credentialsSchema = z.object({
   captchaToken: z.string().optional(),
 });
 
-function sendSignupVerification(userId: string, email: string) {
-  return createAndSendVerificationCode(
-    userId,
-    "SIGNUP",
-    email,
-    "Votre code de vérification Nasap3D",
-    "Bienvenue chez Nasap3D ! Saisissez ce code pour vérifier votre adresse email.",
-  );
+interface PendingSignupPayload {
+  email: string;
+  passwordHash: string;
 }
 
 export async function authRoutes(app: FastifyInstance) {
-  app.post("/auth/signup", async (request, reply) => {
+  // Step 1/2: validates the credentials and mails a 6-digit code, but does
+  // NOT create the account yet — the email/password are stashed in the
+  // VerificationCode's payload (see verification.ts) until the code is
+  // confirmed below. Closing the popup or letting the 3-minute code expire
+  // leaves no account behind, only an unused, self-expiring row.
+  app.post("/auth/signup", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (request, reply) => {
     const body = credentialsSchema.safeParse(request.body);
     if (!body.success) return reply.code(400).send({ error: "invalid_body" });
     const { email, password, captchaToken } = body.data;
@@ -60,38 +59,22 @@ export async function authRoutes(app: FastifyInstance) {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return reply.code(409).send({ error: "email_taken" });
 
-    const user = await prisma.user.create({
-      data: {
-        email,
-        passwordHash: await hashPassword(password),
-        customerNo: await nextCustomerNo(),
-        role: "CLIENT",
-      },
-    });
-
-    const guestSessionId = request.cookies[GUEST_COOKIE];
-    if (guestSessionId) await mergeGuestCartIntoUser(guestSessionId, user.id);
-
-    await sendSignupVerification(user.id, user.email);
-
-    const { raw, expiresAt } = await createSession(user.id);
-    setSessionCookie(reply, raw, expiresAt);
-    return reply.code(201).send({ user: publicUser(user) });
+    const passwordHash = await hashPassword(password);
+    const { id, expiresAt } = await createPendingSignupCode(email, { email, passwordHash } satisfies PendingSignupPayload);
+    return reply.code(201).send({ pendingId: id, expiresAt });
   });
 
-  // Requires an active session — the code verifies "this logged-in
-  // account", it isn't a bearer credential mailed as a link. That also lets
-  // us scope attempts per account instead of per anonymous request.
-  app.post("/auth/verify-email", { preHandler: requireAuth }, async (request, reply) => {
-    const user = request.user!;
-    if (user.emailVerifiedAt) return reply.send({ ok: true, alreadyVerified: true });
-
-    const schema = z.object({ code: z.string().trim().length(6) });
+  // Step 2/2: confirms the code and only THEN creates the account —
+  // emailVerifiedAt is set immediately since control of the mailbox was
+  // just proven, unlike the old create-first-verify-after flow.
+  app.post("/auth/signup/confirm", { config: { rateLimit: { max: 15, timeWindow: "1 minute" } } }, async (request, reply) => {
+    const schema = z.object({ pendingId: z.string(), code: z.string().trim().length(6) });
     const body = schema.safeParse(request.body);
     if (!body.success) return reply.code(400).send({ error: "invalid_body" });
 
+    let payload: PendingSignupPayload;
     try {
-      await consumeVerificationCode(user.id, "SIGNUP", body.data.code);
+      payload = await consumePendingSignupCode<PendingSignupPayload>(body.data.pendingId, body.data.code);
     } catch (err) {
       if (err instanceof NoPendingCodeError) return reply.code(400).send({ error: "no_pending_code" });
       if (err instanceof TooManyAttemptsError) return reply.code(429).send({ error: "too_many_attempts" });
@@ -99,20 +82,44 @@ export async function authRoutes(app: FastifyInstance) {
       throw err;
     }
 
-    await prisma.user.update({ where: { id: user.id }, data: { emailVerifiedAt: new Date() } });
-    return reply.send({ ok: true });
+    // Re-check: someone else could have taken the email during the 3-minute
+    // window between the request and this confirmation.
+    const existing = await prisma.user.findUnique({ where: { email: payload.email } });
+    if (existing) return reply.code(409).send({ error: "email_taken" });
+
+    const user = await prisma.user.create({
+      data: {
+        email: payload.email,
+        passwordHash: payload.passwordHash,
+        customerNo: await nextCustomerNo(),
+        role: "CLIENT",
+        emailVerifiedAt: new Date(),
+      },
+    });
+
+    const guestSessionId = request.cookies[GUEST_COOKIE];
+    if (guestSessionId) await mergeGuestCartIntoUser(guestSessionId, user.id);
+
+    const { raw, expiresAt } = await createSession(user.id);
+    setSessionCookie(reply, raw, expiresAt);
+    return reply.code(201).send({ user: publicUser(user) });
   });
 
-  app.post("/auth/resend-verification", { preHandler: requireAuth }, async (request, reply) => {
-    const user = request.user!;
-    if (user.emailVerifiedAt) return reply.send({ ok: true, alreadyVerified: true });
-    if (!(await canResend(user.id, "SIGNUP"))) return reply.code(429).send({ error: "too_soon" });
+  app.post("/auth/signup/resend", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (request, reply) => {
+    const schema = z.object({ pendingId: z.string() });
+    const body = schema.safeParse(request.body);
+    if (!body.success) return reply.code(400).send({ error: "invalid_body" });
 
-    await sendSignupVerification(user.id, user.email);
-    return reply.send({ ok: true });
+    const record = await prisma.verificationCode.findUnique({ where: { id: body.data.pendingId } });
+    if (!record || record.userId !== null || !record.payload) return reply.code(400).send({ error: "no_pending_code" });
+    const { email } = JSON.parse(record.payload) as PendingSignupPayload;
+
+    const result = await resendPendingSignupCode(body.data.pendingId, email);
+    if (!result.ok) return reply.code(result.error === "too_soon" ? 429 : 400).send({ error: result.error });
+    return reply.send({ ok: true, expiresAt: result.expiresAt });
   });
 
-  app.post("/auth/login", async (request, reply) => {
+  app.post("/auth/login", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (request, reply) => {
     const body = credentialsSchema.safeParse(request.body);
     if (!body.success) return reply.code(400).send({ error: "invalid_body" });
     const { email, password, captchaToken } = body.data;
@@ -148,7 +155,7 @@ export async function authRoutes(app: FastifyInstance) {
     return reply.send({ user: user ? publicUser(user) : null });
   });
 
-  app.post("/auth/forgot-password", async (request, reply) => {
+  app.post("/auth/forgot-password", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (request, reply) => {
     const schema = z.object({ email: z.string(), captchaToken: z.string().optional() });
     const body = schema.safeParse(request.body);
     if (!body.success) return reply.code(400).send({ error: "invalid_body" });

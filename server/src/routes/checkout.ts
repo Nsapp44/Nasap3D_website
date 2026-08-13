@@ -3,14 +3,13 @@ import Stripe from "stripe";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { getSessionUser, requireAuth } from "../lib/session.js";
-import { getCartSummary, getCartTotalWeightG } from "../lib/cart.js";
+import { getCartSummary, getCartTotalWeightG, getCartParcelRequirement, getCartTotalPrintMinutes } from "../lib/cart.js";
 import { stripe } from "../lib/stripeClient.js";
 import {
   createOrderFromCart,
   packShippingMetadata,
   shippingFromStripeMetadata,
   EmptyCartError,
-  ExpiredCartError,
   type ShippingSelection,
 } from "../lib/orders.js";
 import { quoteShippingRates, BoxtalConfigError, BoxtalApiError } from "../lib/boxtal.js";
@@ -18,24 +17,38 @@ import { nextCounter } from "../lib/counter.js";
 import { saveFile } from "../lib/storage.js";
 import { sendMail } from "../lib/mailer.js";
 
-const checkoutShippingSchema = z.object({
-  mode: z.enum(["RELAY", "HOME"]),
-  recipient: z.object({
-    name: z.string().trim().min(2).max(80),
-    phone: z.string().trim().min(6).max(20),
-    address: z.string().trim().min(3).max(120),
-    city: z.string().trim().min(1).max(80),
-    zipcode: z.string().trim().min(2).max(12),
-    country: z.string().trim().length(2).default("FR"),
-  }),
-  relayPoint: z.object({
-    code: z.string().trim().min(1).max(30),
-    name: z.string().trim().min(1).max(80),
-    address: z.string().trim().min(1).max(120),
-    city: z.string().trim().min(1).max(80),
-    zipcode: z.string().trim().min(1).max(12),
-  }).optional(),
+const shippingRecipientSchema = z.object({
+  name: z.string().trim().min(2).max(80),
+  phone: z.string().trim().min(6).max(20),
+  address: z.string().trim().min(3).max(120),
+  city: z.string().trim().min(1).max(80),
+  zipcode: z.string().trim().min(2).max(12),
+  country: z.string().trim().length(2).default("FR"),
 });
+
+const relayPointSchema = z.object({
+  code: z.string().trim().min(1).max(30),
+  name: z.string().trim().min(1).max(80),
+  address: z.string().trim().min(1).max(120),
+  city: z.string().trim().min(1).max(80),
+  zipcode: z.string().trim().min(1).max(12),
+});
+
+// Discriminated on mode rather than one loose object: PICKUP (free,
+// in-person at the workshop) only ever needs a name/phone to know who's
+// coming, never a real shipping address — RELAY/HOME need the full
+// recipient (and RELAY additionally needs the chosen relay point).
+const checkoutShippingSchema = z.discriminatedUnion("mode", [
+  z.object({
+    mode: z.literal("PICKUP"),
+    recipient: z.object({
+      name: z.string().trim().min(2).max(80),
+      phone: z.string().trim().min(6).max(20),
+    }),
+  }),
+  z.object({ mode: z.literal("RELAY"), recipient: shippingRecipientSchema, relayPoint: relayPointSchema }),
+  z.object({ mode: z.literal("HOME"), recipient: shippingRecipientSchema }),
+]);
 
 // Checkout requires an account (not guest) — an Invoice is always tied to a
 // User in the schema, and "download my invoice from my account" only makes
@@ -45,38 +58,53 @@ export async function checkoutRoutes(app: FastifyInstance) {
     const user = request.user!;
     const summary = await getCartSummary({ userId: user.id });
     if (summary.lines.length === 0) return reply.code(400).send({ error: "empty_cart" });
-    if (summary.hasExpired) return reply.code(409).send({ error: "quote_expired_in_cart" });
 
     const body = z.object({ shipping: checkoutShippingSchema }).safeParse(request.body);
     if (!body.success) return reply.code(400).send({ error: "invalid_body" });
     const { shipping: requested } = body.data;
-    if (requested.mode === "RELAY" && !requested.relayPoint) {
-      return reply.code(400).send({ error: "missing_relay_point" });
-    }
 
-    // The shipping price is NEVER trusted from the client — same principle
-    // as the print quote itself (see server/PRICING.md). We re-run the real
-    // Boxtal rate simulation server-side, right here, and only ever charge
-    // the cents it just returned for the requested carrier.
-    const weightG = await getCartTotalWeightG({ userId: user.id });
-    let rates;
-    try {
-      rates = await quoteShippingRates(requested.recipient, weightG);
-    } catch (err) {
-      if (err instanceof BoxtalConfigError) return reply.code(503).send({ error: "shipping_not_configured" });
-      if (err instanceof BoxtalApiError) return reply.code(502).send({ error: "shipping_provider_error" });
-      throw err;
-    }
-    const rate = requested.mode === "RELAY" ? rates.relay : rates.home;
-    if (!rate) return reply.code(409).send({ error: "shipping_offer_unavailable" });
+    let shipping: ShippingSelection;
+    if (requested.mode === "PICKUP") {
+      // Free, no carrier involved — never calls Boxtal at all, so none of
+      // the packaging fee (see boxtal.ts) or parcel-box logic applies.
+      shipping = {
+        mode: "PICKUP",
+        rate: { operatorCode: "PICKUP", serviceCode: "PICKUP", label: "Retrait à l'atelier", cents: 0, estimatedDeliveryDate: null },
+        weightG: 0,
+        parcelCm: { length: 0, width: 0, height: 0 },
+        oversized: false,
+        recipient: { ...requested.recipient, address: "", city: "", zipcode: "", country: "FR" },
+      };
+    } else {
+      // The shipping price is NEVER trusted from the client — same
+      // principle as the print quote itself (see server/PRICING.md). We
+      // re-run the real Boxtal rate simulation server-side, right here, and
+      // only ever charge the cents it just returned for the requested
+      // carrier.
+      const weightG = await getCartTotalWeightG({ userId: user.id });
+      const parcelRequirement = await getCartParcelRequirement({ userId: user.id });
+      const printMinutes = await getCartTotalPrintMinutes({ userId: user.id });
+      let rates;
+      try {
+        rates = await quoteShippingRates(requested.recipient, weightG, parcelRequirement, printMinutes);
+      } catch (err) {
+        if (err instanceof BoxtalConfigError) return reply.code(503).send({ error: "shipping_not_configured" });
+        if (err instanceof BoxtalApiError) return reply.code(502).send({ error: "shipping_provider_error" });
+        throw err;
+      }
+      const rate = requested.mode === "RELAY" ? rates.relay : rates.home;
+      if (!rate) return reply.code(409).send({ error: "shipping_offer_unavailable" });
 
-    const shipping: ShippingSelection = {
-      mode: requested.mode,
-      rate,
-      weightG: rates.weightUsedG,
-      recipient: requested.recipient,
-      relayPoint: requested.relayPoint,
-    };
+      shipping = {
+        mode: requested.mode,
+        rate,
+        weightG: rates.weightUsedG,
+        parcelCm: rates.parcelCm,
+        oversized: rates.oversized,
+        recipient: requested.recipient,
+        relayPoint: requested.mode === "RELAY" ? requested.relayPoint : undefined,
+      };
+    }
 
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = summary.lines.map((l) => ({
       quantity: 1,
@@ -102,8 +130,8 @@ export async function checkoutRoutes(app: FastifyInstance) {
       quantity: 1,
       price_data: {
         currency: "eur",
-        unit_amount: rate.cents,
-        product_data: { name: `Livraison — ${rate.label}` },
+        unit_amount: shipping.rate.cents,
+        product_data: { name: `Livraison — ${shipping.rate.label}` },
       },
     });
 
@@ -155,7 +183,7 @@ export async function stripeWebhookRoutes(app: FastifyInstance) {
       try {
         created = await createOrderFromCart(userId, shipping);
       } catch (err) {
-        if (err instanceof EmptyCartError || err instanceof ExpiredCartError) {
+        if (err instanceof EmptyCartError) {
           request.log.error(err, "could not create order from cart at webhook time");
           return reply.send({ ok: true });
         }

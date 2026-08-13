@@ -117,7 +117,10 @@ a:hover{color:#ff7a5c}
           </div>
         </sc-if>
         <sc-if value="{{ isCodePopup }}" hint-placeholder-val="{{ false }}">
-          <input value="{{ verifyCode }}" onChange="{{ onVerifyCode }}" type="text" inputmode="numeric" maxlength="6" placeholder="123456" style="width:140px;box-sizing:border-box;height:40px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:16px ui-monospace,monospace;letter-spacing:4px;text-align:center;color:#e8e6e1;outline:none;margin-bottom:12px" />
+          <input value="{{ verifyCode }}" onChange="{{ onVerifyCode }}" type="text" inputmode="numeric" maxlength="6" placeholder="123456" style="width:140px;box-sizing:border-box;height:40px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:16px ui-monospace,monospace;letter-spacing:4px;text-align:center;color:#e8e6e1;outline:none;margin-bottom:8px" />
+          <sc-if value="{{ hasVerifyCountdown }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-bottom:12px;font:500 10.5px ui-monospace,monospace;color:rgba(255,255,255,.4)">{{ verifyCountdownLabel }}</div>
+          </sc-if>
           <sc-if value="{{ hasVerifyMessage }}" hint-placeholder-val="{{ false }}">
             <div style="margin-bottom:12px;font:600 11px 'Inter',sans-serif;color:{{ verifyMessageColor }}">{{ verifyMessage }}</div>
           </sc-if>
@@ -125,7 +128,7 @@ a:hover{color:#ff7a5c}
             <div onClick="{{ closePopup }}" style="border:1px solid rgba(255,255,255,.2);color:#f3f1ec;font:600 12px 'Inter',sans-serif;padding:9px 18px;border-radius:6px;cursor:pointer">Annuler</div>
             <div onClick="{{ onVerifySubmit }}" style="{{ verifySubmitStyle }}">Confirmer</div>
           </div>
-          <div onClick="{{ onResendCode }}" style="font:500 11px 'Inter',sans-serif;color:rgba(255,255,255,.5);cursor:pointer;text-decoration:underline">Renvoyer le code</div>
+          <div onClick="{{ onResendCode }}" style="{{ resendCodeStyle }}">{{ resendCodeLabel }}</div>
         </sc-if>
       </div>
     </div>
@@ -146,13 +149,6 @@ a:hover{color:#ff7a5c}
           <div onClick="{{ logout }}" style="border:1px solid rgba(255,255,255,.2);color:#f3f1ec;font:500 12px 'Inter',sans-serif;padding:9px 16px;border-radius:6px;cursor:pointer">Se déconnecter</div>
         </div>
       </div>
-
-      <sc-if value="{{ needsEmailVerification }}" hint-placeholder-val="{{ false }}">
-      <div style="border:1px solid rgba(255,90,60,.3);background:rgba(255,90,60,.06);border-radius:10px;padding:15px 18px;margin-bottom:32px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap">
-        <div style="font:400 11.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.6)"><strong style="color:#f3f1ec;font-weight:600">Adresse email non vérifiée.</strong> Un code vous a été envoyé à {{ authEmail }}.</div>
-        <div onClick="{{ openVerifyPopup }}" style="flex:none;background:#ff5a3c;color:#161514;font:600 11.5px 'Inter',sans-serif;padding:8px 16px;border-radius:6px;cursor:pointer">Entrer le code</div>
-      </div>
-      </sc-if>
 
       <div style="border:1px solid rgba(255,90,60,.3);background:rgba(255,90,60,.06);border-radius:10px;padding:15px 18px;margin-bottom:32px;display:flex;gap:12px;align-items:flex-start">
         <span style="color:#ff5a3c;flex:none;margin-top:1px"><svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span>
@@ -179,6 +175,16 @@ a:hover{color:#ff7a5c}
             </div>
           </sc-for>
         </div>
+        <sc-if value="{{ activeOrderShowsTracking }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08);font:400 11px 'Inter',sans-serif;color:rgba(255,255,255,.55)">
+            <sc-if value="{{ activeOrderHasTracking }}" hint-placeholder-val="{{ false }}">
+              Numéro de suivi : <span style="color:#f3f1ec;font-weight:600;font-family:ui-monospace,monospace">{{ activeOrderTrackingNumber }}</span>
+            </sc-if>
+            <sc-if value="{{ activeOrderHasTracking }}" hint-placeholder-val="{{ true }}">
+              Numéro de suivi pas encore disponible.
+            </sc-if>
+          </div>
+        </sc-if>
       </div>
       </sc-if>
 
@@ -267,6 +273,9 @@ a:hover{color:#ff7a5c}
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
+  // Après ce nombre de renvois consécutifs sans succès, on abandonne plutôt
+  // que de continuer à mailer indéfiniment — voir resendCode().
+  static MAX_CODE_RESENDS = 3;
   state = {
     loggedIn: false, authMode: 'login', authEmail: '', authPassword: '', cartCount: 0,
     popupMessage: null, popupConfirm: null, showPassword: false, busy: false,
@@ -274,7 +283,8 @@ class Component extends DCLogic {
     newEmail: '', emailCurPwd: '', curPwd: '', newPwd: '', confirmPwd: '', deletePwd: '',
     resetToken: null, resetNewPwd: '', resetConfirmPwd: '',
     orders: [], rawInvoices: [],
-    emailVerified: true, verifyCode: '', verifyMessage: null, verifyMessageOk: false, verifyBusy: false, verifyPurpose: null,
+    verifyCode: '', verifyMessage: null, verifyMessageOk: false, verifyBusy: false, verifyPurpose: null,
+    pendingSignupId: null, verifyExpiresAt: null, verifyResendCount: 0,
     captchaToken: ''
   };
 
@@ -293,6 +303,22 @@ class Component extends DCLogic {
     }
     this._mountCaptcha();
   }
+  // Le formulaire de connexion (et sa case hCaptcha) n'existe dans le DOM
+  // que pendant "isLoggedOut" — componentDidMount ne le voit qu'au tout
+  // premier rendu. Après une déconnexion, ou après une réinitialisation de
+  // mot de passe réussie (qui ramène sur ce même formulaire), le conteneur
+  // captchaRef réapparaît mais rien ne remontait jamais le widget dedans :
+  // la case anti-robot restait absente, connexion bloquée sans recharger la
+  // page. On revérifie donc à chaque re-render si le conteneur vient
+  // d'apparaître sans widget monté (et on oublie l'ancien id quand le
+  // conteneur disparaît, pour ne pas croire à tort qu'un widget y est déjà).
+  componentDidUpdate() {
+    if (this.captchaRef.current && !this._captchaWidgetId) {
+      this._mountCaptcha();
+    } else if (!this.captchaRef.current && this._captchaWidgetId) {
+      this._captchaWidgetId = null;
+    }
+  }
   async _mountCaptcha() {
     const [{ HCAPTCHA_SITE_KEY }, { renderHcaptcha }] = await Promise.all([
       import('./api-client.js'), import('./hcaptcha-widget.js')
@@ -310,6 +336,7 @@ class Component extends DCLogic {
   }
   componentWillUnmount() {
     window.removeEventListener('nasap3d-cart-changed', this._listener);
+    this._stopVerifyCountdown();
   }
   async _loadCart() {
     const api = await this._api();
@@ -325,7 +352,7 @@ class Component extends DCLogic {
     const res = await api.me();
     if (res.ok && res.data && res.data.user) {
       const u = res.data.user;
-      this.setState({ loggedIn: true, authEmail: u.email, customerNo: u.customerNo, view: 'dashboard', emailVerified: u.emailVerified });
+      this.setState({ loggedIn: true, authEmail: u.email, customerNo: u.customerNo, view: 'dashboard' });
       this._loadOrdersAndInvoices();
     }
   }
@@ -377,9 +404,31 @@ class Component extends DCLogic {
     }
     this.setState({ busy: true });
     const api = await this._api();
-    const res = s.authMode === 'signup'
-      ? await api.signup(s.authEmail, s.authPassword, s.captchaToken)
-      : await api.login(s.authEmail, s.authPassword, s.captchaToken);
+
+    // Signup is two-step: this only mails a code and stashes the
+    // email/password server-side (see auth.ts POST /auth/signup) — the
+    // account itself isn't created until submitVerify() confirms the code
+    // below. Closing the popup (Annuler) or letting the 3-minute code
+    // expire leaves nothing behind. Login is unaffected — one step, no code.
+    if (s.authMode === 'signup') {
+      const res = await api.signup(s.authEmail, s.authPassword, s.captchaToken);
+      this.setState({ busy: false });
+      this._resetCaptcha();
+      if (!res.ok) {
+        this.setState({ popupMessage: this._errorMessage(res.data) });
+        return;
+      }
+      this.setState({
+        pendingSignupId: res.data.pendingId, authPassword: '',
+        popupMessage: 'Un code à 6 chiffres a été envoyé à ' + s.authEmail + '. Saisissez-le pour créer votre compte.',
+        popupConfirm: 'verify-code', verifyPurpose: 'signup', verifyCode: '', verifyMessage: null,
+        verifyExpiresAt: res.data.expiresAt, verifyResendCount: 0
+      });
+      this._startVerifyCountdown();
+      return;
+    }
+
+    const res = await api.login(s.authEmail, s.authPassword, s.captchaToken);
     this.setState({ busy: false });
     this._resetCaptcha();
     if (!res.ok) {
@@ -391,14 +440,7 @@ class Component extends DCLogic {
       window.location.href = 'Admin.dc.html';
       return;
     }
-    this.setState({ loggedIn: true, authEmail: u.email, customerNo: u.customerNo, authPassword: '', view: 'dashboard', emailVerified: u.emailVerified });
-    if (s.authMode === 'signup' && !u.emailVerified) this.openVerifyPopup();
-  }
-  openVerifyPopup() {
-    this.setState({
-      popupMessage: 'Un code à 6 chiffres a été envoyé à ' + this.state.authEmail + '. Saisissez-le pour vérifier votre adresse.',
-      popupConfirm: 'verify-code', verifyPurpose: 'signup', verifyCode: '', verifyMessage: null
-    });
+    this.setState({ loggedIn: true, authEmail: u.email, customerNo: u.customerNo, authPassword: '', view: 'dashboard' });
   }
   async submitVerify() {
     const s = this.state;
@@ -407,10 +449,20 @@ class Component extends DCLogic {
     const api = await this._api();
 
     if (s.verifyPurpose === 'signup') {
-      const res = await api.verifyEmail(s.verifyCode.trim());
+      const res = await api.confirmSignup(s.pendingSignupId, s.verifyCode.trim());
       this.setState({ verifyBusy: false });
-      if (res.ok && res.data && res.data.ok) {
-        this.setState({ emailVerified: true, popupMessage: 'Adresse email vérifiée.', popupConfirm: null, verifyPurpose: null, verifyCode: '' });
+      if (res.ok && res.data && res.data.user) {
+        const u = res.data.user;
+        if (u.role === 'ADMIN') {
+          window.location.href = 'Admin.dc.html';
+          return;
+        }
+        this._stopVerifyCountdown();
+        this.setState({
+          loggedIn: true, authEmail: u.email, customerNo: u.customerNo, view: 'dashboard',
+          pendingSignupId: null, verifyExpiresAt: null, verifyResendCount: 0,
+          popupMessage: 'Compte créé avec succès.', popupConfirm: null, verifyPurpose: null, verifyCode: ''
+        });
         return;
       }
       this.setState({ verifyMessage: this._verifyErrorMessage(res.data), verifyMessageOk: false });
@@ -421,8 +473,10 @@ class Component extends DCLogic {
       const res = await api.confirmEmailChange(s.verifyCode.trim());
       this.setState({ verifyBusy: false });
       if (res.ok && res.data && res.data.user) {
+        this._stopVerifyCountdown();
         this.setState({
-          authEmail: res.data.user.email, emailVerified: true, newEmail: '', emailCurPwd: '',
+          authEmail: res.data.user.email, newEmail: '', emailCurPwd: '',
+          verifyExpiresAt: null, verifyResendCount: 0,
           popupMessage: 'Votre adresse e-mail a été mise à jour : ' + res.data.user.email,
           popupConfirm: null, verifyPurpose: null, verifyCode: ''
         });
@@ -436,8 +490,10 @@ class Component extends DCLogic {
       const res = await api.confirmPasswordChange(s.verifyCode.trim());
       this.setState({ verifyBusy: false });
       if (res.ok && res.data && res.data.ok) {
+        this._stopVerifyCountdown();
         this.setState({
           curPwd: '', newPwd: '', confirmPwd: '',
+          verifyExpiresAt: null, verifyResendCount: 0,
           popupMessage: 'Votre mot de passe a été modifié avec succès.',
           popupConfirm: null, verifyPurpose: null, verifyCode: ''
         });
@@ -445,6 +501,19 @@ class Component extends DCLogic {
       }
       this.setState({ verifyMessage: this._verifyErrorMessage(res.data), verifyMessageOk: false });
     }
+  }
+  // Une seule horloge visible vaut mieux qu'un compte à rebours abstrait —
+  // re-render chaque seconde pendant que la popup de code est ouverte pour
+  // que renderVals() recalcule le temps restant à partir de verifyExpiresAt
+  // (pas de state dédié au temps restant : Date.now() est déjà la source de
+  // vérité, inutile de la dupliquer).
+  _startVerifyCountdown() {
+    this._stopVerifyCountdown();
+    this._verifyTick = setInterval(() => this.forceUpdate(), 1000);
+  }
+  _stopVerifyCountdown() {
+    clearInterval(this._verifyTick);
+    this._verifyTick = null;
   }
   _verifyErrorMessage(data) {
     const messages = {
@@ -457,16 +526,37 @@ class Component extends DCLogic {
   }
   async resendCode() {
     const s = this.state;
+    // Grisé tant que le code en cours est valide (voir renderVals /
+    // canResendCode) — ce garde-fou est une sécurité, le clic ne devrait
+    // normalement pas arriver ici avant l'expiration.
+    if (s.verifyExpiresAt && Date.now() < s.verifyExpiresAt) return;
+    // 3 renvois consécutifs et on arrête de mailer — probablement une
+    // adresse qui ne reçoit rien (typo, spam...) : on annule complètement,
+    // comme si l'utilisateur avait fermé la popup lui-même, plutôt que de
+    // continuer à envoyer des codes indéfiniment.
+    if (s.verifyResendCount >= Component.MAX_CODE_RESENDS) {
+      this._stopVerifyCountdown();
+      this.setState({
+        popupMessage: 'Trop de tentatives — recommencez depuis le début.',
+        popupConfirm: null, verifyPurpose: null, verifyCode: '', verifyMessage: null,
+        pendingSignupId: null, verifyExpiresAt: null, verifyResendCount: 0
+      });
+      return;
+    }
     const api = await this._api();
     this.setState({ verifyMessage: null });
     let res;
     if (s.verifyPurpose === 'email') res = await api.requestEmailChange(s.newEmail, s.emailCurPwd);
     else if (s.verifyPurpose === 'password') res = await api.requestPasswordChange(s.curPwd, s.newPwd);
-    else res = await api.resendVerification();
+    else res = await api.resendSignupCode(s.pendingSignupId);
     if (res.ok) {
-      this.setState({ verifyMessage: 'Un nouveau code a été envoyé.', verifyMessageOk: true });
+      this.setState({
+        verifyMessage: 'Un nouveau code a été envoyé.', verifyMessageOk: true,
+        verifyExpiresAt: res.data.expiresAt, verifyResendCount: s.verifyResendCount + 1
+      });
+      this._startVerifyCountdown();
     } else {
-      const messages = { too_soon: 'Patientez un instant avant de redemander un code.' };
+      const messages = { too_soon: 'Patientez encore un peu avant de redemander un code.' };
       this.setState({ verifyMessage: messages[res.data && res.data.error] || 'Une erreur est survenue.', verifyMessageOk: false });
     }
   }
@@ -516,7 +606,14 @@ class Component extends DCLogic {
     });
   }
   closePopup() {
-    this.setState({ popupMessage: null, popupConfirm: null, verifyPurpose: null, verifyCode: '', verifyMessage: null });
+    // Cancelling a pending signup (verifyPurpose === 'signup') just drops
+    // pendingSignupId — no account was ever created, only an unused
+    // VerificationCode row that expires on its own after 3 minutes.
+    this._stopVerifyCountdown();
+    this.setState({
+      popupMessage: null, popupConfirm: null, verifyPurpose: null, verifyCode: '', verifyMessage: null,
+      pendingSignupId: null, verifyExpiresAt: null, verifyResendCount: 0
+    });
   }
   async logout() {
     const api = await this._api();
@@ -549,8 +646,10 @@ class Component extends DCLogic {
     }
     this.setState({
       popupMessage: 'Un code à 6 chiffres a été envoyé à ' + s.newEmail + '. Saisissez-le pour confirmer ce changement.',
-      popupConfirm: 'verify-code', verifyPurpose: 'email', verifyCode: '', verifyMessage: null
+      popupConfirm: 'verify-code', verifyPurpose: 'email', verifyCode: '', verifyMessage: null,
+      verifyExpiresAt: res.data.expiresAt, verifyResendCount: 0
     });
+    this._startVerifyCountdown();
   }
   async requestPasswordChange() {
     const s = this.state;
@@ -573,8 +672,10 @@ class Component extends DCLogic {
     }
     this.setState({
       popupMessage: 'Un code à 6 chiffres a été envoyé à ' + s.authEmail + '. Saisissez-le pour confirmer ce changement.',
-      popupConfirm: 'verify-code', verifyPurpose: 'password', verifyCode: '', verifyMessage: null
+      popupConfirm: 'verify-code', verifyPurpose: 'password', verifyCode: '', verifyMessage: null,
+      verifyExpiresAt: res.data.expiresAt, verifyResendCount: 0
     });
+    this._startVerifyCountdown();
   }
   deleteAccount() {
     if (!this.state.deletePwd) {
@@ -657,14 +758,28 @@ class Component extends DCLogic {
     }));
     const isResetPassword = !!s.resetToken;
     const verifyReady = s.verifyCode.trim().length === 6 && !s.verifyBusy;
+    const remainingMs = s.verifyExpiresAt ? s.verifyExpiresAt - Date.now() : 0;
+    const remainingSec = Math.max(0, Math.ceil(remainingMs / 1000));
+    const codeExpired = !!s.verifyExpiresAt && remainingMs <= 0;
+    const canResendCode = !s.verifyExpiresAt || codeExpired;
     return {
       cartCount: s.cartCount,
       isResetPassword,
-      needsEmailVerification: s.loggedIn && !s.emailVerified,
       verifyCode: s.verifyCode,
       onVerifyCode: (e) => this.setState({ verifyCode: e.target.value.replace(/\D/g, '').slice(0, 6) }),
       onVerifySubmit: () => this.submitVerify(),
       onResendCode: () => this.resendCode(),
+      hasVerifyCountdown: !!s.verifyExpiresAt,
+      verifyCountdownLabel: codeExpired
+        ? 'Code expiré.'
+        : `Code valable encore ${String(Math.floor(remainingSec / 60)).padStart(2, '0')}:${String(remainingSec % 60).padStart(2, '0')}`,
+      resendCodeLabel: 'Renvoyer le code',
+      resendCodeStyle: {
+        font: "500 11px 'Inter',sans-serif",
+        color: canResendCode ? 'rgba(255,255,255,.5)' : 'rgba(255,255,255,.25)',
+        cursor: canResendCode ? 'pointer' : 'not-allowed',
+        textDecoration: canResendCode ? 'underline' : 'none'
+      },
       verifySubmitStyle: {
         background: verifyReady ? '#ff5a3c' : '#3a3936',
         color: verifyReady ? '#161514' : 'rgba(255,255,255,.4)',
@@ -712,6 +827,9 @@ class Component extends DCLogic {
       hasActiveOrder: !!activeOrder,
       activeOrderRef: activeOrder ? activeOrder.ref : '',
       activeOrderDesc: activeOrder ? activeOrder.items.map(i => i.nameSnapshot + ' · ' + i.materialSnapshot + ' · x' + i.qty).join(' + ') : '',
+      activeOrderShowsTracking: !!activeOrder && !!activeOrder.shippingMode && activeOrder.shippingMode !== 'PICKUP',
+      activeOrderHasTracking: !!activeOrder && !!activeOrder.trackingNumber,
+      activeOrderTrackingNumber: activeOrder && activeOrder.trackingNumber ? activeOrder.trackingNumber : '',
       orderSteps,
       orderHistory,
       noOrders: s.orders.length === 0,
@@ -736,7 +854,6 @@ class Component extends DCLogic {
       changeEmail: () => this.requestEmailChange(),
       changePassword: () => this.requestPasswordChange(),
       deleteAccount: () => this.deleteAccount(),
-      openVerifyPopup: () => this.openVerifyPopup(),
       hasPopupConfirm: s.popupConfirm === 'delete',
       isCodePopup: s.popupConfirm === 'verify-code',
       isPlainPopup: !s.popupConfirm,

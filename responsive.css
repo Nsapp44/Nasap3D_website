@@ -174,6 +174,32 @@
 }
 
 /* --------------------------------------------------------------------------
+   ADMIN — ligne statuts + Accepter/Refuser d'une commande (Admin.dc.html)
+   flex-wrap seul reste borderline sur mobile (le bloc Accepter/Refuser peut
+   encore déborder de quelques px selon le nombre de statuts qui tiennent sur
+   la première ligne des puces) — forcé en colonne pour un résultat fiable.
+   -------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+  [style*="justify-content: space-between; flex-wrap: wrap; gap: 10px"] {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   CARTE BOXTAL (sélection point relais, Cart.dc.html) — id stable, pas
+   besoin du sélecteur [style*="..."] utilisé ailleurs dans ce fichier.
+   380px de haut est pensé pour desktop ; sur mobile ça pousse tout le reste
+   du panier hors écran, donc réduit progressivement.
+   -------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  #boxtal-relay-map { height: 300px !important; }
+}
+@media (max-width: 420px) {
+  #boxtal-relay-map { height: 260px !important; }
+}
+
+/* --------------------------------------------------------------------------
    GRILLES À COLONNES FIXES
    -------------------------------------------------------------------------- */
 @media (max-width: 900px) {

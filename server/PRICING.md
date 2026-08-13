@@ -146,6 +146,10 @@ ou baisser tous les prix d'un coup).
 - **Assemblages multi-pièces complexes** (ex. un fichier CAO avec plusieurs
   corps mal positionnés) peuvent échouer à l'analyse — l'API renvoie une
   erreur claire plutôt qu'un prix faux.
-- **Devis à durée limitée** (`quoteExpiryMinutes`, 60 min par défaut) : au-delà,
-  le devis doit être refait avant achat, pour ne jamais facturer un prix basé
-  sur d'anciens tarifs matière.
+- **Pas de date d'expiration séparée sur le prix d'un devis.** Un prix reste
+  valable aussi longtemps que la ligne de panier qui le porte existe — et une
+  ligne de panier ne survit pas indéfiniment : elle est nettoyée après 1h
+  d'inactivité pour un invité, 48h pour un compte connecté (voir
+  `lib/cartCleanup.ts`). Ça évite qu'un prix basé sur d'anciens tarifs
+  matière ne traîne indéfiniment, sans avoir besoin d'un minuteur séparé sur
+  le devis lui-même.

@@ -52,7 +52,7 @@ describe("routes (integration, real DB)", () => {
     }
   });
 
-  it("full signup -> email verification code -> confirm flow", async () => {
+  it("full signup -> pending code -> confirm flow (account only created on confirm)", async () => {
     // No HCAPTCHA_SECRET_KEY in the test environment's effective config for
     // this call -> dev bypass (see captcha.test.ts) so this test doesn't
     // depend on a real token.
@@ -61,18 +61,21 @@ describe("routes (integration, real DB)", () => {
 
     const logSpy = vi.spyOn(console, "log");
     try {
+      // Step 1: requesting a signup only mails a code — no account, no
+      // session cookie, yet (see auth.ts POST /auth/signup).
       const signupRes = await app.inject({
         method: "POST",
         url: "/auth/signup",
         payload: { email: testEmail, password: "TestPwd2026!" },
       });
       expect(signupRes.statusCode).toBe(201);
-      expect(signupRes.json().user.emailVerified).toBe(false);
+      const { pendingId, expiresAt } = signupRes.json();
+      expect(typeof pendingId).toBe("string");
+      expect(expiresAt).toBeTruthy();
+      expect(signupRes.headers["set-cookie"]).toBeUndefined();
 
-      const setCookie = signupRes.headers["set-cookie"];
-      const cookieHeader = Array.isArray(setCookie) ? setCookie[0] : setCookie;
-      const sessionCookie = cookieHeader?.split(";")[0];
-      expect(sessionCookie).toMatch(/^n3d_session=/);
+      const noUserYet = await prisma.user.findUnique({ where: { email: testEmail } });
+      expect(noUserYet).toBeNull();
 
       // The code was "sent" via the console-log fallback (see mailer.ts) —
       // this is also exactly how to test signup locally without SMTP
@@ -84,27 +87,52 @@ describe("routes (integration, real DB)", () => {
 
       const wrongRes = await app.inject({
         method: "POST",
-        url: "/auth/verify-email",
-        headers: { cookie: sessionCookie! },
-        payload: { code: "000000" },
+        url: "/auth/signup/confirm",
+        payload: { pendingId, code: "000000" },
       });
       expect(wrongRes.statusCode).toBe(400);
       expect(wrongRes.json().error).toBe("wrong_code");
 
-      const verifyRes = await app.inject({
+      // Step 2: the right code both creates the account (already verified)
+      // and logs it in.
+      const confirmRes = await app.inject({
         method: "POST",
-        url: "/auth/verify-email",
-        headers: { cookie: sessionCookie! },
-        payload: { code },
+        url: "/auth/signup/confirm",
+        payload: { pendingId, code },
       });
-      expect(verifyRes.statusCode).toBe(200);
-      expect(verifyRes.json().ok).toBe(true);
+      expect(confirmRes.statusCode).toBe(201);
+      expect(confirmRes.json().user.emailVerified).toBe(true);
+
+      const setCookie = confirmRes.headers["set-cookie"];
+      const cookieHeader = Array.isArray(setCookie) ? setCookie[0] : setCookie;
+      const sessionCookie = cookieHeader?.split(";")[0];
+      expect(sessionCookie).toMatch(/^n3d_session=/);
 
       const meRes = await app.inject({ method: "GET", url: "/auth/me", headers: { cookie: sessionCookie! } });
       expect(meRes.json().user.emailVerified).toBe(true);
     } finally {
       logSpy.mockRestore();
       if (previousSecret !== undefined) process.env.HCAPTCHA_SECRET_KEY = previousSecret;
+    }
+  });
+
+  it("cancelling a pending signup (never confirming) leaves no account behind", async () => {
+    const previousSecret = process.env.HCAPTCHA_SECRET_KEY;
+    delete process.env.HCAPTCHA_SECRET_KEY;
+    const cancelledEmail = `${testEmail}-cancelled`;
+    try {
+      const signupRes = await app.inject({
+        method: "POST",
+        url: "/auth/signup",
+        payload: { email: cancelledEmail, password: "TestPwd2026!" },
+      });
+      expect(signupRes.statusCode).toBe(201);
+
+      const user = await prisma.user.findUnique({ where: { email: cancelledEmail } });
+      expect(user).toBeNull();
+    } finally {
+      if (previousSecret !== undefined) process.env.HCAPTCHA_SECRET_KEY = previousSecret;
+      await prisma.user.deleteMany({ where: { email: cancelledEmail } });
     }
   });
 });

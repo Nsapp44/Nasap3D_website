@@ -161,7 +161,6 @@ async function main() {
       quoteEnabled: true,
       hourlyRateCents: 500,
       minUnitPriceCents: 890,
-      quoteExpiryMinutes: 60,
       minOrderCents: 1800,
       smallOrderFeeCents: 500,
     },

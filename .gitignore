@@ -4,6 +4,8 @@
 .DS_Store
 Thumbs.db
 .vscode/
+.claude/
+.playwright-mcp/
 
 # Backend (added when the API project is scaffolded)
 node_modules/

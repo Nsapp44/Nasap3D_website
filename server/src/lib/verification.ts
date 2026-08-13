@@ -3,15 +3,22 @@ import { hashToken, generateNumericCode } from "./tokens.js";
 import { sendMail } from "./mailer.js";
 import type { VerificationPurpose } from "@prisma/client";
 
-const EXPIRY_MS = 30 * 60 * 1000;
-export const RESEND_COOLDOWN_MS = 60 * 1000;
+// Shared lifetime for every 6-digit code in the app (signup, email change,
+// password change): short on purpose — a code is only ever meant to be
+// typed within a minute or two of receiving it, and a short window limits
+// how long a stale, unconsumed code sits around. Resending is only allowed
+// once the current code has actually expired (see canResend below) rather
+// than on a short fixed cooldown, so there's only ever one *valid* code at a
+// time per pending action.
+export const CODE_EXPIRY_MS = 3 * 60 * 1000;
 const MAX_ATTEMPTS = 8;
 
 // Shared by three flows: verifying a new account, confirming a new email
 // address, and confirming a password change (see routes/auth.ts and
 // routes/account.ts). `payload` is whatever the confirm step needs once the
 // code checks out (new email, new password hash, ...) — never blocks the
-// caller if SMTP isn't configured yet (see mailer.ts).
+// caller if SMTP isn't configured yet (see mailer.ts). Returns `expiresAt`
+// so the caller can hand it to the client for a countdown display.
 export async function createAndSendVerificationCode(
   userId: string,
   purpose: VerificationPurpose,
@@ -19,22 +26,24 @@ export async function createAndSendVerificationCode(
   subject: string,
   bodyIntro: string,
   payload?: unknown,
-): Promise<void> {
+): Promise<{ expiresAt: Date }> {
   const code = generateNumericCode();
+  const expiresAt = new Date(Date.now() + CODE_EXPIRY_MS);
   await prisma.verificationCode.create({
     data: {
       userId,
       purpose,
       codeHash: hashToken(code),
       payload: payload !== undefined ? JSON.stringify(payload) : null,
-      expiresAt: new Date(Date.now() + EXPIRY_MS),
+      expiresAt,
     },
   });
   try {
-    await sendMail(recipientEmail, subject, `${bodyIntro}\n\nVotre code de vérification : ${code}\n\nIl est valable 30 minutes.`);
+    await sendMail(recipientEmail, subject, `${bodyIntro}\n\nVotre code de vérification : ${code}\n\nIl est valable 3 minutes.`);
   } catch (err) {
     console.error(`[verification] sendMail failed for purpose=${purpose}`, err);
   }
+  return { expiresAt };
 }
 
 export class WrongCodeError extends Error {}
@@ -66,10 +75,93 @@ export async function consumeVerificationCode<T = unknown>(
   return record.payload ? (JSON.parse(record.payload) as T) : undefined;
 }
 
+// Resend is only allowed once the current code has expired — there's only
+// ever one *valid* code per pending action at a time, so a resend can't be
+// used to spam mailboxes faster than one message per CODE_EXPIRY_MS.
 export async function canResend(userId: string, purpose: VerificationPurpose): Promise<boolean> {
   const last = await prisma.verificationCode.findFirst({
     where: { userId, purpose },
     orderBy: { createdAt: "desc" },
   });
-  return !last || Date.now() - last.createdAt.getTime() >= RESEND_COOLDOWN_MS;
+  return !last || Date.now() - last.createdAt.getTime() >= CODE_EXPIRY_MS;
+}
+
+// Signup verification code, sent BEFORE any User row exists (see
+// routes/auth.ts POST /auth/signup) — payload carries the pending
+// email+passwordHash, and the User row is only created once the code is
+// confirmed. Keyed by the VerificationCode's own id (returned to the client
+// as `pendingId`) rather than userId, since there's no user to scope it to.
+export async function createPendingSignupCode(email: string, payload: unknown): Promise<{ id: string; expiresAt: Date }> {
+  const code = generateNumericCode();
+  const expiresAt = new Date(Date.now() + CODE_EXPIRY_MS);
+  // No userId: this code precedes account creation (see doc comment above).
+  const record = await prisma.verificationCode.create({
+    data: {
+      purpose: "SIGNUP",
+      codeHash: hashToken(code),
+      payload: JSON.stringify(payload),
+      expiresAt,
+    },
+  });
+  try {
+    await sendMail(
+      email,
+      "Votre code de vérification Nasap3D",
+      `Bienvenue chez Nasap3D ! Saisissez ce code pour créer votre compte.\n\nVotre code de vérification : ${code}\n\nIl est valable 3 minutes.`,
+    );
+  } catch (err) {
+    console.error("[verification] sendMail failed for pending signup", err);
+  }
+  return { id: record.id, expiresAt };
+}
+
+export async function consumePendingSignupCode<T = unknown>(id: string, code: string): Promise<T> {
+  const record = await prisma.verificationCode.findUnique({ where: { id } });
+  if (!record || record.userId !== null || record.purpose !== "SIGNUP" || record.usedAt || record.expiresAt < new Date()) {
+    throw new NoPendingCodeError();
+  }
+  if (record.attempts >= MAX_ATTEMPTS) throw new TooManyAttemptsError();
+
+  if (record.codeHash !== hashToken(code)) {
+    await prisma.verificationCode.update({ where: { id: record.id }, data: { attempts: { increment: 1 } } });
+    throw new WrongCodeError();
+  }
+
+  await prisma.verificationCode.update({ where: { id: record.id }, data: { usedAt: new Date() } });
+  return JSON.parse(record.payload!) as T;
+}
+
+// Regenerates the code in place (same row, same id) so the `pendingId` the
+// client already holds stays valid — a resend isn't a new signup attempt.
+// Cooldown is derived from expiresAt (= last-sent + CODE_EXPIRY_MS) rather
+// than a separate timestamp column, since the row is reused in place.
+export async function resendPendingSignupCode(
+  id: string,
+  email: string,
+): Promise<{ ok: true; expiresAt: Date } | { ok: false; error: "too_soon" | "no_pending_code" }> {
+  const record = await prisma.verificationCode.findUnique({ where: { id } });
+  // Note: an EXPIRED code is exactly the normal case a resend is for — only
+  // an already-consumed or altogether unknown id is a dead end here.
+  if (!record || record.userId !== null || record.purpose !== "SIGNUP" || record.usedAt) {
+    return { ok: false, error: "no_pending_code" };
+  }
+  const lastSentAt = record.expiresAt.getTime() - CODE_EXPIRY_MS;
+  if (Date.now() - lastSentAt < CODE_EXPIRY_MS) return { ok: false, error: "too_soon" };
+
+  const code = generateNumericCode();
+  const expiresAt = new Date(Date.now() + CODE_EXPIRY_MS);
+  await prisma.verificationCode.update({
+    where: { id },
+    data: { codeHash: hashToken(code), attempts: 0, expiresAt },
+  });
+  try {
+    await sendMail(
+      email,
+      "Votre code de vérification Nasap3D",
+      `Voici votre nouveau code de vérification : ${code}\n\nIl est valable 3 minutes.`,
+    );
+  } catch (err) {
+    console.error("[verification] sendMail failed for pending signup resend", err);
+  }
+  return { ok: true, expiresAt };
 }

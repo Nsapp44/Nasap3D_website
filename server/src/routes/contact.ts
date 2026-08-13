@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import path from "node:path";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { isValidEmail } from "../lib/password.js";
@@ -8,13 +9,17 @@ import { newFileKey, saveFile, readFileByKey } from "../lib/storage.js";
 import { requireAdmin } from "../lib/session.js";
 
 const MAX_CONTACT_FILE_BYTES = 50 * 1024 * 1024;
+// Matches what the contact form's UI advertises accepting (".stl .step .pdf
+// .jpg .png") — the front-end input didn't actually enforce it either, so
+// this was previously wide open to any file type.
+const ALLOWED_CONTACT_EXT = new Set([".stl", ".step", ".stp", ".pdf", ".jpg", ".jpeg", ".png"]);
 
 export async function contactRoutes(app: FastifyInstance) {
   // Real upload for the contact form's attachment — the file is stored (not
   // emailed: most mailboxes reject/strip attachments over ~25MB, well under
   // our 50MB cap here), and the notification email links to the admin
   // download route below instead.
-  app.post("/contact/upload", async (request, reply) => {
+  app.post("/contact/upload", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (request, reply) => {
     const parts = request.parts({ limits: { fileSize: MAX_CONTACT_FILE_BYTES } });
     let fileBuffer: Buffer | null = null;
     let fileName = "";
@@ -28,13 +33,15 @@ export async function contactRoutes(app: FastifyInstance) {
       }
     }
     if (!fileBuffer || !fileName) return reply.code(400).send({ error: "missing_file" });
+    const ext = path.extname(fileName).toLowerCase();
+    if (!ALLOWED_CONTACT_EXT.has(ext)) return reply.code(400).send({ error: "unsupported_file_type" });
 
     const fileKey = newFileKey(fileName);
     await saveFile(fileKey, fileBuffer);
     return reply.code(201).send({ fileKey, fileName });
   });
 
-  app.post("/contact", async (request, reply) => {
+  app.post("/contact", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (request, reply) => {
     const schema = z.object({
       name: z.string().min(1).max(60),
       email: z.string(),

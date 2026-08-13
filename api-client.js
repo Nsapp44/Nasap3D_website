@@ -3,7 +3,7 @@
 // HANDOFF_CLAUDE_CODE.md. Every call sends cookies (credentials: 'include')
 // since auth is a single httpOnly session cookie, never a token in JS.
 
-function apiBase() {
+export function apiBase() {
   if (typeof window !== 'undefined' && window.NASAP3D_API_BASE) return window.NASAP3D_API_BASE;
   if (typeof location === 'undefined') return '';
   // Same-host default: works for local dev (localhost:8080 -> localhost:3000)
@@ -61,11 +61,11 @@ export const api = {
   async resetPassword(token, newPassword) {
     return request('POST', '/auth/reset-password', { token, newPassword });
   },
-  async verifyEmail(code) {
-    return request('POST', '/auth/verify-email', { code });
+  async confirmSignup(pendingId, code) {
+    return request('POST', '/auth/signup/confirm', { pendingId, code });
   },
-  async resendVerification() {
-    return request('POST', '/auth/resend-verification');
+  async resendSignupCode(pendingId) {
+    return request('POST', '/auth/signup/resend', { pendingId });
   },
   async requestEmailChange(newEmail, currentPassword) {
     return request('POST', '/account/email/request-change', { newEmail, currentPassword });
@@ -158,6 +158,9 @@ export const api = {
   },
   async adminCheckShippingLabel(orderId) {
     return request('GET', '/admin/orders/' + orderId + '/shipping-label');
+  },
+  async adminSetTrackingNumber(orderId, trackingNumber) {
+    return request('PATCH', '/admin/orders/' + orderId, { trackingNumber });
   },
   async adminGetSettings() {
     return request('GET', '/admin/settings');

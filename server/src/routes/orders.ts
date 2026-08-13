@@ -17,6 +17,8 @@ export async function customerOrderRoutes(app: FastifyInstance) {
         status: o.status,
         totalCents: o.totalCents,
         createdAt: o.createdAt,
+        shippingMode: o.shippingMode,
+        trackingNumber: o.trackingNumber,
         items: o.items.map((i) => ({
           nameSnapshot: i.nameSnapshot,
           materialSnapshot: i.materialSnapshot,

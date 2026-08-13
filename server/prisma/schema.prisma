@@ -20,6 +20,7 @@ enum OrderStatus {
 }
 
 enum ShippingMode {
+  PICKUP
   RELAY
   HOME
 }
@@ -91,10 +92,17 @@ enum VerificationPurpose {
 // codeHash is intentionally not unique — a coincidence between two users'
 // codes is expected and harmless; verification is scoped by userId+purpose
 // (the endpoint requires an active session) plus expiresAt/attempts.
+//
+// userId is nullable for purpose=SIGNUP only: that code is sent BEFORE the
+// account exists (see src/lib/verification.ts createPendingSignupCode / src/
+// routes/auth.ts) — payload carries the pending email+passwordHash, and the
+// User row is only created once the code is confirmed. Cancelling the popup
+// or letting the code expire simply leaves this row unconsumed; no account
+// was ever created.
 model VerificationCode {
   id        String              @id @default(cuid())
-  userId    String
-  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
   purpose   VerificationPurpose
   codeHash  String
   payload   String?
@@ -155,7 +163,6 @@ model Settings {
   // Plancher de prix discret par pièce : un prix calculé en dessous
   // s'affiche directement à ce montant, sans ligne "frais minimum" visible.
   minUnitPriceCents   Int      @default(890)
-  quoteExpiryMinutes  Int      @default(60)
   // Panier minimum : sous ce montant, smallOrderFeeCents s'ajoute au total
   // au lieu de bloquer la commande (le front affiche un message invitant à
   // ajouter des articles pour l'éviter) — appliqué au checkout (phase
@@ -200,7 +207,6 @@ model QuoteJob {
   unitPriceCents   Int?
   totalPriceCents  Int?
   status           QuoteJobStatus @default(DRAFT)
-  expiresAt        DateTime?
   createdAt        DateTime       @default(now())
 
   cartItems  CartItem[]
@@ -219,6 +225,10 @@ model CartItem {
   quoteJob   QuoteJob @relation(fields: [quoteJobId], references: [id])
   qty        Int      @default(1)
   createdAt  DateTime @default(now())
+  // Bumped by Prisma on every update (qty change) — the basis for "cart
+  // inactive since" in the cleanup sweep (lib/cartCleanup.ts), not just
+  // "added since".
+  updatedAt  DateTime @updatedAt
 
   @@index([userId])
   @@index([sessionId])
@@ -249,6 +259,18 @@ model Order {
   shippingServiceCode String?
   shippingLabel       String?
   shippingWeightG     Float?
+  // Carton choisi au moment du paiement (voir PARCEL_BOXES_CM dans
+  // boxtal.ts) — figé ici pour que l'achat d'étiquette (plus tard, par
+  // l'admin) réutilise exactement le même carton que celui déjà facturé au
+  // client, jamais recalculé. shippingOversized = la pièce ne rentrait dans
+  // aucun des formats connus : le devis client est quand même parti avec le
+  // plus grand carton (estimation raisonnable, le client n'est pas
+  // impacté), mais l'achat d'étiquette est bloqué côté admin tant que ce
+  // n'est pas vérifié/traité manuellement sur Boxtal.
+  shippingParcelLengthCm Int?
+  shippingParcelWidthCm  Int?
+  shippingParcelHeightCm Int?
+  shippingOversized      Boolean @default(false)
   recipientName       String?
   recipientPhone      String?
   recipientAddress    String?
@@ -268,6 +290,14 @@ model Order {
   boxtalOrderRef   String?   @unique
   shippingLabelUrl String?
   labelPurchasedAt DateTime?
+  // Transporteur (via Boxtal order_status "carrier_reference") ou saisi à la
+  // main par l'admin quand l'étiquette a été achetée manuellement sur
+  // Boxtal (hors gabarit, ou tout autre cas géré à la main). Gate le
+  // passage au statut READY pour une commande expédiée (pas de retrait) —
+  // voir routes/admin.ts. Purgé avec le reste du bloc expédition/
+  // destinataire dès que la commande passe en DELIVERED (voir purgeShippingDataOnDelivery
+  // dans routes/admin.ts) : plus aucune utilité passé ce point.
+  trackingNumber String?
 
   items   OrderItem[]
   invoice Invoice?

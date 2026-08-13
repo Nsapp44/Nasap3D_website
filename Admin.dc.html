@@ -33,7 +33,9 @@ a:hover{color:#ff7a5c}
       <span style="{{ tabStyleOrders }}" onClick="{{ goOrders }}">Commandes</span>
       <span style="{{ tabStyleStock }}" onClick="{{ goStock }}">Stock filament</span>
     </div>
-    <span onClick="{{ adminLogout }}" style="cursor:pointer;color:rgba(255,255,255,.6);font:500 12px 'Inter',sans-serif;transition:color .2s ease" style-hover="color:#ff5a3c">Déconnexion</span>
+    <div style="display:flex;align-items:center;gap:18px;font:500 12px 'Inter',sans-serif;color:rgba(255,255,255,.75)">
+      <span onClick="{{ adminLogout }}" style="cursor:pointer;color:rgba(255,255,255,.6);font:500 12px 'Inter',sans-serif;transition:color .2s ease" style-hover="color:#ff5a3c">Déconnexion</span>
+    </div>
   </div>
 
   <!-- ACCESS GUARD (client-side only — the real protection is the requireAdmin
@@ -86,8 +88,8 @@ a:hover{color:#ff7a5c}
               </div>
               <span style="font:700 14px 'Space Grotesk',sans-serif;color:#ff5a3c">{{ order.price }} €</span>
             </div>
-            <div style="display:flex;align-items:center;justify-content:space-between">
-              <div style="display:flex;gap:6px">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
                 <sc-for list="{{ order.statusOptions }}" as="opt" hint-placeholder-count="4">
                   <span style="{{ opt.chipStyle }}" onClick="{{ opt.onClick }}">{{ opt.label }}</span>
                 </sc-for>
@@ -117,6 +119,24 @@ a:hover{color:#ff7a5c}
                 </sc-for>
               </div>
             </sc-if>
+            <sc-if value="{{ order.isPickup }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)">
+                <div style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Retrait à l'atelier</div>
+                <div style="font:400 11px/1.6 'Inter',sans-serif;color:#e8e6e1">{{ order.recipientName }} · {{ order.recipientPhone }}</div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ order.hasShipping }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)">
+                <div style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Livraison — {{ order.shippingLabel }}</div>
+                <div style="font:400 11px/1.6 'Inter',sans-serif;color:#e8e6e1">{{ order.recipientName }} · {{ order.recipientPhone }}<br>{{ order.recipientAddress }}, {{ order.recipientZipcode }} {{ order.recipientCity }}, {{ order.recipientCountry }}</div>
+                <sc-if value="{{ order.hasRelayPoint }}" hint-placeholder-val="{{ false }}">
+                  <div style="font:400 11px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.6);margin-top:4px">Point relais : {{ order.relayPointName }} — {{ order.relayPointAddress }}, {{ order.relayPointZipcode }} {{ order.relayPointCity }}</div>
+                </sc-if>
+                <sc-if value="{{ order.shippingOversized }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:8px;font:600 10.5px 'Inter',sans-serif;color:#ff8a70">⚠ Hors gabarit — carton à vérifier, étiquette à acheter manuellement sur Boxtal</div>
+                </sc-if>
+              </div>
+            </sc-if>
             <sc-if value="{{ order.canBuyLabel }}" hint-placeholder-val="{{ false }}">
               <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)">
                 <span onClick="{{ order.onBuyLabel }}" style="border:1px solid rgba(255,255,255,.2);color:#f3f1ec;font:500 10.5px 'Inter',sans-serif;padding:6px 12px;border-radius:5px;cursor:pointer">{{ order.buyLabelText }}</span>
@@ -131,6 +151,20 @@ a:hover{color:#ff7a5c}
               <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px">
                 <span style="font:500 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.45)">Étiquette en cours de génération…</span>
                 <span onClick="{{ order.onCheckLabel }}" style="border:1px solid rgba(255,255,255,.2);color:#f3f1ec;font:500 10px 'Inter',sans-serif;padding:5px 10px;border-radius:5px;cursor:pointer">Vérifier</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ order.showTracking }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <sc-if value="{{ order.hasTrackingNumber }}" hint-placeholder-val="{{ false }}">
+                  <span style="font:600 10.5px ui-monospace,monospace;color:#e8e6e1">Suivi : {{ order.trackingNumber }}</span>
+                </sc-if>
+                <sc-if value="{{ order.hasTrackingNumber }}" hint-placeholder-val="{{ true }}">
+                  <input value="{{ order.trackingDraft }}" onChange="{{ order.onTrackingDraftChange }}" type="text" placeholder="Numéro de suivi" style="width:180px;box-sizing:border-box;height:28px;border:1px solid rgba(255,255,255,.15);border-radius:5px;background:#161514;padding:0 8px;font:10.5px ui-monospace,monospace;color:#e8e6e1;outline:none" />
+                  <span onClick="{{ order.onSaveTracking }}" style="border:1px solid rgba(255,255,255,.2);color:#f3f1ec;font:500 10px 'Inter',sans-serif;padding:5px 10px;border-radius:5px;cursor:pointer">Enregistrer</span>
+                </sc-if>
+                <sc-if value="{{ order.canCheckTracking }}" hint-placeholder-val="{{ false }}">
+                  <span onClick="{{ order.onCheckLabel }}" style="border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.6);font:500 10px 'Inter',sans-serif;padding:5px 10px;border-radius:5px;cursor:pointer">Vérifier auprès de Boxtal</span>
+                </sc-if>
               </div>
             </sc-if>
           </div>
@@ -216,7 +250,8 @@ class Component extends DCLogic {
     priceSaved: {},
     hourlyRateDraft: '', minPriceDraft: '',
     hourlyRateSaved: false, minPriceSaved: false,
-    labelBusy: {}
+    labelBusy: {},
+    trackingDrafts: {}, trackingBusy: {}
   };
   componentDidMount() {
     this._checkAuth();
@@ -315,8 +350,29 @@ class Component extends DCLogic {
   }
   async setOrderStatus(id, status) {
     const api = await this._api();
-    await api.adminUpdateOrderStatus(id, status);
+    const res = await api.adminUpdateOrderStatus(id, status);
+    if (!res.ok) {
+      const messages = {
+        tracking_number_required: "Ajoutez d'abord un numéro de suivi avant de passer cette commande à l'étape Expédié.",
+        order_already_delivered: 'Cette commande est déjà marquée livrée — impossible de revenir en arrière.'
+      };
+      if (res.data && res.data.error && messages[res.data.error]) window.alert(messages[res.data.error]);
+      return;
+    }
     this._loadOrders();
+  }
+  onTrackingDraftChange(orderId, value) {
+    this.setState(s => ({ trackingDrafts: { ...s.trackingDrafts, [orderId]: value } }));
+  }
+  async saveTrackingNumber(orderId) {
+    const draft = (this.state.trackingDrafts[orderId] || '').trim();
+    if (!draft || this.state.trackingBusy[orderId]) return;
+    this.setState(s => ({ trackingBusy: { ...s.trackingBusy, [orderId]: true } }));
+    const api = await this._api();
+    const res = await api.adminSetTrackingNumber(orderId, draft);
+    this.setState(s => ({ trackingBusy: { ...s.trackingBusy, [orderId]: false } }));
+    if (res.ok) this._loadOrders();
+    else window.alert("Échec de l'enregistrement du numéro de suivi.");
   }
   async rejectOrder(id) {
     const api = await this._api();
@@ -340,6 +396,7 @@ class Component extends DCLogic {
         label_already_purchased: 'Une étiquette a déjà été achetée pour cette commande.',
         missing_shipping_info: "Informations de livraison incomplètes pour cette commande.",
         missing_relay_point: 'Aucun point relais enregistré pour cette commande.',
+        parcel_oversized: "Pièce hors gabarit (aucun des cartons habituels ne convient) — vérifiez l'emballage et achetez l'étiquette manuellement sur le site Boxtal pour cette commande.",
         boxtal_not_configured: 'Boxtal non configuré côté serveur.',
         boxtal_order_failed: "Échec de l'achat auprès de Boxtal : " + ((res.data && res.data.reason) || 'raison inconnue')
       };
@@ -348,18 +405,24 @@ class Component extends DCLogic {
     }
     this._loadOrders();
   }
+  // Revérifie l'étiquette ET le suivi/statut de livraison en un seul appel
+  // (voir refreshOrderTrackingStatus côté serveur) — peut faire passer la
+  // commande en Livré toute seule si Boxtal indique que c'est arrivé.
   async checkShippingLabel(orderId) {
     if (this.state.labelBusy[orderId]) return;
     this.setState(s => ({ labelBusy: { ...s.labelBusy, [orderId]: true } }));
     const api = await this._api();
     const res = await api.adminCheckShippingLabel(orderId);
     this.setState(s => ({ labelBusy: { ...s.labelBusy, [orderId]: false } }));
-    if (res.ok && res.data && res.data.shippingLabelUrl) {
+    if (res.ok && res.data && res.data.autoDelivered) {
+      this._loadOrders();
+      window.alert('Boxtal indique cette commande comme livrée — passée automatiquement à "Livré".');
+    } else if (res.ok && res.data && (res.data.shippingLabelUrl || res.data.trackingNumber)) {
       this._loadOrders();
     } else if (res.ok) {
-      window.alert("Étiquette pas encore prête chez Boxtal, réessayez dans un instant.");
+      window.alert("Rien de nouveau chez Boxtal pour l'instant, réessayez plus tard.");
     } else {
-      window.alert("Échec de la vérification du statut de l'étiquette.");
+      window.alert("Échec de la vérification du statut auprès de Boxtal.");
     }
   }
   async toggleSpool(materialId, colorId, inStock) {
@@ -422,23 +485,64 @@ class Component extends DCLogic {
         downloadUrl: i.fileAvailable && this._apiMod ? this._apiMod.adminOrderFileUrl(o.id, i.id) : '#',
         onDelete: () => this.deleteOrderFile(o.id, i.id)
       })),
-      canBuyLabel: o.canBuyLabel && !o.shippingLabelUrl,
+      canBuyLabel: o.canBuyLabel && !o.shippingLabelUrl && !o.shippingOversized,
       hasLabel: !!o.shippingLabelUrl,
       labelPending: !!o.boxtalOrderRef && !o.shippingLabelUrl,
       labelUrl: o.shippingLabelUrl,
       labelBusy: !!s.labelBusy[o.id],
+      // Livré : le bloc destinataire/expédition détaillé n'a plus de sens —
+      // recipientPhone/Address/relayPoint*/trackingNumber ont été purgés
+      // côté serveur dès le passage à ce statut (voir SHIPPING_DATA_PURGE
+      // dans lib/orderTracking.ts), ne reste que recipientName/shippingMode.
+      isPickup: o.shippingMode === 'PICKUP' && o.status !== 'DELIVERED',
+      hasShipping: !!o.shippingMode && o.shippingMode !== 'PICKUP' && o.status !== 'DELIVERED',
+      shippingLabel: o.shippingLabel,
+      shippingOversized: !!o.shippingOversized,
+      recipientName: o.recipientName,
+      recipientPhone: o.recipientPhone,
+      recipientAddress: o.recipientAddress,
+      recipientCity: o.recipientCity,
+      recipientZipcode: o.recipientZipcode,
+      recipientCountry: o.recipientCountry,
+      hasRelayPoint: o.shippingMode === 'RELAY' && !!o.relayPointName,
+      relayPointName: o.relayPointName,
+      relayPointAddress: o.relayPointAddress,
+      relayPointCity: o.relayPointCity,
+      relayPointZipcode: o.relayPointZipcode,
       buyLabelText: s.labelBusy[o.id] ? 'Achat en cours…' : "Créer l'étiquette",
       onBuyLabel: () => this.buyShippingLabel(o.id),
       onCheckLabel: () => this.checkShippingLabel(o.id),
+      // Numéro de suivi : saisi à la main (étiquette achetée hors système,
+      // ex. hors gabarit) ou récupéré tout seul auprès de Boxtal via
+      // "Vérifier" (même bouton que pour l'étiquette, voir checkShippingLabel).
+      // Obligatoire côté serveur avant de pouvoir passer une commande
+      // expédiée (pas retrait) à l'étape "Expédié / Prêt".
+      showTracking: !!o.shippingMode && o.shippingMode !== 'PICKUP' && o.status !== 'DELIVERED',
+      hasTrackingNumber: !!o.trackingNumber,
+      trackingNumber: o.trackingNumber || '',
+      trackingDraft: s.trackingDrafts[o.id] !== undefined ? s.trackingDrafts[o.id] : (o.trackingNumber || ''),
+      onTrackingDraftChange: (e) => this.onTrackingDraftChange(o.id, e.target.value),
+      onSaveTracking: () => this.saveTrackingNumber(o.id),
+      trackingBusy: !!s.trackingBusy[o.id],
+      canCheckTracking: !!o.boxtalOrderRef,
       statusOptions: statusDefs.map(def => {
         const active = o.status === def.key;
+        // Verrouillé une fois Livré (rien à changer, voir setOrderStatus/
+        // admin.ts) ; grisé sur "Expédié / Prêt" tant qu'une commande
+        // expédiée (pas retrait) n'a pas de numéro de suivi — le clic reste
+        // possible (setOrderStatus explique pourquoi via une alerte) plutôt
+        // que silencieusement désactivé.
+        const locked = o.status === 'DELIVERED';
+        const blockedByTracking = def.key === 'READY' && !!o.shippingMode && o.shippingMode !== 'PICKUP' && !o.trackingNumber;
+        const dim = locked || blockedByTracking;
         return {
           label: def.label,
           onClick: () => this.setOrderStatus(o.id, def.key),
           chipStyle: {
-            font: "600 10px 'Inter',sans-serif", padding: '5px 10px', borderRadius: '5px', cursor: 'pointer',
+            font: "600 10px 'Inter',sans-serif", padding: '5px 10px', borderRadius: '5px',
+            cursor: dim ? 'not-allowed' : 'pointer',
             background: active ? '#ff5a3c' : 'transparent',
-            color: active ? '#161514' : 'rgba(255,255,255,.5)',
+            color: dim && !active ? 'rgba(255,255,255,.25)' : (active ? '#161514' : 'rgba(255,255,255,.5)'),
             border: '1px solid ' + (active ? '#ff5a3c' : 'rgba(255,255,255,.15)')
           }
         };

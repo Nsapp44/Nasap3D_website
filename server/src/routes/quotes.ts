@@ -8,6 +8,7 @@ import { getOrCreateGuestSessionId } from "../lib/guestSession.js";
 import { newFileKey, saveFile, readFileByKey } from "../lib/storage.js";
 import { getModelInfo, pickPrinter, sliceModel } from "../lib/slicer.js";
 import { computePrice } from "../lib/pricing.js";
+import { deleteQuoteJobFileIfOrphaned } from "../lib/quoteCleanup.js";
 
 const ALLOWED_EXT = new Set([".stl", ".obj", ".step", ".stp"]);
 const MAX_FILE_BYTES = 150 * 1024 * 1024;
@@ -15,7 +16,7 @@ const MAX_FILE_BYTES = 150 * 1024 * 1024;
 function quotePublicView(q: {
   id: string; fileName: string; volumeCm3: number | null; weightG: number | null;
   estimatedTimeMin: number | null; unitPriceCents: number | null; totalPriceCents: number | null;
-  quantity: number; infillPct: number; expiresAt: Date | null; status: string;
+  quantity: number; infillPct: number; status: string;
   material: { key: string; label: string }; color: { colorName: string; colorHex: string };
   quality: { key: string; label: string };
 }, discountPct: number) {
@@ -36,7 +37,6 @@ function quotePublicView(q: {
     unitPriceCents: q.unitPriceCents,
     totalPriceCents: q.totalPriceCents,
     discountPct,
-    expiresAt: q.expiresAt,
     status: q.status,
   };
 }
@@ -157,7 +157,6 @@ export async function quoteRoutes(app: FastifyInstance) {
           unitPriceCents: price.unitPriceCents,
           totalPriceCents: price.totalCents,
           status: "ANALYZED",
-          expiresAt: new Date(Date.now() + settings.quoteExpiryMinutes * 60_000),
         },
         include: { material: true, color: true, quality: true },
       });
@@ -203,5 +202,27 @@ export async function quoteRoutes(app: FastifyInstance) {
       .header("Content-Disposition", `inline; filename="${quoteJob.fileName.replace(/"/g, "")}"`)
       .header("Content-Type", "application/octet-stream")
       .send(buffer);
+  });
+
+  // Best-effort immediate cleanup: the configurator calls this via
+  // navigator.sendBeacon when the tab closes/navigates away with an
+  // analyzed quote that was never added to the cart (see Devis
+  // Instantane.dc.html) — no response is ever read by a beacon, so this
+  // always replies 204 regardless of outcome. deleteQuoteJobFileIfOrphaned
+  // already no-ops if the quote is still in a cart or was ordered, so even
+  // a stray/late call here can't delete a file still in use. Not the only
+  // cleanup path — the periodic sweep (lib/quoteCleanup.ts) is the
+  // reliable backstop for whatever this misses (network drop, browser not
+  // firing the beacon, cookies not sent cross-site, ...).
+  app.post("/quotes/:id/discard", async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const quoteJob = await prisma.quoteJob.findUnique({ where: { id } });
+    if (quoteJob) {
+      const user = await getSessionUser(request);
+      const sessionId = request.cookies["n3d_guest"];
+      const owns = (user && quoteJob.userId === user.id) || (!user && sessionId && quoteJob.sessionId === sessionId);
+      if (owns) await deleteQuoteJobFileIfOrphaned(id);
+    }
+    return reply.code(204).send();
   });
 }

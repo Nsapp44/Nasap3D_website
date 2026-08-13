@@ -3,7 +3,8 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../lib/session.js";
 import { readFileByKey, deleteFile } from "../lib/storage.js";
-import { purchaseShippingLabel, checkLabelStatus, BoxtalConfigError, BoxtalApiError } from "../lib/boxtal.js";
+import { purchaseShippingLabel, BoxtalConfigError, BoxtalApiError } from "../lib/boxtal.js";
+import { refreshOrderTrackingStatus, SHIPPING_DATA_PURGE } from "../lib/orderTracking.js";
 
 const ORDER_STATUSES = ["PENDING", "PRINTING", "READY", "DELIVERED"] as const;
 
@@ -83,9 +84,22 @@ export async function adminRoutes(app: FastifyInstance) {
         totalCents: o.totalCents,
         createdAt: o.createdAt,
         shippingMode: o.shippingMode,
+        shippingLabel: o.shippingLabel,
+        shippingOversized: o.shippingOversized,
         canBuyLabel: !!o.shippingMode && !!o.shippingCarrierCode && !!o.shippingServiceCode && !!o.shippingWeightG,
         boxtalOrderRef: o.boxtalOrderRef,
         shippingLabelUrl: o.shippingLabelUrl,
+        trackingNumber: o.trackingNumber,
+        recipientName: o.recipientName,
+        recipientPhone: o.recipientPhone,
+        recipientAddress: o.recipientAddress,
+        recipientCity: o.recipientCity,
+        recipientZipcode: o.recipientZipcode,
+        recipientCountry: o.recipientCountry,
+        relayPointName: o.relayPointName,
+        relayPointAddress: o.relayPointAddress,
+        relayPointCity: o.relayPointCity,
+        relayPointZipcode: o.relayPointZipcode,
         items: o.items.map((i) => ({
           id: i.id,
           nameSnapshot: i.nameSnapshot,
@@ -140,11 +154,17 @@ export async function adminRoutes(app: FastifyInstance) {
     const order = await prisma.order.findUnique({ where: { id }, include: { user: { select: { email: true } } } });
     if (!order) return reply.code(404).send({ error: "not_found" });
     if (order.boxtalOrderRef) return reply.code(409).send({ error: "label_already_purchased" });
+    // Retrait à l'atelier : gratuit, jamais expédié, rien à acheter chez
+    // Boxtal — narrows shippingMode to "RELAY" | "HOME" for TS below.
+    if (order.shippingMode === "PICKUP") return reply.code(409).send({ error: "not_shippable" });
     if (
       !order.shippingMode ||
       !order.shippingCarrierCode ||
       !order.shippingServiceCode ||
       !order.shippingWeightG ||
+      !order.shippingParcelLengthCm ||
+      !order.shippingParcelWidthCm ||
+      !order.shippingParcelHeightCm ||
       !order.recipientName ||
       !order.recipientPhone ||
       !order.recipientAddress ||
@@ -156,6 +176,14 @@ export async function adminRoutes(app: FastifyInstance) {
     }
     if (order.shippingMode === "RELAY" && !order.relayPointCode) {
       return reply.code(409).send({ error: "missing_relay_point" });
+    }
+    // La pièce ne rentrait dans aucun des 3 formats de carton connus au
+    // moment du paiement (voir PARCEL_BOXES_CM dans boxtal.ts) — le client a
+    // quand même payé un tarif estimé avec le plus grand carton, mais on
+    // n'achète jamais une étiquette automatiquement sur cette base : il faut
+    // vérifier l'emballage réel et le faire manuellement sur Boxtal.
+    if (order.shippingOversized) {
+      return reply.code(409).send({ error: "parcel_oversized" });
     }
 
     try {
@@ -170,10 +198,16 @@ export async function adminRoutes(app: FastifyInstance) {
           country: order.recipientCountry,
         },
         weightG: order.shippingWeightG,
+        parcelCm: {
+          length: order.shippingParcelLengthCm,
+          width: order.shippingParcelWidthCm,
+          height: order.shippingParcelHeightCm,
+        },
         operatorCode: order.shippingCarrierCode,
         serviceCode: order.shippingServiceCode,
         mode: order.shippingMode,
         relayPointCode: order.relayPointCode,
+        declaredValueCents: order.subtotalCents,
       });
       const updated = await prisma.order.update({
         where: { id },
@@ -183,10 +217,16 @@ export async function adminRoutes(app: FastifyInstance) {
           labelPurchasedAt: new Date(),
         },
       });
+      // Best-effort: the tracking number is never in the purchase response
+      // itself (confirmed against the real API), only learned afterward —
+      // try right away so it's often already there by the time the admin
+      // looks, instead of always needing a separate manual check.
+      const tracking = await refreshOrderTrackingStatus(id);
       return reply.send({
         boxtalOrderRef: updated.boxtalOrderRef,
-        shippingLabelUrl: updated.shippingLabelUrl,
+        shippingLabelUrl: tracking && !tracking.autoDelivered ? updated.shippingLabelUrl : updated.shippingLabelUrl,
         labelPending: !updated.shippingLabelUrl,
+        trackingNumber: tracking?.trackingNumber ?? null,
       });
     } catch (err) {
       if (err instanceof BoxtalConfigError) return reply.code(500).send({ error: "boxtal_not_configured" });
@@ -198,21 +238,30 @@ export async function adminRoutes(app: FastifyInstance) {
     }
   });
 
-  // Si l'achat n'a pas renvoyé l'étiquette immédiatement (génération
-  // asynchrone chez certains transporteurs), permet de la re-vérifier.
+  // Re-vérifie le statut Boxtal à la demande : étiquette (si l'achat ne
+  // l'a pas renvoyée immédiatement — génération asynchrone chez certains
+  // transporteurs), numéro de suivi, et passage automatique en DELIVERED si
+  // le statut transporteur ressemble à une livraison (voir
+  // lib/orderTracking.ts). Appelle toujours Boxtal tant que la commande
+  // n'est pas déjà DELIVERED — contrairement à avant, ne s'arrête plus
+  // silencieusement une fois l'étiquette disponible (le suivi/la livraison
+  // continuent d'évoluer après).
   app.get("/admin/orders/:id/shipping-label", async (request, reply) => {
     const { id } = request.params as { id: string };
     const order = await prisma.order.findUnique({ where: { id } });
     if (!order) return reply.code(404).send({ error: "not_found" });
     if (!order.boxtalOrderRef) return reply.code(409).send({ error: "label_not_purchased" });
-    if (order.shippingLabelUrl) return reply.send({ shippingLabelUrl: order.shippingLabelUrl, labelPending: false });
+    if (order.status === "DELIVERED") return reply.send({ shippingLabelUrl: null, labelPending: false, trackingNumber: null, autoDelivered: false });
 
     try {
-      const status = await checkLabelStatus(order.boxtalOrderRef);
-      if (status.labelUrl) {
-        await prisma.order.update({ where: { id }, data: { shippingLabelUrl: status.labelUrl } });
-      }
-      return reply.send({ shippingLabelUrl: status.labelUrl, labelPending: !status.labelUrl });
+      const result = await refreshOrderTrackingStatus(id);
+      const fresh = await prisma.order.findUnique({ where: { id } });
+      return reply.send({
+        shippingLabelUrl: result?.autoDelivered ? null : fresh?.shippingLabelUrl ?? null,
+        labelPending: !result?.autoDelivered && !fresh?.shippingLabelUrl,
+        trackingNumber: result?.trackingNumber ?? null,
+        autoDelivered: !!result?.autoDelivered,
+      });
     } catch (err) {
       if (err instanceof BoxtalConfigError) return reply.code(500).send({ error: "boxtal_not_configured" });
       if (err instanceof BoxtalApiError) {
@@ -225,21 +274,40 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.patch("/admin/orders/:id", async (request, reply) => {
     const { id } = request.params as { id: string };
-    const schema = z.object({ status: z.enum(ORDER_STATUSES) });
+    const schema = z.object({ status: z.enum(ORDER_STATUSES).optional(), trackingNumber: z.string().trim().min(1).max(60).optional() });
     const body = schema.safeParse(request.body);
     if (!body.success) return reply.code(400).send({ error: "invalid_body" });
+    if (!body.data.status && !body.data.trackingNumber) return reply.code(400).send({ error: "invalid_body" });
 
     const order = await prisma.order.findUnique({ where: { id } });
     if (!order) return reply.code(404).send({ error: "not_found" });
+    // Terminal state — no going back once delivered, on purpose: the
+    // shipping/recipient data needed to make sense of an earlier status is
+    // wiped the moment this is reached (see SHIPPING_DATA_PURGE below), so
+    // there'd be nothing left to revert *to* even if we allowed it. A
+    // genuine mistake needs a direct DB fix, not a button here.
+    if (order.status === "DELIVERED") return reply.code(409).send({ error: "order_already_delivered" });
+
+    // A shipped order (not a workshop pickup) needs a tracking number
+    // before it can be marked READY/"Expédié" — either already on file
+    // (auto-fetched from Boxtal) or provided in this same request (manual
+    // label purchased outside the system, e.g. the oversized-parcel case).
+    const nextStatus = body.data.status ?? order.status;
+    const trackingNumber = body.data.trackingNumber ?? order.trackingNumber;
+    if (nextStatus === "READY" && order.shippingMode && order.shippingMode !== "PICKUP" && !trackingNumber) {
+      return reply.code(409).send({ error: "tracking_number_required" });
+    }
 
     const now = new Date();
     const updated = await prisma.order.update({
       where: { id },
       data: {
-        status: body.data.status,
-        printingAt: body.data.status === "PRINTING" && !order.printingAt ? now : undefined,
-        readyAt: body.data.status === "READY" && !order.readyAt ? now : undefined,
-        deliveredAt: body.data.status === "DELIVERED" && !order.deliveredAt ? now : undefined,
+        status: nextStatus,
+        trackingNumber: body.data.trackingNumber ?? undefined,
+        printingAt: nextStatus === "PRINTING" && !order.printingAt ? now : undefined,
+        readyAt: nextStatus === "READY" && !order.readyAt ? now : undefined,
+        deliveredAt: nextStatus === "DELIVERED" && !order.deliveredAt ? now : undefined,
+        ...(nextStatus === "DELIVERED" ? SHIPPING_DATA_PURGE : {}),
       },
     });
     return reply.send({ order: updated });
@@ -272,7 +340,6 @@ export async function adminRoutes(app: FastifyInstance) {
       quoteEnabled: z.boolean().optional(),
       hourlyRateCents: z.number().int().positive().optional(),
       minUnitPriceCents: z.number().int().min(0).optional(),
-      quoteExpiryMinutes: z.number().int().positive().optional(),
       minOrderCents: z.number().int().min(0).optional(),
       smallOrderFeeCents: z.number().int().min(0).optional(),
     });

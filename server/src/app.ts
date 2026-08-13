@@ -2,6 +2,7 @@ import Fastify, { type FastifyError } from "fastify";
 import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
 import multipart from "@fastify/multipart";
+import rateLimit from "@fastify/rate-limit";
 import { authRoutes } from "./routes/auth.js";
 import { accountRoutes } from "./routes/account.js";
 import { contactRoutes } from "./routes/contact.js";
@@ -25,6 +26,11 @@ export async function buildApp(opts: { logger?: boolean } = {}) {
   });
   await app.register(cookie);
   await app.register(multipart);
+  // global:false — nothing is rate-limited unless a route opts in with its
+  // own `config: { rateLimit: {...} }` (see auth.ts, contact.ts). Login,
+  // signup, password-reset and the contact form were previously guarded by
+  // hCaptcha alone, with no independent limit on request volume.
+  await app.register(rateLimit, { global: false });
 
   // Any error not already handled explicitly by a route (e.g. the DB being
   // unreachable) must never reach the client as a raw stack trace/message —

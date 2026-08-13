@@ -360,11 +360,29 @@ class Component extends DCLogic {
     window.addEventListener('nasap3d-quote-changed', this._quoteListener);
     this._loadMaterials();
     this._loadDiscountTiers();
+    // Best-effort cleanup: if the tab closes (or the user navigates
+    // elsewhere on the site) with an analyzed quote that was never added to
+    // the cart, tell the server it can delete the uploaded file right away
+    // instead of waiting for the periodic sweep to notice it's abandoned
+    // (see server/src/lib/quoteCleanup.ts). Fires on 'pagehide' rather than
+    // 'beforeunload' — the latter is unreliable on mobile and can block the
+    // navigation with a confirm dialog in some browsers, neither of which
+    // is wanted here. sendBeacon doesn't wait for a response, so this never
+    // blocks the actual navigation either way.
+    this._discardListener = () => {
+      const q = this.state.cfgQuote;
+      if (q && !this._addedToCart && this._apiBase) {
+        navigator.sendBeacon(this._apiBase + '/quotes/' + q.id + '/discard');
+      }
+    };
+    window.addEventListener('pagehide', this._discardListener);
+    import('./api-client.js').then((mod) => { this._apiBase = mod.apiBase(); });
   }
   componentWillUnmount() {
     window.removeEventListener('nasap3d-cart-changed', this._cartListener);
     window.removeEventListener('nasap3d-stock-changed', this._stockListener);
     window.removeEventListener('nasap3d-quote-changed', this._quoteListener);
+    window.removeEventListener('pagehide', this._discardListener);
     clearTimeout(this._toastTimer);
     if (this._previewHandle) this._previewHandle.dispose();
     if (this._analysisPreviewHandle) this._analysisPreviewHandle.dispose();
@@ -514,9 +532,12 @@ class Component extends DCLogic {
     const api = await this._api();
     const res = await api.addCartItem(q.id, q.quantity);
     if (!res.ok) {
-      this.setState({ cfgAnalysisError: 'Impossible d’ajouter au panier — le devis a peut-être expiré, relancez l’analyse.' });
+      this.setState({ cfgAnalysisError: 'Impossible d’ajouter au panier, réessayez.' });
       return;
     }
+    // Une fois au panier, le fichier n'est plus "en attente d'abandon" —
+    // plus la peine de le faire supprimer si l'onglet se ferme ensuite.
+    this._addedToCart = true;
     this.setState({ cartCount: res.data.lines.reduce((n, l) => n + l.qty, 0), showAddedToast: true });
     clearTimeout(this._toastTimer);
     this._toastTimer = setTimeout(() => this.setState({ showAddedToast: false }), 4000);
