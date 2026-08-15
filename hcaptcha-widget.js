@@ -22,16 +22,30 @@ function waitForHcaptcha(timeoutMs = 10000) {
 // reset it after each submit attempt, since a solved token is single-use).
 // hCaptcha only offers "normal" (~huge next to our compact forms) or
 // "compact" (narrower but taller) — neither fits well, so the "normal"
-// widget is rendered into an inner wrapper and scaled down uniformly with
-// CSS, then the outer container is resized to the scaled height so no blank
-// gap is left below it (CSS transform doesn't affect flow layout sizing).
+// widget is shrunk with CSS `zoom` instead.
+//
+// Two earlier approaches were tried and both broke in practice (seen live,
+// not just in theory): `transform: scale()` only affects paint, not
+// layout, so the container's height had to be measured and copied over by
+// hand — first a one-shot measurement (missed hCaptcha resizing its own
+// iframe a second time after the logo loaded, clipping the bottom of the
+// widget), then a ResizeObserver-based fix (still collapsed the widget to
+// a sliver in testing — the observer's first callback can fire before
+// hCaptcha's iframe has any real content, and nothing forced a re-check
+// afterward). `zoom` sidesteps the whole class of bug: unlike `transform`,
+// it's a real layout property — the browser lays out `inner` (and by
+// extension `container`, an auto-height block) as if it natively were that
+// much smaller, so there's no separate height to compute or keep in sync
+// at all, whatever hCaptcha's real size turns out to be or however many
+// times it changes.
 export async function renderHcaptcha(container, { sitekey, onToken, onExpire, scale = 0.8 }) {
   if (!container) return null;
   const hcaptcha = await waitForHcaptcha();
   container.innerHTML = '';
   const inner = document.createElement('div');
+  inner.style.zoom = scale;
   container.appendChild(inner);
-  const widgetId = hcaptcha.render(inner, {
+  return hcaptcha.render(inner, {
     sitekey,
     theme: 'dark',
     hl: 'fr',
@@ -39,27 +53,6 @@ export async function renderHcaptcha(container, { sitekey, onToken, onExpire, sc
     'expired-callback': () => { if (onExpire) onExpire(); },
     'error-callback': () => { if (onExpire) onExpire(); },
   });
-  applyScale(inner, container, scale);
-  return widgetId;
-}
-
-// The widget's real size only settles once hCaptcha's iframe has loaded and
-// been sized by its own script — on a slow connection/device that can take
-// longer than a single animation frame. A one-shot rAF check (the original
-// approach) could catch offsetHeight still at 0 and give up, leaving the
-// widget unscaled and spilling out of its container. Poll instead, same
-// pattern as waitForHcaptcha above.
-function applyScale(inner, container, scale, attempt = 0) {
-  const h = inner.offsetHeight;
-  if (!h) {
-    if (attempt > 40) return; // ~4s — give up rather than loop forever
-    setTimeout(() => applyScale(inner, container, scale, attempt + 1), 100);
-    return;
-  }
-  inner.style.transform = `scale(${scale})`;
-  inner.style.transformOrigin = 'center top';
-  container.style.height = `${Math.ceil(h * scale)}px`;
-  container.style.overflow = 'hidden';
 }
 
 export async function resetHcaptcha(widgetId) {

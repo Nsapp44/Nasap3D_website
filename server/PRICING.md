@@ -19,17 +19,68 @@ client et ne calcule jamais qu'à partir de ce qu'elle a elle-même mesuré.
 ## Étape 1 — Analyser le fichier
 
 Le fichier uploadé (STL/OBJ/STEP) est passé à **PrusaSlicer**, en ligne de
-commande, avec un profil propre à la machine choisie automatiquement selon la
-taille de la pièce (`server/slicer-profiles/`) :
+commande, avec le profil de la H2C (`server/slicer-profiles/h2c.ini` — seule
+machine réellement utilisée pour le devis instantané, voir `PRINTERS` dans
+`lib/slicer.ts`, simplifié à une seule entrée pour ne pas maintenir une vraie
+logique multi-flotte) :
 
-1. `--info` donne l'encombrement (bounding box) — sert à choisir la machine
-   (X1C/X2D 256×256×256mm, H2C 350×320×325mm) et à rejeter immédiatement une
-   pièce trop grande pour toutes vos imprimantes, avant même de trancher.
+1. `--info` donne l'encombrement (bounding box) — sert à rejeter
+   immédiatement une pièce trop grande pour le plateau de la H2C
+   (330×320×325mm), avant même de trancher.
 2. `--export-gcode` tranche réellement le modèle avec les réglages du devis
    (matériau, qualité/hauteur de couche, taux de remplissage) et produit un
    G-code dont l'en-tête contient le **temps d'impression estimé** et le
    **poids de filament utilisé** — les mêmes informations que vous verriez
    dans votre propre logiciel de tranchage.
+
+### Échelle, orientation d'impression et supports (nouveau)
+
+Trois choses affectent maintenant réellement le prix, pas seulement l'aperçu
+visuel côté client :
+
+- **Échelle** (panneau Unité/Échelle du configurateur, étape 1) — le client
+  choisit une unité (mm/cm/pouce/m, pour corriger un fichier mal exporté) et
+  un pourcentage ; le facteur combiné est envoyé au serveur (`scale` dans
+  `POST /quotes`, jamais un fichier déjà redimensionné côté client) et
+  appliqué via `--scale` de PrusaSlicer, aussi bien sur `--info` que sur
+  `--export-gcode` — confirmé pour de vrai sur un cube de 10mm connu
+  (`--scale 1.5` → `size_x = 15.000000`). Borné côté serveur à
+  [0,001 ; 2000] (`MIN_SCALE`/`MAX_SCALE` dans `routes/quotes.ts`).
+- **Orientation d'impression** (`lib/orientation.ts`) — le fichier envoyé est
+  parsé (triangles STL, ou normalisé en STL via PrusaSlicer d'abord pour
+  .obj/.step) et les 6 orientations orthogonales de la pièce sont notées
+  selon une heuristique (surface de surplomb, hauteur, surface de contact
+  avec le plateau — surplomb largement prioritaire dans le score). La
+  meilleure est appliquée avant analyse/tranchage via `--rotate-x`/
+  `--rotate-y`, donc le prix reflète la vraie orientation d'impression, pas
+  celle du fichier tel qu'exporté. Best-effort : un échec de parsing
+  n'annule jamais le devis, juste aucune rotation appliquée (0°, 0°).
+  **Bug corrigé** : la face en contact avec le plateau est par construction
+  toujours orientée vers le bas, donc elle validait aussi le test de
+  surplomb — chaque orientation candidate voyait sa propre face de contact
+  comptée en double comme un faux surplomb, ce qui pénalisait justement les
+  orientations avec une grande face d'appui plate (les meilleures en
+  pratique) et favorisait des appuis plus petits et moins stables.
+  Confirmé en vrai sur une pièce test 30×40×8mm : elle était basculée sur
+  la tranche (hauteur 40mm) au lieu de reposer à plat (hauteur 8mm,
+  l'orientation évidemment correcte). Les deux tests sont maintenant
+  mutuellement exclusifs dans `suggestOrientation()`.
+- **Supports activés** (`support_material = 1`,
+  `support_material_auto = 1`, `support_material_style = snug` dans
+  `lib/slicer.ts`) — absents du profil jusqu'à cette session : une pièce
+  avec surplombs se voyait donc estimer un temps/poids **sans** le
+  matériau/temps de support réellement nécessaire. Vérifié pour de vrai
+  sur une pièce-test avec surplomb évident : orientation + supports
+  ensemble donnent un résultat cohérent (moins de matière/temps dans la
+  bonne orientation que dans l'orientation d'origine).
+
+Le fichier gardé en stockage (téléchargé plus tard pour la production, et
+réutilisé pour tous les aperçus 3D ultérieurs — panier, "Analyse terminée")
+a l'échelle **et** l'orientation retenues directement intégrées dans le
+maillage (`exportTransformedStl` dans `lib/slicer.ts`) — jamais le fichier
+brut tel qu'uploadé dès que l'un des deux s'écarte de la valeur neutre. Ça
+évite tout risque de désaccord entre ce qui a été chiffré et ce qui est
+effectivement imprimé.
 
 ## Étape 2 — La formule de prix
 

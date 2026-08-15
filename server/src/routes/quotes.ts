@@ -6,12 +6,20 @@ import { prisma } from "../lib/prisma.js";
 import { getSessionUser } from "../lib/session.js";
 import { getOrCreateGuestSessionId } from "../lib/guestSession.js";
 import { newFileKey, saveFile, readFileByKey } from "../lib/storage.js";
-import { getModelInfo, pickPrinter, sliceModel } from "../lib/slicer.js";
+import { getModelInfo, pickPrinter, sliceModel, exportTransformedStl } from "../lib/slicer.js";
 import { computePrice } from "../lib/pricing.js";
 import { deleteQuoteJobFileIfOrphaned } from "../lib/quoteCleanup.js";
+import { parseStlTriangles, suggestOrientation } from "../lib/orientation.js";
 
 const ALLOWED_EXT = new Set([".stl", ".obj", ".step", ".stp"]);
 const MAX_FILE_BYTES = 150 * 1024 * 1024;
+// Scale is a raw multiplication factor, not a percentage (client sends
+// unitMultiplier × pct/100 already combined — see Home.dc.html/Devis
+// Instantane.dc.html _computeCfgScale()). Bounds cover the realistic
+// unit-mistake range (mm↔inch ≈25.4×, mm↔m ≈1000×) with margin either way,
+// while still rejecting garbage input outright.
+const MIN_SCALE = 0.001;
+const MAX_SCALE = 2000;
 
 function quotePublicView(q: {
   id: string; fileName: string; volumeCm3: number | null; weightG: number | null;
@@ -75,9 +83,13 @@ export async function quoteRoutes(app: FastifyInstance) {
     const qualityKey = fields.quality;
     const infillPct = parseInt(fields.infillPct, 10);
     const quantity = Math.max(1, parseInt(fields.quantity, 10) || 1);
+    const scale = fields.scale !== undefined ? parseFloat(fields.scale) : 1;
 
     if (!materialKey || !colorId || !qualityKey || !Number.isFinite(infillPct)) {
       return reply.code(400).send({ error: "invalid_body" });
+    }
+    if (!Number.isFinite(scale) || scale < MIN_SCALE || scale > MAX_SCALE) {
+      return reply.code(400).send({ error: "invalid_scale" });
     }
 
     const [material, quality] = await Promise.all([
@@ -95,7 +107,27 @@ export async function quoteRoutes(app: FastifyInstance) {
     try {
       await writeFile(tmpPath, fileBuffer);
 
-      const info = await getModelInfo(tmpPath).catch((e) => {
+      // Best-effort print-orientation suggestion (see lib/orientation.ts) —
+      // scored on the raw, unscaled geometry (rotation is scale-independent)
+      // before anything else runs. Never fails the quote on its own: a
+      // parse hiccup or an unusual/degenerate mesh just falls back to no
+      // rotation (0, 0), same as before this feature existed.
+      let rotateXDeg = 0, rotateYDeg = 0;
+      try {
+        const stlBuffer = ext === ".stl" ? fileBuffer : await exportTransformedStl(tmpPath, {});
+        const triangles = parseStlTriangles(stlBuffer);
+        const suggestion = suggestOrientation(triangles);
+        if (suggestion) {
+          rotateXDeg = suggestion.rotateXDeg;
+          rotateYDeg = suggestion.rotateYDeg;
+          request.log.info({ suggestion }, "suggestOrientation");
+        }
+      } catch (e) {
+        request.log.warn(e, "suggestOrientation failed, printing as-uploaded");
+      }
+      const transform = { scale, rotateXDeg, rotateYDeg };
+
+      const info = await getModelInfo(tmpPath, transform).catch((e) => {
         request.log.warn(e, "getModelInfo failed");
         return null;
       });
@@ -113,6 +145,7 @@ export async function quoteRoutes(app: FastifyInstance) {
         densityGCm3: material.densityGCm3,
         layerHeightMm: quality.layerHeightMm,
         infillPct,
+        ...transform,
       }).catch((e) => {
         request.log.warn(e, "sliceModel failed");
         return null;
@@ -130,8 +163,19 @@ export async function quoteRoutes(app: FastifyInstance) {
         discountTiers: tiers,
       });
 
+      // The file kept in storage (re-downloaded later for real production,
+      // and re-used for every later preview — cart, "Analyse terminée",
+      // admin) always has scale AND the suggested orientation actually
+      // baked into its geometry, so it never again needs any client-side
+      // transform to match what was priced/sliced. Always .stl output
+      // regardless of the original format (.obj/.step get normalized too —
+      // fileName keeps its original extension for display purposes only,
+      // the stored bytes are the real, final mesh).
+      const needsExport = scale !== 1 || rotateXDeg !== 0 || rotateYDeg !== 0;
+      const storedBuffer = needsExport ? await exportTransformedStl(tmpPath, transform) : fileBuffer;
+
       const fileKey = newFileKey(fileName);
-      await saveFile(fileKey, fileBuffer);
+      await saveFile(fileKey, storedBuffer);
 
       const user = await getSessionUser(request);
       const sessionId = user ? null : getOrCreateGuestSessionId(request, reply);
@@ -142,7 +186,7 @@ export async function quoteRoutes(app: FastifyInstance) {
           sessionId: sessionId ?? undefined,
           fileKey,
           fileName,
-          fileSizeBytes: fileBuffer.length,
+          fileSizeBytes: storedBuffer.length,
           materialId: material.id,
           colorId: color.id,
           qualityId: quality.id,

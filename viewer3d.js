@@ -32,8 +32,12 @@ function loadOcct() {
 // the canvas fills it) in the piece's chosen color, auto-fit so a tiny
 // piece and a large piece both read at a sensible size. `animate: false`
 // renders one still frame at a flattering angle instead of spinning
-// (used in the cart — see Cart.dc.html).
-export async function renderModelPreview(container, { fileBuffer, ext, colorHex, animate = true }) {
+// (used in the cart — see Cart.dc.html). `showGrid: true` adds a floor
+// grid + "5 cm" scale bar (used by the file-upload step's Unité/Échelle
+// panel — see Devis Instantane.dc.html/Home.dc.html) — the returned
+// handle's getSizeMm()/setScale() let that panel show live dimensions and
+// preview a scale factor without reloading/re-parsing the file.
+export async function renderModelPreview(container, { fileBuffer, ext, colorHex, animate = true, showGrid = false }) {
   const THREE = await import('./vendor/three/three.module.min.js');
   const lowerExt = ext.toLowerCase();
 
@@ -62,17 +66,66 @@ export async function renderModelPreview(container, { fileBuffer, ext, colorHex,
   // CAD-intent point (a corner, a mounting hole...), not the visual
   // center, which is what made the piece look like it was orbiting a
   // point far from itself instead of spinning in place.
+  const box0 = new THREE.Box3().setFromObject(object);
+  const center0 = box0.getCenter(new THREE.Vector3());
+  object.traverse((child) => {
+    if (child.isMesh && child.geometry) child.geometry.translate(-center0.x, -center0.y, -center0.z);
+  });
+  object.position.set(0, 0, 0);
+  // File Z = print height everywhere else in this app (PrusaSlicer's own
+  // convention — see server/src/lib/slicer.ts sizeZMm and orientation.ts,
+  // which score orientations on that same Z axis). three.js treats Y as
+  // "up" for its own floor/camera defaults, so remap Z→Y once here, on the
+  // GEOMETRY itself (not just object.rotation) so every box/size/corner
+  // computed below already reflects the final display orientation.
+  // Applied unconditionally (used to be showGrid-only) — now that the
+  // stored file's orientation is a real, server-computed value baked into
+  // its geometry (see exportTransformedStl/suggestOrientation in
+  // routes/quotes.ts), every viewer showing that file — the step-1/3 grid
+  // aperçu, the step-3 spinning "Analyse terminée" preview, and the cart —
+  // needs to agree on which axis is "up", or the same file looks upright
+  // in one and tipped over in another. Confirmed: cart's still preview
+  // (animate:false, showGrid:false) was skipping this and looked wrong
+  // relative to the aperçu.
+  object.traverse((child) => {
+    if (child.isMesh && child.geometry) child.geometry.rotateX(-Math.PI / 2);
+  });
+  // Real dimensions in the file's own units (mm, by this app's universal
+  // convention — matches bboxXMm/YMm/ZMm server-side) — exposed via the
+  // returned handle's getSizeMm() for the caller's live dimension readout.
+  // Taken pre-remap so x/y/z always mean the same physical axes as the
+  // server (getSizeMm().z stays "print height" regardless of showGrid).
+  const sizeMm = box0.getSize(new THREE.Vector3());
+
   const box = new THREE.Box3().setFromObject(object);
   const center = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3());
-  object.traverse((child) => {
-    if (child.isMesh && child.geometry) child.geometry.translate(-center.x, -center.y, -center.z);
-  });
-  object.position.set(0, 0, 0);
   const radius = Math.max(size.length() / 2, 0.001);
 
   const scene = new THREE.Scene();
   scene.add(object);
+  let grid = null;
+  if (showGrid) {
+    // Nearest "nice" 1/2/5×10^n cm size that comfortably contains the part,
+    // one division per cm — a fixed, real-world-scale ruler behind the
+    // part, so changing "Échelle" visibly grows/shrinks the part against a
+    // constant reference instead of both moving together.
+    const wantedCm = (Math.max(size.x, size.z) / 10) * 1.6;
+    const niceSteps = [5, 10, 20, 30, 50, 75, 100, 150, 200, 300, 500, 750, 1000];
+    const gridCm = niceSteps.find((n) => n >= wantedCm) || niceSteps[niceSteps.length - 1];
+    grid = new THREE.GridHelper(gridCm * 10, gridCm, 0x888888, 0x444444);
+    // Below the part's actual bottom, not exactly on it — otherwise the
+    // grid plane and the part's bottom face are perfectly coplanar, a
+    // textbook WebGL z-fighting setup (depth-test ties resolve
+    // unpredictably per pixel, so the grid visibly flickers through the
+    // part's underside). The offset has to be sized against the camera's
+    // near/far range, not just the part itself — depth-buffer precision is
+    // what actually matters here, and it degrades fast with a wide near/far
+    // ratio (see the tightened camera.near/far below, set once `dist` is
+    // known, which is what makes a small offset like this actually hold).
+    grid.position.y = box.min.y - Math.max(radius * 0.01, 0.05);
+    scene.add(grid);
+  }
   scene.add(new THREE.AmbientLight(0xffffff, 0.7));
   const key = new THREE.DirectionalLight(0xffffff, 1.1);
   key.position.set(1, 1.4, 1.2);
@@ -100,6 +153,11 @@ export async function renderModelPreview(container, { fileBuffer, ext, colorHex,
       for (const sz of [box.min.z - center.z, box.max.z - center.z])
         corners.push(new THREE.Vector3(sx, sy, sz));
 
+  let orbitDist;
+  // Reused by setScale() below to re-fit the camera when the Échelle
+  // panel changes the part's size — kept at the same outer scope as
+  // `orbitDist` regardless of `animate` so it's available either way.
+  const fitDir = new THREE.Vector3(1, 1, 1).normalize();
   if (animate) {
     // Spins continuously (rotation.y free-running, rotation.x wobbling
     // +/-0.15 rad) — the camera direction is fixed, so the fit must stay
@@ -117,18 +175,88 @@ export async function renderModelPreview(container, { fileBuffer, ext, colorHex,
     // axes, so every piece reads the same way regardless of its own shape
     // or how its file happened to be exported (used for the cart, where
     // the piece stays still, so a single fixed orientation is all that
-    // needs to fit).
-    const dir = new THREE.Vector3(1, 1, 1).normalize();
-    const dist = tightFitDistance(THREE, corners, dir, fovRad, width / height, [{ ry: 0, rx: 0 }], 1.05);
-    camera.position.copy(dir).multiplyScalar(dist);
+    // needs to fit). Grid mode uses a wider margin so the ruler grid reads
+    // clearly around the part instead of being cropped tight against it.
+    const dist = tightFitDistance(THREE, corners, fitDir, fovRad, width / height, [{ ry: 0, rx: 0 }], showGrid ? 1.8 : 1.05);
+    camera.position.copy(fitDir).multiplyScalar(dist);
+    orbitDist = dist;
   }
   camera.lookAt(0, 0, 0);
+
+  // Depth-buffer precision is dominated by the near/far RATIO, not the
+  // absolute values — the generic radius/100..radius*100 range above is
+  // fine for the auto-fit spin/cart previews (camera distance moves with
+  // it), but for the grid viewer specifically we now know the exact,
+  // fixed camera distance, so tightening around it fixes the part/grid
+  // z-fighting confirmed live (see grid.position.y above) far more
+  // reliably than a bigger offset alone would.
+  if (showGrid && orbitDist) {
+    camera.near = orbitDist * 0.05;
+    camera.far = orbitDist * 4;
+    camera.updateProjectionMatrix();
+  }
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(width, height);
   container.innerHTML = '';
   container.appendChild(renderer.domElement);
+
+  // Drag-to-inspect + wheel/button zoom for the grid viewer only (it never
+  // auto-spins, so there'd otherwise be no way to see the part from
+  // another angle) — the CAMERA orbits around the fixed part+grid, exactly
+  // like PrusaSlicer's own viewer (or any real CAD/slicer tool) — not the
+  // part spinning in place on a fixed camera, which was the first version
+  // of this and read wrong (the grid, standing in for the physical print
+  // bed, should never itself appear to move).
+  let onPointerDown, onPointerMove, onPointerUp, onWheel;
+  let zoomIn, zoomOut;
+  // Hoisted so setScale() (defined on the returned handle, below) can also
+  // call it after re-fitting orbitDist to a newly scaled part — declared
+  // here rather than staying local to the `if (showGrid)` block it's
+  // created in, since a closure keeps working correctly when invoked from
+  // outside that block as long as it was DEFINED inside it.
+  let updateCamera = null;
+  if (showGrid) {
+    let dragging = false, lastX = 0, lastY = 0, zoom = 1;
+    // Spherical angles derived from the isometric start position set
+    // above, so the drag continues smoothly from exactly where the part
+    // was already framed instead of snapping to a different angle.
+    let theta = Math.atan2(camera.position.x, camera.position.z);
+    let phi = Math.acos(THREE.MathUtils.clamp(camera.position.y / orbitDist, -1, 1));
+    updateCamera = () => {
+      const r = orbitDist * zoom;
+      camera.position.set(
+        r * Math.sin(phi) * Math.sin(theta),
+        r * Math.cos(phi),
+        r * Math.sin(phi) * Math.cos(theta),
+      );
+      camera.lookAt(0, 0, 0);
+    };
+    const setZoom = (z) => { zoom = THREE.MathUtils.clamp(z, 0.25, 4); updateCamera(); renderer.render(scene, camera); };
+    onPointerDown = (e) => { dragging = true; lastX = e.clientX; lastY = e.clientY; container.style.cursor = 'grabbing'; };
+    onPointerMove = (e) => {
+      if (!dragging) return;
+      theta -= (e.clientX - lastX) * 0.008;
+      // Clamped just shy of straight up/down — exactly at the pole makes
+      // "left/right" drag direction undefined (gimbal lock), same reason
+      // every orbit-camera implementation avoids the exact pole.
+      phi = THREE.MathUtils.clamp(phi - (e.clientY - lastY) * 0.008, 0.05, Math.PI - 0.05);
+      lastX = e.clientX; lastY = e.clientY;
+      updateCamera();
+      renderer.render(scene, camera);
+    };
+    onPointerUp = () => { dragging = false; container.style.cursor = 'grab'; };
+    onWheel = (e) => { e.preventDefault(); setZoom(zoom * (e.deltaY > 0 ? 1.12 : 1 / 1.12)); };
+    container.style.cursor = 'grab';
+    container.style.touchAction = 'none';
+    container.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    container.addEventListener('wheel', onWheel, { passive: false });
+    zoomIn = () => setZoom(zoom / 1.25);
+    zoomOut = () => setZoom(zoom * 1.25);
+  }
 
   let disposed = false;
   let frameId = null;
@@ -144,10 +272,65 @@ export async function renderModelPreview(container, { fileBuffer, ext, colorHex,
     renderer.render(scene, camera);
   }
 
+  const gridBottomLocal = box.min.y; // pre-scale, local space — see setScale()
+
   return {
+    // Real X/Y/Z in mm, at scale 1 (unscaled) — the file's own axes, same
+    // meaning as the server's bboxXMm/YMm/ZMm regardless of showGrid's
+    // display-only Z→Y remap.
+    getSizeMm() {
+      return { x: sizeMm.x, y: sizeMm.y, z: sizeMm.z };
+    },
+    // Visually previews a scale factor (1 = 100%) without reloading the
+    // file — keeps the part's bottom resting on the grid at any scale
+    // (object.position.y compensates for the fact that a uniform scale
+    // from the origin would otherwise lift or sink that bottom edge).
+    setScale(factor) {
+      const posY = gridBottomLocal - factor * gridBottomLocal;
+      object.scale.setScalar(factor);
+      object.position.y = posY;
+      // Re-fit the camera distance to the newly scaled part — without
+      // this, only the object grew/shrank while the camera stayed at its
+      // original distance, so a small part scaled up (e.g. 1000%) grew
+      // straight past the frame and became invisible, confirmed live. The
+      // grid itself is left alone on purpose (still the fixed real-world
+      // reference — see its own comment above); only the camera adapts,
+      // at the same drag angle/zoom the customer already set (theta/phi/
+      // zoom, captured by updateCamera()'s closure) so this never resets
+      // their view. `corners` are offsets from the object's own center at
+      // scale 1 with position (0,0,0) — scaling them by `factor` alone
+      // would ignore the compensating Y shift above (`posY`, which keeps
+      // the part's bottom resting on the grid, and grows large at extreme
+      // scales), so it's added back in to get each corner's real world
+      // position.
+      if (showGrid && updateCamera) {
+        const scaledCorners = corners.map((c) => {
+          const sc = c.clone().multiplyScalar(factor);
+          sc.y += posY;
+          return sc;
+        });
+        orbitDist = tightFitDistance(THREE, scaledCorners, fitDir, fovRad, width / height, [{ ry: 0, rx: 0 }], 1.8);
+        camera.near = orbitDist * 0.05;
+        camera.far = orbitDist * 4;
+        camera.updateProjectionMatrix();
+        updateCamera();
+      }
+      renderer.render(scene, camera);
+    },
+    // Grid viewer only (undefined otherwise) — same zoom the mouse wheel
+    // drives, for an explicit +/− button pair (see Devis Instantane.dc.html/
+    // Home.dc.html step-1 panel).
+    zoomIn,
+    zoomOut,
     dispose() {
       disposed = true;
       if (frameId) cancelAnimationFrame(frameId);
+      if (onPointerDown) {
+        container.removeEventListener('pointerdown', onPointerDown);
+        window.removeEventListener('pointermove', onPointerMove);
+        container.removeEventListener('wheel', onWheel);
+        window.removeEventListener('pointerup', onPointerUp);
+      }
       renderer.dispose();
       object.traverse((child) => {
         if (child.geometry) child.geometry.dispose();

@@ -29,6 +29,23 @@ export async function customerOrderRoutes(app: FastifyInstance) {
     });
   });
 
+  // Customer-initiated cancellation — only while the order hasn't been
+  // reviewed yet (EXPERTISE): no payment has been taken at this point, so
+  // there's nothing to refund, and a hard delete is safe (no Invoice can
+  // exist yet — see Invoice.orderId, only ever created from the Stripe
+  // webhook after payment). Cascades to OrderItem via onDelete: Cascade in
+  // the schema, so the order disappears everywhere, admin included, as if
+  // it had never been placed.
+  app.delete("/orders/:id", { preHandler: requireAuth }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const order = await prisma.order.findUnique({ where: { id } });
+    if (!order || order.userId !== request.user!.id) return reply.code(404).send({ error: "not_found" });
+    if (order.status !== "EXPERTISE") return reply.code(409).send({ error: "not_cancellable" });
+
+    await prisma.order.delete({ where: { id } });
+    return reply.send({ ok: true });
+  });
+
   app.get("/invoices", { preHandler: requireAuth }, async (request, reply) => {
     const invoices = await prisma.invoice.findMany({
       where: { userId: request.user!.id },

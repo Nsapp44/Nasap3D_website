@@ -11,10 +11,23 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./responsive.css">
+<link rel="stylesheet" href="./vendor/intl-tel-input/css/intlTelInput.min.css">
 <style>
 body{margin:0;background:#161514;font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 a{color:#ff5a3c}
 a:hover{color:#ff7a5c}
+/* intl-tel-input, restylé pour matcher les autres champs du formulaire
+   (voir les variables --iti-* déclarées par la lib elle-même — pas besoin
+   de repartir de zéro sur la structure/positionnement, juste les couleurs). */
+.iti{display:block;width:100%;--iti-border-color:rgba(255,255,255,.15);--iti-country-selector-bg:transparent;--iti-hover-color:rgba(255,255,255,.08);--iti-icon-color:rgba(255,255,255,.5)}
+.iti input.iti__tel-input{width:100%;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none}
+.iti__selected-dial-code{color:#e8e6e1}
+.iti__country-list{background:#211f1c;border:1px solid rgba(255,255,255,.15);color:#e8e6e1;border-radius:6px}
+.iti__country{color:#e8e6e1}
+.iti__country.iti__highlight,.iti__country:hover{background:rgba(255,90,60,.12)}
+.iti__divider{border-bottom:1px solid rgba(255,255,255,.1)}
+.iti__search-input{background:#161514;color:#e8e6e1;border:1px solid rgba(255,255,255,.15);border-radius:6px}
+.iti__search-input::placeholder{color:rgba(255,255,255,.4)}
 .printer-loader-svg{width:100%;height:100%;display:block}
 .printer-loader-svg .filament{fill:none;stroke:currentColor;stroke-width:6;stroke-linecap:round;stroke-linejoin:round}
 .printer-loader-svg .stack{animation:plShiftDown 2.5s linear infinite}
@@ -38,6 +51,7 @@ a:hover{color:#ff7a5c}
 <script src="./navguard.js"></script>
 <script src="./mobile-nav.js"></script>
 <script src="./vendor/boxtal-parcel-point-map.js"></script>
+<script src="./vendor/intl-tel-input/js/intlTelInputWithUtils.min.js"></script>
 </helmet>
 
 <div style="background:#161514;min-height:100vh">
@@ -58,6 +72,7 @@ a:hover{color:#ff7a5c}
     </div>
     <div style="display:flex;align-items:center;gap:18px;font:500 12px 'Inter',sans-serif;color:rgba(255,255,255,.75)">
       <a href="Account.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Compte</a>
+      <sc-if value="{{ isLoggedIn }}" hint-placeholder-val="{{ false }}"><a href="Account.dc.html?view=settings" title="Réglages du compte" style="cursor:pointer;color:inherit;display:inline-flex;align-items:center;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg></a></sc-if>
       <span style="position:relative;color:#f3f1ec;border-bottom:2px solid #ff5a3c;padding-bottom:4px;display:inline-flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg><span style="position:absolute;top:-9px;right:-9px;width:15px;height:15px;border-radius:50%;background:#ff5a3c;color:#161514;font:700 8.5px/15px 'Inter',sans-serif;text-align:center">{{ cartCount }}</span></span>
     </div>
   </div>
@@ -126,11 +141,13 @@ a:hover{color:#ff7a5c}
           <div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.4);margin-top:8px">En dessous de {{ minOrder }} €, des frais s'appliquent — ajoutez des pièces pour les éviter.</div>
         </sc-if>
 
-        <div style="display:flex;gap:8px;margin-top:18px">
+        <div style="margin-top:18px">
           <sc-if value="{{ needsLogin }}" hint-placeholder-val="{{ false }}">
-            <a href="Account.dc.html" style="flex:1;text-decoration:none;display:flex;background:#635bff;color:#fff;font:600 12.5px 'Inter',sans-serif;padding:12px;border-radius:7px;text-align:center;align-items:center;justify-content:center">Se connecter</a>
+            <a href="Account.dc.html" style="display:flex;text-decoration:none;background:#ff5a3c;color:#161514;font:600 12.5px 'Inter',sans-serif;padding:12px;border-radius:7px;text-align:center;align-items:center;justify-content:center;transition:transform .2s ease" style-hover="transform:scale(1.02)">Se connecter</a>
           </sc-if>
-          <div onClick="{{ onGoToCheckout }}" style="{{ goToCheckoutStyle }}">Passer la commande</div>
+          <sc-if value="{{ readyToCheckout }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ onGoToCheckout }}" style="display:flex;background:#ff5a3c;color:#161514;font:600 12.5px 'Inter',sans-serif;padding:12px;border-radius:7px;text-align:center;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s ease" style-hover="transform:scale(1.02)">Passer la commande</div>
+          </sc-if>
         </div>
         <div style="font:400 9.5px 'Inter',sans-serif;color:rgba(255,255,255,.35);margin-top:10px;text-align:center">Livraison ou retrait à choisir à l'étape suivante</div>
       </div>
@@ -174,17 +191,17 @@ a:hover{color:#ff7a5c}
         </div>
 
         <sc-if value="{{ isPickup }}" hint-placeholder-val="{{ false }}">
-          <div style="font:400 11px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:12px">Vous récupérez la commande directement à l'atelier, sur rendez-vous : <strong style="color:#e8e6e1">{{ workshopAddress }}</strong>.</div>
+          <div style="font:400 11px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:12px">Vous récupérez la commande directement à l'atelier, sur rendez-vous : <strong style="color:#e8e6e1">{{ workshopAddress }}</strong>. Dès que votre pièce est prête, nous vous appelons pour convenir d'un horaire.</div>
           <div style="display:flex;flex-direction:column;gap:8px">
             <input value="{{ shipName }}" onChange="{{ onShipName }}" type="text" placeholder="Nom et prénom" style="width:100%;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
-            <input value="{{ shipPhone }}" onChange="{{ onShipPhone }}" type="tel" placeholder="Téléphone" style="width:100%;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+            <input ref="{{ phoneInputRef }}" type="tel" placeholder="Téléphone" />
           </div>
         </sc-if>
 
         <sc-if value="{{ isShipping }}" hint-placeholder-val="{{ false }}">
           <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
             <input value="{{ shipName }}" onChange="{{ onShipName }}" type="text" placeholder="Nom et prénom" style="width:100%;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
-            <input value="{{ shipPhone }}" onChange="{{ onShipPhone }}" type="tel" placeholder="Téléphone" style="width:100%;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
+            <input ref="{{ phoneInputRef }}" type="tel" placeholder="Téléphone" />
             <div style="position:relative">
               <input value="{{ shipAddress }}" onChange="{{ onShipAddress }}" onFocus="{{ onShipAddressFocus }}" onBlur="{{ onShipAddressBlur }}" type="text" placeholder="Adresse" autocomplete="off" style="width:100%;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;padding:0 12px;font:11.5px 'Inter',sans-serif;color:#e8e6e1;outline:none" />
               <sc-if value="{{ hasAddressSuggestions }}" hint-placeholder-val="{{ false }}">
@@ -206,7 +223,7 @@ a:hover{color:#ff7a5c}
             </select>
           </div>
 
-          <div onClick="{{ onQuoteShipping }}" style="{{ quoteShippingButtonStyle }}">{{ quoteShippingButtonLabel }}</div>
+          <div onClick="{{ onQuoteShipping }}" style="{{ quoteShippingButtonStyle }}" style-hover="transform:scale(1.02)">{{ quoteShippingButtonLabel }}</div>
 
           <sc-if value="{{ hasShippingError }}" hint-placeholder-val="{{ false }}">
             <div style="margin-top:10px;font:600 11px 'Inter',sans-serif;color:#ff8a70">{{ shippingError }}</div>
@@ -240,7 +257,7 @@ a:hover{color:#ff7a5c}
               <sc-if value="{{ hasRelayMapNotice }}" hint-placeholder-val="{{ false }}">
                 <div style="font:600 11px 'Inter',sans-serif;color:#ff8a70;margin-bottom:8px">{{ relayMapNotice }}</div>
               </sc-if>
-              <div id="boxtal-relay-map" style="height:380px;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.1)"></div>
+              <div id="boxtal-relay-map" style="height:380px;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.1);background:#fff"></div>
             </div>
           </sc-if>
         </sc-if>
@@ -268,11 +285,11 @@ a:hover{color:#ff7a5c}
         </sc-if>
 
         <sc-if value="{{ needsLogin }}" hint-placeholder-val="{{ false }}">
-          <a href="Account.dc.html" style="text-decoration:none;display:flex;margin-top:18px;background:#635bff;color:#fff;font:600 13px 'Inter',sans-serif;padding:12px;border-radius:7px;text-align:center;align-items:center;justify-content:center">Se connecter pour payer</a>
+          <a href="Account.dc.html" style="text-decoration:none;display:flex;margin-top:18px;background:#635bff;color:#fff;font:600 13px 'Inter',sans-serif;padding:12px;border-radius:7px;text-align:center;align-items:center;justify-content:center">Se connecter pour commander</a>
         </sc-if>
         <sc-if value="{{ isIdle }}" hint-placeholder-val="{{ true }}">
           <div onClick="{{ startCheckout }}" style="{{ checkoutButtonStyle }}">
-            <span>Payer avec Stripe</span>
+            <span>Passer la commande pour expertise</span>
           </div>
         </sc-if>
         <sc-if value="{{ isRedirecting }}" hint-placeholder-val="{{ false }}">
@@ -304,23 +321,25 @@ a:hover{color:#ff7a5c}
 <polygon points="35,42 65,42 53,55 47,55"/>
 </g>
 </svg></span>
-            <span>Redirection vers Stripe…</span>
+            <span>Envoi de la commande…</span>
           </div>
         </sc-if>
-        <div style="font:400 9.5px 'Inter',sans-serif;color:rgba(255,255,255,.35);margin-top:10px;text-align:center">Paiement sécurisé — carte, Apple Pay, Google Pay</div>
+        <div style="font:400 9.5px 'Inter',sans-serif;color:rgba(255,255,255,.35);margin-top:10px;text-align:center">Aucun paiement à cette étape — réglé une fois la commande acceptée</div>
       </div>
 
     </div>
   </sc-if>
 
-  <!-- SUCCESS -->
-  <sc-if value="{{ isPaid }}" hint-placeholder-val="{{ false }}">
-    <div style="max-width:900px;margin:0 auto;padding:0 24px 60px;text-align:center">
-      <div style="border:1px solid rgba(255,90,60,.3);background:rgba(255,90,60,.08);border-radius:12px;padding:44px 24px">
-        <div style="width:44px;height:44px;border-radius:50%;background:#ff5a3c;color:#161514;font:700 20px/44px 'Inter',sans-serif;margin:0 auto 16px">✓</div>
-        <div style="font:700 18px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:8px">Paiement confirmé</div>
-        <div style="font:400 12px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55);margin-bottom:18px">Suivez votre commande depuis votre espace compte.</div>
-        <a href="Account.dc.html" style="text-decoration:none;display:inline-block;background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:10px 18px;border-radius:6px">Voir ma commande</a>
+  <!-- POPUP : confirmation d'envoi de la commande, avant redirection vers
+       le compte — le client doit voir et acter le message (bouton
+       "Compris !") plutôt que risquer de le manquer dans un bandeau sur
+       la page suivante. -->
+  <sc-if value="{{ orderPlacedPopup }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(10,10,10,.7);display:flex;align-items:center;justify-content:center;z-index:50;animation:popupBackdropIn .2s ease">
+      <div style="width:380px;max-width:90vw;background:#1a1917;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:26px;text-align:center;animation:popupModalIn .35s cubic-bezier(.2,.9,.3,1.1)">
+        <div style="font:700 16px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:10px">Commande envoyée !</div>
+        <div style="font:400 12px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.65);margin-bottom:20px">Votre commande est en expertise : nous vérifions qu'elle peut être réalisée telle quelle (24 à 48h maximum). Vous serez averti par email dès qu'elle sera acceptée et payable — ou revenez consulter votre compte d'ici là.</div>
+        <div onClick="{{ confirmOrderPlaced }}" style="display:inline-block;background:#ff5a3c;color:#161514;font:600 12.5px 'Inter',sans-serif;padding:10px 22px;border-radius:6px;cursor:pointer">Compris !</div>
       </div>
     </div>
   </sc-if>
@@ -377,34 +396,61 @@ class Component extends DCLogic {
     // 'checkout' = panier verrouillé + livraison + paiement (étape 2), atteint
     // via "Passer la commande" (connexion obligatoire — voir goToCheckout).
     step: 'cart',
-    checkoutState: 'idle', checkoutError: null,
+    checkoutState: 'idle', checkoutError: null, orderPlacedPopup: false,
     // Étape 1 du bloc Livraison : null (pas choisi), 'PICKUP' (gratuit, à
     // l'atelier) ou 'SHIPPING' (révèle le formulaire d'adresse ci-dessous).
     deliveryMode: null,
-    shipName: '', shipPhone: '', shipAddress: '', shipCity: '', shipZipcode: '', shipCountry: 'FR',
+    shipName: '', shipAddress: '', shipCity: '', shipZipcode: '', shipCountry: 'FR',
     addressSuggestions: [], addressSearchBusy: false,
     ratesState: 'idle', rates: null, shippingError: null,
     shipMode: null, relayPoint: null, relayMapNotice: null
   };
+  phoneInputRef = React.createRef();
 
   componentDidMount() {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('paid') === '1') this.setState({ checkoutState: 'paid' });
-    if (params.get('canceled') === '1') this.setState({ checkoutError: 'Paiement annulé — votre panier est toujours là.' });
-    window.history.replaceState({}, '', 'Cart.dc.html');
-
     this._loadCart();
     this._listener = () => this._loadCart();
     window.addEventListener('nasap3d-cart-changed', this._listener);
     this._checkAuth();
-    // Preloaded here (not on first keystroke) so it's already available
-    // synchronously in renderVals() by the time the user reaches the phone
-    // field.
-    import('./phone.js').then((mod) => { this._phoneMod = mod; this.setState({}); });
+    this._syncPhoneWidget();
+  }
+  // Le champ téléphone (pickup ou shipping — un seul monté à la fois, jamais
+  // les deux) est un <input> non contrôlé géré par intl-tel-input : la
+  // valeur/le formatage/la validation viennent de son instance (this._iti),
+  // pas du state React. Comme pour la case hCaptcha dans Account.dc.html
+  // (voir son componentDidUpdate), toute la page se re-rend au moindre
+  // setState, donc il faut revérifier à chaque update si le <input> vient
+  // d'apparaître (bascule pickup/shipping) sans widget monté dessus.
+  componentDidUpdate() {
+    this._syncPhoneWidget();
+  }
+  _syncPhoneWidget() {
+    const el = this.phoneInputRef.current;
+    if (el && this._itiEl !== el) {
+      // Bascule retrait/expédition : chaque branche a son propre <input>
+      // (jamais montés en même temps), donc son propre widget — sans ça, le
+      // numéro déjà tapé serait perdu au changement de mode.
+      const previousNumber = this._iti ? this._iti.getNumber('E164') || this._itiEl.value : '';
+      if (this._iti) this._iti.destroy();
+      this._iti = window.intlTelInput(el, { initialCountry: 'fr', strictMode: true, separateDialCode: true });
+      if (previousNumber) this._iti.setNumber(previousNumber);
+      this._itiEl = el;
+      // Un setState vide force juste un nouveau renderVals() (donc
+      // recalcule shippingReady/canCheckout à partir de this._iti sans
+      // changer la valeur de l'input lui-même, qu'intl-tel-input gère seul).
+      const onPhoneActivity = () => this.setState({});
+      el.addEventListener('input', onPhoneActivity);
+      el.addEventListener('countrychange', onPhoneActivity);
+    } else if (!el && this._itiEl) {
+      if (this._iti) this._iti.destroy();
+      this._iti = null;
+      this._itiEl = null;
+    }
   }
   componentWillUnmount() {
     window.removeEventListener('nasap3d-cart-changed', this._listener);
-    if (this._previewHandles) for (const handle of this._previewHandles.values()) handle.dispose();
+    if (this._previewHandles) for (const entry of this._previewHandles.values()) entry.handle.dispose();
+    if (this._iti) this._iti.destroy();
   }
   async _api() {
     if (!this._apiMod) this._apiMod = (await import('./api-client.js')).api;
@@ -431,19 +477,36 @@ class Component extends DCLogic {
   // its chosen color — see viewer3d.js. Fetches the original file once per
   // line and skips lines already rendered; disposes lines no longer in the
   // cart.
+  //
+  // Each entry also remembers the exact DOM node the canvas was mounted
+  // into, not just the handle — a line's ref can end up pointing at a
+  // BRAND NEW node without the line's id itself ever changing (removing a
+  // DIFFERENT line reshuffles the list and can remount every card after
+  // it — confirmed live: removing item 1 left item 2's canvas orphaned in
+  // the destroyed old node, showing a blank card). Comparing the stored
+  // container against the ref's CURRENT node catches that in general,
+  // instead of only the cart/checkout step-change case this used to rely
+  // on callers remembering to handle via _resetLinePreviews() — every
+  // mutation (removeItem, incQty/decQty, a fresh _loadCart) is now safe
+  // automatically, not just the ones someone remembered to wire up.
   async _renderLinePreviews() {
     const lines = this.state.cart.lines;
     this._previewHandles = this._previewHandles || new Map();
     const activeIds = new Set(lines.map(l => l.id));
-    for (const [id, handle] of this._previewHandles) {
-      if (!activeIds.has(id)) { handle.dispose(); this._previewHandles.delete(id); }
+    for (const [id, entry] of this._previewHandles) {
+      if (!activeIds.has(id)) { entry.handle.dispose(); this._previewHandles.delete(id); }
     }
     if (!lines.length) return;
     const { isRenderableExt, renderModelPreview } = await import('./viewer3d.js');
     const api = await this._api();
     for (const line of lines) {
-      if (this._previewHandles.has(line.id)) continue;
       const ref = this._getLineRef(line.id);
+      const existing = this._previewHandles.get(line.id);
+      if (existing) {
+        if (existing.container === ref.current) continue; // still mounted where we left it
+        existing.handle.dispose();
+        this._previewHandles.delete(line.id);
+      }
       if (!ref.current) continue;
       const ext = '.' + line.fileName.split('.').pop().toLowerCase();
       if (!isRenderableExt(ext)) continue; // STEP etc. — leave the neutral background
@@ -455,7 +518,7 @@ class Component extends DCLogic {
       const buffer = await res.arrayBuffer();
       if (!ref.current) continue; // unmounted while the file was downloading
       const handle = await renderModelPreview(ref.current, { fileBuffer: buffer, ext, colorHex: line.colorHex, animate: false });
-      if (handle) this._previewHandles.set(line.id, handle);
+      if (handle) this._previewHandles.set(line.id, { handle, container: ref.current });
     }
   }
   async incQty(id, qty) {
@@ -490,7 +553,7 @@ class Component extends DCLogic {
   }
   _resetLinePreviews() {
     if (!this._previewHandles) return;
-    for (const handle of this._previewHandles.values()) handle.dispose();
+    for (const entry of this._previewHandles.values()) entry.handle.dispose();
     this._previewHandles.clear();
   }
   selectPickup() {
@@ -498,10 +561,6 @@ class Component extends DCLogic {
   }
   selectShipping() {
     this.setState({ deliveryMode: 'SHIPPING' });
-  }
-  async onPhoneChange(value) {
-    if (!this._phoneMod) this._phoneMod = await import('./phone.js');
-    this.setState({ shipPhone: this._phoneMod.formatPhoneAsYouType(value), shippingError: null });
   }
   _updateShipField(key, value) {
     // Any address edit invalidates a previously fetched rate/selection —
@@ -519,25 +578,20 @@ class Component extends DCLogic {
     clearTimeout(this._hideSuggestionsTimer);
     this._hideSuggestionsTimer = setTimeout(() => this.setState({ addressSuggestions: [] }), 150);
   }
-  // Autocomplétion d'adresse — deux fournisseurs selon le pays choisi,
-  // chacun normalisé vers la même forme { displayLabel, address, city,
-  // postcode } (voir _normalizeSuggestion) pour que selectAddressSuggestion
-  // n'ait pas à savoir lequel a répondu :
-  // - France : api-adresse.data.gouv.fr (Base Adresse Nationale), la base
-  //   officielle française — gratuite, sans clé, la plus précise pour la FR.
-  // - Autres pays UE : Photon (photon.komoot.io, données OpenStreetMap),
-  //   gratuit et sans clé aussi, couvre toute l'Europe (la BAN ne couvre
-  //   que la France).
+  // Autocomplétion d'adresse — un seul fournisseur pour tous les pays :
+  // Photon (photon.komoot.io, données OpenStreetMap), gratuit et sans clé,
+  // couvre la France et le reste de l'UE. Avant, la France passait par
+  // api-adresse.data.gouv.fr (Base Adresse Nationale) et les autres pays par
+  // Photon — deux formats de réponse différents à normaliser en parallèle
+  // pour un gain de précision marginal en France, pour plus de complexité
+  // qu'utile. Un seul fournisseur = un seul comportement à déboguer.
   _searchAddress(query) {
     clearTimeout(this._addressSearchTimer);
     if (query.trim().length < 4) { this.setState({ addressSuggestions: [] }); return; }
-    const country = this.state.shipCountry;
     this._addressSearchTimer = setTimeout(async () => {
       this.setState({ addressSearchBusy: true });
       try {
-        const url = country === 'FR'
-          ? 'https://api-adresse.data.gouv.fr/search/?limit=5&q=' + encodeURIComponent(query)
-          : 'https://photon.komoot.io/api/?limit=5&lang=fr&q=' + encodeURIComponent(query) + '&osm_tag=place&osm_tag=building&osm_tag=highway';
+        const url = 'https://photon.komoot.io/api/?limit=5&lang=fr&q=' + encodeURIComponent(query) + '&osm_tag=place&osm_tag=building&osm_tag=highway';
         const res = await fetch(url);
         const data = await res.json();
         // The debounced request can resolve after the user already tabbed
@@ -545,17 +599,17 @@ class Component extends DCLogic {
         // longer focused, however late the network response lands.
         if (!this._addressFocused) { this.setState({ addressSearchBusy: false }); return; }
         const features = (data && data.features) || [];
-        // Les deux fournisseurs mélangent des résultats précis (avec numéro)
-        // et des résultats "rue seule" (sans numéro, ex: zone industrielle
-        // pas encore numérotée dans leur base) pour la même requête — sans
-        // tri, un résultat sans numéro peut apparaître avant celui avec le
-        // numéro que l'utilisateur a pourtant tapé, et un clic dessus efface
+        // Photon mélange des résultats précis (avec numéro) et des résultats
+        // "rue seule" (sans numéro, ex: zone industrielle pas encore
+        // numérotée dans sa base) pour la même requête — sans tri, un
+        // résultat sans numéro peut apparaître avant celui avec le numéro
+        // que l'utilisateur a pourtant tapé, et un clic dessus efface
         // silencieusement ce numéro. On garde les deux (le sans-numéro reste
         // le seul choix possible dans les cas où l'adresse n'a réellement
         // pas de numéro), mais les résultats avec numéro remontent en
         // premier, et les autres sont explicitement annotés.
         const suggestions = features
-          .map((f) => this._normalizeSuggestion(f, country))
+          .map((f) => this._normalizeSuggestion(f))
           .filter((s) => s.address)
           .sort((a, b) => (b.hasNumber ? 1 : 0) - (a.hasNumber ? 1 : 0));
         this.setState({ addressSuggestions: suggestions, addressSearchBusy: false });
@@ -564,18 +618,10 @@ class Component extends DCLogic {
       }
     }, 300);
   }
-  _normalizeSuggestion(feature, country) {
-    const p = feature.properties;
-    if (country === 'FR') {
-      // BAN: name = "12 rue de Rivoli" quand p.type === 'housenumber', mais
-      // peut aussi être juste "Rue de Rivoli" (p.type === 'street', pas de
-      // numéro) — la même recherche renvoie souvent les deux.
-      const hasNumber = p.type === 'housenumber';
-      const displayLabel = hasNumber ? p.label : p.label + ' (sans numéro)';
-      return { displayLabel, address: p.name, city: p.city || '', postcode: p.postcode || '', hasNumber };
-    }
+  _normalizeSuggestion(feature) {
     // Photon: no single "name"/"label" — built from parts (housenumber may
     // be absent for a street-level-only match).
+    const p = feature.properties;
     const hasNumber = !!p.housenumber;
     const address = [p.housenumber, p.street || p.name].filter(Boolean).join(' ');
     const displayLabel = [address, p.postcode, p.city].filter(Boolean).join(' ') + (hasNumber ? '' : ' (sans numéro)');
@@ -593,13 +639,12 @@ class Component extends DCLogic {
   }
   async quoteShipping() {
     const s = this.state;
-    if (!this._phoneMod) this._phoneMod = await import('./phone.js');
     if (!s.shipName.trim() || !s.shipAddress.trim() || !s.shipCity.trim() || !s.shipZipcode.trim()) {
       this.setState({ shippingError: 'Renseignez le nom, téléphone, adresse, code postal et ville.' });
       return;
     }
-    if (!this._phoneMod.isValidPhone(s.shipPhone)) {
-      this.setState({ shippingError: 'Numéro de téléphone invalide (10 chiffres, format français).' });
+    if (!this._iti || !this._iti.isValidNumber()) {
+      this.setState({ shippingError: 'Numéro de téléphone invalide.' });
       return;
     }
     this.setState({ ratesState: 'loading', shippingError: null, shipMode: null, relayPoint: null });
@@ -634,6 +679,11 @@ class Component extends DCLogic {
 
     if (!this._map) {
       this._mapReady = false;
+      const accessToken = await this._apiToken();
+      if (!accessToken) {
+        this.setState({ relayMapNotice: 'Carte des points relais indisponible pour le moment, réessayez plus tard.' });
+        return;
+      }
       // debug:true + les deux callbacks ci-dessous : le widget ne remonte
       // normalement AUCUN signal exploitable côté parent (searchParcelPoints
       // n'a de callback que pour "un point a été cliqué", jamais pour "la
@@ -648,9 +698,22 @@ class Component extends DCLogic {
       // l'attente explicite de onMapLoaded avant le tout premier envoi.
       this._map = new window.BoxtalParcelPointMap.BoxtalParcelPointMap({
         domToLoadMap: '#boxtal-relay-map',
-        accessToken: await this._apiToken(),
+        accessToken,
         debug: true,
-        config: { locale: 'fr', options: { autoSelectNearestParcelPoint: false, primaryColor: '#ff5a3c' } },
+        // parcelPointNetworks est obligatoire (pas optionnel malgré son
+        // absence d'effet visible si on l'omet à la création — confirmé en
+        // vrai : Boxtal fait `config.parcelPointNetworks.map(...)` tel quel
+        // dans searchParcelPoints(), d'où le crash "Cannot read properties
+        // of undefined (reading 'map')" observé jusqu'ici sans jamais un
+        // seul point relais affiché). Le code réseau n'est PAS le même que
+        // l'operatorCode Boxtal ("MONR", utilisé pour les tarifs — voir
+        // lib/boxtal.ts) : l'API carte utilise son propre référentiel,
+        // suffixé "_NETWORK" (confirmé en vrai en interrogeant
+        // maps.boxtal.com/api/v2/parcel-point sans filtre, qui renvoie la
+        // liste réelle des réseaux du compte dans searchNetworks — "MONR"
+        // seul est rejeté avec "No ParcelPoint Network found with code
+        // MONR"). Ce site ne propose que Mondial Relay en point relais.
+        config: { locale: 'fr', parcelPointNetworks: [{ code: 'MONR_NETWORK' }], options: { autoSelectNearestParcelPoint: false, primaryColor: '#ff5a3c' } },
         onMapLoaded: () => {
           console.info('[BoxtalMaps] carte chargée (iframe prête)');
           this._mapReady = true;
@@ -685,15 +748,19 @@ class Component extends DCLogic {
       });
     });
   }
+  // Un vrai JWT temporaire (1h), minté côté serveur (voir
+  // lib/boxtal.ts getBoxtalMapAccessToken) — pas une clé statique passée
+  // telle quelle au widget, qui chargeait la carte sans erreur mais ne
+  // renvoyait jamais aucun point relais avec l'ancienne clé.
   async _apiToken() {
-    const mod = await import('./api-client.js');
-    return mod.BOXTAL_MAP_ACCESS_TOKEN;
+    const api = await this._api();
+    const res = await api.getBoxtalMapToken();
+    return res.ok && res.data ? res.data.accessToken : null;
   }
   async startCheckout() {
     if (!this.state.loggedIn) return;
     const s = this.state;
-    if (!this._phoneMod) this._phoneMod = await import('./phone.js');
-    if (!this._phoneMod.isValidPhone(s.shipPhone)) return;
+    if (!this._iti || !this._iti.isValidNumber()) return;
     if (s.deliveryMode === 'PICKUP') {
       if (!s.shipName.trim()) return;
     } else {
@@ -701,7 +768,7 @@ class Component extends DCLogic {
     }
     this.setState({ checkoutState: 'redirecting', checkoutError: null });
     const api = await this._api();
-    const phone = this._phoneMod.phoneDigits(s.shipPhone);
+    const phone = this._iti.getNumber('E164');
     const shipping = s.deliveryMode === 'PICKUP'
       ? { mode: 'PICKUP', recipient: { name: s.shipName, phone } }
       : {
@@ -710,21 +777,27 @@ class Component extends DCLogic {
           relayPoint: s.shipMode === 'RELAY' ? s.relayPoint : undefined
         };
     const res = await api.checkout(shipping);
-    if (!res.ok || !res.data || !res.data.url) {
+    if (!res.ok || !res.data || !res.data.ok) {
       const messages = {
         empty_cart: 'Votre panier est vide.',
-        missing_relay_point: 'Choisissez un point relais avant de payer.',
+        missing_relay_point: 'Choisissez un point relais avant de commander.',
         shipping_not_configured: 'La livraison n’est pas encore configurée, réessayez plus tard.',
         shipping_provider_error: 'Le calcul des frais de livraison a échoué, réessayez.',
         shipping_offer_unavailable: 'Cette offre de livraison n’est plus disponible, recalculez les frais.',
       };
       this.setState({
         checkoutState: 'idle',
-        checkoutError: messages[res.data && res.data.error] || 'Le paiement n’a pas pu démarrer, réessayez.'
+        checkoutError: messages[res.data && res.data.error] || 'La commande n’a pas pu être envoyée, réessayez.'
       });
       return;
     }
-    window.location.href = res.data.url;
+    // Confirmation en popup (avec bouton explicite) plutôt qu'un bandeau
+    // sur la page suivante — le client doit voir et acter le message avant
+    // de partir, pas risquer de le manquer en scrollant sur son compte.
+    this.setState({ checkoutState: 'idle', orderPlacedPopup: true });
+  }
+  confirmOrderPlaced() {
+    window.location.href = 'Account.dc.html';
   }
   renderVals() {
     const s = this.state;
@@ -755,16 +828,14 @@ class Component extends DCLogic {
     const total = (c.totalCents + shippingCents) / 100;
     const isPickup = s.deliveryMode === 'PICKUP';
     const isShipping = s.deliveryMode === 'SHIPPING';
-    const phoneValid = this._phoneMod ? this._phoneMod.isValidPhone(s.shipPhone) : false;
+    const phoneValid = this._iti ? this._iti.isValidNumber() : false;
     const shippingReady = isPickup
       ? !!s.shipName.trim() && phoneValid
       : phoneValid && !!s.shipMode && (s.shipMode !== 'RELAY' || !!s.relayPoint);
     const canCheckout = s.loggedIn && c.lines.length > 0 && !!s.deliveryMode && shippingReady;
-    const canGoToCheckout = s.loggedIn && c.lines.length > 0;
-    const hasItems = c.lines.length > 0 && s.checkoutState !== 'paid';
+    const hasItems = c.lines.length > 0;
     const isStepCart = hasItems && s.step === 'cart';
     const isStepCheckout = hasItems && s.step === 'checkout';
-    const quoteShippingReady = s.shipName.trim() && phoneValid && s.shipAddress.trim() && s.shipCity.trim() && s.shipZipcode.trim();
     const optionStyle = (selected) => ({
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       padding: '10px 12px', borderRadius: '7px', cursor: 'pointer',
@@ -779,13 +850,6 @@ class Component extends DCLogic {
       totalNoShipping: totalNoShipping.toFixed(2),
       onGoToCheckout: () => this.goToCheckout(),
       onBackToCart: () => this.backToCart(),
-      goToCheckoutStyle: {
-        flex: 1,
-        background: canGoToCheckout ? '#ff5a3c' : '#3a3936',
-        color: canGoToCheckout ? '#161514' : 'rgba(255,255,255,.4)',
-        font: "600 12.5px 'Inter',sans-serif", padding: '12px', borderRadius: '7px',
-        textAlign: 'center', cursor: canGoToCheckout ? 'pointer' : 'not-allowed'
-      },
       isPickup, isShipping,
       hasDeliveryMode: !!s.deliveryMode,
       pickupOptionStyle: optionStyle(isPickup),
@@ -794,7 +858,7 @@ class Component extends DCLogic {
       onSelectShipping: () => this.selectShipping(),
       workshopAddress: '29 rue Mellier, 44100 Nantes',
       shipName: s.shipName, onShipName: (e) => this._updateShipField('shipName', e.target.value),
-      shipPhone: s.shipPhone, onShipPhone: (e) => this.onPhoneChange(e.target.value),
+      phoneInputRef: this.phoneInputRef,
       shipAddress: s.shipAddress, onShipAddress: (e) => this._updateShipField('shipAddress', e.target.value),
       onShipAddressFocus: () => this.onAddressFocus(),
       onShipAddressBlur: () => this.hideAddressSuggestionsSoon(),
@@ -811,11 +875,9 @@ class Component extends DCLogic {
       onQuoteShipping: () => this.quoteShipping(),
       quoteShippingButtonLabel: s.ratesState === 'loading' ? 'Calcul en cours…' : 'Calculer les frais de livraison',
       quoteShippingButtonStyle: {
-        background: quoteShippingReady ? '#2a2926' : '#211f1c',
-        color: quoteShippingReady ? '#e8e6e1' : 'rgba(255,255,255,.35)',
-        border: '1px solid rgba(255,255,255,.15)', borderRadius: '7px', padding: '10px',
+        background: '#ff5a3c', color: '#161514', border: 'none', borderRadius: '7px', padding: '10px',
         textAlign: 'center', font: "600 11.5px 'Inter',sans-serif",
-        cursor: quoteShippingReady ? 'pointer' : 'not-allowed'
+        cursor: 'pointer', transition: 'transform .2s ease'
       },
       hasShippingError: !!s.shippingError,
       shippingError: s.shippingError,
@@ -840,12 +902,18 @@ class Component extends DCLogic {
       hasSelectedShipping: !!selectedRate || isPickup,
       shippingPrice: isPickup ? 'Gratuit' : selectedRate ? '+' + (selectedRate.cents / 100).toFixed(2) + ' €' : '',
       cartCount: c.lines.reduce((n, l) => n + l.qty, 0),
-      isEmpty: s.loaded && c.lines.length === 0 && s.checkoutState !== 'paid',
+      isEmpty: s.loaded && c.lines.length === 0,
       items,
       hasSmallOrderFee: c.smallOrderFeeCents > 0,
       smallOrderFee: (c.smallOrderFeeCents / 100).toFixed(2),
       minOrder: (c.minOrderCents / 100).toFixed(2),
       needsLogin: s.authChecked && !s.loggedIn,
+      // sc-if's hint-placeholder-val is NOT an "else" — both branches must
+      // have their own real condition, this is the genuine negation (was
+      // wrongly using {{ needsLogin }} for both, which just showed/hid them
+      // together instead of toggling between them).
+      readyToCheckout: s.authChecked && s.loggedIn,
+      isLoggedIn: s.authChecked && s.loggedIn,
       hasCheckoutError: !!s.checkoutError,
       checkoutError: s.checkoutError,
       checkoutButtonStyle: {
@@ -862,8 +930,9 @@ class Component extends DCLogic {
       hasDiscount: discountAmount > 0.001,
       isIdle: s.checkoutState === 'idle',
       isRedirecting: s.checkoutState === 'redirecting',
-      isPaid: s.checkoutState === 'paid',
-      startCheckout: () => this.startCheckout()
+      startCheckout: () => this.startCheckout(),
+      orderPlacedPopup: s.orderPlacedPopup,
+      confirmOrderPlaced: () => this.confirmOrderPlaced()
     };
   }
 }

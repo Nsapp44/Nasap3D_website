@@ -35,4 +35,17 @@ export async function materialRoutes(app: FastifyInstance) {
     const tiers = await prisma.discountTier.findMany({ orderBy: { minQty: "asc" } });
     return reply.send({ tiers: tiers.map((t) => ({ minQty: t.minQty, pct: t.pct })) });
   });
+
+  // Public, read-only — the real "mode vacances" source of truth (what
+  // POST /quotes itself checks, see routes/quotes.ts). The configurator's
+  // quoteEnabled UI state used to come from a per-browser localStorage flag
+  // (stock.js's isQuoteEnabled(), a wireframe-demo holdover) that had no
+  // connection to this at all — a browser that had ever locally flipped
+  // that flag off would keep showing "indisponible" forever, even once the
+  // admin turned quotes back on for real. This is what Home.dc.html/Devis
+  // Instantane.dc.html should actually be reading.
+  app.get("/quote-enabled", async (_request, reply) => {
+    const settings = await prisma.settings.findUnique({ where: { id: 1 } });
+    return reply.send({ quoteEnabled: !!settings?.quoteEnabled });
+  });
 }

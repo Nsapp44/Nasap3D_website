@@ -3,6 +3,7 @@ import { buildApp } from "./app.js";
 import { sweepExpiredQuoteFiles } from "./lib/quoteCleanup.js";
 import { sweepAbandonedCarts } from "./lib/cartCleanup.js";
 import { sweepOrderTracking } from "./lib/orderTracking.js";
+import { sweepRejectedOrders } from "./lib/orders.js";
 
 const app = await buildApp();
 
@@ -32,6 +33,12 @@ async function runSweep() {
     if (deletedFiles > 0) app.log.info(`[quoteCleanup] deleted ${deletedFiles} expired quote file(s)`);
   } catch (err) {
     app.log.error(err, "[quoteCleanup] sweep failed");
+  }
+  try {
+    const deletedOrders = await sweepRejectedOrders();
+    if (deletedOrders > 0) app.log.info(`[orders] purged ${deletedOrders} rejected order(s) past the 72h retention`);
+  } catch (err) {
+    app.log.error(err, "[orders] rejected-order sweep failed");
   }
 }
 setInterval(runSweep, SWEEP_INTERVAL_MS);

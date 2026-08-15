@@ -13,6 +13,7 @@ import { cartRoutes } from "./routes/cart.js";
 import { shippingRoutes } from "./routes/shipping.js";
 import { checkoutRoutes, stripeWebhookRoutes } from "./routes/checkout.js";
 import { customerOrderRoutes } from "./routes/orders.js";
+import { googleRoutes } from "./routes/google.js";
 
 // Split from index.ts so tests can build a real app (real plugins, real
 // routes) and exercise it with Fastify's .inject() — no open port, no
@@ -57,6 +58,7 @@ export async function buildApp(opts: { logger?: boolean } = {}) {
   await app.register(shippingRoutes);
   await app.register(checkoutRoutes);
   await app.register(customerOrderRoutes);
+  await app.register(googleRoutes);
   // Own encapsulated scope: registers a raw-buffer body parser needed to
   // verify Stripe's webhook signature, without affecting any other route.
   await app.register(stripeWebhookRoutes);

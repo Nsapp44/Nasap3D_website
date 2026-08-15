@@ -3,10 +3,24 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../lib/session.js";
 import { readFileByKey, deleteFile } from "../lib/storage.js";
-import { purchaseShippingLabel, BoxtalConfigError, BoxtalApiError } from "../lib/boxtal.js";
+import { purchaseShippingLabel, fetchLabelDocument, BoxtalConfigError, BoxtalApiError } from "../lib/boxtal.js";
 import { refreshOrderTrackingStatus, SHIPPING_DATA_PURGE } from "../lib/orderTracking.js";
+import { sendOrderAcceptedEmail, sendOrderRejectedEmail } from "../lib/orderEmails.js";
 
-const ORDER_STATUSES = ["PENDING", "PRINTING", "READY", "DELIVERED"] as const;
+// Statuses settable via the admin's free-form quick-status chips (PATCH
+// /admin/orders/:id below). Deliberately excludes:
+// - EXPERTISE/AWAITING_PAYMENT: reached only via their own dedicated
+//   accept/reject actions (each has a side effect — an email — a generic
+//   "set any status" chip shouldn't casually trigger).
+// - PENDING: only ever set by the Stripe webhook once actually paid — a
+//   chip that could fake a "paid" status without a real payment would be a
+//   serious bug, not just a UX nicety.
+// - REJECTED: terminal, time-limited (see sweepRejectedOrders), only ever
+//   reached via the reject action.
+const ORDER_STATUSES = ["PRINTING", "READY", "DELIVERED"] as const;
+// Every status, for the GET /admin/orders list filter — a superset of the
+// admin-settable ones above.
+const ORDER_FILTER_STATUSES = ["EXPERTISE", "AWAITING_PAYMENT", "PENDING", ...ORDER_STATUSES, "REJECTED"] as const;
 
 export async function adminRoutes(app: FastifyInstance) {
   app.addHook("preHandler", requireAdmin);
@@ -54,14 +68,30 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // ---- Orders -----------------------------------------------------------
   app.get("/admin/orders", async (request, reply) => {
-    const query = request.query as { status?: string };
-    const status = query.status && (ORDER_STATUSES as readonly string[]).includes(query.status)
-      ? (query.status as (typeof ORDER_STATUSES)[number])
+    const query = request.query as { status?: string; q?: string };
+    const status = query.status && (ORDER_FILTER_STATUSES as readonly string[]).includes(query.status)
+      ? (query.status as (typeof ORDER_FILTER_STATUSES)[number])
       : undefined;
+    // Une recherche texte (numéro de commande, email, n° client — utile
+    // pour retrouver une commande en SAV sans savoir dans quel statut elle
+    // se trouve) ignore volontairement le filtre de statut : le cas
+    // d'usage est justement "je ne sais pas où chercher".
+    const q = query.q?.trim();
+    const where = q
+      ? {
+          OR: [
+            { ref: { contains: q, mode: "insensitive" as const } },
+            { user: { email: { contains: q, mode: "insensitive" as const } } },
+            { user: { customerNo: { contains: q, mode: "insensitive" as const } } },
+          ],
+        }
+      : status
+        ? { status }
+        : undefined;
 
     const [orders, counts] = await Promise.all([
       prisma.order.findMany({
-        where: status ? { status } : undefined,
+        where,
         orderBy: { createdAt: "desc" },
         include: {
           items: { include: { quoteJob: { select: { fileName: true, fileDeletedAt: true } } } },
@@ -86,6 +116,10 @@ export async function adminRoutes(app: FastifyInstance) {
         shippingMode: o.shippingMode,
         shippingLabel: o.shippingLabel,
         shippingOversized: o.shippingOversized,
+        shippingWeightG: o.shippingWeightG,
+        shippingParcelLengthCm: o.shippingParcelLengthCm,
+        shippingParcelWidthCm: o.shippingParcelWidthCm,
+        shippingParcelHeightCm: o.shippingParcelHeightCm,
         canBuyLabel: !!o.shippingMode && !!o.shippingCarrierCode && !!o.shippingServiceCode && !!o.shippingWeightG,
         boxtalOrderRef: o.boxtalOrderRef,
         shippingLabelUrl: o.shippingLabelUrl,
@@ -272,6 +306,33 @@ export async function adminRoutes(app: FastifyInstance) {
     }
   });
 
+  // Proxies the actual PDF bytes instead of handing the admin's browser
+  // Boxtal's raw label URL directly (the original `<a href>` approach) —
+  // that URL needs the same account auth as every other v1 call, which a
+  // plain browser tab obviously doesn't have (confirmed for real:
+  // "access_denied" opening it directly, see fetchLabelDocument in
+  // lib/boxtal.ts).
+  app.get("/admin/orders/:id/shipping-label/download", async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const order = await prisma.order.findUnique({ where: { id } });
+    if (!order) return reply.code(404).send({ error: "not_found" });
+    if (!order.shippingLabelUrl) return reply.code(409).send({ error: "label_not_available" });
+
+    try {
+      const { contentType, buffer } = await fetchLabelDocument(order.shippingLabelUrl);
+      reply.header("Content-Type", contentType);
+      reply.header("Content-Disposition", `attachment; filename="${order.ref}-etiquette.pdf"`);
+      return reply.send(buffer);
+    } catch (err) {
+      if (err instanceof BoxtalConfigError) return reply.code(500).send({ error: "boxtal_not_configured" });
+      if (err instanceof BoxtalApiError) {
+        request.log.error({ err }, "boxtal label document fetch failed");
+        return reply.code(502).send({ error: "boxtal_document_failed" });
+      }
+      throw err;
+    }
+  });
+
   app.patch("/admin/orders/:id", async (request, reply) => {
     const { id } = request.params as { id: string };
     const schema = z.object({ status: z.enum(ORDER_STATUSES).optional(), trackingNumber: z.string().trim().min(1).max(60).optional() });
@@ -287,6 +348,13 @@ export async function adminRoutes(app: FastifyInstance) {
     // there'd be nothing left to revert *to* even if we allowed it. A
     // genuine mistake needs a direct DB fix, not a button here.
     if (order.status === "DELIVERED") return reply.code(409).send({ error: "order_already_delivered" });
+    // Production status changes (impression/expédition/livré) only make
+    // sense once the order is actually paid — before that it's still going
+    // through expertise/acceptance/payment (see the accept/reject routes
+    // below), each with its own dedicated endpoint and side effects.
+    if (order.status === "EXPERTISE" || order.status === "AWAITING_PAYMENT" || order.status === "REJECTED") {
+      return reply.code(409).send({ error: "order_not_paid_yet" });
+    }
 
     // A shipped order (not a workshop pickup) needs a tracking number
     // before it can be marked READY/"Expédié" — either already on file
@@ -313,20 +381,42 @@ export async function adminRoutes(app: FastifyInstance) {
     return reply.send({ order: updated });
   });
 
-  // "Refuser" une commande : seulement possible tant qu'elle est encore
-  // PENDING (pas encore acceptée en impression) — au-delà, un refus reviendrait
-  // à annuler un travail en cours et doit passer par un vrai remboursement
-  // Stripe, pas juste une suppression. TODO(phase Stripe): déclencher un
-  // remboursement ici plutôt que de se contenter de supprimer la ligne.
-  app.delete("/admin/orders/:id", async (request, reply) => {
+  // "Accepter" une commande à l'étape expertise : passe en attente de
+  // paiement et prévient le client par email (avec le lien vers son compte,
+  // où le bouton "Payer avec Stripe" apparaît désormais). Seule façon
+  // d'atteindre AWAITING_PAYMENT — jamais via le PATCH générique ci-dessus.
+  app.post("/admin/orders/:id/accept", async (request, reply) => {
     const { id } = request.params as { id: string };
-    const order = await prisma.order.findUnique({ where: { id } });
+    const order = await prisma.order.findUnique({ where: { id }, include: { user: true } });
     if (!order) return reply.code(404).send({ error: "not_found" });
-    if (order.status !== "PENDING") {
-      return reply.code(409).send({ error: "not_pending" });
-    }
-    await prisma.order.delete({ where: { id } });
-    return reply.send({ ok: true });
+    if (order.status !== "EXPERTISE") return reply.code(409).send({ error: "not_expertise" });
+
+    const updated = await prisma.order.update({
+      where: { id },
+      data: { status: "AWAITING_PAYMENT", acceptedAt: new Date() },
+    });
+    await sendOrderAcceptedEmail(order.user.email, order.ref, order.totalCents);
+    return reply.send({ order: updated });
+  });
+
+  // "Refuser" une commande à l'étape expertise (pièce infaisable, etc.) —
+  // seulement possible tant qu'elle est encore EXPERTISE (jamais payée, donc
+  // pas de remboursement à gérer). Contrairement à avant, ne supprime plus
+  // la commande tout de suite : elle passe en REJECTED, reste visible côté
+  // client (message poli) 72h — voir sweepRejectedOrders dans lib/orders.ts
+  // — puis disparaît toute seule.
+  app.post("/admin/orders/:id/reject", async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const order = await prisma.order.findUnique({ where: { id }, include: { user: true } });
+    if (!order) return reply.code(404).send({ error: "not_found" });
+    if (order.status !== "EXPERTISE") return reply.code(409).send({ error: "not_expertise" });
+
+    const updated = await prisma.order.update({
+      where: { id },
+      data: { status: "REJECTED", rejectedAt: new Date() },
+    });
+    await sendOrderRejectedEmail(order.user.email, order.ref);
+    return reply.send({ order: updated });
   });
 
   // ---- Settings (mode vacances + paramètres de prix) ---------------------

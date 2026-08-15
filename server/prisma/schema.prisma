@@ -13,10 +13,25 @@ enum Role {
 }
 
 enum OrderStatus {
+  // Passée par le client, en attente d'examen (faisabilité) avant tout
+  // paiement — voir server/PRICING.md / SHIPPING.md pour le pourquoi de ce
+  // palier : éviter de faire payer un client pour une pièce qu'on
+  // découvrirait ensuite ne pas pouvoir réaliser.
+  EXPERTISE
+  // Acceptée par l'admin — un email est parti au client avec le lien pour
+  // payer. Le passage à PENDING n'est déclenché QUE par le webhook Stripe
+  // (paiement confirmé), jamais manuellement.
+  AWAITING_PAYMENT
   PENDING
   PRINTING
   READY
   DELIVERED
+  // Refusée à l'expertise (pièce infaisable, etc.) — état terminal, jamais
+  // payée. Reste visible côté client (message poli, pas de détail technique)
+  // 72h — voir rejectedAt et sweepRejectedOrders() dans lib/orders.ts —
+  // avant suppression automatique, plutôt qu'une suppression immédiate qui
+  // laisserait le client sans aucune explication visible.
+  REJECTED
 }
 
 enum ShippingMode {
@@ -239,7 +254,7 @@ model Order {
   ref                   String       @unique
   userId                String
   user                  User         @relation(fields: [userId], references: [id])
-  status                OrderStatus  @default(PENDING)
+  status                OrderStatus  @default(EXPERTISE)
   subtotalCents         Int
   discountCents         Int
   shippingCents         Int          @default(0)
@@ -248,6 +263,8 @@ model Order {
   printingAt            DateTime?
   readyAt               DateTime?
   deliveredAt           DateTime?
+  acceptedAt            DateTime?
+  rejectedAt            DateTime?
   createdAt             DateTime     @default(now())
   updatedAt             DateTime     @updatedAt
 

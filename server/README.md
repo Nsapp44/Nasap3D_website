@@ -18,7 +18,10 @@ Documents associés :
 - **PostgreSQL + Prisma 6** — schéma dans `prisma/schema.prisma`, migrations dans
   `prisma/migrations/`.
 - **Argon2id** pour les mots de passe, **sessions httpOnly** (cookie `n3d_session`, révocables
-  côté serveur) plutôt que des JWT.
+  côté serveur) plutôt que des JWT. La session côté base dure toujours 30 jours, mais le cookie
+  lui-même n'est persistant que si la case « Se souvenir de moi » était cochée à la connexion
+  (`rememberMe` dans `POST /auth/login`, voir `setSessionCookie()` dans `src/lib/session.ts`) —
+  sinon c'est un cookie de session standard, effacé à la fermeture du navigateur.
 - **Vérification par code à 6 chiffres** (inscription, changement d'email, changement de mot de
   passe) — voir `src/lib/verification.ts`.
 - **Devis serveur** : PrusaSlicer CLI tranche réellement le fichier envoyé (pas d'estimation
@@ -63,6 +66,7 @@ correspondent au `docker-compose.yml` à la racine du projet.
 | Auth | `ARGON2_MEMORY_COST`, `ARGON2_TIME_COST`, `ARGON2_PARALLELISM` | Valeurs par défaut OWASP raisonnables — à ne durcir que si le matériel de prod le permet. |
 | Anti-robot (hCaptcha) | `HCAPTCHA_SITE_KEY`, `HCAPTCHA_SECRET_KEY` | Sans `HCAPTCHA_SECRET_KEY`, la vérification anti-robot est **désactivée automatiquement en dev** (`NODE_ENV != production`) et **bloque tout en prod** — voir `src/lib/captcha.ts`. |
 | Devis (PrusaSlicer) | `PRUSASLICER_BIN` | `POST /quotes` échoue avec `slicing_failed`. |
+| Avis Google (badge + carrousel, Home.dc.html) | `GOOGLE_PLACES_API_KEY`, `GOOGLE_PLACE_ID` | `GET /google-rating` répond `503 google_places_not_configured` — le badge et les avis du carrousel ne s'affichent juste pas (repli sur les anciens témoignages statiques, voir `_buildReviews()`). Clé à restreindre à l'API Places uniquement dans Google Cloud Console, **sans** restriction de referer HTTP (appel serveur-à-serveur). Rafraîchi au maximum 1×/semaine (`CACHE_MS` dans `src/routes/google.ts`) — l'API Google Place Details plafonne de toute façon à 5 avis par fiche, non paginable. |
 | Livraison (Boxtal) | `BOXTAL_API_KEY_V1/_SECRET_V1`, `BOXTAL_SHIPPER_*` | `POST /shipping/rates` et `POST /checkout` échouent avec `shipping_not_configured`. |
 | Paiement (Stripe) | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | `POST /checkout` échoue. Utilisez une clé `sk_test_...`, jamais `sk_live_...` en développement. |
 | Stockage (S3) | `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Repli automatique sur le disque local (`server/uploads/`) — pratique en dev, à configurer avant la mise en prod réelle. |
@@ -170,7 +174,16 @@ suffit).
 `.github/workflows/docker-publish.yml` build et publie l'image sur GitHub Container Registry
 (`ghcr.io/nsapp44/nasap3d-api`) à chaque push sur `master` qui touche `server/`. Le serveur OVH
 n'a donc besoin que de Docker installé, pas de Node/npm/PrusaSlicer — il récupère l'image déjà
-construite :
+construite.
+
+**Avant le tout premier `docker compose up`** (une fois par serveur, pas à chaque déploiement) :
+créer un `.env` à la racine du dépôt (à côté de `docker-compose.yml` — différent de `server/.env`)
+avec un vrai `POSTGRES_PASSWORD` — voir `.env.example` à la racine. Important : Postgres n'applique
+ce mot de passe qu'à la toute première initialisation du volume `nasap3d_db_data` ; le changer après
+coup dans `.env` ne change rien à la base déjà créée (il faudrait le changer en base directement,
+ex. `ALTER USER nasap3d WITH PASSWORD '...'`, ou repartir d'un volume vide). Sans ce `.env`, le mot
+de passe par défaut codé dans `docker-compose.yml` (public, visible dans ce dépôt) est utilisé —
+acceptable en dev, jamais en production.
 
 ```bash
 docker compose --profile full pull
@@ -186,8 +199,28 @@ visibility* → *Public* (comportement par défaut de GHCR : un paquet publié v
 privé au premier push, quelle que soit la visibilité du repo).
 
 Le PostgreSQL n'est pas managé par OVH dans ce schéma : c'est un conteneur (ou une instance
-dédiée) que vous administrez vous-même — pensez aux sauvegardes et à activer `sslmode=require`
-sur `DATABASE_URL` si l'API et la base ne sont pas sur le même réseau privé.
+dédiée) que vous administrez vous-même — activer `sslmode=require` sur `DATABASE_URL` si l'API et
+la base ne sont pas sur le même réseau privé.
+
+### Sauvegardes
+
+`scripts/backup-db.sh` (racine du dépôt) fait un `pg_dump` compressé dans `backups/` et supprime
+les fichiers de plus de 14 jours (`RETENTION_DAYS` pour changer). À planifier en cron quotidien sur
+le serveur, depuis la racine du dépôt :
+
+```cron
+0 3 * * * cd /chemin/vers/le/depot && ./scripts/backup-db.sh >> backups/backup.log 2>&1
+```
+
+Ces fichiers restent sur le même disque que la base — une panne du serveur entier les perdrait
+aussi. Copier `backups/` ailleurs régulièrement (rsync, S3, ...) reste à faire séparément, ce script
+ne fait que le dump local.
+
+Pour restaurer :
+
+```bash
+gunzip -c backups/nasap3d-<horodatage>.sql.gz | docker compose exec -T db psql -U nasap3d -d nasap3d
+```
 
 Avant de passer en production, vérifier concrètement :
 - `NODE_ENV=production` (active le fail-closed de la vérification anti-robot, entre autres).

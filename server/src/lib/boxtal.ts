@@ -199,6 +199,69 @@ function authHeader(): string {
   return Buffer.from(`${key}:${secret}`).toString("base64");
 }
 
+// The real label URL (order.shipment.labels.label / order_status.labels.label
+// — see checkLabelStatus above for the other, broken-for-us field this is
+// NOT) is actually a signed, directly downloadable PDF link, no auth needed
+// (confirmed for real: 200, real PDF bytes, straight off the sandbox host).
+// The Authorization header here is harmless-but-unnecessary against that URL
+// — kept mainly so this still works if Boxtal ever changes the signing
+// scheme to something that does check account auth. Proxied through our own
+// server (routes/admin.ts) rather than linked to directly mostly so the
+// download gets a clean filename via Content-Disposition, not because the
+// URL itself requires it.
+export async function fetchLabelDocument(url: string): Promise<{ contentType: string; buffer: Buffer }> {
+  let res: Response;
+  try {
+    res = await fetch(url, { headers: { Authorization: authHeader() } });
+  } catch (err) {
+    throw new BoxtalApiError(`boxtal label document request failed: ${(err as Error).message}`);
+  }
+  if (!res.ok) throw new BoxtalApiError(`boxtal label document http ${res.status}`);
+  const contentType = res.headers.get("content-type") || "application/pdf";
+  const buffer = Buffer.from(await res.arrayBuffer());
+  return { contentType, buffer };
+}
+
+// Map widget access token — a completely separate auth flow from the V1
+// XML API above. Confirmed directly by Boxtal support (their own OpenAPI
+// spec for "Composant carte"): the front-end map widget needs a short-lived
+// JWT minted via POST /iam/account-app/token (standard HTTP Basic Auth,
+// "Basic base64(key:secret)"), not a long-lived static key handed straight
+// to the browser. What this project did before — pass BOXTAL_MAP_API_KEY
+// itself as the widget's accessToken — loaded the map iframe fine (it
+// doesn't validate the token before displaying) but silently returned zero
+// parcel points for every search, since the token was never actually a
+// valid one from Boxtal's point of view. BOXTAL_MAP_API_SECRET, previously
+// stored but unused, is the corresponding Basic Auth password.
+const MAP_TOKEN_URL = "https://api.boxtal.com/iam/account-app/token";
+let mapTokenCache: { accessToken: string; expiresAt: number } | null = null;
+
+export async function getBoxtalMapAccessToken(): Promise<{ accessToken: string; expiresIn: number }> {
+  const now = Date.now();
+  // Refresh a minute early rather than right at expiry, so a request never
+  // races a token that's valid when checked but expired by the time it
+  // reaches Boxtal's map iframe.
+  if (mapTokenCache && mapTokenCache.expiresAt - now > 60_000) {
+    return { accessToken: mapTokenCache.accessToken, expiresIn: Math.floor((mapTokenCache.expiresAt - now) / 1000) };
+  }
+  const key = process.env.BOXTAL_MAP_API_KEY;
+  const secret = process.env.BOXTAL_MAP_API_SECRET;
+  if (!key || !secret) throw new BoxtalConfigError("BOXTAL_MAP_API_KEY / BOXTAL_MAP_API_SECRET not configured");
+  let res: Response;
+  try {
+    res = await fetch(MAP_TOKEN_URL, {
+      method: "POST",
+      headers: { Authorization: `Basic ${Buffer.from(`${key}:${secret}`).toString("base64")}` },
+    });
+  } catch (err) {
+    throw new BoxtalApiError(`boxtal map token request failed: ${(err as Error).message}`);
+  }
+  if (!res.ok) throw new BoxtalApiError(`boxtal map token request failed: ${res.status}`);
+  const data = (await res.json()) as { accessToken: string; expiresIn: number };
+  mapTokenCache = { accessToken: data.accessToken, expiresAt: now + data.expiresIn * 1000 };
+  return { accessToken: data.accessToken, expiresIn: data.expiresIn };
+}
+
 function shipperAddress(): ShippingAddress {
   const country = process.env.BOXTAL_SHIPPER_COUNTRY;
   const zipcode = process.env.BOXTAL_SHIPPER_ZIPCODE;
@@ -233,12 +296,11 @@ function shipperIdentity(): ShipperIdentity {
 }
 
 // BOXTAL_SHIPPER_PHONE is kept in local French format ("0X XX XX XX XX",
-// matches how it's used elsewhere) — verified for real that Boxtal accepts
-// that local format for FR-domestic orders, but rejects it (and rejects a
-// "00" prefix) for international ones, which want a leading "+" instead
-// (see server/SHIPPING.md "Format de téléphone") — so only convert it for
-// non-FR orders, leaving the FR-domestic path (already tested, working)
-// untouched.
+// matches how it's used elsewhere) in the .env, but Boxtal's real order API
+// rejects that bare local format outright ("shipper.phone: Le numéro de
+// téléphone n'est pas valide" — hit for real on a FR-domestic order, so the
+// earlier "FR-domestic accepts local format" assumption was wrong) — always
+// convert to E.164 before sending, both FR and international.
 function toInternationalFrPhone(local: string): string {
   const digits = local.replace(/\D/g, "");
   return "+33" + (digits.startsWith("0") ? digits.slice(1) : digits);
@@ -418,7 +480,7 @@ export async function purchaseShippingLabel(input: LabelPurchaseInput): Promise<
     "shipper.lastname": shipperId.lastname,
     "shipper.societe": shipperId.company,
     "shipper.email": shipperId.email,
-    "shipper.phone": input.recipient.country === "FR" ? shipperId.phone : toInternationalFrPhone(shipperId.phone),
+    "shipper.phone": toInternationalFrPhone(shipperId.phone),
     "recipient.country": input.recipient.country,
     "recipient.zipcode": input.recipient.zipcode,
     "recipient.city": input.recipient.city,
@@ -537,8 +599,20 @@ export async function checkLabelStatus(boxtalOrderRef: string): Promise<BoxtalOr
   const doc = xmlParser.parse(xml);
   if (doc?.error) throw new BoxtalApiError(`boxtal order_status error: ${JSON.stringify(doc.error).slice(0, 500)}`);
 
-  const labelAvailable = String(doc?.order?.label_available).toLowerCase() === "true";
-  const labelUrl: string | null = doc?.order?.label_url || null;
+  // Boxtal's order_status response has two different label fields, easy to
+  // confuse: `label_url` (singular) is a web-UI link into their customer
+  // portal — needs a logged-in browser session, NOT our API key, and
+  // returns "access_denied"/"unparsed error" for any programmatic fetch
+  // (confirmed for real, including with the same Authorization header used
+  // for every other v1 call). `labels.label` is the actual signed, directly
+  // downloadable PDF URL (also confirmed for real: 200, real PDF bytes, no
+  // auth needed at all — the random path segment IS the auth). Always use
+  // the latter; matches how the initial purchase response already reads
+  // labels the right way (`shipment.labels.label`, see purchaseShippingLabel
+  // above — same field name, one level shallower here since this response
+  // has no `shipment` wrapper).
+  const labelAvailable = doc?.order?.label_available === "1" || String(doc?.order?.label_available).toLowerCase() === "true";
+  const labelUrl: string | null = doc?.order?.labels?.label?.[0] ?? null;
   const carrierReference: string | null = doc?.order?.carrier_reference || null;
   const state: string | null = doc?.order?.state || null;
   return { labelAvailable, labelUrl, carrierReference, state, isLikelyDelivered: !!state && DELIVERED_STATE_RE.test(state) };

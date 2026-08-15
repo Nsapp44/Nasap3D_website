@@ -54,6 +54,7 @@ a:hover{color:#ff7a5c}
     </div>
     <div style="display:flex;align-items:center;gap:18px;font:500 12px 'Inter',sans-serif;color:rgba(255,255,255,.75)">
       <a href="Account.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Compte</a>
+      <sc-if value="{{ isLoggedIn }}" hint-placeholder-val="{{ false }}"><a href="Account.dc.html?view=settings" title="Réglages du compte" style="cursor:pointer;color:inherit;display:inline-flex;align-items:center;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg></a></sc-if>
       <a href="Cart.dc.html" style="text-decoration:none;color:inherit;position:relative;display:inline-flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg><span style="position:absolute;top:-9px;right:-9px;width:15px;height:15px;border-radius:50%;background:#ff5a3c;color:#161514;font:700 8.5px/15px 'Inter',sans-serif;text-align:center">{{ cartCount }}</span></a>
     </div>
   </div>
@@ -91,17 +92,93 @@ a:hover{color:#ff7a5c}
           <sc-if value="{{ cfgFileReady }}" hint-placeholder-val="{{ false }}">
             <div style="border:1px solid rgba(255,90,60,.3);background:#101010;border-radius:8px;padding:14px;margin-bottom:16px;animation:cfgFadeUp .35s ease">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><span style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,.5)">{{ cfgFileName }}</span><span style="width:16px;height:16px;border-radius:50%;background:#ff5a3c;color:#161514;font:700 10px/16px 'Inter',sans-serif;text-align:center">✓</span></div>
-              <div ref="{{ previewRef }}" style="height:150px;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center, rgba(255,90,60,.08), transparent 70%);border-radius:6px;overflow:hidden">
-                <sc-if value="{{ cfgPreviewUnavailable }}" hint-placeholder-val="{{ false }}">
-                  <div style="text-align:center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                    <div style="font:400 9.5px 'Inter',sans-serif;color:rgba(255,255,255,.35)">Aperçu non disponible pour ce format</div>
+              <div style="display:flex;flex-wrap:wrap;gap:12px">
+                <div style="flex:1 1 240px;min-width:220px;min-height:260px;align-self:stretch;position:relative">
+                  <div ref="{{ previewRef }}" style="width:100%;height:100%;background:#161514;border-radius:6px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center"></div>
+                  <sc-if value="{{ cfgPreviewLoading }}" hint-placeholder-val="{{ true }}">
+                    <div style="position:absolute;inset:0;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;pointer-events:none">
+                      <div style="text-align:center">
+                        <div style="width:40px;height:40px;margin:0 auto 8px;color:#ff5a3c;--pl-nozzle-fill:#161514"><svg viewBox="0 0 100 100" class="printer-loader-svg">
+<defs>
+<linearGradient id="plFadeD3" x1="0" y1="0" x2="0" y2="1">
+<stop offset="65%" stop-color="white" stop-opacity="1"></stop>
+<stop offset="90%" stop-color="white" stop-opacity="0"></stop>
+</linearGradient>
+<mask id="plMaskD3">
+<rect x="0" y="0" width="100" height="100" fill="url(#plFadeD3)"></rect>
+</mask>
+</defs>
+<g mask="url(#plMaskD3)">
+<g class="stack">
+<path class="filament" d="M 75 105 L 25 105 A 5 5 0 0 1 25 95 L 75 95 A 5 5 0 0 0 75 85 L 25 85 A 5 5 0 0 1 25 75 L 75 75 A 5 5 0 0 0 75 65 L 25 65 A 5 5 0 0 1 25 55"></path>
+<path class="filament line-lr" d="M 25 55 L 75 55"></path>
+<path class="filament arc-r" d="M 75 55 A 5 5 0 0 0 75 45"></path>
+<path class="filament line-rl" d="M 75 45 L 25 45"></path>
+<path class="filament arc-l" d="M 25 45 A 5 5 0 0 1 25 35"></path>
+</g>
+</g>
+<g class="nozzle">
+<rect x="40" y="15" width="20" height="15" rx="1"></rect>
+<line x1="38" y1="20" x2="62" y2="20"></line>
+<line x1="38" y1="25" x2="62" y2="25"></line>
+<polygon points="35,30 65,30 65,42 35,42"></polygon>
+<polygon points="35,42 65,42 53,55 47,55"></polygon>
+</g>
+</svg></div>
+                        <div style="font:400 9.5px 'Inter',sans-serif;color:rgba(255,255,255,.4)">Chargement de l'aperçu…</div>
+                      </div>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ cfgPreviewUnavailable }}" hint-placeholder-val="{{ false }}">
+                    <div style="position:absolute;inset:0;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;pointer-events:none">
+                      <div style="text-align:center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                        <div style="font:400 9.5px 'Inter',sans-serif;color:rgba(255,255,255,.35)">Aperçu non disponible pour ce format</div>
+                      </div>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ cfgHasSize }}" hint-placeholder-val="{{ false }}">
+                    <div style="position:absolute;bottom:8px;right:8px;display:flex;flex-direction:column;gap:4px;z-index:2">
+                      <div onClick="{{ onViewerZoomIn }}" style="width:24px;height:24px;border-radius:5px;background:rgba(22,21,20,.85);border:1px solid rgba(255,255,255,.15);color:#e8e6e1;font:600 14px 'Inter',sans-serif;text-align:center;line-height:22px;cursor:pointer;user-select:none">+</div>
+                      <div onClick="{{ onViewerZoomOut }}" style="width:24px;height:24px;border-radius:5px;background:rgba(22,21,20,.85);border:1px solid rgba(255,255,255,.15);color:#e8e6e1;font:600 14px 'Inter',sans-serif;text-align:center;line-height:22px;cursor:pointer;user-select:none">−</div>
+                    </div>
+                  </sc-if>
+                </div>
+                <sc-if value="{{ cfgHasSize }}" hint-placeholder-val="{{ false }}">
+                  <div style="flex:1 1 150px;min-width:150px;display:flex;flex-direction:column;gap:14px">
+                    <div>
+                      <div style="font:600 9px 'Inter',sans-serif;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Unité</div>
+                      <select value="{{ cfgUnit }}" onChange="{{ onCfgUnitChange }}" style="width:100%;box-sizing:border-box;height:34px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;color:#e8e6e1;font:11.5px 'Inter',sans-serif;padding:0 10px">
+                        <option value="mm">Millimètres (mm)</option>
+                        <option value="cm">Centimètres (cm)</option>
+                        <option value="in">Pouces (in)</option>
+                        <option value="m">Mètres (m)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <div style="font:600 9px 'Inter',sans-serif;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Échelle</div>
+                      <div style="display:flex;align-items:center;justify-content:center;gap:5px">
+                        <div onClick="{{ onCfgScaleDec }}" style="width:26px;height:34px;flex:none;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;color:#e8e6e1;font:600 15px 'Inter',sans-serif;cursor:pointer;user-select:none">−</div>
+                        <div style="width:66px;flex:none;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:3px;height:34px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514">
+                          <input value="{{ cfgScalePct }}" onChange="{{ onCfgScalePctChange }}" type="text" inputmode="decimal" style="width:34px;box-sizing:border-box;border:none;background:transparent;color:#e8e6e1;font:11.5px 'Inter',sans-serif;padding:0;text-align:center">
+                          <span style="font:10px 'Inter',sans-serif;color:rgba(255,255,255,.4)">%</span>
+                        </div>
+                        <div onClick="{{ onCfgScaleInc }}" style="width:26px;height:34px;flex:none;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:#161514;color:#e8e6e1;font:600 15px 'Inter',sans-serif;cursor:pointer;user-select:none">+</div>
+                      </div>
+                    </div>
+                    <div style="font:400 10px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.5);border-top:1px solid rgba(255,255,255,.08);padding-top:10px">
+                      Taille réelle<br>
+                      <span style="{{ cfgSizeLabelStyle }}">{{ cfgSizeLabel }}</span>
+                    </div>
                   </div>
                 </sc-if>
               </div>
-              <div style="font:400 9.5px 'Inter',sans-serif;color:rgba(255,255,255,.4);text-align:center;margin-top:8px">Fichier chargé avec succès</div>
+              <sc-if value="{{ cfgScaleTooLarge }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:10px;padding:10px 12px;border:1px solid rgba(255,138,112,.35);background:rgba(255,90,60,.08);border-radius:6px;font:400 10.5px/1.5 'Inter',sans-serif;color:#ffb199">⚠ À cette échelle, la pièce dépasse le format imprimable de nos machines (330×320×325mm max). Réduisez le pourcentage ou changez l'unité pour continuer.</div>
+              </sc-if>
+              <div style="font:400 9.5px 'Inter',sans-serif;color:rgba(255,255,255,.4);text-align:center;margin-top:10px">Fichier chargé avec succès</div>
             </div>
-            <div style="display:flex;justify-content:flex-end;animation:cfgFadeUp .4s ease .05s both"><div onClick="{{ cfgNext }}" style="background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:10px 20px;border-radius:6px;cursor:pointer">Suivant →</div></div>
+            <div style="display:flex;justify-content:flex-end;animation:cfgFadeUp .4s ease .05s both"><div onClick="{{ cfgNext }}" style="{{ cfgNextStepButtonStyle }}">Suivant →</div></div>
           </sc-if>
           <sc-if value="{{ isCfgIdle }}" hint-placeholder-val="{{ true }}">
             <input ref="{{ fileInputRef }}" type="file" accept=".stl,.obj,.step,.stp" onChange="{{ onFileInputChange }}" style="display:none">
@@ -117,25 +194,58 @@ a:hover{color:#ff7a5c}
 
         <sc-if value="{{ isCfgStep2 }}">
           <div style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Matériau</div>
-          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px">
+          <div id="cfg-material-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px">
             <sc-for list="{{ cfgMaterials }}" as="mat" hint-placeholder-count="7"><span style="{{ mat.chipStyle }}" onClick="{{ mat.onClick }}">{{ mat.label }}</span></sc-for>
+          </div>
+          <div id="cfg-material-select" style="display:none;position:relative;margin-bottom:4px">
+            <div onClick="{{ toggleMaterialDropdown }}" style="width:100%;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.2);border-radius:6px;background:#161514;color:#e8e6e1;font:600 12px 'Inter',sans-serif;padding:0 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+              <span>{{ cfgMaterialLabel }}</span>
+              <span style="{{ cfgMaterialChevronStyle }}">▾</span>
+            </div>
+            <sc-if value="{{ cfgMaterialDropdownOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:10;background:#1a1917;border:1px solid rgba(255,90,60,.3);border-radius:8px;box-shadow:0 12px 24px rgba(0,0,0,.4);animation:cfgFadeUp .2s ease;overflow:hidden">
+                <sc-for list="{{ cfgMaterials }}" as="mat" hint-placeholder-count="7"><div onClick="{{ mat.onSelectClick }}" style="{{ mat.selectRowStyle }}">{{ mat.label }}</div></sc-for>
+              </div>
+            </sc-if>
           </div>
           <div style="font:400 9px 'Inter',sans-serif;color:rgba(255,255,255,.35);margin-bottom:16px">PEEK / PEKK non proposés</div>
 
           <div style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Couleur</div>
-          <div style="display:flex;gap:8px;margin-bottom:16px">
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
             <sc-for list="{{ cfgColors }}" as="c" hint-placeholder-count="4"><span style="{{ c.style }}" onClick="{{ c.onClick }}"></span></sc-for>
           </div>
 
           <div style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Taux de remplissage</div>
-          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">
+          <div id="cfg-infill-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">
             <sc-for list="{{ infills }}" as="fill" hint-placeholder-count="6"><span style="{{ fill.chipStyle }}" onClick="{{ fill.onClick }}">{{ fill.label }}</span></sc-for>
+          </div>
+          <div id="cfg-infill-select" style="display:none;position:relative;margin-bottom:6px">
+            <div onClick="{{ toggleInfillDropdown }}" style="width:100%;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.2);border-radius:6px;background:#161514;color:#e8e6e1;font:600 12px 'Inter',sans-serif;padding:0 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+              <span>{{ cfgInfillLabel }}</span>
+              <span style="{{ cfgInfillChevronStyle }}">▾</span>
+            </div>
+            <sc-if value="{{ cfgInfillDropdownOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:10;background:#1a1917;border:1px solid rgba(255,90,60,.3);border-radius:8px;box-shadow:0 12px 24px rgba(0,0,0,.4);animation:cfgFadeUp .2s ease;overflow:hidden">
+                <sc-for list="{{ infills }}" as="fill" hint-placeholder-count="6"><div onClick="{{ fill.onSelectClick }}" style="{{ fill.selectRowStyle }}">{{ fill.selectLabel }}</div></sc-for>
+              </div>
+            </sc-if>
           </div>
           <div style="font:400 9.5px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.4);margin-bottom:16px">{{ infillHint }}</div>
 
           <div style="font:600 10px 'Inter',sans-serif;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Qualité d'impression</div>
-          <div style="display:flex;gap:6px;margin-bottom:6px">
+          <div id="cfg-quality-chips" style="display:flex;gap:6px;margin-bottom:6px">
             <sc-for list="{{ qualities }}" as="q" hint-placeholder-count="3"><span style="{{ q.chipStyle }}" onClick="{{ q.onClick }}">{{ q.label }}</span></sc-for>
+          </div>
+          <div id="cfg-quality-select" style="display:none;position:relative;margin-bottom:6px">
+            <div onClick="{{ toggleQualityDropdown }}" style="width:100%;box-sizing:border-box;height:36px;border:1px solid rgba(255,255,255,.2);border-radius:6px;background:#161514;color:#e8e6e1;font:600 12px 'Inter',sans-serif;padding:0 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+              <span>{{ cfgQualityLabel }}</span>
+              <span style="{{ cfgQualityChevronStyle }}">▾</span>
+            </div>
+            <sc-if value="{{ cfgQualityDropdownOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:10;background:#1a1917;border:1px solid rgba(255,90,60,.3);border-radius:8px;box-shadow:0 12px 24px rgba(0,0,0,.4);animation:cfgFadeUp .2s ease;overflow:hidden">
+                <sc-for list="{{ qualities }}" as="q" hint-placeholder-count="3"><div onClick="{{ q.onSelectClick }}" style="{{ q.selectRowStyle }}">{{ q.label }}</div></sc-for>
+              </div>
+            </sc-if>
           </div>
           <div style="font:400 9.5px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.4);margin-bottom:16px">{{ qualityHint }}</div>
 
@@ -218,6 +328,9 @@ a:hover{color:#ff7a5c}
             <div style="background:#161514;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:10px"><div style="color:rgba(255,255,255,.4);font-size:9px;text-transform:uppercase;margin-bottom:3px">Filament</div><div style="display:flex;align-items:center;gap:6px"><span style="{{ cfgSelColorStyle }}"></span>{{ cfgSelMaterial }} · {{ cfgSelColorName }}</div></div>
             <div style="background:#161514;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:10px"><div style="color:rgba(255,255,255,.4);font-size:9px;text-transform:uppercase;margin-bottom:3px">Définition d'impression</div>{{ cfgSelQuality }}</div>
           </div>
+          <sc-if value="{{ cfgHasThinWallWarning }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-bottom:16px;padding:10px 12px;border:1px solid rgba(255,138,112,.35);background:rgba(255,90,60,.08);border-radius:6px;font:400 10.5px/1.5 'Inter',sans-serif;color:#ffb199">⚠ Cette pièce contient des parois très fines (moins de 0,4 mm) — un problème d'impression est probable à cet endroit. Vous pouvez continuer, mais on vous conseille de nous <a href="Contact.dc.html" style="color:#ff5a3c">contacter via le formulaire de contact</a> pour vérifier la faisabilité avant de commander.</div>
+          </sc-if>
           <div style="display:flex;align-items:center;justify-content:space-between;padding-top:2px">
             <div>
               <div style="font:500 10px 'Inter',sans-serif;color:rgba(255,255,255,.45)">Prix estimé</div>
@@ -281,7 +394,7 @@ a:hover{color:#ff7a5c}
     <div style="font:700 20px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:16px">Quelle taille de pièce est possible ?</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px">
       <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:16px;background:#1a1917"><div style="font:600 12px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Bambu Lab X1C</div><div style="font:400 11px 'Inter',sans-serif;color:rgba(255,255,255,.5)">256 × 256 × 256 mm</div></div>
-      <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:16px;background:#1a1917"><div style="font:600 12px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Bambu Lab H2C</div><div style="font:400 11px 'Inter',sans-serif;color:rgba(255,255,255,.5)">350 × 320 × 325 mm</div></div>
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:16px;background:#1a1917"><div style="font:600 12px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Bambu Lab H2C</div><div style="font:400 11px 'Inter',sans-serif;color:rgba(255,255,255,.5)">330 × 320 × 325 mm</div></div>
       <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:16px;background:#1a1917"><div style="font:600 12px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:4px">Bambu Lab X2D</div><div style="font:400 11px 'Inter',sans-serif;color:rgba(255,255,255,.5)">256 × 256 × 256 mm</div></div>
     </div>
     <div style="font:400 11.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.45)">Pièce plus grande ? Elle peut être imprimée en plusieurs parties puis assemblée — décrivez votre projet via le <a href="Contact.dc.html">formulaire de contact</a> pour un devis sur-mesure.</div>
@@ -337,10 +450,12 @@ a:hover{color:#ff7a5c}
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
   state = {
-    cfgStep: 1, cfgFile: null, cfgFileError: null, cfgDragging: false, cfgPreviewUnavailable: false,
+    cfgStep: 1, cfgFile: null, cfgFileError: null, cfgDragging: false, cfgPreviewUnavailable: false, cfgPreviewLoading: false,
+    cfgUnit: 'mm', cfgScalePct: 100, cfgSizeMm: null, cfgThinWallWarning: false, cfgInfillDropdownOpen: false,
+    cfgMaterialDropdownOpen: false, cfgQualityDropdownOpen: false,
     cfgMaterial: 'PLA', cfgColorId: null, cfgInfill: 40, cfgQuality: 'Standard', cfgQty: 1,
     cfgShowDiscountInfo: false, cfgAnalyzing: false, cfgAnalysisReady: false, cfgAnalysisError: null, cfgQuote: null,
-    openFaq: 0, cartCount: 0, showAddedToast: false, quoteEnabled: true,
+    openFaq: 0, cartCount: 0, showAddedToast: false, quoteEnabled: true, isLoggedIn: false,
     materials: [], discountTiers: [
       { minQty: 5, pct: 5 }, { minQty: 15, pct: 10 }, { minQty: 50, pct: 15 }, { minQty: 100, pct: 20 }, { minQty: 500, pct: 30 }
     ]
@@ -356,10 +471,11 @@ class Component extends DCLogic {
     this._loadStock();
     this._stockListener = () => this._loadStock();
     window.addEventListener('nasap3d-stock-changed', this._stockListener);
-    this._quoteListener = () => { if (this._stock) this.setState({ quoteEnabled: this._stock.isQuoteEnabled() }); };
+    this._quoteListener = () => this._loadStock();
     window.addEventListener('nasap3d-quote-changed', this._quoteListener);
     this._loadMaterials();
     this._loadDiscountTiers();
+    this._checkAuth();
     // Best-effort cleanup: if the tab closes (or the user navigates
     // elsewhere on the site) with an analyzed quote that was never added to
     // the cart, tell the server it can delete the uploaded file right away
@@ -391,7 +507,7 @@ class Component extends DCLogic {
   // box, in the currently selected color — see viewer3d.js. Shared by the
   // step-1 "fichier chargé" box (previewRef) and the step-3 "analyse
   // terminée" box (analysisPreviewRef), which show the same file/color.
-  async _renderInto(ref, handleKey) {
+  async _renderInto(ref, handleKey, extraOpts) {
     const file = this.state.cfgFile;
     if (this[handleKey]) { this[handleKey].dispose(); this[handleKey] = null; }
     if (!file || !ref.current) return;
@@ -403,26 +519,210 @@ class Component extends DCLogic {
     if (this.state.cfgFile !== file || !ref.current) return; // stale by the time the read finished
     const material = this.state.materials.find(m => m.key === this.state.cfgMaterial);
     const color = material ? (material.colors.find(c => c.id === this.state.cfgColorId) || {}).colorHex : null;
-    this[handleKey] = await renderModelPreview(ref.current, { fileBuffer: buffer, ext, colorHex: color });
+    this[handleKey] = await renderModelPreview(ref.current, { fileBuffer: buffer, ext, colorHex: color, ...extraOpts });
+    return this[handleKey];
   }
-  _renderPreview() {
-    return this._renderInto(this.previewRef, '_previewHandle');
+  // Step 1 only ("le viewer à la place de la pièce qui tourne, que à cette
+  // étape là") — grid + drag instead of the auto-spin used everywhere else
+  // (step 3, cart), plus the Unité/Échelle panel this feeds.
+  async _renderPreview() {
+    // Loading three.js + parsing the mesh (STEP via occt-import-js
+    // especially) can take a couple seconds — without a visible loading
+    // state the box just sits empty/black, which reads as broken rather
+    // than working (see cfgPreviewLoading in the JSX). Delayed by 500ms so
+    // a fast (cached, small file) load never flashes the spinner at all.
+    if (this._previewLoaderTimer) clearTimeout(this._previewLoaderTimer);
+    this._previewLoaderTimer = setTimeout(() => {
+      this._previewLoaderTimer = null;
+      this.setState({ cfgPreviewLoading: true });
+    }, 500);
+    const handle = await this._renderInto(this.previewRef, '_previewHandle', { animate: false, showGrid: true });
+    if (this._previewLoaderTimer) { clearTimeout(this._previewLoaderTimer); this._previewLoaderTimer = null; }
+    if (!handle) { this.setState({ cfgSizeMm: null, cfgThinWallWarning: false, cfgPreviewLoading: false }); return; }
+    this.setState({ cfgSizeMm: handle.getSizeMm(), cfgThinWallWarning: false, cfgPreviewLoading: false }, () => {
+      handle.setScale(this._effectiveScale());
+    });
+    // The check itself now runs later, alongside the server-side analysis
+    // at step 3 (see _submitQuote()) — running it here too meant doing it
+    // right as the customer is still fiddling with Unité/Échelle, and the
+    // result was shown at step 1 where they'd have to remember it three
+    // steps later at "Prix & panier". Moved so it happens once, at the
+    // point the customer is already waiting on an analysis, and shows up
+    // where the actual decision (add to cart or not) gets made.
+  }
+  // Unit-mistake correction: interprets the file's own raw coordinates as
+  // being in `cfgUnit` (not necessarily mm, whatever the export actually
+  // used), converts to mm, then applies the extra Échelle % on top. 1 =
+  // file used exactly as exported. Sent to the server as-is (see
+  // api-client.js submitQuote) — PrusaSlicer applies it for real via
+  // --scale, so price/weight/time always match the corrected size.
+  _effectiveScale() {
+    const UNIT_TO_MM = { mm: 1, cm: 10, in: 25.4, m: 1000 };
+    const pct = parseFloat(this.state.cfgScalePct);
+    return (UNIT_TO_MM[this.state.cfgUnit] || 1) * ((Number.isFinite(pct) ? pct : 100) / 100);
+  }
+  _applyScalePreview() {
+    if (!this._previewHandle || !this.state.cfgSizeMm) return;
+    this._previewHandle.setScale(this._effectiveScale());
+  }
+  // Real H2C bed (see PRINTERS/bedXMm/bedYMm/heightMm in
+  // server/src/lib/slicer.ts — the only printer the instant quote actually
+  // targets) — mirrors pickPrinter()'s own fit check (two smallest dims
+  // against the bed's two dims, allowing rotation on the plate; tallest dim
+  // against the height) so a scale the customer picks here can never reach
+  // the server just to be rejected there with no visible reason. Purely a
+  // client-side UX guard — the server re-checks for real regardless (see
+  // routes/quotes.ts, never trusts this).
+  _scaleFitsPrinter() {
+    if (!this.state.cfgSizeMm) return true;
+    const f = this._effectiveScale();
+    const dims = [this.state.cfgSizeMm.x * f, this.state.cfgSizeMm.y * f, this.state.cfgSizeMm.z * f].sort((a, b) => a - b);
+    const bed = [330, 320].sort((a, b) => a - b);
+    return dims[0] <= bed[0] && dims[1] <= bed[1] && dims[2] <= 325;
+  }
+  onCfgUnitChange(e) {
+    this.setState({ cfgUnit: e.target.value }, () => this._applyScalePreview());
+  }
+  onCfgScalePctChange(e) {
+    this.setState({ cfgScalePct: e.target.value }, () => this._applyScalePreview());
+  }
+  _bumpScalePct(delta) {
+    const cur = parseFloat(this.state.cfgScalePct);
+    const next = Math.max(0.01, (Number.isFinite(cur) ? cur : 100) + delta);
+    this.setState({ cfgScalePct: Math.round(next * 100) / 100 }, () => this._applyScalePreview());
+  }
+  // Best-effort, approximate — only for .stl (the common case; .obj/.step
+  // aren't parsed client-side here, see viewer3d.js which handles those
+  // via OBJLoader/occt-import-js instead of the lightweight parser below).
+  // Casts a ray inward from a sample of triangle centers along their
+  // inverse normal and measures the distance to the next surface hit —
+  // the same idea slicers use for a wall-thickness check. Non-blocking by
+  // design (see cfgHasThinWallWarning in the JSX): flags a likely problem
+  // area, never stops the quote — an admin can still catch/reject it
+  // during expertise (see EXPERTISE workflow, routes/admin.ts).
+  async _checkThinWalls() {
+    const file = this.state.cfgFile;
+    if (!file || !file.name.toLowerCase().endsWith('.stl')) return;
+    try {
+      const buffer = await file.arrayBuffer();
+      if (this.state.cfgFile !== file) return;
+      const THREE = await import('./vendor/three/three.module.min.js');
+      const { STLLoader } = await import('./vendor/three/STLLoader.js');
+      const geometry = new STLLoader().parse(buffer);
+      const pos = geometry.attributes.position;
+      const triCount = pos.count / 3;
+      if (triCount === 0) return; // degenerate
+      geometry.computeVertexNormals();
+      // DoubleSide is required here, not cosmetic: a ray fired from just
+      // inside one wall toward the opposite wall (looking for a nearby
+      // "thin" surface) always approaches that opposite wall from its
+      // BACK side on any correctly-wound watertight mesh (the outward
+      // normal points away from the ray, not toward it) — three.js's
+      // default raycasting backface-culls exactly that side when the
+      // material is the default FrontSide, so every such hit was silently
+      // discarded. Confirmed live: a real 0.2mm test plate produced zero
+      // hits with the default material and consistent 0.199mm hits with
+      // DoubleSide — this was a real bug, not a false-negative bit of
+      // fine-tuning, meaning the warning likely never fired on any normal
+      // (correctly-wound) upload before this fix.
+      const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+      const raycaster = new THREE.Raycaster();
+      raycaster.firstHitOnly = true;
+      // 0.4mm real thickness (after Échelle — see effectiveScale below), not
+      // the raw file's own units: a part scaled down for a unit correction
+      // needs checking against its REAL final size, not what the file says
+      // before that correction. Sample distances are measured in the raw
+      // file's geometry, so divide the threshold by scale instead of
+      // multiplying every hit — same comparison, one division instead of
+      // one multiplication per sample.
+      const REAL_THRESHOLD_MM = 0.4;
+      const effectiveScale = this._effectiveScale() || 1;
+      const THRESHOLD_MM = REAL_THRESHOLD_MM / effectiveScale;
+      // A single thin triangle (a stray sliver, a fillet edge, a rounding
+      // artifact) isn't worth a warning — only flag once enough thin
+      // surface accumulates that it's plausibly a real wall, not noise.
+      // 2mm² in REAL (post-scale) terms.
+      const MIN_THIN_AREA_MM2 = 2;
+      // Each ray is a brute-force O(triCount) scan — three.js's default
+      // Raycaster has no spatial index (no BVH) here, so a naive fixed
+      // sample budget (previously always up to 1500 rays regardless of
+      // density) could multiply into hundreds of millions of ray/triangle
+      // tests on a dense mesh, which is exactly what was freezing the page
+      // (confirmed live: the freeze landed right after the viewer appeared,
+      // i.e. exactly when this synchronous loop started). Bounding the
+      // TOTAL ray×triangle cost keeps worst-case work sane regardless of
+      // mesh density — a very dense mesh just gets sampled more sparsely.
+      const MAX_RAY_TRIANGLE_COST = 6000000;
+      const sampleBudget = Math.min(1500, Math.max(20, Math.floor(MAX_RAY_TRIANGLE_COST / triCount)));
+      const step = Math.max(1, Math.floor(triCount / sampleBudget));
+      const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), centroid = new THREE.Vector3(), normal = new THREE.Vector3();
+      let thinAreaMm2 = 0;
+      // Yields back to the browser every ~12ms of work (well within a
+      // frame) instead of running the whole loop in one uninterrupted
+      // synchronous burst — this is what actually stops the page from
+      // freezing; the total wall-clock time is roughly the same, but
+      // scrolling/clicking/the viewer's own drag keep working throughout.
+      const CHUNK_MS = 12;
+      let chunkStart = performance.now();
+      for (let i = 0; i < triCount; i += step) {
+        if (this.state.cfgFile !== file) return; // superseded by a newer upload
+        a.fromBufferAttribute(pos, i * 3);
+        b.fromBufferAttribute(pos, i * 3 + 1);
+        c.fromBufferAttribute(pos, i * 3 + 2);
+        centroid.copy(a).add(b).add(c).divideScalar(3);
+        normal.subVectors(b, a).cross(c.clone().sub(a)).normalize();
+        if (normal.lengthSq() < 1e-8) continue;
+        raycaster.set(centroid.clone().addScaledVector(normal, -1e-3), normal.clone().negate());
+        raycaster.near = 0; raycaster.far = THRESHOLD_MM;
+        const hits = raycaster.intersectObject(mesh, false);
+        if (hits.length && hits[0].distance < THRESHOLD_MM) {
+          const triArea = b.clone().sub(a).cross(c.clone().sub(a)).length() / 2;
+          thinAreaMm2 += triArea * step * effectiveScale * effectiveScale; // ×step: this sample stands in for the skipped triangles too
+          if (thinAreaMm2 >= MIN_THIN_AREA_MM2) {
+            if (this.state.cfgFile === file) this.setState({ cfgThinWallWarning: true });
+            geometry.dispose();
+            mesh.material.dispose();
+            return;
+          }
+        }
+        if (performance.now() - chunkStart > CHUNK_MS) {
+          await new Promise((r) => setTimeout(r, 0));
+          chunkStart = performance.now();
+        }
+      }
+      geometry.dispose();
+      mesh.material.dispose();
+    } catch (e) {
+      // Best-effort — a parse hiccup just means no warning shown, never an error state.
+    }
   }
   _renderAnalysisPreview() {
     return this._renderInto(this.analysisPreviewRef, '_analysisPreviewHandle');
   }
-  // Mode vacances : la source de vérité réelle est déjà côté serveur (POST
-  // /quotes refuse tout si Settings.quoteEnabled est faux) ; ce flag local
-  // ne sert qu'à masquer le configurateur dans l'UI en attendant que l'écran
-  // admin pilote directement Settings au lieu de ce drapeau localStorage.
+  // Mode vacances : la source de vérité réelle est le serveur (POST /quotes
+  // refuse tout si Settings.quoteEnabled est faux — voir GET /quote-enabled
+  // dans routes/materials.ts). L'ancien drapeau localStorage (stock.js,
+  // reliquat de wireframe) restait local à CE navigateur : un visiteur
+  // n'ayant jamais eu ce flag remis à jour continuait de voir
+  // "indisponible" indéfiniment, même une fois les devis réactivés pour de
+  // vrai côté admin — confirmé en vrai (Settings.quoteEnabled=true en base,
+  // page toujours bloquée). stock.js reste chargé pour ses autres exports
+  // (MATERIAL_KEY_MAP etc.), juste plus comme source pour ce flag précis.
   async _loadStock() {
     const mod = await import('./stock.js');
     this._stock = mod;
-    this.setState({ quoteEnabled: mod.isQuoteEnabled() });
+    const api = await this._api();
+    const res = await api.getQuoteEnabled();
+    this.setState({ quoteEnabled: res.ok && res.data ? res.data.quoteEnabled : mod.isQuoteEnabled() });
   }
   async _api() {
     if (!this._apiMod) this._apiMod = (await import('./api-client.js')).api;
     return this._apiMod;
+  }
+  async _checkAuth() {
+    const api = await this._api();
+    const res = await api.me();
+    this.setState({ isLoggedIn: !!(res.ok && res.data && res.data.user) });
   }
   async _loadMaterials() {
     const api = await this._api();
@@ -486,12 +786,33 @@ class Component extends DCLogic {
     this._setFile(e.dataTransfer.files && e.dataTransfer.files[0]);
   }
   cfgNext() {
+    // Blocks leaving step 1 while the chosen Unité/Échelle would put the
+    // part outside the H2C's real bed (330×320×325mm) — see
+    // _scaleFitsPrinter(). Purely a client-side UX guard against a wasted
+    // round-trip; the server (routes/quotes.ts) enforces this for real
+    // regardless of what happens here.
+    if (this.state.cfgStep === 1 && !this._scaleFitsPrinter()) return;
     this.setState(s => ({ cfgStep: Math.min(4, s.cfgStep + 1) }), () => {
       if (this.state.cfgStep === 3 && !this.state.cfgAnalysisReady && !this.state.cfgAnalyzing) this._submitQuote();
+      // Same DOM-remount issue as cfgGoStep(1) — revisiting step 3 after an
+      // earlier analysis (already cfgAnalysisReady) skips _submitQuote(),
+      // which is the only place _renderAnalysisPreview() was otherwise
+      // called from.
+      else if (this.state.cfgStep === 3 && this.state.cfgAnalysisReady) this._renderAnalysisPreview();
     });
   }
   cfgGoStep(n) {
-    if (n < this.state.cfgStep) this.setState({ cfgStep: n });
+    if (n >= this.state.cfgStep) return;
+    // Going back to step 1 remounts previewRef's DOM node (sc-if removes/
+    // re-adds the whole step-1 subtree) — the old renderer's canvas was
+    // appended to the now-destroyed node, so without this the viewer comes
+    // back completely black. Re-render fresh into the new node, same
+    // file/color/scale already in state (nothing here resets those, so
+    // every choice survives going back — confirmed for real, this was the
+    // only actual bug).
+    this.setState({ cfgStep: n }, () => {
+      if (n === 1 && this.state.cfgFile) this._renderPreview();
+    });
   }
   cfgRetryAnalysis() {
     this.setState({ cfgAnalysisError: null });
@@ -504,19 +825,28 @@ class Component extends DCLogic {
       return;
     }
     this.setState({ cfgAnalyzing: true, cfgAnalysisError: null });
+    // Runs alongside the server request below (not after it) so it doesn't
+    // add its own wait on top — but we still await it before leaving step 3
+    // (see below), so the "Analyse en cours" loader that's already up
+    // covers it too: the warning is always known by the time step 4 shows,
+    // never popping in after the fact once the customer's already looking
+    // at the price.
+    const thinWallPromise = this._checkThinWalls();
     const api = await this._api();
     const res = await api.submitQuote({
       file: s.cfgFile, material: s.cfgMaterial, colorId: s.cfgColorId,
-      quality: s.cfgQuality, infillPct: s.cfgInfill, quantity: s.cfgQty
+      quality: s.cfgQuality, infillPct: s.cfgInfill, quantity: s.cfgQty,
+      scale: this._effectiveScale()
     });
     if (!res.ok) {
       const messages = {
         quote_disabled: "Le devis instantané est momentanément indisponible.",
-        part_too_large: 'Cette pièce dépasse le volume imprimable de toutes nos machines (max 350×320×325mm).',
+        part_too_large: 'Cette pièce dépasse le volume imprimable de toutes nos machines (max 330×320×325mm). Possibilité d’imprimer vos pièces en plusieurs morceaux, utilisez le formulaire de contact.',
         non_manifold_model: 'Le modèle contient des erreurs de géométrie (maillage non étanche) — vérifiez le fichier dans votre logiciel de CAO.',
         unreadable_file: 'Fichier illisible — vérifiez qu’il s’agit bien d’un .stl, .obj ou .step valide.',
         slicing_failed: 'L’analyse a échoué pour ce fichier. Contactez-nous si le problème persiste.',
         color_out_of_stock: 'Cette couleur vient de passer en rupture de stock — choisissez-en une autre.',
+        invalid_scale: 'Échelle invalide — vérifiez l’unité et le pourcentage saisis à l’étape précédente.',
       };
       this.setState({
         cfgAnalyzing: false,
@@ -524,6 +854,7 @@ class Component extends DCLogic {
       });
       return;
     }
+    await thinWallPromise;
     this.setState({ cfgAnalyzing: false, cfgAnalysisReady: true, cfgQuote: res.data.quote }, () => this._renderAnalysisPreview());
   }
   async addToCart() {
@@ -565,11 +896,17 @@ class Component extends DCLogic {
     const materials = s.materials.map(m => ({
       label: m.key,
       onClick: () => this._selectMaterial(m.key),
+      onSelectClick: () => { this._selectMaterial(m.key); this.setState({ cfgMaterialDropdownOpen: false }); },
       chipStyle: {
         padding: '6px 12px', borderRadius: '6px', font: "600 10.5px 'Inter',sans-serif", cursor: 'pointer',
         background: s.cfgMaterial === m.key ? '#ff5a3c' : 'transparent',
         color: s.cfgMaterial === m.key ? '#161514' : '#e8e6e1',
         border: '1px solid ' + (s.cfgMaterial === m.key ? '#ff5a3c' : 'rgba(255,255,255,.2)')
+      },
+      selectRowStyle: {
+        padding: '9px 12px', font: "500 11.5px 'Inter',sans-serif", cursor: 'pointer',
+        background: s.cfgMaterial === m.key ? 'rgba(255,90,60,.12)' : 'transparent',
+        color: s.cfgMaterial === m.key ? '#ff5a3c' : '#e8e6e1',
       }
     }));
     const selectedMaterial = s.materials.find(m => m.key === s.cfgMaterial);
@@ -579,21 +916,29 @@ class Component extends DCLogic {
       style: { width: '20px', height: '20px', borderRadius: '50%', background: c.colorHex, cursor: 'pointer', border: s.cfgColorId === c.id ? '2px solid #f3f1ec' : '1px solid rgba(255,255,255,.3)' }
     }));
     const infillHints = {
-      15: 'Minimum conseillé — très léger, déco fragile uniquement.',
-      30: 'Léger, décoratif standard.',
-      40: 'Usage courant, bon compromis poids / coût.',
-      60: 'Renforcé, pièces modérément sollicitées.',
-      80: 'Très renforcé, forte contrainte mécanique.',
-      100: 'Quasi plein, pièces fortement sollicitées.'
+      15: 'Minimum, déco fragile',
+      30: 'Décoratif standard',
+      40: 'Usage courant',
+      60: 'Renforcé',
+      80: 'Forte contrainte',
+      100: 'Pièce pleine'
     };
     const infills = [15, 30, 40, 60, 80, 100].map(v => ({
+      value: v,
       label: v + '%',
+      selectLabel: v + '% — ' + infillHints[v],
       onClick: () => this.setState({ cfgInfill: v, cfgAnalysisReady: false, cfgQuote: null }),
+      onSelectClick: () => this.setState({ cfgInfill: v, cfgAnalysisReady: false, cfgQuote: null, cfgInfillDropdownOpen: false }),
       chipStyle: {
         padding: '6px 11px', borderRadius: '6px', font: "600 10.5px 'Inter',sans-serif", cursor: 'pointer',
         background: s.cfgInfill === v ? '#ff5a3c' : 'transparent',
         color: s.cfgInfill === v ? '#161514' : '#e8e6e1',
         border: '1px solid ' + (s.cfgInfill === v ? '#ff5a3c' : 'rgba(255,255,255,.2)')
+      },
+      selectRowStyle: {
+        padding: '9px 12px', font: "500 11.5px 'Inter',sans-serif", cursor: 'pointer',
+        background: s.cfgInfill === v ? 'rgba(255,90,60,.12)' : 'transparent',
+        color: s.cfgInfill === v ? '#ff5a3c' : '#e8e6e1',
       }
     }));
     const qualityHints = {
@@ -604,11 +949,17 @@ class Component extends DCLogic {
     const qualities = ['Rapide', 'Standard', 'Fine'].map(q => ({
       label: q,
       onClick: () => this.setState({ cfgQuality: q, cfgAnalysisReady: false, cfgQuote: null }),
+      onSelectClick: () => this.setState({ cfgQuality: q, cfgAnalysisReady: false, cfgQuote: null, cfgQualityDropdownOpen: false }),
       chipStyle: {
         padding: '6px 14px', borderRadius: '6px', font: "600 11px 'Inter',sans-serif", cursor: 'pointer',
         background: s.cfgQuality === q ? '#ff5a3c' : 'transparent',
         color: s.cfgQuality === q ? '#161514' : '#e8e6e1',
         border: '1px solid ' + (s.cfgQuality === q ? '#ff5a3c' : 'rgba(255,255,255,.2)')
+      },
+      selectRowStyle: {
+        padding: '9px 12px', font: "500 11.5px 'Inter',sans-serif", cursor: 'pointer',
+        background: s.cfgQuality === q ? 'rgba(255,90,60,.12)' : 'transparent',
+        color: s.cfgQuality === q ? '#ff5a3c' : '#e8e6e1',
       }
     }));
     const qty = s.cfgQty;
@@ -626,7 +977,7 @@ class Component extends DCLogic {
     }));
     const faqsRaw = [
       { q: 'Quels formats de fichiers acceptez-vous ?', a: 'STL, OBJ et STEP. Pas de fichier prêt ? Contactez-nous pour être accompagné.' },
-      { q: 'Quelle taille de pièce est possible ?', a: 'Jusqu\u2019à 350 × 320 × 325 mm selon la machine. Les pièces plus grandes peuvent être imprimées en plusieurs parties puis assemblées.' },
+      { q: 'Quelle taille de pièce est possible ?', a: 'Jusqu\u2019à 330 × 320 × 325 mm selon la machine. Les pièces plus grandes peuvent être imprimées en plusieurs parties puis assemblées.' },
       { q: 'Quels sont les délais ?', a: 'Ils dépendent du volume, du remplissage, de la qualité choisie et de la charge de l\u2019atelier.' },
       { q: 'Comment choisir mon matériau ?', a: 'Le configurateur propose PLA, PETG, ABS, ASA, TPU, PP et Nylon (le PEEK/PEKK n\u2019est pas proposé). Un doute ? Consultez le guide ci-dessus ou contactez-nous.' },
       { q: 'Comment se passent le paiement et la livraison ?', a: 'Paiement en ligne sécurisé via Stripe à la validation du panier. Retrait à Nantes (Canclaux) ou expédition.' }
@@ -642,11 +993,35 @@ class Component extends DCLogic {
     const selColor = availableColors.find(c => c.id === s.cfgColorId);
     return {
       cartCount: s.cartCount,
+      isLoggedIn: s.isLoggedIn,
       quoteEnabled: s.quoteEnabled,
       quotePaused: !s.quoteEnabled,
       isCfgStep1: s.cfgStep === 1, isCfgStep2: s.cfgStep === 2, isCfgStep3: s.cfgStep === 3, isCfgStep4: s.cfgStep === 4,
       cfgFileReady: !!s.cfgFile, cfgFileName: s.cfgFile ? s.cfgFile.name : '',
-      previewRef: this.previewRef, analysisPreviewRef: this.analysisPreviewRef, cfgPreviewUnavailable: s.cfgPreviewUnavailable,
+      previewRef: this.previewRef, analysisPreviewRef: this.analysisPreviewRef,
+      cfgPreviewUnavailable: s.cfgPreviewUnavailable && !s.cfgPreviewLoading,
+      cfgPreviewLoading: s.cfgPreviewLoading,
+      cfgHasSize: !!s.cfgSizeMm,
+      cfgUnit: s.cfgUnit,
+      cfgScalePct: s.cfgScalePct,
+      onCfgUnitChange: (e) => this.onCfgUnitChange(e),
+      onCfgScalePctChange: (e) => this.onCfgScalePctChange(e),
+      onCfgScaleInc: () => this._bumpScalePct(5),
+      onCfgScaleDec: () => this._bumpScalePct(-5),
+      cfgSizeLabel: s.cfgSizeMm ? (() => {
+        const f = this._effectiveScale();
+        const fmt = (n) => (n * f).toFixed(1).replace('.', ',');
+        return `${fmt(s.cfgSizeMm.x)} × ${fmt(s.cfgSizeMm.y)} × ${fmt(s.cfgSizeMm.z)} mm`;
+      })() : '',
+      cfgScaleTooLarge: !!s.cfgSizeMm && !this._scaleFitsPrinter(),
+      cfgSizeLabelStyle: {
+        font: "600 11px ui-monospace,monospace",
+        color: (!!s.cfgSizeMm && !this._scaleFitsPrinter()) ? '#ff8a70' : '#f3f1ec'
+      },
+      cfgNextStepButtonStyle: (!!s.cfgSizeMm && !this._scaleFitsPrinter())
+        ? { background: 'rgba(255,255,255,.08)', color: 'rgba(255,255,255,.35)', font: "600 12px 'Inter',sans-serif", padding: '10px 20px', borderRadius: '6px', cursor: 'not-allowed' }
+        : { background: '#ff5a3c', color: '#161514', font: "600 12px 'Inter',sans-serif", padding: '10px 20px', borderRadius: '6px', cursor: 'pointer' },
+      cfgHasThinWallWarning: s.cfgThinWallWarning,
       cfgAnalyzing: s.cfgAnalyzing, cfgAnalysisReady: s.cfgAnalysisReady, cfgAnalysisError: s.cfgAnalysisError,
       cfgRetryAnalysis: () => this.cfgRetryAnalysis(),
       isCfgIdle: !s.cfgFile,
@@ -666,7 +1041,21 @@ class Component extends DCLogic {
       cfgRail1: railStep(1, 'Fichier STL'), cfgRail2: railStep(2, 'Options'), cfgRail3: railStep(3, 'Analyse auto'), cfgRail4: railStep(4, 'Prix & panier'),
       cfgMaterials: materials, cfgColors: colors,
       infills, infillHint: infillHints[s.cfgInfill],
+      cfgInfillDropdownOpen: s.cfgInfillDropdownOpen,
+      cfgInfillLabel: s.cfgInfill + '%',
+      toggleInfillDropdown: () => this.setState(prev => ({ cfgInfillDropdownOpen: !prev.cfgInfillDropdownOpen })),
+      cfgInfillChevronStyle: { display: 'inline-block', transition: 'transform .15s ease', transform: s.cfgInfillDropdownOpen ? 'rotate(180deg)' : 'none' },
+      onViewerZoomIn: () => this._previewHandle && this._previewHandle.zoomIn && this._previewHandle.zoomIn(),
+      onViewerZoomOut: () => this._previewHandle && this._previewHandle.zoomOut && this._previewHandle.zoomOut(),
+      cfgMaterialDropdownOpen: s.cfgMaterialDropdownOpen,
+      cfgMaterialLabel: s.cfgMaterial,
+      toggleMaterialDropdown: () => this.setState(prev => ({ cfgMaterialDropdownOpen: !prev.cfgMaterialDropdownOpen })),
+      cfgMaterialChevronStyle: { display: 'inline-block', transition: 'transform .15s ease', transform: s.cfgMaterialDropdownOpen ? 'rotate(180deg)' : 'none' },
       qualities, qualityHint: qualityHints[s.cfgQuality],
+      cfgQualityDropdownOpen: s.cfgQualityDropdownOpen,
+      cfgQualityLabel: s.cfgQuality,
+      toggleQualityDropdown: () => this.setState(prev => ({ cfgQualityDropdownOpen: !prev.cfgQualityDropdownOpen })),
+      cfgQualityChevronStyle: { display: 'inline-block', transition: 'transform .15s ease', transform: s.cfgQualityDropdownOpen ? 'rotate(180deg)' : 'none' },
       cfgSelMaterial: s.cfgMaterial,
       cfgSelQuality: s.cfgQuality,
       cfgSelColorName: selColor ? selColor.colorName : '—',

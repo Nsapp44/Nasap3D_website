@@ -26,7 +26,7 @@ dans `server/`.
 ├── *.dc.html            Pages du site (front-end statique)
 ├── api-client.js        Client JS partagé vers l'API (server/)
 ├── viewer3d.js           Aperçu 3D réel (three.js + occt-import-js pour le STEP)
-├── vendor/               Dépendances front vendorisées (three.js, occt-import-js)
+├── vendor/               Dépendances front vendorisées (three.js, occt-import-js, intl-tel-input, boxtal-parcel-point-map)
 ├── server/                API réelle (Fastify + TypeScript + PostgreSQL/Prisma)
 │   ├── PRICING.md         Formule de calcul de prix (détaillée, avec exemples)
 │   ├── SHIPPING.md         Intégration Boxtal

@@ -13,6 +13,9 @@ dist/
 .env
 .env.local
 server/uploads/
+# Dumps produced by scripts/backup-db.sh — never committed, see
+# server/README.md "Sauvegardes"
+backups/
 # Local-only PrusaSlicer install used for dev/testing (see server/README.md) —
 # not part of the app, never committed; production installs it via Docker.
 server/.tools/

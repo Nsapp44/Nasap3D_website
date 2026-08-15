@@ -20,93 +20,12 @@ export interface ShippingSelection {
   relayPoint?: { code: string; name: string; address: string; city: string; zipcode: string };
 }
 
-// Packs a confirmed shipping selection into Stripe Checkout Session
-// metadata (string keys/values only, 500 chars max each) so the webhook can
-// recover it once payment is confirmed — see stripeWebhookRoutes below.
-// Several short keys rather than one JSON blob: comfortably under Stripe's
-// per-value limit even for long addresses, and easy to inspect in the
-// Stripe dashboard.
-export function packShippingMetadata(s: ShippingSelection): Record<string, string> {
-  const m: Record<string, string> = {
-    shipping_mode: s.mode,
-    shipping_carrier: s.rate.operatorCode,
-    shipping_service: s.rate.serviceCode,
-    shipping_label: s.rate.label,
-    shipping_cents: String(s.rate.cents),
-    shipping_delivery_date: s.rate.estimatedDeliveryDate ?? "",
-    shipping_weight_g: String(Math.round(s.weightG)),
-    shipping_parcel_l: String(s.parcelCm.length),
-    shipping_parcel_w: String(s.parcelCm.width),
-    shipping_parcel_h: String(s.parcelCm.height),
-    shipping_oversized: s.oversized ? "1" : "0",
-    recipient_name: s.recipient.name,
-    recipient_phone: s.recipient.phone,
-    recipient_address: s.recipient.address,
-    recipient_city: s.recipient.city,
-    recipient_zipcode: s.recipient.zipcode,
-    recipient_country: s.recipient.country,
-  };
-  if (s.relayPoint) {
-    m.relay_code = s.relayPoint.code;
-    m.relay_name = s.relayPoint.name;
-    m.relay_address = s.relayPoint.address;
-    m.relay_city = s.relayPoint.city;
-    m.relay_zipcode = s.relayPoint.zipcode;
-  }
-  return m;
-}
-
-function unpackShippingMetadata(metadata: Record<string, string>): ShippingSelection | null {
-  if (!metadata.shipping_mode) return null;
-  const mode =
-    metadata.shipping_mode === "PICKUP" ? "PICKUP" as const :
-    metadata.shipping_mode === "RELAY" ? "RELAY" as const : "HOME" as const;
-  return {
-    mode,
-    rate: {
-      operatorCode: metadata.shipping_carrier ?? "",
-      serviceCode: metadata.shipping_service ?? "",
-      label: metadata.shipping_label ?? "",
-      cents: Number(metadata.shipping_cents) || 0,
-      estimatedDeliveryDate: metadata.shipping_delivery_date || null,
-    },
-    weightG: Number(metadata.shipping_weight_g) || 0,
-    parcelCm: {
-      length: Number(metadata.shipping_parcel_l) || 0,
-      width: Number(metadata.shipping_parcel_w) || 0,
-      height: Number(metadata.shipping_parcel_h) || 0,
-    },
-    oversized: metadata.shipping_oversized === "1",
-    recipient: {
-      name: metadata.recipient_name ?? "",
-      phone: metadata.recipient_phone ?? "",
-      address: metadata.recipient_address ?? "",
-      city: metadata.recipient_city ?? "",
-      zipcode: metadata.recipient_zipcode ?? "",
-      country: metadata.recipient_country ?? "FR",
-    },
-    relayPoint: mode === "RELAY"
-      ? {
-          code: metadata.relay_code ?? "",
-          name: metadata.relay_name ?? "",
-          address: metadata.relay_address ?? "",
-          city: metadata.relay_city ?? "",
-          zipcode: metadata.relay_zipcode ?? "",
-        }
-      : undefined,
-  };
-}
-
-export function shippingFromStripeMetadata(metadata: Record<string, string> | null | undefined): ShippingSelection | null {
-  return metadata ? unpackShippingMetadata(metadata) : null;
-}
-
-// Called from the Stripe webhook once payment is confirmed. Takes the cart
-// exactly as it stands right now (see server/README.md's checkout section
-// for the accepted trade-off: a cart edited in another tab between "Payer"
-// and the webhook firing — seconds, in practice — isn't re-priced here).
-// `shipping` is the selection re-verified server-side at /checkout time
-// (see checkoutRoutes) — its price was never trusted from the client.
+// Called at "Passer la commande pour expertise" time (POST /checkout, see
+// routes/checkout.ts) — no Stripe/payment involved at all: the order is
+// created straight away, in EXPERTISE status, so an admin can review
+// feasibility before ever charging the customer. `shipping` is the
+// selection re-verified server-side at /checkout time — its price was
+// never trusted from the client.
 export async function createOrderFromCart(
   userId: string,
   shipping: ShippingSelection | null,
@@ -128,7 +47,7 @@ export async function createOrderFromCart(
       data: {
         ref,
         userId,
-        status: "PENDING",
+        status: "EXPERTISE",
         subtotalCents: summary.subtotalCents,
         discountCents: summary.discountCents,
         shippingCents,
@@ -193,4 +112,18 @@ export async function createOrderFromCart(
   });
 
   return { orderId: order.id, ref: order.ref, totalCents: order.totalCents };
+}
+
+// A REJECTED order (declined at the expertise stage, never paid) stays
+// visible to the customer for a while — see routes/admin.ts — with a
+// polite "contact us" message rather than vanishing instantly. Run
+// periodically (see index.ts) to actually clean these up afterward.
+const REJECTED_ORDER_RETENTION_MS = 72 * 60 * 60 * 1000; // 72h
+
+export async function sweepRejectedOrders(): Promise<number> {
+  const cutoff = new Date(Date.now() - REJECTED_ORDER_RETENTION_MS);
+  const result = await prisma.order.deleteMany({
+    where: { status: "REJECTED", rejectedAt: { lt: cutoff } },
+  });
+  return result.count;
 }

@@ -40,6 +40,7 @@ a:hover{color:#ff7a5c}
     </div>
     <div style="display:flex;align-items:center;gap:18px;font:500 12px 'Inter',sans-serif;color:rgba(255,255,255,.75)">
       <a href="Account.dc.html" style="text-decoration:none;color:inherit;display:inline-block;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c">Compte</a>
+      <sc-if value="{{ isLoggedIn }}" hint-placeholder-val="{{ false }}"><a href="Account.dc.html?view=settings" title="Réglages du compte" style="cursor:pointer;color:inherit;display:inline-flex;align-items:center;transition:transform .2s ease,color .2s ease" style-hover="transform:scale(1.18);color:#ff5a3c"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg></a></sc-if>
       <a href="Cart.dc.html" style="text-decoration:none;color:inherit;position:relative;display:inline-flex;align-items:center"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg></a>
     </div>
   </div>
@@ -63,5 +64,21 @@ a:hover{color:#ff7a5c}
 
 </div>
 </x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { isLoggedIn: false };
+  componentDidMount() {
+    this._checkAuth();
+  }
+  async _checkAuth() {
+    const { api } = await import('./api-client.js');
+    const res = await api.me();
+    this.setState({ isLoggedIn: !!(res.ok && res.data && res.data.user) });
+  }
+  renderVals() {
+    return { isLoggedIn: this.state.isLoggedIn };
+  }
+}
+</script>
 </body>
 </html>

@@ -33,6 +33,7 @@ const credentialsSchema = z.object({
   password: z.string(),
   captchaToken: z.string().optional(),
 });
+const loginSchema = credentialsSchema.extend({ rememberMe: z.boolean().optional() });
 
 interface PendingSignupPayload {
   email: string;
@@ -120,9 +121,9 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   app.post("/auth/login", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (request, reply) => {
-    const body = credentialsSchema.safeParse(request.body);
+    const body = loginSchema.safeParse(request.body);
     if (!body.success) return reply.code(400).send({ error: "invalid_body" });
-    const { email, password, captchaToken } = body.data;
+    const { email, password, captchaToken, rememberMe } = body.data;
 
     const rc = await verifyCaptcha(captchaToken);
     if (!rc.ok) return reply.code(400).send({ error: "captcha_failed", reason: rc.reason });
@@ -139,7 +140,7 @@ export async function authRoutes(app: FastifyInstance) {
     if (guestSessionId) await mergeGuestCartIntoUser(guestSessionId, user.id);
 
     const { raw, expiresAt } = await createSession(user.id);
-    setSessionCookie(reply, raw, expiresAt);
+    setSessionCookie(reply, raw, expiresAt, rememberMe === true);
     return reply.send({ user: publicUser(user) });
   });
 

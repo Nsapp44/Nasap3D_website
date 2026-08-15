@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireAuth } from "../lib/session.js";
 import { getCartTotalWeightG, getCartParcelRequirement, getCartTotalPrintMinutes } from "../lib/cart.js";
-import { quoteShippingRates, BoxtalConfigError, BoxtalApiError } from "../lib/boxtal.js";
+import { quoteShippingRates, getBoxtalMapAccessToken, BoxtalConfigError, BoxtalApiError } from "../lib/boxtal.js";
 
 const recipientSchema = z.object({
   address: z.string().trim().min(3).max(120),
@@ -35,6 +35,27 @@ export async function shippingRoutes(app: FastifyInstance) {
       }
       if (err instanceof BoxtalApiError) {
         request.log.error(err, "boxtal cotation failed");
+        return reply.code(502).send({ error: "shipping_provider_error" });
+      }
+      throw err;
+    }
+  });
+
+  // Short-lived token for the Boxtal parcel-point-map widget (see
+  // lib/boxtal.ts getBoxtalMapAccessToken) — minted server-side so
+  // BOXTAL_MAP_API_SECRET never reaches the browser, cached in-memory
+  // between calls since the token isn't user-specific.
+  app.get("/shipping/map-token", { preHandler: requireAuth }, async (request, reply) => {
+    try {
+      const { accessToken, expiresIn } = await getBoxtalMapAccessToken();
+      return reply.send({ accessToken, expiresIn });
+    } catch (err) {
+      if (err instanceof BoxtalConfigError) {
+        request.log.error(err, "boxtal map not configured");
+        return reply.code(503).send({ error: "shipping_not_configured" });
+      }
+      if (err instanceof BoxtalApiError) {
+        request.log.error(err, "boxtal map token failed");
         return reply.code(502).send({ error: "shipping_provider_error" });
       }
       throw err;

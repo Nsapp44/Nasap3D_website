@@ -2,20 +2,14 @@ import type { FastifyInstance } from "fastify";
 import Stripe from "stripe";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
-import { getSessionUser, requireAuth } from "../lib/session.js";
+import { requireAuth } from "../lib/session.js";
 import { getCartSummary, getCartTotalWeightG, getCartParcelRequirement, getCartTotalPrintMinutes } from "../lib/cart.js";
 import { stripe } from "../lib/stripeClient.js";
-import {
-  createOrderFromCart,
-  packShippingMetadata,
-  shippingFromStripeMetadata,
-  EmptyCartError,
-  type ShippingSelection,
-} from "../lib/orders.js";
+import { createOrderFromCart, EmptyCartError, type ShippingSelection } from "../lib/orders.js";
 import { quoteShippingRates, BoxtalConfigError, BoxtalApiError } from "../lib/boxtal.js";
 import { nextCounter } from "../lib/counter.js";
 import { saveFile } from "../lib/storage.js";
-import { sendMail } from "../lib/mailer.js";
+import { sendOrderPlacedEmail, notifyAdminOrderToReview, notifyAdminOrderPaid } from "../lib/orderEmails.js";
 
 const shippingRecipientSchema = z.object({
   name: z.string().trim().min(2).max(80),
@@ -54,6 +48,13 @@ const checkoutShippingSchema = z.discriminatedUnion("mode", [
 // User in the schema, and "download my invoice from my account" only makes
 // sense if there's an account. The front prompts login/signup before this.
 export async function checkoutRoutes(app: FastifyInstance) {
+  // "Passer la commande pour expertise" — creates the order right away, no
+  // Stripe involved at all: payment only happens later, once an admin has
+  // reviewed feasibility and accepted it (see POST /orders/:id/pay below
+  // and PATCH /admin/orders/:id in routes/admin.ts). This also sidesteps
+  // the old design's dependency on Stripe's webhook actually reaching this
+  // server to create the order at all — see server/README.md for why that
+  // was fragile in local/dev environments without a webhook tunnel.
   app.post("/checkout", { preHandler: requireAuth }, async (request, reply) => {
     const user = request.user!;
     const summary = await getCartSummary({ userId: user.id });
@@ -106,43 +107,62 @@ export async function checkoutRoutes(app: FastifyInstance) {
       };
     }
 
-    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = summary.lines.map((l) => ({
+    let created;
+    try {
+      created = await createOrderFromCart(user.id, shipping);
+    } catch (err) {
+      if (err instanceof EmptyCartError) return reply.code(400).send({ error: "empty_cart" });
+      throw err;
+    }
+
+    await sendOrderPlacedEmail(user.email, created.ref, created.totalCents);
+    await notifyAdminOrderToReview(created.ref, user.email, created.totalCents);
+
+    return reply.send({ ok: true, ref: created.ref });
+  });
+
+  // Triggered by the "Payer avec Stripe" button that appears on the
+  // customer's account once their order has been accepted (AWAITING_PAYMENT)
+  // — unlike the old flow, the Stripe session is built straight from the
+  // already-stored Order/OrderItem rows, not the cart (which is long since
+  // empty by this point).
+  app.post("/orders/:id/pay", { preHandler: requireAuth }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const order = await prisma.order.findUnique({ where: { id }, include: { items: true } });
+    if (!order || order.userId !== request.user!.id) return reply.code(404).send({ error: "not_found" });
+    if (order.status !== "AWAITING_PAYMENT") return reply.code(409).send({ error: "not_awaiting_payment" });
+
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = order.items.map((it) => ({
       quantity: 1,
       price_data: {
         currency: "eur",
-        unit_amount: l.lineTotalCents,
+        unit_amount: it.lineTotalCents,
         product_data: {
-          name: `${l.fileName} — ${l.material}, ${l.quality}, ${l.infillPct}% (×${l.qty}${l.discountPct ? `, -${l.discountPct}%` : ""})`,
+          name: it.materialSnapshot
+            ? `${it.nameSnapshot} — ${it.materialSnapshot}, ${it.qualitySnapshot} (×${it.qty})`
+            : it.nameSnapshot,
         },
       },
     }));
-    if (summary.smallOrderFeeCents > 0) {
+    if (order.shippingCents > 0) {
       lineItems.push({
         quantity: 1,
         price_data: {
           currency: "eur",
-          unit_amount: summary.smallOrderFeeCents,
-          product_data: { name: `Frais de petite commande (panier < ${(summary.minOrderCents / 100).toFixed(2)}€)` },
+          unit_amount: order.shippingCents,
+          product_data: { name: `Livraison — ${order.shippingLabel || ""}` },
         },
       });
     }
-    lineItems.push({
-      quantity: 1,
-      price_data: {
-        currency: "eur",
-        unit_amount: shipping.rate.cents,
-        product_data: { name: `Livraison — ${shipping.rate.label}` },
-      },
-    });
 
     const session = await stripe().checkout.sessions.create({
       mode: "payment",
       line_items: lineItems,
-      customer_email: user.email,
+      customer_email: request.user!.email,
       invoice_creation: { enabled: true },
-      success_url: `${process.env.FRONT_URL}/Cart.dc.html?paid=1`,
-      cancel_url: `${process.env.FRONT_URL}/Cart.dc.html?canceled=1`,
-      metadata: { userId: user.id, ...packShippingMetadata(shipping) },
+      success_url: `${process.env.FRONT_URL}/Account.dc.html?paid=1`,
+      cancel_url: `${process.env.FRONT_URL}/Account.dc.html?canceled=1`,
+      metadata: { orderId: order.id },
     });
 
     return reply.send({ url: session.url });
@@ -172,49 +192,33 @@ export async function stripeWebhookRoutes(app: FastifyInstance) {
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
-      const userId = session.metadata?.userId;
-      if (!userId) {
-        request.log.error("checkout.session.completed without metadata.userId");
+      const orderId = session.metadata?.orderId;
+      if (!orderId) {
+        request.log.error("checkout.session.completed without metadata.orderId");
         return reply.send({ ok: true });
       }
 
-      const shipping = shippingFromStripeMetadata(session.metadata);
-      let created;
-      try {
-        created = await createOrderFromCart(userId, shipping);
-      } catch (err) {
-        if (err instanceof EmptyCartError) {
-          request.log.error(err, "could not create order from cart at webhook time");
-          return reply.send({ ok: true });
-        }
-        throw err;
+      const order = await prisma.order.findUnique({ where: { id: orderId } });
+      if (!order) {
+        request.log.error(`checkout.session.completed for missing order ${orderId}`);
+        return reply.send({ ok: true });
+      }
+      // Idempotency: Stripe can retry webhook delivery for the same event.
+      if (order.status !== "AWAITING_PAYMENT") {
+        return reply.send({ ok: true });
       }
 
       await prisma.order.update({
-        where: { id: created.orderId },
-        data: { stripePaymentIntentId: String(session.payment_intent) },
+        where: { id: orderId },
+        data: { status: "PENDING", stripePaymentIntentId: String(session.payment_intent) },
       });
 
-      await createInvoiceFromStripeSession(session, created.orderId, userId, created.totalCents);
-      await notifyNewOrder(created.ref, session.customer_email, created.totalCents);
+      await createInvoiceFromStripeSession(session, orderId, order.userId, order.totalCents);
+      await notifyAdminOrderPaid(order.ref, session.customer_email, order.totalCents);
     }
 
     return reply.send({ ok: true });
   });
-}
-
-async function notifyNewOrder(ref: string, customerEmail: string | null | undefined, totalCents: number) {
-  const notify = process.env.ORDER_NOTIFY_EMAIL;
-  if (!notify) return;
-  try {
-    await sendMail(
-      notify,
-      `Nouvelle commande ${ref} — ${(totalCents / 100).toFixed(2)} €`,
-      `Nouvelle commande payée sur nasap3d.com.\n\nRéférence : ${ref}\nClient : ${customerEmail || "(email inconnu)"}\nTotal : ${(totalCents / 100).toFixed(2)} €\n\nVoir dans l'admin : ${process.env.FRONT_URL}/Admin.dc.html`,
-    );
-  } catch (err) {
-    console.error("[checkout] new order notification email failed", err);
-  }
 }
 
 async function createInvoiceFromStripeSession(

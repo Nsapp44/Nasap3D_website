@@ -199,6 +199,32 @@
   #boxtal-relay-map { height: 260px !important; }
 }
 
+/* Compte client — barre de progression "Commande en cours" (5 étapes
+   depuis l'ajout du palier expertise/paiement). Structure : une ligne de
+   fond en position absolute (dégradé, voir orderStepsLineStyle) sous une
+   rangée de pastilles en justify-content:space-between — les pastilles se
+   répartissent toutes seules quelle que soit la largeur d'écran, donc
+   aucune règle de largeur/débordement n'est nécessaire ici. Seuls les
+   libellés texte (5 mots complets, ex. "Expédié / Prêt") ne rentrent pas
+   sur un petit écran : on les masque, le libellé de l'étape en cours reste
+   lisible via la ligne "Étape actuelle : ..." juste au-dessus (toujours
+   affichée, à toutes les tailles). */
+@media (max-width: 480px) {
+  #order-steps-bar span:nth-of-type(2) { display: none !important; }
+}
+
+/* Compte client — en-tête "Mon compte" (email + n° client à gauche,
+   Réglages/Se déconnecter à droite) : pré-existant, pas ajouté par le
+   palier expertise/paiement, mais débordait déjà sur mobile (repéré en
+   testant les ajouts ci-dessus au même endroit) — passe à la ligne plutôt
+   que de déborder hors de l'écran. */
+@media (max-width: 640px) {
+  [style*="justify-content: space-between; margin-bottom: 28px"] {
+    flex-wrap: wrap !important;
+    gap: 14px !important;
+  }
+}
+
 /* --------------------------------------------------------------------------
    GRILLES À COLONNES FIXES
    -------------------------------------------------------------------------- */
@@ -255,6 +281,18 @@
   [style*="font: 700 40px"] { font-size: 28px !important; }
   [style*="font: 700 32px"] { font-size: 24px !important; }
   [style*="font: 700 26px"] { font-size: 21px !important; }
+}
+
+/* --------------------------------------------------------------------------
+   CONFIGURATEUR DE DEVIS — Matériau / Taux de remplissage / Qualité
+   (Home.dc.html + Devis Instantane.dc.html, étape 2 "Options") : une rangée
+   de chips (boutons) en desktop, un menu déroulant animé sur mobile — les
+   deux existent toujours dans le DOM (voir #cfg-*-chips / #cfg-*-select
+   dans le JSX), seul l'affichage change ici.
+   -------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  #cfg-material-chips, #cfg-infill-chips, #cfg-quality-chips { display: none !important; }
+  #cfg-material-select, #cfg-infill-select, #cfg-quality-select { display: block !important; }
 }
 
 /* --------------------------------------------------------------------------

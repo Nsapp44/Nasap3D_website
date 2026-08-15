@@ -82,7 +82,7 @@ const PROFILES_DIR = path.resolve(process.cwd(), "slicer-profiles");
 // quote actually runs against, so there's no real fleet-picking logic to
 // maintain — a part either fits the H2C's bed/height or it doesn't.
 export const PRINTERS: PrinterProfile[] = [
-  { key: "h2c", label: "Bambu Lab H2C", bedXMm: 350, bedYMm: 320, heightMm: 325, iniPath: path.join(PROFILES_DIR, "h2c.ini") },
+  { key: "h2c", label: "Bambu Lab H2C", bedXMm: 330, bedYMm: 320, heightMm: 325, iniPath: path.join(PROFILES_DIR, "h2c.ini") },
 ];
 
 // Rejects a part that doesn't fit the H2C's bed/height (with a couple mm of
@@ -103,8 +103,27 @@ function bin(): string {
   return b;
 }
 
-export async function getModelInfo(filePath: string): Promise<ModelInfo> {
-  const { stdout } = await execFileAsync(bin(), ["--info", filePath], { timeout: 30_000 });
+// scale: raw multiplication factor (1.5 = 150%), never a client-trusted
+// price input on its own — it only ever changes what PrusaSlicer itself
+// measures/slices (confirmed for real: `--scale 1.5` on a known 10mm cube
+// reports size_x/y/z = 15 via --info, and the same flag works identically
+// on --export-gcode), so the resulting price always matches the real,
+// corrected size. rotateXDeg/rotateYDeg: from suggestOrientation() (see
+// lib/orientation.ts) — applied before scale doesn't matter here since
+// rotation and uniform scale commute for AABB purposes.
+export interface ModelTransform { scale?: number; rotateXDeg?: number; rotateYDeg?: number }
+
+function transformArgs(opts: ModelTransform): string[] {
+  const args: string[] = [];
+  if (opts.rotateXDeg) args.push("--rotate-x", String(opts.rotateXDeg));
+  if (opts.rotateYDeg) args.push("--rotate-y", String(opts.rotateYDeg));
+  if (opts.scale && opts.scale !== 1) args.push("--scale", String(opts.scale));
+  return args;
+}
+
+export async function getModelInfo(filePath: string, opts: ModelTransform = {}): Promise<ModelInfo> {
+  const args = [...transformArgs(opts), "--info", filePath];
+  const { stdout } = await execFileAsync(bin(), args, { timeout: 30_000 });
   const get = (key: string) => {
     const m = stdout.match(new RegExp(`^${key}\\s*=\\s*([-\\d.]+)`, "m"));
     return m ? parseFloat(m[1]) : NaN;
@@ -118,6 +137,24 @@ export async function getModelInfo(filePath: string): Promise<ModelInfo> {
     manifold: /^manifold\s*=\s*yes/m.test(stdout),
     parts: parts ? parseInt(parts[1], 10) : 1,
   };
+}
+
+// Re-exports the model with scale/rotation actually baked into the mesh —
+// used so the file we keep in storage (downloaded later for real
+// production) matches what was actually priced/quoted, not the raw
+// as-uploaded geometry. Always STL out regardless of input format (.obj/
+// .step get normalized to a mesh too, which production printing needs
+// anyway).
+export async function exportTransformedStl(filePath: string, opts: ModelTransform): Promise<Buffer> {
+  const dir = await mkdtemp(path.join(tmpdir(), "nasap3d-export-"));
+  try {
+    const outPath = path.join(dir, "out.stl");
+    const args = [...transformArgs(opts), "--export-stl", "-o", outPath, filePath];
+    await execFileAsync(bin(), args, { timeout: 60_000 });
+    return await readFile(outPath);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 }
 
 function parseGcodeTime(gcode: string): number | null {
@@ -150,6 +187,13 @@ export interface SliceOptions {
   densityGCm3: number;
   layerHeightMm: number;
   infillPct: number;
+  // Must match whatever was passed to getModelInfo() for the same job —
+  // pickPrinter()'s fit check and this slice need to agree on the model's
+  // real (post-scale/rotate) size, or the price and the fit check would be
+  // computed against two different geometries.
+  scale?: number;
+  rotateXDeg?: number;
+  rotateYDeg?: number;
 }
 
 export interface SliceResult {
@@ -179,6 +223,20 @@ export async function sliceModel(filePath: string, opts: SliceOptions): Promise<
       `perimeters = 2`,
       `top_solid_layers = 4`,
       `bottom_solid_layers = 4`,
+      // Supports étaient absents du profil jusqu'ici — un vrai manque : une
+      // pièce avec surplombs se serait vue estimer un temps/poids (donc un
+      // prix) sans le matériau/temps de support réellement nécessaire à
+      // l'impression. "classique auto" + "ajusté" (voir demande explicite) =
+      // support_material_auto (génération automatique selon le seuil de
+      // surplomb, pas seulement dans des zones "enforcer" peintes à la
+      // main) + support_material_style=snug (littéralement "Ajusté" dans
+      // l'UI FR de PrusaSlicer — grid/snug/organic sont les 3 styles
+      // possibles). support_material_threshold=0 = détection automatique du
+      // seuil, recommandé par PrusaSlicer lui-même plutôt qu'un angle fixe.
+      `support_material = 1`,
+      `support_material_auto = 1`,
+      `support_material_style = snug`,
+      `support_material_threshold = 0`,
       // Vitesses/accélération réelles Bambu Lab (H2C, voir MATERIAL_TEMPS/
       // QUALITY_SPEEDS ci-dessus pour la source) — remplacent les vitesses
       // par défaut de PrusaSlicer, bien trop lentes pour ces machines.
@@ -202,11 +260,8 @@ export async function sliceModel(filePath: string, opts: SliceOptions): Promise<
     await writeFile(configPath, configLines);
 
     const outPath = path.join(dir, "out.gcode");
-    await execFileAsync(
-      bin(),
-      ["--load", configPath, "--ensure-on-bed", "--export-gcode", "-o", outPath, filePath],
-      { timeout: 120_000, maxBuffer: 10 * 1024 * 1024 },
-    );
+    const args = ["--load", configPath, "--ensure-on-bed", ...transformArgs(opts), "--export-gcode", "-o", outPath, filePath];
+    await execFileAsync(bin(), args, { timeout: 120_000, maxBuffer: 10 * 1024 * 1024 });
 
     const gcode = await readFile(outPath, "utf8");
     const timeMin = parseGcodeTime(gcode);

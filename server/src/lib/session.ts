@@ -38,13 +38,20 @@ export async function revokeAllSessions(userId: string) {
   });
 }
 
-export function setSessionCookie(reply: FastifyReply, raw: string, expiresAt: Date) {
+// `persistent` controls the COOKIE only, never the server-side session
+// record — the DB row always lives for SESSION_DAYS regardless, so
+// revocation/cleanup logic doesn't need two code paths. When not persistent
+// (remember-me left unchecked), the cookie is issued with no `expires`, so
+// the browser itself deletes it on close — the standard "remember me"
+// meaning ("stay logged in even after I close the browser") without a
+// second, shorter-lived token type.
+export function setSessionCookie(reply: FastifyReply, raw: string, expiresAt: Date, persistent = true) {
   reply.setCookie(SESSION_COOKIE, raw, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    expires: expiresAt,
+    ...(persistent ? { expires: expiresAt } : {}),
   });
 }
 

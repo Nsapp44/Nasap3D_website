@@ -37,17 +37,12 @@ async function request(method, path, body) {
 // it) and pass the resulting token into these calls.
 export const HCAPTCHA_SITE_KEY = '8874894e-8ac6-4344-bb7e-67541fec27b8';
 
-// Boxtal Map widget access token — meant to run client-side (sent to the map
-// iframe via postMessage, see vendor/boxtal-parcel-point-map.js), same
-// category of "public" key as the hCaptcha site key above.
-export const BOXTAL_MAP_ACCESS_TOKEN = 'ON9K1CQK9NO0KKDGPSC4S5K93PVV2NV4MZNEH9D7';
-
 export const api = {
   async signup(email, password, captchaToken) {
     return request('POST', '/auth/signup', { email, password, captchaToken });
   },
-  async login(email, password, captchaToken) {
-    return request('POST', '/auth/login', { email, password, captchaToken });
+  async login(email, password, captchaToken, rememberMe) {
+    return request('POST', '/auth/login', { email, password, captchaToken, rememberMe: !!rememberMe });
   },
   async logout() {
     return request('POST', '/auth/logout');
@@ -101,7 +96,7 @@ export const api = {
   async getMaterials() {
     return request('GET', '/materials');
   },
-  async submitQuote({ file, material, colorId, quality, infillPct, quantity }) {
+  async submitQuote({ file, material, colorId, quality, infillPct, quantity, scale }) {
     const form = new FormData();
     form.append('file', file, file.name);
     form.append('material', material);
@@ -109,6 +104,12 @@ export const api = {
     form.append('quality', quality);
     form.append('infillPct', String(infillPct));
     form.append('quantity', String(quantity));
+    // Unit-mistake correction from the Unité/Échelle panel (see
+    // Home.dc.html/Devis Instantane.dc.html _effectiveScale()) — a raw
+    // multiplication factor, 1 = file as-is. Server re-derives the real
+    // price/weight/time from this via PrusaSlicer's own --scale, never
+    // trusted as a price input on its own (see routes/quotes.ts).
+    if (scale !== undefined) form.append('scale', String(scale));
     let res;
     try {
       res = await fetch(apiBase() + '/quotes', { method: 'POST', credentials: 'include', body: form });
@@ -128,6 +129,12 @@ export const api = {
   async getDiscountTiers() {
     return request('GET', '/discount-tiers');
   },
+  async getQuoteEnabled() {
+    return request('GET', '/quote-enabled');
+  },
+  async getGoogleRating() {
+    return request('GET', '/google-rating');
+  },
   // ---- Admin ----
   async adminGetMaterials() {
     return request('GET', '/admin/materials');
@@ -138,17 +145,27 @@ export const api = {
   async adminUpdateColorStock(materialId, colorId, inStock) {
     return request('PATCH', '/admin/materials/' + materialId + '/colors/' + colorId, { inStock });
   },
-  async adminGetOrders(status) {
-    return request('GET', '/admin/orders' + (status ? '?status=' + status : ''));
+  async adminGetOrders(status, q) {
+    const params = new URLSearchParams();
+    if (status) params.set('status', status);
+    if (q) params.set('q', q);
+    const qs = params.toString();
+    return request('GET', '/admin/orders' + (qs ? '?' + qs : ''));
   },
   async adminUpdateOrderStatus(orderId, status) {
     return request('PATCH', '/admin/orders/' + orderId, { status });
   },
+  async adminAcceptOrder(orderId) {
+    return request('POST', '/admin/orders/' + orderId + '/accept');
+  },
   async adminRejectOrder(orderId) {
-    return request('DELETE', '/admin/orders/' + orderId);
+    return request('POST', '/admin/orders/' + orderId + '/reject');
   },
   adminOrderFileUrl(orderId, itemId) {
     return apiBase() + '/admin/orders/' + orderId + '/items/' + itemId + '/file';
+  },
+  adminOrderLabelDownloadUrl(orderId) {
+    return apiBase() + '/admin/orders/' + orderId + '/shipping-label/download';
   },
   async adminDeleteOrderFile(orderId, itemId) {
     return request('DELETE', '/admin/orders/' + orderId + '/items/' + itemId + '/file');
@@ -184,8 +201,17 @@ export const api = {
   async getShippingRates(recipient) {
     return request('POST', '/shipping/rates', recipient);
   },
+  async getBoxtalMapToken() {
+    return request('GET', '/shipping/map-token');
+  },
   async checkout(shipping) {
     return request('POST', '/checkout', { shipping });
+  },
+  async payOrder(orderId) {
+    return request('POST', '/orders/' + orderId + '/pay');
+  },
+  async cancelOrder(orderId) {
+    return request('DELETE', '/orders/' + orderId);
   },
   async getOrders() {
     return request('GET', '/orders');

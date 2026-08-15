@@ -174,18 +174,24 @@ compte sandbox (cotation **et** achat réel d'étiquette, gratuit en sandbox) :
   client), `colis.valeur` (valeur déclarée, `order.subtotalCents` de la
   commande — jamais devinée).
 - **Format de téléphone** : vérifié pour de vrai que `api/v1/order` **rejette**
-  `shipper.phone`/`recipient.phone` sans le `+` (ex. `"0033..."` échoue) mais
-  **accepte** `"+33..."` (avec ou sans espaces). `BOXTAL_SHIPPER_PHONE` reste
-  en format local français dans `.env` (fonctionne pour les commandes FR,
-  déjà testé en prod) — converti à la volée en `+33...`
-  (`toInternationalFrPhone()`) uniquement pour les commandes non-FR. Côté
-  client, `phone.js` envoie directement le téléphone au format `+33 X XX XX
-  XX XX` affiché à l'écran (aucune conversion supplémentaire nécessaire).
-- **Adresse** : l'autocomplétion bascule automatiquement de l'API française
-  (api-adresse.data.gouv.fr, France uniquement) vers Photon
-  (photon.komoot.io, données OpenStreetMap, toute l'Europe, gratuit et sans
-  clé) dès que le pays sélectionné n'est pas la France — voir
-  `_searchAddress()`/`_normalizeSuggestion()` dans `Cart.dc.html`.
+  `shipper.phone`/`recipient.phone` sans le `+` — y compris le format local
+  français brut (`"0661430506"`), pas seulement le préfixe `"0033..."` comme
+  supposé initialement (erreur réelle rencontrée en prod : `shipper.phone: Le
+  numéro de téléphone n'est pas valide: 0661430506`) — mais **accepte**
+  `"+33..."` (avec ou sans espaces). `BOXTAL_SHIPPER_PHONE` reste en format
+  local français dans `.env` (plus lisible à configurer) mais est désormais
+  **toujours** converti en `+33...` (`toInternationalFrPhone()`) avant envoi,
+  FR ou non-FR. Côté client, le champ téléphone (`Cart.dc.html`) est géré par
+  [intl-tel-input](vendor/intl-tel-input) (vendorisé, pays par défaut FR) —
+  `iti.getNumber('E164')` renvoie directement `+33XXXXXXXXX`, aucune
+  conversion supplémentaire nécessaire. L'ancien `phone.js` maison
+  (FR-only, sans détection de pays) a été retiré.
+- **Adresse** : autocomplétion via Photon (photon.komoot.io, données
+  OpenStreetMap, gratuit et sans clé, couvre la France et le reste de l'UE)
+  — voir `_searchAddress()`/`_normalizeSuggestion()` dans `Cart.dc.html`.
+  Utilisait auparavant l'API française api-adresse.data.gouv.fr pour la
+  France et Photon pour le reste de l'UE ; simplifié sur un seul fournisseur
+  pour éviter deux comportements différents à déboguer en parallèle.
 
 ## Tester sans facturer le compte de production
 
@@ -216,10 +222,19 @@ en prenant la catégorie la plus proche d'une pièce imprimée sur mesure.
 d'étape de build front-end). Il affiche une carte dans un iframe Boxtal et
 renvoie le point choisi par `postMessage` — voir `Cart.dc.html`.
 
-`BOXTAL_MAP_API_KEY` sert de jeton d'accès côté navigateur (même catégorie
-que la clé de site hCaptcha : pensée pour être publique). Le secret
-correspondant (`BOXTAL_MAP_API_SECRET`) est stocké mais non utilisé — rien
-dans le widget officiel n'en a besoin.
+Le widget attend un vrai token temporaire (JWT, valable ~1h), pas une clé
+statique : `GET /shipping/map-token` (route serveur, auth requise) appelle
+`POST https://api.boxtal.com/iam/account-app/token` en Basic Auth avec
+`BOXTAL_MAP_API_KEY`/`BOXTAL_MAP_API_SECRET`, met le résultat en cache
+mémoire jusqu'à expiration (voir `getBoxtalMapAccessToken()` dans
+`lib/boxtal.ts`), et le sert au front (`Cart.dc.html` `_apiToken()`). Avant
+cette correction, `BOXTAL_MAP_API_KEY` était passé directement comme
+`accessToken` au widget côté navigateur : la carte se chargeait sans erreur
+apparente, mais ne renvoyait jamais aucun point relais, car ce n'était
+simplement pas un token valide aux yeux de Boxtal (confirmé par leur
+support, avec leur spec OpenAPI de ce endpoint). `BOXTAL_MAP_API_SECRET` ne
+doit jamais atteindre le navigateur, contrairement à `BOXTAL_MAP_API_KEY`
+avant.
 
 ## Variables d'environnement à vérifier
 

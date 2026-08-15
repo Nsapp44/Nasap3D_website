@@ -1,13 +1,23 @@
+# En local, tout fonctionne sans rien configurer (mot de passe par défaut,
+# port DB accessible depuis l'hôte pour psql/Prisma Studio). En production,
+# créer un `.env` à la racine du dépôt (à côté de ce fichier — pas
+# server/.env) avec un vrai POSTGRES_PASSWORD ; voir .env.example.
 services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: nasap3d
-      POSTGRES_PASSWORD: nasap3d_dev_only
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nasap3d_dev_only}
       POSTGRES_DB: nasap3d
     ports:
-      - "5432:5432"
+      # Loopback uniquement (127.0.0.1) — jamais 0.0.0.0 : le mot de passe
+      # par défaut ci-dessus est public (dans ce dépôt), donc exposer ce
+      # port à tout Internet le rendrait attaquable directement. psql/Prisma
+      # Studio depuis l'hôte marchent identiquement via 127.0.0.1:5432 ; ça
+      # ne change rien en local, seulement en production sur un serveur avec
+      # une IP publique.
+      - "127.0.0.1:5432:5432"
     volumes:
       - nasap3d_db_data:/var/lib/postgresql/data
     healthcheck:
@@ -30,7 +40,7 @@ services:
     env_file:
       - ./server/.env
     environment:
-      DATABASE_URL: postgresql://nasap3d:nasap3d_dev_only@db:5432/nasap3d
+      DATABASE_URL: postgresql://nasap3d:${POSTGRES_PASSWORD:-nasap3d_dev_only}@db:5432/nasap3d
       # server/.env's PRUSASLICER_BIN is the Windows dev path (for `npm run
       # dev` outside Docker) — override it here so the container always
       # uses the Linux binary server/Dockerfile actually installs, no

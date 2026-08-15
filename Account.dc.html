@@ -93,7 +93,13 @@ a:hover{color:#ff7a5c}
           <div style="font:400 9.5px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.4);margin-bottom:12px">8 caractères minimum, avec au moins 1 majuscule et 1 caractère spécial.</div>
         </sc-if>
         <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
-          <div style="text-align:right;margin-bottom:12px"><span onClick="{{ forgotPassword }}" style="font:500 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.45);cursor:pointer">Mot de passe oublié ?</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <label style="display:flex;align-items:center;gap:6px;font:500 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.55);cursor:pointer;user-select:none">
+              <input type="checkbox" checked="{{ authRememberMe }}" onChange="{{ onAuthRememberMe }}" style="width:13px;height:13px;accent-color:#ff5a3c;cursor:pointer" />
+              Se souvenir de moi
+            </label>
+            <span onClick="{{ forgotPassword }}" style="font:500 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.45);cursor:pointer">Mot de passe oublié ?</span>
+          </div>
         </sc-if>
         <div ref="{{ captchaRef }}" style="display:flex;justify-content:center;margin-bottom:14px"></div>
         <div onClick="{{ emailLogin }}" style="{{ authSubmitStyle }}">{{ authSubmitLabel }}</div>
@@ -134,6 +140,19 @@ a:hover{color:#ff7a5c}
     </div>
   </sc-if>
 
+  <!-- CANCEL ORDER CONFIRM POPUP -->
+  <sc-if value="{{ cancelOrderPopup }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(10,10,10,.7);display:flex;align-items:center;justify-content:center;z-index:50;animation:popupBackdropIn .2s ease">
+      <div style="width:340px;max-width:90vw;background:#1a1917;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:24px;text-align:center;animation:popupModalIn .35s cubic-bezier(.2,.9,.3,1.1)">
+        <div style="font:500 12.5px/1.6 'Inter',sans-serif;color:#f3f1ec;margin-bottom:18px">Êtes-vous sûr de vouloir supprimer la commande ?</div>
+        <div style="display:flex;gap:10px;justify-content:center">
+          <div onClick="{{ onCloseCancelOrder }}" style="border:1px solid rgba(255,255,255,.2);color:#f3f1ec;font:600 12px 'Inter',sans-serif;padding:9px 18px;border-radius:6px;cursor:pointer">Retour</div>
+          <div onClick="{{ onConfirmCancelOrder }}" style="background:#ff5a3c;color:#161514;font:600 12px 'Inter',sans-serif;padding:9px 18px;border-radius:6px;cursor:pointer">Annuler la commande</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
   <!-- LOGGED IN -->
   <sc-if value="{{ isLoggedIn }}" hint-placeholder-val="{{ false }}">
     <div style="max-width:900px;margin:0 auto;padding:44px 24px 60px">
@@ -146,9 +165,16 @@ a:hover{color:#ff7a5c}
         </div>
         <div style="display:flex;gap:10px">
           <div onClick="{{ goSettings }}" style="display:flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.2);color:#f3f1ec;font:500 12px 'Inter',sans-serif;padding:9px 14px;border-radius:6px;cursor:pointer;transition:border-color .2s ease" style-hover="border-color:#ff5a3c"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Réglages</div>
-          <div onClick="{{ logout }}" style="border:1px solid rgba(255,255,255,.2);color:#f3f1ec;font:500 12px 'Inter',sans-serif;padding:9px 16px;border-radius:6px;cursor:pointer">Se déconnecter</div>
+          <div onClick="{{ logout }}" style="border:1px solid rgba(255,255,255,.2);color:#f3f1ec;font:500 12px 'Inter',sans-serif;padding:9px 16px;border-radius:6px;cursor:pointer;transition:border-color .2s ease" style-hover="border-color:#ff5a3c">Se déconnecter</div>
         </div>
       </div>
+
+      <sc-if value="{{ hasCheckoutNotice }}" hint-placeholder-val="{{ false }}">
+        <div style="border:1px solid rgba(255,90,60,.35);background:rgba(255,90,60,.1);border-radius:10px;padding:16px 18px;margin-bottom:20px">
+          <div style="font:600 12.5px 'Inter',sans-serif;color:#f3f1ec;margin-bottom:4px">{{ checkoutNoticeTitle }}</div>
+          <div style="font:400 11.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.65)">{{ checkoutNoticeBody }}</div>
+        </div>
+      </sc-if>
 
       <div style="border:1px solid rgba(255,90,60,.3);background:rgba(255,90,60,.06);border-radius:10px;padding:15px 18px;margin-bottom:32px;display:flex;gap:12px;align-items:flex-start">
         <span style="color:#ff5a3c;flex:none;margin-top:1px"><svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span>
@@ -158,32 +184,50 @@ a:hover{color:#ff7a5c}
       <sc-if value="{{ hasActiveOrder }}" hint-placeholder-val="{{ false }}">
       <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">Commande en cours</div>
       <div style="border:1px solid rgba(255,255,255,.1);border-radius:12px;background:#1a1917;padding:24px;margin-bottom:36px">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;flex-wrap:wrap;gap:6px">
           <div style="font:600 13px 'Space Grotesk',sans-serif;color:#f3f1ec">Commande #{{ activeOrderRef }}</div>
           <div style="font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.45)">{{ activeOrderDesc }}</div>
         </div>
-        <div style="display:flex;align-items:center;gap:0">
-          <sc-for list="{{ orderSteps }}" as="step" hint-placeholder-count="3">
-            <div style="display:flex;align-items:center;flex:1">
-              <div style="display:flex;flex-direction:column;align-items:center;gap:8px;min-width:80px">
-                <span style="{{ step.dotStyle }}">{{ step.icon }}</span>
-                <span style="{{ step.labelStyle }}">{{ step.label }}</span>
-              </div>
-              <sc-if value="{{ step.hasLine }}" hint-placeholder-val="{{ true }}">
-                <div style="{{ step.lineStyle }}"></div>
+
+        <sc-if value="{{ activeOrderIsRejected }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:14px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08);font:400 11.5px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.65)">
+            <div style="font:600 12px 'Inter',sans-serif;color:#ff8a70;margin-bottom:6px">Problème de faisabilité</div>
+            Nous ne sommes malheureusement pas en mesure de réaliser cette pièce telle quelle. Aucun paiement n'a été prélevé — contactez-nous par <a href="Contact.dc.html" style="color:#ff5a3c">mail</a> en indiquant le numéro de commande pour en discuter.
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ activeOrderShowsProgress }}" hint-placeholder-val="{{ true }}">
+          <div style="font:500 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.5);margin-bottom:14px">Étape actuelle : <span style="color:#f3f1ec;font-weight:600">{{ activeOrderStepLabel }}</span></div>
+          <div id="order-steps-bar" style="position:relative;padding:0 13px">
+            <div style="{{ orderStepsLineStyle }}"></div>
+            <div style="display:flex;justify-content:space-between;position:relative;z-index:1">
+              <sc-for list="{{ orderSteps }}" as="step" hint-placeholder-count="5">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+                  <span style="{{ step.dotStyle }}">{{ step.icon }}</span>
+                  <span style="{{ step.labelStyle }}">{{ step.label }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <sc-if value="{{ activeOrderIsAwaitingPayment }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ onPayActiveOrder }}" style="margin-top:18px;background:#635bff;color:#fff;font:600 12.5px 'Inter',sans-serif;padding:11px;border-radius:7px;text-align:center;cursor:pointer;transition:transform .2s ease" style-hover="transform:scale(1.02)">{{ payButtonLabel }}</div>
+          </sc-if>
+          <sc-if value="{{ activeOrderIsExpertise }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ onOpenCancelOrder }}" style="margin-top:18px;border:1px solid rgba(255,255,255,.2);color:#f3f1ec;font:500 11px 'Inter',sans-serif;padding:9px 14px;border-radius:6px;cursor:pointer;text-align:center;transition:border-color .2s ease" style-hover="border-color:#ff5a3c">Annuler la commande</div>
+          </sc-if>
+          <sc-if value="{{ activeOrderShowsTracking }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08);font:400 11px 'Inter',sans-serif;color:rgba(255,255,255,.55)">
+              <sc-if value="{{ activeOrderHasTracking }}" hint-placeholder-val="{{ false }}">
+                Numéro de suivi : <span style="color:#f3f1ec;font-weight:600;font-family:ui-monospace,monospace">{{ activeOrderTrackingNumber }}</span>
+              </sc-if>
+              <sc-if value="{{ activeOrderTrackingPending }}" hint-placeholder-val="{{ true }}">
+                Numéro de suivi pas encore disponible.
               </sc-if>
             </div>
-          </sc-for>
-        </div>
-        <sc-if value="{{ activeOrderShowsTracking }}" hint-placeholder-val="{{ false }}">
-          <div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08);font:400 11px 'Inter',sans-serif;color:rgba(255,255,255,.55)">
-            <sc-if value="{{ activeOrderHasTracking }}" hint-placeholder-val="{{ false }}">
-              Numéro de suivi : <span style="color:#f3f1ec;font-weight:600;font-family:ui-monospace,monospace">{{ activeOrderTrackingNumber }}</span>
-            </sc-if>
-            <sc-if value="{{ activeOrderHasTracking }}" hint-placeholder-val="{{ true }}">
-              Numéro de suivi pas encore disponible.
-            </sc-if>
-          </div>
+          </sc-if>
+          <sc-if value="{{ activeOrderIsPickup }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08);font:400 11px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.55)">Vous récupérez la commande directement à l'atelier, sur rendez-vous : <strong style="color:#e8e6e1">{{ workshopAddress }}</strong>. Dès que votre pièce est prête, nous vous appelons pour convenir d'un horaire.</div>
+          </sc-if>
         </sc-if>
       </div>
       </sc-if>
@@ -191,14 +235,15 @@ a:hover{color:#ff7a5c}
       <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">Historique des commandes</div>
       <div style="display:flex;flex-direction:column;gap:10px">
         <sc-for list="{{ orderHistory }}" as="order" hint-placeholder-count="3">
-          <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;background:#1a1917;padding:16px 18px;display:flex;align-items:center;justify-content:space-between">
+          <div style="border:1px solid rgba(255,255,255,.1);border-radius:10px;background:#1a1917;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
             <div>
               <div style="font:600 12px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:3px">{{ order.ref }}</div>
-              <div style="font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.45)">{{ order.desc }} · {{ order.date }}</div>
+              <div style="font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.45)">{{ order.desc }}</div>
+              <div style="font:400 10.5px 'Inter',sans-serif;color:rgba(255,255,255,.45)">{{ order.date }}</div>
             </div>
             <div style="display:flex;align-items:center;gap:16px">
               <span style="{{ order.statusStyle }}">{{ order.status }}</span>
-              <span style="font:700 13px 'Space Grotesk',sans-serif;color:#f3f1ec">{{ order.price }} €</span>
+              <span style="font:700 13px 'Space Grotesk',sans-serif;color:#f3f1ec;white-space:nowrap">{{ order.price }} €</span>
             </div>
           </div>
         </sc-for>
@@ -277,7 +322,7 @@ class Component extends DCLogic {
   // que de continuer à mailer indéfiniment — voir resendCode().
   static MAX_CODE_RESENDS = 3;
   state = {
-    loggedIn: false, authMode: 'login', authEmail: '', authPassword: '', cartCount: 0,
+    loggedIn: false, authMode: 'login', authEmail: '', authPassword: '', authRememberMe: false, cartCount: 0,
     popupMessage: null, popupConfirm: null, showPassword: false, busy: false,
     view: 'dashboard', customerNo: '',
     newEmail: '', emailCurPwd: '', curPwd: '', newPwd: '', confirmPwd: '', deletePwd: '',
@@ -285,7 +330,7 @@ class Component extends DCLogic {
     orders: [], rawInvoices: [],
     verifyCode: '', verifyMessage: null, verifyMessageOk: false, verifyBusy: false, verifyPurpose: null,
     pendingSignupId: null, verifyExpiresAt: null, verifyResendCount: 0,
-    captchaToken: ''
+    captchaToken: '', payBusy: false, cancelOrderPopup: false, cancelBusy: false
   };
 
   captchaRef = React.createRef();
@@ -295,13 +340,55 @@ class Component extends DCLogic {
     this._listener = () => this._loadCart();
     window.addEventListener('nasap3d-cart-changed', this._listener);
 
-    const resetToken = new URLSearchParams(window.location.search).get('resetToken');
+    const params = new URLSearchParams(window.location.search);
+    const resetToken = params.get('resetToken');
+    // Deep link from the gear icon in other pages' nav (only shown once
+    // logged in) — lands straight on Réglages instead of the dashboard.
+    this._requestedView = params.get('view') === 'settings' ? 'settings' : null;
+    // Landed here from Cart.dc.html ("Passer la commande pour expertise")
+    // or back from Stripe (via the "Payer avec Stripe" button below, once
+    // AWAITING_PAYMENT) — see routes/checkout.ts success_url/cancel_url.
+    if (params.get('paid') === '1') this.setState({ checkoutNotice: 'paid' });
+    else if (params.get('canceled') === '1') this.setState({ checkoutNotice: 'canceled' });
+    if (params.get('paid') || params.get('canceled')) {
+      window.history.replaceState({}, '', 'Account.dc.html');
+    }
     if (resetToken) {
       this.setState({ resetToken });
     } else {
       this._checkSession();
     }
     this._mountCaptcha();
+  }
+  async payActiveOrder() {
+    if (this.state.payBusy) return;
+    const activeOrder = this.state.orders.find(o => o.status !== 'DELIVERED');
+    if (!activeOrder) return;
+    this.setState({ payBusy: true });
+    const api = await this._api();
+    const res = await api.payOrder(activeOrder.id);
+    if (!res.ok || !res.data || !res.data.url) {
+      this.setState({ payBusy: false });
+      window.alert("Le paiement n'a pas pu démarrer, réessayez.");
+      return;
+    }
+    window.location.href = res.data.url;
+  }
+  openCancelOrderPopup() { this.setState({ cancelOrderPopup: true }); }
+  closeCancelOrderPopup() { this.setState({ cancelOrderPopup: false }); }
+  async confirmCancelOrder() {
+    if (this.state.cancelBusy) return;
+    const activeOrder = this.state.orders.find(o => o.status !== 'DELIVERED');
+    if (!activeOrder) return;
+    this.setState({ cancelBusy: true });
+    const api = await this._api();
+    const res = await api.cancelOrder(activeOrder.id);
+    this.setState({ cancelBusy: false, cancelOrderPopup: false });
+    if (!res.ok) {
+      window.alert("La commande n'a pas pu être annulée, réessayez.");
+      return;
+    }
+    this._loadOrdersAndInvoices();
   }
   // Le formulaire de connexion (et sa case hCaptcha) n'existe dans le DOM
   // que pendant "isLoggedOut" — componentDidMount ne le voit qu'au tout
@@ -313,21 +400,37 @@ class Component extends DCLogic {
   // d'apparaître sans widget monté (et on oublie l'ancien id quand le
   // conteneur disparaît, pour ne pas croire à tort qu'un widget y est déjà).
   componentDidUpdate() {
-    if (this.captchaRef.current && !this._captchaWidgetId) {
+    if (this.captchaRef.current && !this._captchaWidgetId && !this._captchaMounting) {
       this._mountCaptcha();
     } else if (!this.captchaRef.current && this._captchaWidgetId) {
       this._captchaWidgetId = null;
     }
   }
   async _mountCaptcha() {
+    // Capturé maintenant, pas relu après l'await : le vrai bug (confirmé en
+    // direct avec des logs) est que ce conteneur peut disparaître (session
+    // détectée comme connectée) PENDANT que renderHcaptcha() est encore en
+    // vol depuis le tout premier montage (componentDidMount, avant que
+    // _checkSession() ait répondu) — le widget se rend alors dans un nœud
+    // déjà détaché du DOM, invisible, jamais réutilisable. this._captchaWidgetId
+    // se retrouvait quand même non-null, bloquant ensuite tout remontage
+    // réel (la garde de componentDidUpdate croit qu'un widget existe déjà).
+    this._captchaMounting = true;
+    const container = this.captchaRef.current;
     const [{ HCAPTCHA_SITE_KEY }, { renderHcaptcha }] = await Promise.all([
       import('./api-client.js'), import('./hcaptcha-widget.js')
     ]);
-    this._captchaWidgetId = await renderHcaptcha(this.captchaRef.current, {
+    const widgetId = await renderHcaptcha(container, {
       sitekey: HCAPTCHA_SITE_KEY,
       onToken: (token) => this.setState({ captchaToken: token }),
       onExpire: () => this.setState({ captchaToken: '' })
     });
+    this._captchaMounting = false;
+    // Le conteneur a changé (ou disparu) entre temps — le widget qu'on
+    // vient de monter est orphelin, on l'ignore plutôt que de coincer
+    // _captchaWidgetId sur une référence inatteignable.
+    if (this.captchaRef.current !== container) return;
+    this._captchaWidgetId = widgetId;
   }
   async _resetCaptcha() {
     const { resetHcaptcha } = await import('./hcaptcha-widget.js');
@@ -352,7 +455,7 @@ class Component extends DCLogic {
     const res = await api.me();
     if (res.ok && res.data && res.data.user) {
       const u = res.data.user;
-      this.setState({ loggedIn: true, authEmail: u.email, customerNo: u.customerNo, view: 'dashboard' });
+      this.setState({ loggedIn: true, authEmail: u.email, customerNo: u.customerNo, view: this._requestedView || 'dashboard' });
       this._loadOrdersAndInvoices();
     }
   }
@@ -428,7 +531,7 @@ class Component extends DCLogic {
       return;
     }
 
-    const res = await api.login(s.authEmail, s.authPassword, s.captchaToken);
+    const res = await api.login(s.authEmail, s.authPassword, s.captchaToken, s.authRememberMe);
     this.setState({ busy: false });
     this._resetCaptcha();
     if (!res.ok) {
@@ -619,7 +722,7 @@ class Component extends DCLogic {
     const api = await this._api();
     await api.logout();
     this.setState({
-      loggedIn: false, authMode: 'login', view: 'dashboard', authEmail: '', authPassword: '',
+      loggedIn: false, authMode: 'login', view: 'dashboard', authEmail: '', authPassword: '', authRememberMe: false,
       customerNo: '', newEmail: '', emailCurPwd: '', curPwd: '', newPwd: '', confirmPwd: '', deletePwd: ''
     });
   }
@@ -696,7 +799,7 @@ class Component extends DCLogic {
         return;
       }
       this.setState({
-        loggedIn: false, authMode: 'login', view: 'dashboard', authEmail: '', authPassword: '',
+        loggedIn: false, authMode: 'login', view: 'dashboard', authEmail: '', authPassword: '', authRememberMe: false,
         customerNo: '', deletePwd: '', popupMessage: null, popupConfirm: null
       });
       return;
@@ -709,21 +812,35 @@ class Component extends DCLogic {
   renderVals() {
     const s = this.state;
     const customerNo = s.customerNo;
-    const STATUS_LABELS = { PENDING: 'Devis reçu', PRINTING: 'En impression', READY: 'Expédié / Prêt', DELIVERED: 'Livré' };
+    const STATUS_LABELS = {
+      EXPERTISE: 'Expertise en cours…',
+      AWAITING_PAYMENT: 'En attente de paiement',
+      PENDING: 'Payée',
+      PRINTING: 'En impression',
+      READY: 'Expédié / Prêt',
+      DELIVERED: 'Livré',
+      // Volontairement pas "Refusée" tout court : le client ne doit pas
+      // lire ça comme un jugement définitif sans recours — voir
+      // sendOrderRejectedEmail côté serveur pour le même ton.
+      REJECTED: 'Problème de faisabilité'
+    };
     const STATUS_STYLE = (status) => {
       const isDelivered = status === 'DELIVERED';
+      const isRejected = status === 'REJECTED';
       return {
         font: "600 10px 'Inter',sans-serif",
-        color: isDelivered ? '#8fd19e' : '#ff5a3c',
-        background: isDelivered ? 'rgba(143,209,158,.12)' : 'rgba(255,90,60,.12)',
+        color: isDelivered ? '#8fd19e' : isRejected ? '#ff8a70' : '#ff5a3c',
+        background: isDelivered ? 'rgba(143,209,158,.12)' : isRejected ? 'rgba(255,138,112,.12)' : 'rgba(255,90,60,.12)',
         borderRadius: '5px', padding: '4px 9px'
       };
     };
     const fmtDate = (iso) => new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
 
     const activeOrder = s.orders.find(o => o.status !== 'DELIVERED');
-    const orderStepsRaw = ['Devis reçu', 'En impression', 'Expédié / Prêt'];
-    const activeOrderStepIdx = activeOrder ? { PENDING: 0, PRINTING: 1, READY: 2 }[activeOrder.status] ?? 0 : 0;
+    const activeOrderIsRejected = !!activeOrder && activeOrder.status === 'REJECTED';
+    const orderStepsRaw = ['Expertise', 'Paiement', 'Payée', 'En impression', 'Expédié / Prêt'];
+    const STEP_IDX = { EXPERTISE: 0, AWAITING_PAYMENT: 1, PENDING: 2, PRINTING: 3, READY: 4 };
+    const activeOrderStepIdx = activeOrder ? STEP_IDX[activeOrder.status] ?? 0 : 0;
     const orderSteps = orderStepsRaw.map((label, i) => {
       const done = i < activeOrderStepIdx;
       const active = i === activeOrderStepIdx;
@@ -731,16 +848,29 @@ class Component extends DCLogic {
         label,
         icon: done ? '✓' : String(i + 1),
         dotStyle: {
-          width: '28px', height: '28px', borderRadius: '50%', textAlign: 'center',
-          font: "700 12px/28px 'Inter',sans-serif",
+          width: '26px', height: '26px', borderRadius: '50%', textAlign: 'center',
+          font: "700 11px/26px 'Inter',sans-serif",
           background: done || active ? '#ff5a3c' : '#2a2826',
           color: done || active ? '#161514' : 'rgba(255,255,255,.5)'
         },
-        labelStyle: { font: "600 10.5px 'Inter',sans-serif", color: active ? '#f3f1ec' : (done ? 'rgba(255,255,255,.7)' : 'rgba(255,255,255,.4)'), textAlign: 'center' },
-        hasLine: i < orderStepsRaw.length - 1,
-        lineStyle: { flex: 1, height: '2px', background: i < activeOrderStepIdx ? '#ff5a3c' : 'rgba(255,255,255,.15)', marginBottom: '24px' }
+        labelStyle: { font: "600 10px 'Inter',sans-serif", color: active ? '#f3f1ec' : (done ? 'rgba(255,255,255,.7)' : 'rgba(255,255,255,.4)'), textAlign: 'center' }
       };
     });
+    // Une seule ligne continue en fond (dégradé avec un point de rupture net
+    // à la progression actuelle) plutôt qu'un segment par étape : évite tout
+    // calcul de largeur par étape (source du débordement corrigé plus haut)
+    // — les 5 pastilles se répartissent avec justify-content:space-between,
+    // qui s'adapte tout seul à n'importe quelle largeur d'écran, et
+    // recouvrent chaque extrémité de la ligne (voir le JSX : la ligne est en
+    // position absolute, sous la rangée de pastilles). left/right à 13px
+    // correspond au padding du conteneur #order-steps-bar (= la moitié de
+    // la largeur d'une pastille), pas besoin d'être pixel-parfait puisque
+    // les pastilles cachent les deux extrémités de toute façon.
+    const stepProgressPct = orderStepsRaw.length > 1 ? Math.round((activeOrderStepIdx / (orderStepsRaw.length - 1)) * 100) : 0;
+    const orderStepsLineStyle = {
+      position: 'absolute', left: '13px', right: '13px', top: '13px', height: '2px', marginTop: '-1px',
+      background: `linear-gradient(to right, #ff5a3c 0%, #ff5a3c ${stepProgressPct}%, rgba(255,255,255,.15) ${stepProgressPct}%, rgba(255,255,255,.15) 100%)`
+    };
     const orderHistory = s.orders.map(o => ({
       ref: o.ref,
       desc: o.items.map(i => i.nameSnapshot + ' · ' + i.materialSnapshot + ' · x' + i.qty).join(' + '),
@@ -807,6 +937,8 @@ class Component extends DCLogic {
       toggleShowPassword: () => this.toggleShowPassword(),
       onAuthEmail: (e) => this.setState({ authEmail: e.target.value }),
       onAuthPassword: (e) => this.setState({ authPassword: e.target.value }),
+      authRememberMe: s.authRememberMe,
+      onAuthRememberMe: (e) => this.setState({ authRememberMe: e.target.checked }),
       isLogin: s.authMode === 'login',
       isSignup: s.authMode === 'signup',
       forgotPassword: () => this.forgotPassword(),
@@ -824,13 +956,46 @@ class Component extends DCLogic {
       toggleAuthMode: () => this.toggleAuthMode(),
       customerNo,
       logout: () => this.logout(),
+      hasCheckoutNotice: !!s.checkoutNotice,
+      checkoutNoticeTitle: {
+        paid: 'Paiement confirmé !',
+        canceled: 'Paiement annulé'
+      }[s.checkoutNotice] || '',
+      checkoutNoticeBody: {
+        paid: 'Votre commande est payée, la production va démarrer. Suivez son avancement juste en dessous.',
+        canceled: "Le paiement n'a pas été finalisé — votre commande reste en attente de paiement, vous pouvez réessayer quand vous le souhaitez."
+      }[s.checkoutNotice] || '',
       hasActiveOrder: !!activeOrder,
       activeOrderRef: activeOrder ? activeOrder.ref : '',
       activeOrderDesc: activeOrder ? activeOrder.items.map(i => i.nameSnapshot + ' · ' + i.materialSnapshot + ' · x' + i.qty).join(' + ') : '',
-      activeOrderShowsTracking: !!activeOrder && !!activeOrder.shippingMode && activeOrder.shippingMode !== 'PICKUP',
+      // REJECTED remplace tout ce bloc par le message poli (voir JSX) —
+      // rien après ce stade n'a de sens (pas de suivi, pas de progression).
+      activeOrderIsRejected,
+      activeOrderShowsProgress: !activeOrderIsRejected,
+      // Annulation client — seulement possible tant que l'admin n'a pas
+      // encore expertisé la commande (aucun paiement n'a pu avoir lieu à ce
+      // stade, donc suppression définitive sans conséquence). Disparaît dès
+      // AWAITING_PAYMENT/PENDING/etc — voir POST /orders/:id/pay côté serveur
+      // qui refuse aussi l'annulation passé ce stade.
+      activeOrderIsExpertise: !!activeOrder && activeOrder.status === 'EXPERTISE',
+      onOpenCancelOrder: () => this.openCancelOrderPopup(),
+      cancelOrderPopup: s.cancelOrderPopup,
+      onCloseCancelOrder: () => this.closeCancelOrderPopup(),
+      onConfirmCancelOrder: () => this.confirmCancelOrder(),
+      activeOrderStepLabel: orderStepsRaw[activeOrderStepIdx],
+      activeOrderIsAwaitingPayment: !!activeOrder && activeOrder.status === 'AWAITING_PAYMENT',
+      onPayActiveOrder: () => this.payActiveOrder(),
+      payButtonLabel: s.payBusy ? 'Redirection…' : 'Payer avec Stripe',
+      activeOrderShowsTracking: !!activeOrder && !!activeOrder.shippingMode && activeOrder.shippingMode !== 'PICKUP' && !['EXPERTISE', 'AWAITING_PAYMENT'].includes(activeOrder.status),
       activeOrderHasTracking: !!activeOrder && !!activeOrder.trackingNumber,
+      activeOrderTrackingPending: !!activeOrder && !activeOrder.trackingNumber,
       activeOrderTrackingNumber: activeOrder && activeOrder.trackingNumber ? activeOrder.trackingNumber : '',
+      // activeOrder exclut déjà DELIVERED (voir sa définition plus haut) —
+      // ce bloc disparaît donc tout seul une fois la commande livrée.
+      activeOrderIsPickup: !!activeOrder && activeOrder.shippingMode === 'PICKUP',
+      workshopAddress: '29 rue Mellier, 44100 Nantes',
       orderSteps,
+      orderStepsLineStyle,
       orderHistory,
       noOrders: s.orders.length === 0,
       invoices,
