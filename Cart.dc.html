@@ -344,6 +344,19 @@ a:hover{color:#ff7a5c}
     </div>
   </sc-if>
 
+  <!-- POPUP : atelier plein pour la journée (cap configurable en admin,
+       voir dailyOrderLimit / Réglages) — vérifié pour de vrai côté serveur
+       à POST /checkout, jamais uniquement côté client. -->
+  <sc-if value="{{ dailyLimitPopup }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(10,10,10,.7);display:flex;align-items:center;justify-content:center;z-index:50;animation:popupBackdropIn .2s ease">
+      <div style="width:380px;max-width:90vw;background:#1a1917;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:26px;text-align:center;animation:popupModalIn .35s cubic-bezier(.2,.9,.3,1.1)">
+        <div style="font:700 16px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:10px">Surchauffe à l'atelier !</div>
+        <div style="font:400 12px/1.6 'Inter',sans-serif;color:rgba(255,255,255,.65);margin-bottom:20px">Les lignes de production sont complètes pour aujourd'hui. On laisse refroidir les moteurs et réessayez à partir de 00h00.</div>
+        <div onClick="{{ closeDailyLimitPopup }}" style="display:inline-block;background:#ff5a3c;color:#161514;font:600 12.5px 'Inter',sans-serif;padding:10px 22px;border-radius:6px;cursor:pointer">Compris !</div>
+      </div>
+    </div>
+  </sc-if>
+
   <!-- FOOTER -->
   <div style="padding:20px 40px;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:center;font:10px 'Inter',sans-serif;color:rgba(255,255,255,.4)">
     <div><a href="MentionsLegales.dc.html" style="color:rgba(255,255,255,.4)">Mentions légales</a> · <a href="CGU.dc.html" style="color:rgba(255,255,255,.4)">CGU</a> · <a href="Confidentialite.dc.html" style="color:rgba(255,255,255,.4)">Confidentialité</a> · <a href="Cookies.dc.html" style="color:rgba(255,255,255,.4)">Cookies</a></div>
@@ -396,7 +409,7 @@ class Component extends DCLogic {
     // 'checkout' = panier verrouillé + livraison + paiement (étape 2), atteint
     // via "Passer la commande" (connexion obligatoire — voir goToCheckout).
     step: 'cart',
-    checkoutState: 'idle', checkoutError: null, orderPlacedPopup: false,
+    checkoutState: 'idle', checkoutError: null, orderPlacedPopup: false, dailyLimitPopup: false,
     // Étape 1 du bloc Livraison : null (pas choisi), 'PICKUP' (gratuit, à
     // l'atelier) ou 'SHIPPING' (révèle le formulaire d'adresse ci-dessous).
     deliveryMode: null,
@@ -778,6 +791,14 @@ class Component extends DCLogic {
         };
     const res = await api.checkout(shipping);
     if (!res.ok || !res.data || !res.data.ok) {
+      // Atelier plein pour la journée (cap configurable en admin, voir
+      // dailyOrderLimit) — un popup dédié plutôt que le bandeau générique
+      // ci-dessous : le client doit comprendre que ce n'est pas une erreur
+      // de sa part, juste "repassez après minuit".
+      if (res.data && res.data.error === 'daily_limit_reached') {
+        this.setState({ checkoutState: 'idle', dailyLimitPopup: true });
+        return;
+      }
       const messages = {
         empty_cart: 'Votre panier est vide.',
         missing_relay_point: 'Choisissez un point relais avant de commander.',
@@ -798,6 +819,9 @@ class Component extends DCLogic {
   }
   confirmOrderPlaced() {
     window.location.href = 'Account.dc.html';
+  }
+  closeDailyLimitPopup() {
+    this.setState({ dailyLimitPopup: false });
   }
   renderVals() {
     const s = this.state;
@@ -932,7 +956,9 @@ class Component extends DCLogic {
       isRedirecting: s.checkoutState === 'redirecting',
       startCheckout: () => this.startCheckout(),
       orderPlacedPopup: s.orderPlacedPopup,
-      confirmOrderPlaced: () => this.confirmOrderPlaced()
+      confirmOrderPlaced: () => this.confirmOrderPlaced(),
+      dailyLimitPopup: s.dailyLimitPopup,
+      closeDailyLimitPopup: () => this.closeDailyLimitPopup()
     };
   }
 }

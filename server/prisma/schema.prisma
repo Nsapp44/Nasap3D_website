@@ -184,6 +184,11 @@ model Settings {
   // Stripe), pas au devis lui-même.
   minOrderCents       Int      @default(1800)
   smallOrderFeeCents  Int      @default(500)
+  // Cap quotidien de commandes acceptées (comme JLCPCB) — protège l'atelier
+  // d'un afflux de commandes qu'il ne pourrait pas honorer dans les temps.
+  // 0 = pas de limite. Vérifié au moment de POST /checkout (voir
+  // routes/checkout.ts), jamais au niveau du devis ou de l'ajout au panier.
+  dailyOrderLimit     Int      @default(10)
   updatedAt           DateTime @updatedAt
 }
 

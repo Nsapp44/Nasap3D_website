@@ -211,6 +211,12 @@ a:hover{color:#ff7a5c}
             <span style="font:400 10px 'Inter',sans-serif;color:rgba(255,255,255,.4)">€</span>
             <span onClick="{{ onMinPriceSave }}" style="{{ minPriceSaveStyle }}">{{ minPriceSaveLabel }}</span>
           </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font:400 10px 'Inter',sans-serif;color:rgba(255,255,255,.4)">Limite de commandes / jour</span>
+            <input value="{{ dailyLimitDraft }}" onChange="{{ onDailyLimitChange }}" style="width:70px;box-sizing:border-box;height:28px;border:1px solid rgba(255,255,255,.15);border-radius:5px;background:#161514;padding:0 8px;font:11px 'Inter',sans-serif;color:#e8e6e1;outline:none;text-align:right">
+            <span style="font:400 10px 'Inter',sans-serif;color:rgba(255,255,255,.4)">/ jour (0 = pas de limite)</span>
+            <span onClick="{{ onDailyLimitSave }}" style="{{ dailyLimitSaveStyle }}">{{ dailyLimitSaveLabel }}</span>
+          </div>
         </div>
       </div>
 
@@ -262,8 +268,8 @@ class Component extends DCLogic {
     materials: [],
     priceDrafts: {},
     priceSaved: {},
-    hourlyRateDraft: '', minPriceDraft: '',
-    hourlyRateSaved: false, minPriceSaved: false,
+    hourlyRateDraft: '', minPriceDraft: '', dailyLimitDraft: '',
+    hourlyRateSaved: false, minPriceSaved: false, dailyLimitSaved: false,
     labelBusy: {},
     trackingDrafts: {}, trackingBusy: {}
   };
@@ -300,7 +306,8 @@ class Component extends DCLogic {
       this.setState({
         quoteEnabled: s.quoteEnabled,
         hourlyRateDraft: (s.hourlyRateCents / 100).toFixed(2),
-        minPriceDraft: (s.minUnitPriceCents / 100).toFixed(2)
+        minPriceDraft: (s.minUnitPriceCents / 100).toFixed(2),
+        dailyLimitDraft: String(s.dailyOrderLimit)
       });
       // Garde le flag localStorage (stock.js) en phase avec le vrai réglage
       // serveur : c'est lui que lisent Home/Devis-Instantane pour masquer le
@@ -331,6 +338,19 @@ class Component extends DCLogic {
       this.setState({ minPriceSaved: true });
       clearTimeout(this._minPriceSavedTimer);
       this._minPriceSavedTimer = setTimeout(() => this.setState({ minPriceSaved: false }), 2000);
+    }
+  }
+  // Cap quotidien de commandes acceptées (comme JLCPCB) — 0 = pas de
+  // limite. Vérifié côté serveur à POST /checkout, voir routes/checkout.ts.
+  async saveDailyLimit() {
+    const n = Math.round(parseFloat(String(this.state.dailyLimitDraft).replace(',', '.')));
+    if (!Number.isFinite(n) || n < 0) return;
+    const api = await this._api();
+    const res = await api.adminUpdateSettings({ dailyOrderLimit: n });
+    if (res.ok) {
+      this.setState({ dailyLimitSaved: true });
+      clearTimeout(this._dailyLimitSavedTimer);
+      this._dailyLimitSavedTimer = setTimeout(() => this.setState({ dailyLimitSaved: false }), 2000);
     }
   }
   async _loadMaterials() {
@@ -686,6 +706,15 @@ class Component extends DCLogic {
         font: "600 10px 'Inter',sans-serif", padding: '5px 10px', borderRadius: '5px', cursor: 'pointer',
         background: s.minPriceSaved ? 'rgba(143,209,158,.15)' : '#ff5a3c',
         color: s.minPriceSaved ? '#8fd19e' : '#161514'
+      },
+      dailyLimitDraft: s.dailyLimitDraft,
+      onDailyLimitChange: (e) => this.setState({ dailyLimitDraft: e.target.value }),
+      onDailyLimitSave: () => this.saveDailyLimit(),
+      dailyLimitSaveLabel: s.dailyLimitSaved ? '✓' : 'OK',
+      dailyLimitSaveStyle: {
+        font: "600 10px 'Inter',sans-serif", padding: '5px 10px', borderRadius: '5px', cursor: 'pointer',
+        background: s.dailyLimitSaved ? 'rgba(143,209,158,.15)' : '#ff5a3c',
+        color: s.dailyLimitSaved ? '#8fd19e' : '#161514'
       },
       quoteEnabled: s.quoteEnabled,
       quoteStateLabel: s.quoteEnabled ? 'en ligne' : 'en pause',

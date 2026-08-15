@@ -432,6 +432,7 @@ export async function adminRoutes(app: FastifyInstance) {
       minUnitPriceCents: z.number().int().min(0).optional(),
       minOrderCents: z.number().int().min(0).optional(),
       smallOrderFeeCents: z.number().int().min(0).optional(),
+      dailyOrderLimit: z.number().int().min(0).optional(),
     });
     const body = schema.safeParse(request.body);
     if (!body.success) return reply.code(400).send({ error: "invalid_body" });

@@ -11,6 +11,26 @@ import { nextCounter } from "../lib/counter.js";
 import { saveFile } from "../lib/storage.js";
 import { sendOrderPlacedEmail, notifyAdminOrderToReview, notifyAdminOrderPaid } from "../lib/orderEmails.js";
 
+// The server runs in UTC (no TZ set in the Docker image), but "réessayez à
+// partir de 00h00" in the daily-limit popup means Paris midnight, not UTC
+// midnight — so the day boundary has to be computed against that zone,
+// DST included, rather than naive UTC date slicing. Standard dependency-free
+// technique: format `at` in the target zone, then measure how far that
+// formatted wall-clock reading is from `at` itself to get the zone's
+// current offset, and apply that offset to the zone's own local midnight.
+function zonedMidnightUtc(timeZone: string, at: Date): Date {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone, year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
+    }).formatToParts(at).map((p) => [p.type, p.value]),
+  );
+  const asIfUtc = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+  const offsetMs = asIfUtc - at.getTime();
+  const localMidnightAsIfUtc = Date.UTC(+parts.year, +parts.month - 1, +parts.day, 0, 0, 0);
+  return new Date(localMidnightAsIfUtc - offsetMs);
+}
+
 const shippingRecipientSchema = z.object({
   name: z.string().trim().min(2).max(80),
   phone: z.string().trim().min(6).max(20),
@@ -57,6 +77,19 @@ export async function checkoutRoutes(app: FastifyInstance) {
   // was fragile in local/dev environments without a webhook tunnel.
   app.post("/checkout", { preHandler: requireAuth }, async (request, reply) => {
     const user = request.user!;
+
+    // Daily order cap (like JLCPCB) — checked first, before any Boxtal call
+    // or DB write, so a full workshop fails fast instead of wasting a rate
+    // lookup. 0 = no limit. Reset is Paris midnight, matching the popup's
+    // "réessayez à partir de 00h00" — see zonedMidnightUtc above.
+    const settings = await prisma.settings.findUnique({ where: { id: 1 } });
+    const dailyLimit = settings?.dailyOrderLimit ?? 0;
+    if (dailyLimit > 0) {
+      const todayStart = zonedMidnightUtc("Europe/Paris", new Date());
+      const todayCount = await prisma.order.count({ where: { createdAt: { gte: todayStart } } });
+      if (todayCount >= dailyLimit) return reply.code(409).send({ error: "daily_limit_reached" });
+    }
+
     const summary = await getCartSummary({ userId: user.id });
     if (summary.lines.length === 0) return reply.code(400).send({ error: "empty_cart" });
 
