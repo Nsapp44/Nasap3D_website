@@ -1474,7 +1474,8 @@ class Component extends DCLogic {
   // pages selon l'écran. Recalculé partout où l'ancien "% 2" était codé en
   // dur, pour rester cohérent quel que soit le nombre de cartes par vue.
   _reviewPageCount() {
-    return Math.ceil(6 / this._realCardsPerView());
+    const count = this.state.googleReviews.length || 6;
+    return Math.ceil(count / this._realCardsPerView());
   }
   goRealisation(delta) {
     this.setState(s => ({ realIdx: (s.realIdx + delta + 7) % 7 }));

@@ -418,6 +418,62 @@ a:hover{color:#ff7a5c}
     </div>
   </div>
 
+  <!-- AVIS GOOGLE -->
+  <div style="max-width:1000px;margin:0 auto;padding:10px 24px 46px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+      <sc-if value="{{ hasGoogleRating }}" hint-placeholder-val="{{ false }}">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 36" height="20" width="211" fill="none" style="display:block">
+          <defs>
+            <g id="nasap-google-star-devis"><path d="M12 1.5l3.09 6.26L22 8.77l-5 4.87 1.18 6.86L12 17.27l-6.18 3.23L7 13.64 2 8.77l6.91-1.01L12 1.5z" /></g>
+          </defs>
+          <g transform="translate(0, 6)">
+            <sc-for list="{{ googleStars }}" as="star" hint-placeholder-count="5">
+              <g style="transform:translate({{ star.x }}px, 0)">
+                <use href="#nasap-google-star-devis" fill="#4B4F56" opacity="0.4" />
+                <clipPath id="{{ star.clipId }}"><rect x="0" y="0" style="width:{{ star.clipW }}px" height="24" /></clipPath>
+                <g clip-path="url(#{{ star.clipId }})"><use href="#nasap-google-star-devis" fill="#FBBC05" /></g>
+              </g>
+            </sc-for>
+          </g>
+          <g transform="translate(144, 25)" font-family="'Product Sans', Roboto, Inter, sans-serif" font-weight="700" font-size="22">
+            <text fill="#4285F4" x="0">G</text>
+            <text fill="#EA4335" x="17">o</text>
+            <text fill="#FBBC05" x="31">o</text>
+            <text fill="#4285F4" x="45">g</text>
+            <text fill="#34A853" x="59">l</text>
+            <text fill="#EA4335" x="65">e</text>
+          </g>
+          <text x="228" y="24" fill="#9AA0A6" font-family="Roboto, Inter, sans-serif" font-size="16" font-weight="400">Avis clients <tspan font-weight="600" fill="#E8EAED">{{ googleRatingLabel }}</tspan></text>
+        </svg>
+      </sc-if>
+      <sc-if value="{{ noGoogleRating }}" hint-placeholder-val="{{ true }}">
+        <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:1px">Avis Google</div>
+      </sc-if>
+    </div>
+    <div style="position:relative;padding:0 32px">
+      <div style="overflow:hidden;border-radius:8px">
+        <div style="{{ reviewTrackStyle }}">
+          <sc-for list="{{ reviews }}" as="rev" hint-placeholder-count="1">
+            <div style="flex:0 0 100%;box-sizing:border-box">
+              <div style="border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:16px;background:#1a1917">
+                <div style="color:#ff5a3c;font:14px/1 'Inter',sans-serif;margin-bottom:8px">{{ rev.stars }}</div>
+                <div style="font:400 11px/1.5 'Inter',sans-serif;color:rgba(255,255,255,.6);margin-bottom:10px">{{ rev.text }}</div>
+                <div style="font:600 10.5px 'Inter',sans-serif;color:#f3f1ec">{{ rev.author }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div onClick="{{ prevReview }}" style="position:absolute;top:50%;transform:translateY(-50%);width:24px;height:24px;border-radius:50%;background:#1e1c1a;border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:#f3f1ec;font:700 13px 'Inter',sans-serif;cursor:pointer;left:0">‹</div>
+      <div onClick="{{ nextReview }}" style="position:absolute;top:50%;transform:translateY(-50%);width:24px;height:24px;border-radius:50%;background:#1e1c1a;border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:#f3f1ec;font:700 13px 'Inter',sans-serif;cursor:pointer;right:0">›</div>
+    </div>
+    <div style="display:flex;gap:6px;justify-content:center;margin-top:12px">
+      <sc-for list="{{ reviewDots }}" as="dot" hint-placeholder-count="4">
+        <span style="{{ dot.style }}" onClick="{{ dot.go }}"></span>
+      </sc-for>
+    </div>
+  </div>
+
   <!-- FAQ -->
   <div style="max-width:1000px;margin:0 auto;padding:10px 24px 60px">
     <div style="font:600 11.5px 'Inter',sans-serif;color:#ff5a3c;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Avant de vous lancer</div>
@@ -459,6 +515,7 @@ class Component extends DCLogic {
     cfgMaterial: 'PLA', cfgColorId: null, cfgInfill: 40, cfgQuality: 'Standard', cfgQty: 1,
     cfgShowDiscountInfo: false, cfgAnalyzing: false, cfgAnalysisReady: false, cfgAnalysisError: null, cfgQuote: null,
     openFaq: 0, cartCount: 0, showAddedToast: false, quoteEnabled: true, isLoggedIn: false,
+    googleRating: null, googleReviewCount: null, googleReviews: [], reviewIdx: 0,
     materials: [], discountTiers: [
       { minQty: 5, pct: 5 }, { minQty: 15, pct: 10 }, { minQty: 50, pct: 15 }, { minQty: 100, pct: 20 }, { minQty: 500, pct: 30 }
     ]
@@ -479,6 +536,7 @@ class Component extends DCLogic {
     this._loadMaterials();
     this._loadDiscountTiers();
     this._checkAuth();
+    this._loadGoogleRating();
     // Best-effort cleanup: if the tab closes (or the user navigates
     // elsewhere on the site) with an analyzed quote that was never added to
     // the cart, tell the server it can delete the uploaded file right away
@@ -876,6 +934,71 @@ class Component extends DCLogic {
     clearTimeout(this._toastTimer);
     this._toastTimer = setTimeout(() => this.setState({ showAddedToast: false }), 4000);
   }
+  // Badge "Avis Google" — même logique que sur l'accueil (voir GET
+  // /google-rating côté serveur, filtré aux avis >=4 étoiles avec texte,
+  // mis en cache 7 jours). Rien ne s'affiche si l'appel échoue plutôt qu'un
+  // badge à moitié rempli.
+  async _loadGoogleRating() {
+    const api = await this._api();
+    const res = await api.getGoogleRating();
+    if (res.ok && res.data && typeof res.data.rating === 'number') {
+      this.setState({
+        googleRating: res.data.rating,
+        googleReviewCount: res.data.totalReviews,
+        googleReviews: Array.isArray(res.data.reviews) ? res.data.reviews : []
+      });
+    }
+  }
+  _buildGoogleStars() {
+    const rating = this.state.googleRating || 0;
+    return Array.from({ length: 5 }, (_, i) => {
+      const fillFrac = Math.max(0, Math.min(1, rating - i));
+      return { x: i * 28, clipW: (fillFrac * 24).toFixed(2), clipId: 'nasap-google-star-devis-clip-' + i };
+    });
+  }
+  _truncateReviewText(text, max = 150) {
+    if (!text || text.length <= max) return text || '';
+    const cut = text.slice(0, max);
+    const lastSpace = cut.lastIndexOf(' ');
+    return (lastSpace > 40 ? cut.slice(0, lastSpace) : cut) + '…';
+  }
+  goReview(delta) {
+    const count = this.state.googleReviews.length || 6;
+    this.setState(s => ({ reviewIdx: (s.reviewIdx + delta + count) % count }));
+  }
+  // Un avis à la fois (pas de carrousel multi-cartes ici) : pas besoin de
+  // mesurer la largeur du conteneur, translateX se fait en % plutôt qu'en
+  // pixels.
+  _buildReviews() {
+    const FALLBACK_REVIEWS = [
+      { stars: '★★★★★', text: '« Pièce livrée en 48h, finition impeccable. »', author: 'M. Dubois' },
+      { stars: '★★★★★', text: '« Devis instantané très pratique, conseil au top. »', author: 'L. Perrin' },
+      { stars: '★★★★☆', text: '« Rétro-conception rapide sur une pièce introuvable. »', author: 'S. Roy' },
+      { stars: '★★★★★', text: '« Maintenance rapide, machine repartie le jour même. »', author: 'K. Morel' },
+      { stars: '★★★★☆', text: '« Bon rapport qualité-prix sur une petite série. »', author: 'A. Fontaine' },
+      { stars: '★★★★★', text: '« Initiation claire, super pédagogue. »', author: 'T. Gauthier' }
+    ];
+    const raw = this.state.googleReviews.length
+      ? this.state.googleReviews.map((r) => ({
+          stars: '★'.repeat(Math.round(r.rating)) + '☆'.repeat(5 - Math.round(r.rating)),
+          text: '« ' + this._truncateReviewText(r.text) + ' »',
+          author: r.author
+        }))
+      : FALLBACK_REVIEWS;
+    const idx = Math.min(this.state.reviewIdx, raw.length - 1);
+    return {
+      reviews: raw,
+      reviewTrackStyle: {
+        display: 'flex',
+        transform: `translateX(-${idx * 100}%)`,
+        transition: 'transform .4s ease'
+      },
+      reviewDots: raw.map((_, d) => ({
+        style: { width: '7px', height: '7px', borderRadius: '50%', background: idx === d ? '#ff5a3c' : 'rgba(255,255,255,.25)', cursor: 'pointer' },
+        go: () => this.setState({ reviewIdx: d })
+      }))
+    };
+  }
   renderVals() {
     const s = this.state;
     const railStep = (n, label) => {
@@ -1077,7 +1200,14 @@ class Component extends DCLogic {
       discountTiers,
       addToCart: () => this.addToCart(),
       showAddedToast: s.showAddedToast,
-      faqs
+      faqs,
+      hasGoogleRating: s.googleRating != null,
+      noGoogleRating: s.googleRating == null,
+      googleRatingLabel: s.googleRating != null ? s.googleRating.toFixed(1).replace('.', ',') : '',
+      googleStars: this._buildGoogleStars(),
+      prevReview: () => this.goReview(-1),
+      nextReview: () => this.goReview(1),
+      ...this._buildReviews()
     };
   }
 }
