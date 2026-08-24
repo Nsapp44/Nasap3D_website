@@ -64,7 +64,7 @@ export async function googleRoutes(app: FastifyInstance) {
     }
 
     const reviews: GoogleReview[] = (data.result.reviews ?? [])
-      .filter((r) => r.rating >= MIN_REVIEW_STARS)
+      .filter((r) => r.rating >= MIN_REVIEW_STARS && r.text?.trim())
       .map((r) => ({ author: r.author_name, rating: r.rating, text: r.text, relativeTime: r.relative_time_description, time: r.time }));
 
     cache = { rating: data.result.rating, totalReviews: data.result.user_ratings_total ?? 0, reviews, fetchedAt: Date.now() };

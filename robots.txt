@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /Account.dc.html
+Disallow: /Admin.dc.html
+Disallow: /Cart.dc.html
+Disallow: /Loading.dc.html
+
+Sitemap: https://nasap3d.com/sitemap.xml

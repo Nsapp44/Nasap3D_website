@@ -1,0 +1,65 @@
+# Config Caddy pour nasap3d.com — à déposer sur le serveur OVH et lancer avec
+# `caddy run --config Caddyfile`. Gère : URLs propres pour le front statique
+# (réécriture interne, pas de redirection visible), + reverse proxy vers
+# l'API (conteneur Docker sur le port 3000).
+#
+# Remplacer /path/to/Nasap3D_website ci-dessous par le chemin réel où le
+# dépôt est cloné sur le serveur (le dossier qui contient Home.dc.html).
+
+nasap3d.com, www.nasap3d.com {
+	root * /path/to/Nasap3D_website
+	encode gzip
+
+	@home path /
+	rewrite @home /Home.dc.html
+
+	@services path /services
+	rewrite @services /Services.dc.html
+
+	@devis path /devis-instantane
+	rewrite @devis "/Devis Instantane.dc.html"
+
+	@machines path /machines
+	rewrite @machines /Machines.dc.html
+
+	@realisations path /realisations
+	rewrite @realisations /Realisations.dc.html
+
+	@apropos path /a-propos
+	rewrite @apropos /About.dc.html
+
+	@contact path /contact
+	rewrite @contact /Contact.dc.html
+
+	@panier path /panier
+	rewrite @panier /Cart.dc.html
+
+	@compte path /compte
+	rewrite @compte /Account.dc.html
+
+	@admin path /admin
+	rewrite @admin /Admin.dc.html
+
+	@cgu path /cgu
+	rewrite @cgu /CGU.dc.html
+
+	@confidentialite path /confidentialite
+	rewrite @confidentialite /Confidentialite.dc.html
+
+	@cookies path /cookies
+	rewrite @cookies /Cookies.dc.html
+
+	@mentionslegales path /mentions-legales
+	rewrite @mentionslegales /MentionsLegales.dc.html
+
+	handle_errors {
+		rewrite * /404.dc.html
+		file_server
+	}
+
+	file_server
+}
+
+api.nasap3d.com {
+	reverse_proxy localhost:3000
+}
