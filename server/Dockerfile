@@ -52,5 +52,15 @@ COPY --from=build /app/src ./src
 RUN npx prisma generate
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
+
+# Run as the non-root `node` user the base image already ships (uid 1000) —
+# least privilege: a compromised API process shouldn't have root inside its
+# own container. Needs write access to /app itself (the local-disk storage
+# fallback creates ./uploads on demand, see storage.ts) and to the
+# PrusaSlicer install (xvfb-run writes its own lock/socket files next to
+# where it runs from).
+RUN chown -R node:node /app /opt/prusaslicer
+USER node
+
 EXPOSE 3000
 ENTRYPOINT ["./docker-entrypoint.sh"]

@@ -185,6 +185,26 @@ déjà modifiés depuis l'admin (voir les commentaires de `prisma/seed.ts`) — 
 catalogue (matières, couleurs, profils qualité, paliers de remise) synchronisé avec le code, et
 recrée le compte admin/test seulement s'il n'existe pas déjà.
 
+### PostgreSQL
+
+Pas de base à provisionner séparément : `docker-compose.yml` inclut déjà un service `db`
+(`postgres:16-alpine`) qui tourne comme conteneur, avec un volume Docker (`nasap3d_db_data`) pour
+que les données survivent aux redémarrages/redéploiements. Les identifiants par défaut :
+
+| | Valeur |
+|---|---|
+| Utilisateur | `nasap3d` |
+| Base | `nasap3d` |
+| Hôte (depuis le conteneur `api`) | `db` (nom du service dans le réseau Docker interne, pas une vraie IP) |
+| Port | `5432` |
+| Mot de passe | voir ci-dessous |
+
+**`DATABASE_URL` dans `server/.env` n'est pas utilisé par ce déploiement** — c'est
+`docker-compose.yml` qui construit et impose la vraie valeur au conteneur `api`
+(`postgresql://nasap3d:$POSTGRES_PASSWORD@db:5432/nasap3d`), écrasant tout ce qu'il y aurait dans
+`server/.env`. La ligne `DATABASE_URL` de `server/.env.example` (`@localhost:5432`) ne sert qu'à
+`npm run dev` en local, en dehors de Docker — inutile de la modifier pour la prod.
+
 **Avant le tout premier `docker compose up`** (une fois par serveur, pas à chaque déploiement) :
 créer un `.env` à la racine du dépôt (à côté de `docker-compose.yml` — différent de `server/.env`)
 avec un vrai `POSTGRES_PASSWORD` — voir `.env.example` à la racine. Important : Postgres n'applique
