@@ -6,6 +6,7 @@ import { prisma } from "../lib/prisma.js";
 import { getSessionUser } from "../lib/session.js";
 import { getOrCreateGuestSessionId } from "../lib/guestSession.js";
 import { newFileKey, saveFile, readFileByKey } from "../lib/storage.js";
+import { checkLongWindowLimit } from "../lib/longWindowLimit.js";
 import { getModelInfo, pickPrinter, sliceModel, exportTransformedStl } from "../lib/slicer.js";
 import { computePrice } from "../lib/pricing.js";
 import { deleteQuoteJobFileIfOrphaned } from "../lib/quoteCleanup.js";
@@ -54,6 +55,11 @@ export async function quoteRoutes(app: FastifyInstance) {
   // (le plus coûteux du site en CPU) et remplir le stockage/la base à
   // volonté — voir contact.ts pour le même principe sur /contact/upload.
   app.post("/quotes", { config: { rateLimit: { max: 15, timeWindow: "1 minute" } } }, async (request, reply) => {
+    // Filet en plus de la limite par minute ci-dessus — un vrai visiteur
+    // n'approche jamais 100 devis/heure, un script en boucle si.
+    if (!checkLongWindowLimit(`quotes:${request.ip}`, 100, 60 * 60 * 1000)) {
+      return reply.code(429).send({ error: "too_many_requests" });
+    }
     const settings = await prisma.settings.findUnique({ where: { id: 1 } });
     if (!settings?.quoteEnabled) {
       return reply.code(403).send({ error: "quote_disabled" });

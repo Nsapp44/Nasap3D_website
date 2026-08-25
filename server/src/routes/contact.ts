@@ -7,6 +7,7 @@ import { verifyCaptcha } from "../lib/captcha.js";
 import { sendMail } from "../lib/mailer.js";
 import { renderEmailHtml, contactNotificationContentHtml } from "../lib/emailTemplate.js";
 import { newFileKey, saveFile, readFileByKey } from "../lib/storage.js";
+import { checkLongWindowLimit } from "../lib/longWindowLimit.js";
 import { requireAdmin } from "../lib/session.js";
 
 const MAX_CONTACT_FILE_BYTES = 50 * 1024 * 1024;
@@ -21,6 +22,11 @@ export async function contactRoutes(app: FastifyInstance) {
   // our 50MB cap here), and the notification email links to the admin
   // download route below instead.
   app.post("/contact/upload", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (request, reply) => {
+    // Filet en plus de la limite par minute ci-dessus — un vrai visiteur
+    // n'approche jamais 50 pièces jointes/heure, un script en boucle si.
+    if (!checkLongWindowLimit(`contact-upload:${request.ip}`, 50, 60 * 60 * 1000)) {
+      return reply.code(429).send({ error: "too_many_requests" });
+    }
     const parts = request.parts({ limits: { fileSize: MAX_CONTACT_FILE_BYTES } });
     let fileBuffer: Buffer | null = null;
     let fileName = "";
