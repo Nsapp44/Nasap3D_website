@@ -275,9 +275,24 @@ class Component extends DCLogic {
       iconAnchor: [10, 10]
     });
     L.marker(coords, { icon: pulseIcon }).addTo(this._map).bindPopup('Nasap3D — Nantes (Canclaux)');
+    // Leaflet fige la taille de sa grille de tuiles au moment de l'init, à
+    // partir de la taille du conteneur à cet instant précis — si la mise en
+    // page n'est pas encore stabilisée (police/CSS pas finis de charger, ou
+    // grille responsive pas encore repassée en 1 colonne sur mobile), les
+    // tuiles restent calées sur cette largeur trop grande et débordent
+    // visuellement de la page, même si le conteneur lui-même est bien
+    // redimensionné par le CSS. invalidateSize() force Leaflet à remesurer.
+    // Un ResizeObserver couvre aussi le cas où la fenêtre est redimensionnée
+    // après coup (rotation d'écran, fenêtre desktop réduite/agrandie).
+    setTimeout(() => { if (this._map) this._map.invalidateSize(); }, 0);
+    if (window.ResizeObserver) {
+      this._mapResizeObserver = new ResizeObserver(() => { if (this._map) this._map.invalidateSize(); });
+      this._mapResizeObserver.observe(el);
+    }
   }
   componentWillUnmount() {
     clearTimeout(this._sentTimer);
+    if (this._mapResizeObserver) { this._mapResizeObserver.disconnect(); this._mapResizeObserver = null; }
     if (this._map) { this._map.remove(); this._map = null; }
   }
   _isValidEmail(email) {

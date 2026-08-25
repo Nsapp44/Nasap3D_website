@@ -747,7 +747,7 @@ a:hover{color:#ff7a5c}
       <div style="font:400 11.5px/1.8 'Inter',sans-serif;color:rgba(255,255,255,.5)">
         <div style="font:600 13px 'Space Grotesk',sans-serif;color:#f3f1ec;margin-bottom:8px">Nasap3D</div>
         29 rue Mellier, 44100 Nantes<br>06 61 43 05 06<br>nasap3D@gmail.com
-        <div ref="{{ mapRef }}" style="width: 477px; height: 300px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); margin-top: 16px"></div>
+        <div ref="{{ mapRef }}" style="width: 100%; height: 300px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); margin-top: 16px; box-sizing: border-box"></div>
       </div>
     </div>
   </div>
@@ -1136,6 +1136,7 @@ class Component extends DCLogic {
       window.removeEventListener('pointerup', this._onPointerUp);
     }
     if (this._renderer) this._renderer.dispose();
+    if (this._mapResizeObserver) { this._mapResizeObserver.disconnect(); this._mapResizeObserver = null; }
     if (this._map) { this._map.remove(); this._map = null; }
     if (this._previewHandle) this._previewHandle.dispose();
     if (this._analysisPreviewHandle) this._analysisPreviewHandle.dispose();
@@ -1357,6 +1358,18 @@ class Component extends DCLogic {
       iconAnchor: [10, 10]
     });
     L.marker(coords, { icon: pulseIcon }).addTo(this._map).bindPopup('Nasap3D — Nantes (Canclaux)');
+    // Leaflet fige la taille de sa grille de tuiles au moment de l'init, à
+    // partir de la taille du conteneur à cet instant précis — si la mise en
+    // page n'est pas encore stabilisée, les tuiles restent calées sur cette
+    // largeur trop grande et débordent visuellement de la page, même si le
+    // conteneur lui-même est bien redimensionné par le CSS. invalidateSize()
+    // force Leaflet à remesurer ; le ResizeObserver couvre aussi un
+    // redimensionnement ultérieur de la fenêtre.
+    setTimeout(() => { if (this._map) this._map.invalidateSize(); }, 0);
+    if (window.ResizeObserver) {
+      this._mapResizeObserver = new ResizeObserver(() => { if (this._map) this._map.invalidateSize(); });
+      this._mapResizeObserver.observe(el);
+    }
   }
   async _initStepViewer() {
     const canvas = this.heroCanvasRef.current;
