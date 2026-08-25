@@ -47,9 +47,38 @@ services:
       # matter what's in the .env file used for local dev.
       PRUSASLICER_BIN: /usr/local/bin/prusa-slicer
     ports:
-      - "3000:3000"
+      # Loopback uniquement : une fois Caddy en place (service ci-dessous),
+      # c'est lui la seule porte d'entrée publique (80/443, HTTPS). Exposer
+      # aussi le :3000 à tout Internet permettrait de contourner Caddy et de
+      # taper l'API en HTTP direct, sans TLS. 127.0.0.1:3000 reste
+      # joignable depuis l'hôte (utile en dev local, front statique sur
+      # :8080 par exemple).
+      - "127.0.0.1:3000:3000"
+    profiles:
+      - full
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Lecture seule : Caddy ne sert que des fichiers statiques, jamais
+      # besoin d'écrire dans le dépôt.
+      - .:/srv:ro
+      # Persistants entre redémarrages/redéploiements — sans ça, Caddy
+      # redemande un certificat Let's Encrypt à chaque fois (risque de
+      # rate-limit chez Let's Encrypt sur un domaine qui redéploie souvent).
+      - caddy_data:/data
+      - caddy_config:/config
     profiles:
       - full
 
 volumes:
   nasap3d_db_data:
+  caddy_data:
+  caddy_config:

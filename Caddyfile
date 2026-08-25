@@ -1,14 +1,21 @@
-# Config Caddy pour nasap3d.com — à déposer sur le serveur OVH et lancer avec
-# `caddy run --config Caddyfile`. Gère : URLs propres pour le front statique
-# (réécriture interne, pas de redirection visible), + reverse proxy vers
-# l'API (conteneur Docker sur le port 3000).
+# Config Caddy pour nasap3d.com — géré par docker-compose.yml (service
+# `caddy`, profil `full`), pas installé à la main sur l'hôte. Gère : URLs
+# propres pour le front statique (réécriture interne, pas de redirection
+# visible), + reverse proxy vers l'API (service Docker `api`, joignable par
+# son nom sur le réseau interne du compose — jamais `localhost`, qui
+# désignerait le conteneur Caddy lui-même).
 #
-# Remplacer /path/to/Nasap3D_website ci-dessous par le chemin réel où le
-# dépôt est cloné sur le serveur (le dossier qui contient Home.dc.html).
+# `/srv` = racine du dépôt montée en lecture seule dans le conteneur Caddy
+# (voir docker-compose.yml) — pas un chemin à adapter au serveur.
 
 nasap3d.com, www.nasap3d.com {
-	root * /path/to/Nasap3D_website
+	root * /srv
 	encode gzip
+
+	# Le dépôt entier est monté (front + server/ + fichiers de config) —
+	# jamais servir ce qui n'est pas une page du site.
+	@blocked path /server/* /.git/* /.env* /docker-compose.yml /Caddyfile
+	respond @blocked 404
 
 	@home path /
 	rewrite @home /Home.dc.html
@@ -70,5 +77,5 @@ nasap3d.com, www.nasap3d.com {
 }
 
 api.nasap3d.com {
-	reverse_proxy localhost:3000
+	reverse_proxy api:3000
 }
