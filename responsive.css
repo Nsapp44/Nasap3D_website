@@ -16,11 +16,20 @@
    chaque "," dans les fonctions/listes (rgba(a, b, c, d), repeat(n, 1fr)),
    les décimales avec zéro (0.08 et non .08), et les familles de police
    multi-mots entre guillemets doubles ("Space Grotesk") tandis qu'un nom
-   d'un seul mot (Inter) perd ses guillemets. Écrire les sélecteurs sans ces
-   espaces/formats ne matche jamais rien — vérifié en direct dans le DOM
-   avant d'écrire ce fichier. Si un futur changement de style inline ne
-   déclenche plus une règle ici, la première chose à vérifier est la
-   correspondance exacte avec getAttribute('style') sur l'élément concerné.
+   d'un seul mot (Inter) perd ses guillemets — mais seulement sous Chrome/
+   Blink : Firefox/Gecko GARDE les guillemets même pour un nom d'un seul mot
+   ("Inter" au lieu de Inter), ce qui cassait silencieusement en prod tout
+   sélecteur écrit avec le mot "Inter" nu à la fin (menu mobile no-op sous
+   Firefox alors qu'il marchait sous Chrome — vérifié uniquement via
+   Playwright/Chromium à l'écriture initiale de ce fichier, jamais sous un
+   vrai Firefox). Les sélecteurs ci-dessous s'arrêtent donc juste avant le nom
+   de police (ex: "font: 500 13px" sans "Inter" à la fin) pour rester
+   indépendants de cette différence de sérialisation entre moteurs. Écrire les
+   sélecteurs sans ces espaces/formats ne matche jamais rien — vérifié en
+   direct dans le DOM avant d'écrire ce fichier. Si un futur changement de
+   style inline ne déclenche plus une règle ici, la première chose à vérifier
+   est la correspondance exacte avec getAttribute('style') sur l'élément
+   concerné, dans les DEUX navigateurs.
 
    Repères d'écran visés : fenêtre desktop réduite et tablette (<=900px),
    mobile (<=640px), petit mobile (<=420px, iPhone SE etc.).
@@ -52,10 +61,10 @@
   /* rangée Compte/Panier : un peu plus d'espace entre les deux, et par
      rapport au bouton hamburger (padding-right ci-dessus) — le panier
      était trop collé */
-  [style*="padding: 16px 40px"][style*="border-bottom: 1px solid rgba(255, 255, 255, 0.08)"] > [style*="gap: 18px; font: 500 12px Inter"] {
+  [style*="padding: 16px 40px"][style*="border-bottom: 1px solid rgba(255, 255, 255, 0.08)"] > [style*="gap: 18px; font: 500 12px"] {
     gap: 22px !important;
   }
-  [style*="padding: 16px 40px"][style*="border-bottom: 1px solid rgba(255, 255, 255, 0.08)"] > [style*="gap: 26px; font: 500 13px Inter"] {
+  [style*="padding: 16px 40px"][style*="border-bottom: 1px solid rgba(255, 255, 255, 0.08)"] > [style*="gap: 26px; font: 500 13px"] {
     display: flex !important;
     position: absolute !important;
     top: 100% !important;
@@ -75,7 +84,7 @@
     padding: 0 16px !important;
     z-index: 50 !important;
   }
-  html.nasap-nav-open [style*="padding: 16px 40px"][style*="border-bottom: 1px solid rgba(255, 255, 255, 0.08)"] > [style*="gap: 26px; font: 500 13px Inter"] {
+  html.nasap-nav-open [style*="padding: 16px 40px"][style*="border-bottom: 1px solid rgba(255, 255, 255, 0.08)"] > [style*="gap: 26px; font: 500 13px"] {
     max-height: 480px !important;
     opacity: 1 !important;
     transform: scale(1) !important;
@@ -85,7 +94,7 @@
      séparateur, et sans transition — sur mobile on ne peut que taper, une
      transition hover (héritée du style desktop) ne fait que retarder le
      changement visuel au clic */
-  [style*="padding: 16px 40px"][style*="border-bottom: 1px solid rgba(255, 255, 255, 0.08)"] > [style*="gap: 26px; font: 500 13px Inter"] > * {
+  [style*="padding: 16px 40px"][style*="border-bottom: 1px solid rgba(255, 255, 255, 0.08)"] > [style*="gap: 26px; font: 500 13px"] > * {
     display: block !important;
     width: 100% !important;
     padding: 12px 4px !important;
@@ -97,7 +106,7 @@
      style-hover="transform:scale(1.18)..." (voir support.js) — inutile et
      moche sur mobile où il n'y a pas de vraie souris, donc annulé même au
      survol/tap dans le menu déroulant */
-  [style*="padding: 16px 40px"][style*="border-bottom: 1px solid rgba(255, 255, 255, 0.08)"] > [style*="gap: 26px; font: 500 13px Inter"] > *:hover {
+  [style*="padding: 16px 40px"][style*="border-bottom: 1px solid rgba(255, 255, 255, 0.08)"] > [style*="gap: 26px; font: 500 13px"] > *:hover {
     transform: none !important;
   }
   /* item "page actuelle" : texte en gras et plus grand que les autres, trait
@@ -105,7 +114,7 @@
      style desktop. Ciblé via le marqueur de page active lui-même (bordure
      rouge) plutôt que via le tag (<span> vs <a>) : certaines pages (Home)
      rendent même l'item actif comme un <a>, seul son style inline change. */
-  [style*="padding: 16px 40px"][style*="border-bottom: 1px solid rgba(255, 255, 255, 0.08)"] > [style*="gap: 26px; font: 500 13px Inter"] > [style*="border-bottom: 2px solid rgb(255, 90, 60)"] {
+  [style*="padding: 16px 40px"][style*="border-bottom: 1px solid rgba(255, 255, 255, 0.08)"] > [style*="gap: 26px; font: 500 13px"] > [style*="border-bottom: 2px solid rgb(255, 90, 60)"] {
     border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
     font-weight: 700 !important;
     font-size: 15.5px !important;
