@@ -17,7 +17,7 @@
 	auto_https off
 }
 
-nasap3d.com, www.nasap3d.com {
+:80 {
 	root * /srv
 	encode gzip
 
@@ -83,8 +83,4 @@ nasap3d.com, www.nasap3d.com {
 	}
 
 	file_server
-}
-
-api.nasap3d.com {
-	reverse_proxy api:3000
 }
