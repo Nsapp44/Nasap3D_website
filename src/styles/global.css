@@ -1,0 +1,99 @@
+/* Shared base styles, ported from the inline <style> block duplicated in
+   every .dc.html page's <helmet> (see e.g. About.dc.html:17-20). */
+body {
+  margin: 0;
+  background: #161514;
+  font-family: "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a {
+  color: #ff5a3c;
+}
+a:hover {
+  color: #ff7a5c;
+}
+
+/* Replaces the old framework's style-hover="transform:scale(1.18);color:#ff5a3c"
+   directive (support.js injected this per-element via a generated
+   stylesheet rule) — same visual effect, plain CSS class instead. Used by
+   every plain-text nav/footer link that scales+reddens on hover. */
+.nav-hover-scale {
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease;
+  display: inline-block;
+}
+.nav-hover-scale:hover {
+  transform: scale(1.18);
+  color: #ff5a3c;
+}
+
+/* Hamburger button (MobileNavToggle.tsx) — ported from responsive.css's
+   .nasap-nav-toggle* rules. position:relative wrapper + height:0 so the
+   button scrolls with the page instead of a fixed overlay (see
+   MobileNavToggle.tsx's own comment for why), same as the header's
+   Compte/Panier icons. */
+.nasap-nav-toggle-anchor {
+  position: relative;
+  height: 0;
+}
+.nasap-nav-toggle {
+  display: none;
+  position: absolute;
+  top: 13px;
+  right: 26px;
+  z-index: 1000;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  background: rgba(22, 21, 20, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.nasap-nav-toggle span {
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  height: 2px;
+  background: #f3f1ec;
+  transition:
+    transform 0.2s,
+    opacity 0.2s,
+    top 0.2s;
+}
+.nasap-nav-toggle span:nth-child(1) {
+  top: 11px;
+}
+.nasap-nav-toggle span:nth-child(2) {
+  top: 16px;
+}
+.nasap-nav-toggle span:nth-child(3) {
+  top: 21px;
+}
+.nasap-nav-toggle.is-open span:nth-child(1) {
+  top: 16px;
+  transform: rotate(45deg);
+}
+.nasap-nav-toggle.is-open span:nth-child(2) {
+  opacity: 0;
+}
+.nasap-nav-toggle.is-open span:nth-child(3) {
+  top: 16px;
+  transform: rotate(-45deg);
+}
+@media (max-width: 900px) {
+  .nasap-nav-toggle {
+    display: flex !important;
+  }
+}
+
+/* Filet de sécurité général : rien ne doit pouvoir provoquer de scroll
+   horizontal sur la page. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}

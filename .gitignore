@@ -12,6 +12,9 @@ node_modules/
 dist/
 .env
 .env.local
+
+# Front-end (Astro)
+.astro/
 server/uploads/
 # Dumps produced by scripts/backup-db.sh — never committed, see
 # server/README.md "Sauvegardes"

@@ -1,0 +1,192 @@
+---
+import NavAuthIcon from "./NavAuthIcon";
+import MobileNavToggle from "./MobileNavToggle";
+
+interface Props {
+  currentPath: string;
+}
+const { currentPath } = Astro.props;
+
+const NAV_ITEMS = [
+  { href: "/", label: "Accueil" },
+  { href: "/services", label: "Services" },
+  { href: "/devis-instantane", label: "Devis instantané" },
+  { href: "/a-propos", label: "À propos" },
+  { href: "/realisations", label: "Réalisations" },
+  { href: "/machines", label: "Machines" },
+  { href: "/contact", label: "Contact" },
+];
+---
+
+<div class="site-header">
+  <a href="/" class="logo-link">
+    <img src="/assets/logo-blanc-full.png" alt="Nasap3D" class="logo-img" />
+  </a>
+
+  <div class="nav-links">
+    {
+      NAV_ITEMS.map((item) =>
+        item.href === currentPath ? (
+          <span class="nav-current nav-hover-scale">{item.label}</span>
+        ) : (
+          <a href={item.href} class="nav-hover-scale">
+            {item.label}
+          </a>
+        ),
+      )
+    }
+  </div>
+
+  <div class="header-account">
+    <a href="/compte" class="nav-hover-scale">Compte</a>
+    <NavAuthIcon client:load />
+    <a href="/panier" class="cart-link">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="19"
+        height="19"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <circle cx="8" cy="21" r="1"></circle>
+        <circle cx="19" cy="21" r="1"></circle>
+        <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
+      </svg>
+      <span class="cart-count">0</span>
+    </a>
+  </div>
+
+  <MobileNavToggle client:load />
+</div>
+
+<style>
+  .site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 40px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .logo-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+  .logo-img {
+    height: 34px;
+    width: auto;
+  }
+  .nav-links {
+    display: flex;
+    gap: 26px;
+    font: 500 13px "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.62);
+  }
+  .nav-links a {
+    text-decoration: none;
+    color: inherit;
+  }
+  .nav-current {
+    color: #f3f1ec;
+    border-bottom: 2px solid #ff5a3c;
+    padding-bottom: 4px;
+  }
+  .header-account {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    font: 500 12px "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.75);
+  }
+  .header-account a {
+    text-decoration: none;
+    color: inherit;
+  }
+  .cart-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+  .cart-count {
+    position: absolute;
+    top: -9px;
+    right: -9px;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: #ff5a3c;
+    color: #161514;
+    font: 700 8.5px/15px "Inter", sans-serif;
+    text-align: center;
+  }
+
+  /* <=900px : la rangée de liens devient un panneau déroulant sous le
+     header, ouvert/fermé par MobileNavToggle (voir ce composant) — même
+     comportement que l'ancien responsive.css, en classes réelles plutôt
+     qu'en sélecteurs d'attribut [style*="..."] (qui n'ont plus de raison
+     d'être : ce n'est plus le framework DC qui rend tout en style inline). */
+  @media (max-width: 900px) {
+    .site-header {
+      padding: 12px 90px 12px 16px;
+      position: relative;
+    }
+    .header-account {
+      gap: 22px;
+    }
+    .nav-links {
+      display: flex;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      flex-direction: column;
+      gap: 0;
+      background: #161514;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transform: scale(0.94);
+      transform-origin: top center;
+      transition:
+        max-height 0.28s ease,
+        opacity 0.22s ease,
+        transform 0.22s ease;
+      padding: 0 16px;
+      z-index: 50;
+    }
+    :global(html.nasap-nav-open) .nav-links {
+      max-height: 480px;
+      opacity: 1;
+      transform: scale(1);
+      padding: 8px 16px 14px;
+    }
+    .nav-links > :global(*) {
+      display: block;
+      width: 100%;
+      padding: 12px 4px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      transition: none;
+      transform: none;
+    }
+    .nav-links > :global(*:hover) {
+      transform: none;
+    }
+    .nav-current {
+      font-weight: 700;
+      font-size: 15.5px;
+      padding: 14px 4px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      text-decoration: underline;
+      text-decoration-color: rgb(255, 90, 60);
+      text-decoration-thickness: 2px;
+      text-underline-offset: 6px;
+    }
+  }
+</style>
