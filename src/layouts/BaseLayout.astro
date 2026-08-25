@@ -9,8 +9,10 @@ interface Props {
   description: string;
   path: string;
   showAuthIcon?: boolean;
+  noindex?: boolean;
+  hideFooter?: boolean;
 }
-const { title, description, path, showAuthIcon } = Astro.props;
+const { title, description, path, showAuthIcon, noindex = false, hideFooter = false } = Astro.props;
 const canonical = new URL(path, Astro.site).toString();
 ---
 
@@ -21,7 +23,8 @@ const canonical = new URL(path, Astro.site).toString();
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex,nofollow" />}
+    {!noindex && <link rel="canonical" href={canonical} />}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
@@ -33,7 +36,7 @@ const canonical = new URL(path, Astro.site).toString();
       <MobileNavToggle client:load />
       <Header currentPath={path} showAuthIcon={showAuthIcon} />
       <slot />
-      <Footer />
+      {!hideFooter && <Footer />}
     </div>
   </body>
 </html>
@@ -42,5 +45,7 @@ const canonical = new URL(path, Astro.site).toString();
   .page-shell {
     background: #161514;
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
 </style>

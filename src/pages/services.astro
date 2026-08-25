@@ -1,0 +1,530 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const QUICK_NAV = [
+  { href: "#retroconception", label: "Rétro-conception" },
+  { href: "#impression3d", label: "Impression 3D" },
+  { href: "#maquettage", label: "Maquettage" },
+  { href: "#customisation", label: "Customisation Multisupports" },
+  { href: "#maintenance", label: "Maintenance machine" },
+  { href: "#initiation", label: "Initiation" },
+];
+
+const MULTISUPPORT_PROCESSES = [
+  {
+    title: "Découpe & gravure laser",
+    badge: "Diode 40W · Fibre 20W · UV 2W",
+    text: "Découpe et gravure de précision micrométrique sur la quasi-totalité des supports, du prototype technique à l'objet personnalisé.",
+    materials: [
+      {
+        title: "Bois & dérivés",
+        text: "Contreplaqué, MDF, bois massif, liège — signalétique, boîtiers, décoration événementielle, trophées.",
+      },
+      {
+        title: "Métaux (gravure Fibre)",
+        text: "Inox, aluminium, laiton, titane — plaques constructeur, QR/numéros de série, pièces méca auto/moto.",
+      },
+      {
+        title: "Verre, céramique & fragiles (UV)",
+        text: "Verre, cristal, ardoise, céramique, silicone — marquage ultra-fin sans micro-fissures.",
+      },
+      {
+        title: "Plastiques & acryliques",
+        text: "Plexiglas, ABS, POM (Delrin) — panneaux lumineux, façades d'interfaces, lettrages.",
+      },
+      { title: "Matériaux souples", text: "Cuir, carton, papier épais — écussons, packaging sur-mesure, carterie." },
+    ],
+    note: "Petite série jusqu'à 500 pièces. Modélisation et fichiers de production réalisés si besoin.",
+  },
+  {
+    title: "Découpe vinyle & stickers",
+    badge: "Plotter de découpe",
+    text: "Lettrages, autocollants et marquages textiles sur-mesure pour la communication, la personnalisation et la signalétique.",
+    materials: [
+      {
+        title: "Stickers & vinyle adhésif",
+        text: "Vitrines, carrosseries, plastiques, packaging — logos d'entreprise, signalétique, déco de carénages, étiquettes.",
+      },
+      {
+        title: "Flocage & transfert textile",
+        text: "Coton, polyester, T-shirts, tote bags, casquettes — tenues pro, événementiel, goodies textiles.",
+      },
+      {
+        title: "Pochoirs & masquage",
+        text: "Vinyle temporaire sur métal, bois, verre, murs — pochoirs de peinture (restauration auto/moto, marquage d'atelier).",
+      },
+      {
+        title: "Papier & cartonnage léger",
+        text: "Papier épais, kraft, bristol, plastique fin (≤ 1 mm) — packaging, étiquettes volantes, carterie.",
+      },
+    ],
+    note: "Petite série possible selon le projet.",
+  },
+  {
+    title: "Transfert & sublimation thermique",
+    badge: "Presses à plat · mug · mobiles",
+    text: "Marquages couleur haute définition : l'encre est injectée dans la matière, pour un rendu lisse au toucher, ultra-résistant et inaltérable.",
+    materials: [
+      {
+        title: "Textiles (vêtements)",
+        text: "Textiles clairs ≥ 50% polyester — vêtements de sport, tenues techniques, marquages dégradés/photos impossibles en vinyle.",
+      },
+      {
+        title: "Céramiques & tasses",
+        text: "Mugs céramique, tasses métal émaillé — mugs d'entreprise, cadeaux personnalisés, goodies.",
+      },
+      {
+        title: "Objets plats & goodies",
+        text: "Plaques alu polyester, tapis de souris, sous-verres, puzzles — plaques déco, signalétique couleur, cadeaux d'affaires.",
+      },
+      {
+        title: "Surfaces atypiques",
+        text: "Casquettes, trousses, sacs à dos, manches — chauffe ciblée sur zones difficiles ou volumineuses.",
+      },
+    ],
+    note: "Petite série possible, jusqu'à 20 unités pour ce procédé.",
+  },
+];
+
+const INITIATION_TIERS = [
+  {
+    level: "Débutant",
+    price: "90€",
+    duration: "≈ 2h",
+    text: "Découverte de la machine et des bases du slicing.",
+    highlighted: false,
+  },
+  {
+    level: "Standard",
+    price: "225€",
+    duration: "≈ 4h — une après-midi",
+    text: "Réglages, matériaux et premières impressions autonomes.",
+    highlighted: true,
+  },
+  {
+    level: "Advanced",
+    price: "270€",
+    duration: "≈ 6h — deux après-midis",
+    text: "Maintenance de base, dépannage courant et autonomie complète.",
+    highlighted: false,
+  },
+];
+---
+
+<BaseLayout
+  title="Services : Impression 3D, Conception, Maquettage | Nasap3D"
+  description="Impression 3D, rétro-conception, maquettage, customisation multisupports, maintenance machine et initiation — tous les services de l'atelier Nasap3D à Nantes."
+  path="/services"
+>
+  <div class="hero">
+    <div class="kicker">Nos prestations</div>
+    <div class="hero-title">Six façons de donner vie à votre projet</div>
+    <div class="hero-intro">
+      De la pièce cassée à réparer jusqu'à l'objet personnalisé au laser, en passant par l'impression 3D et le
+      maquettage — voici comment on peut vous aider.
+    </div>
+  </div>
+
+  <div class="quick-nav">
+    {
+      QUICK_NAV.map((item) => (
+        <a href={item.href} class="quick-nav-pill">
+          {item.label}
+        </a>
+      ))
+    }
+  </div>
+
+  <div id="retroconception" class="section section-first">
+    <div class="section-eyebrow">01 · Rétro-conception</div>
+    <div class="section-title">Redonner vie à une pièce cassée ou disparue</div>
+    <div class="section-text">
+      À partir d'une pièce existante — cassée, usée ou introuvable dans le commerce — on la reconçoit en CAO pour
+      vous livrer un fichier 3D fidèle et réutilisable.
+    </div>
+    <div class="info-grid">
+      <div class="info-card"><div class="info-title">Livrable</div><div class="info-text">Fichiers 3D / STL réutilisables</div></div>
+      <div class="info-card"><div class="info-title">Option</div><div class="info-text">Impression incluse sur demande</div></div>
+      <div class="info-card"><div class="info-title">Tarif</div><div class="info-text">Au temps passé, sur devis</div></div>
+    </div>
+    <a href="/contact" class="cta-btn">Demander un devis →</a>
+  </div>
+
+  <div id="impression3d" class="section">
+    <div class="section-eyebrow">02 · Impression 3D</div>
+    <div class="section-title">Prototypage, pièces et petites séries</div>
+    <div class="section-text">
+      Deux technologies complémentaires : le dépôt de filament (FDM) pour les pièces fonctionnelles et les séries,
+      la résine (SLA) pour le détail fin et le post-traitement.
+    </div>
+
+    <div class="process-card">
+      <div class="process-head">
+        <span class="process-title">Impression FDM (filament)</span>
+        <span class="process-badge">Devis instantané</span>
+      </div>
+      <div class="process-text">
+        Prototypage rapide, pièces de remplacement, petites séries — conseil matière selon vos contraintes
+        mécaniques, thermiques ou chimiques.
+      </div>
+      <div class="sub-grid">
+        <div class="sub-card"><div class="sub-title">Séries</div><div class="sub-text">Jusqu'à 500 pièces</div></div>
+        <div class="sub-card"><div class="sub-title">Matières</div><div class="sub-text">PLA, PETG, ABS, ASA, TPU, PP, Nylon</div></div>
+      </div>
+      <a href="/devis-instantane" class="cta-btn">Obtenir un devis instantané →</a>
+    </div>
+
+    <div class="process-card">
+      <div class="process-head">
+        <span class="process-title">Impression résine (SLA)</span>
+        <span class="process-badge">Sur devis uniquement</span>
+      </div>
+      <div class="process-text">
+        Pour les pièces très détaillées destinées au post-traitement — ponçage, apprêt, peinture — et les figurines
+        ou modèles fins où la finesse de surface prime. Non disponible au devis instantané.
+      </div>
+      <div class="sub-grid">
+        <div class="sub-card"><div class="sub-title">Séries</div><div class="sub-text">Petite série possible, 20 à 30 pièces</div></div>
+        <div class="sub-card"><div class="sub-title">Matières</div><div class="sub-text">Résine standard, ABS-Like, résine transparente</div></div>
+      </div>
+      <a href="/contact" class="cta-btn">Demander un devis SLA →</a>
+    </div>
+  </div>
+
+  <div id="maquettage" class="section">
+    <div class="section-eyebrow">03 · Maquettage</div>
+    <div class="section-title">Modélisation et impression de maquettes</div>
+    <div class="section-text">
+      Modélisation et/ou impression de maquettes 3D — produit design, outil pédagogique, projet d'architecture —
+      pour présenter, tester ou expliquer un concept en volume.
+    </div>
+    <div class="info-grid">
+      <div class="info-card"><div class="info-title">Design produit</div><div class="info-text">Maquette d'un objet à concevoir</div></div>
+      <div class="info-card"><div class="info-title">Pédagogique</div><div class="info-text">Support d'apprentissage ou de démonstration</div></div>
+      <div class="info-card"><div class="info-title">Architecture</div><div class="info-text">Maquette de bâtiment ou d'aménagement</div></div>
+    </div>
+    <a href="/contact" class="cta-btn">Décrire mon projet →</a>
+  </div>
+
+  <div id="customisation" class="section">
+    <div class="section-eyebrow">04 · Customisation Multisupports</div>
+    <div class="section-title">Laser, vinyle et sublimation, sur presque tous les supports</div>
+    <div class="section-text wide">
+      Au-delà de l'impression 3D, l'atelier personnalise et fabrique sur une large gamme de matières : découpe et
+      gravure laser, découpe vinyle, stickers, transfert textile et sublimation thermique. De l'idée au produit
+      fini — on modélise et on génère les fichiers de production si vous ne les avez pas. Ces prestations se font
+      sur devis.
+    </div>
+
+    {
+      MULTISUPPORT_PROCESSES.map((proc) => (
+        <div class="process-card">
+          <div class="process-head">
+            <div class="process-title">{proc.title}</div>
+            <div class="process-badge nowrap">{proc.badge}</div>
+          </div>
+          <div class="process-text">{proc.text}</div>
+          <div class="sub-grid">
+            {proc.materials.map((m) => (
+              <div class="sub-card">
+                <div class="sub-title">{m.title}</div>
+                <div class="sub-text">{m.text}</div>
+              </div>
+            ))}
+          </div>
+          <div class="process-note">{proc.note}</div>
+        </div>
+      ))
+    }
+
+    <a href="/contact" class="cta-btn">Demander un devis →</a>
+  </div>
+
+  <div id="maintenance" class="section">
+    <div class="section-eyebrow">05 · Maintenance machine</div>
+    <div class="section-title">Diagnostic, réparation, entretien préventif</div>
+    <div class="section-text">
+      Panne électronique ou mécanique sur votre imprimante ? Diagnostic complet, réparation et maintenance
+      préventive pour prolonger la vie de votre machine.
+    </div>
+    <div class="info-grid">
+      <div class="info-card"><div class="info-title">Diagnostic</div><div class="info-text">Électronique et mécanique</div></div>
+      <div class="info-card"><div class="info-title">Préventif</div><div class="info-text">Entretien régulier sur devis</div></div>
+      <div class="info-card"><div class="info-title">Garantie</div><div class="info-text">Retour atelier sous 3 jours</div></div>
+    </div>
+    <a href="/contact" class="cta-btn">Décrire la panne →</a>
+  </div>
+
+  <div id="initiation" class="section section-last">
+    <div class="section-eyebrow">06 · Initiation</div>
+    <div class="section-title">Apprenez l'impression 3D à l'atelier</div>
+    <div class="section-text wide">
+      Trois formules selon le temps que vous voulez y consacrer — de la découverte à une vraie autonomie sur
+      machine.
+    </div>
+    <div class="pricing-grid">
+      {
+        INITIATION_TIERS.map((tier) => (
+          <div class={`pricing-card${tier.highlighted ? " highlighted" : ""}`}>
+            {tier.highlighted && <div class="pricing-tag">Le plus choisi</div>}
+            <div class={`pricing-level${tier.highlighted ? " highlighted" : ""}`}>{tier.level}</div>
+            <div class="pricing-price">{tier.price}</div>
+            <div class="pricing-duration">{tier.duration}</div>
+            <div class="pricing-text">{tier.text}</div>
+          </div>
+        ))
+      }
+    </div>
+    <a href="/contact" class="cta-btn">Réserver une session →</a>
+  </div>
+</BaseLayout>
+
+<style>
+  .hero {
+    padding: 48px 24px 20px;
+  }
+  .hero,
+  .quick-nav,
+  .section {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .kicker {
+    font: 600 12px "Inter", sans-serif;
+    letter-spacing: 1.2px;
+    color: #ff5a3c;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .hero-title {
+    font: 700 32px/1.15 "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 12px;
+  }
+  .hero-intro {
+    font: 400 13px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+    max-width: 600px;
+  }
+  .quick-nav {
+    padding: 12px 24px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .quick-nav-pill {
+    text-decoration: none;
+    font: 600 11px "Inter", sans-serif;
+    color: #e8e6e1;
+    background: #1a1917;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    padding: 7px 14px;
+    transition:
+      transform 0.2s ease,
+      border-color 0.2s ease;
+  }
+  .quick-nav-pill:hover {
+    transform: scale(1.08);
+    border-color: #ff5a3c;
+  }
+  .section {
+    padding: 0 24px 36px;
+    margin-top: 36px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    scroll-margin-top: 80px;
+  }
+  .section-first {
+    margin-top: 4px;
+  }
+  .section-last {
+    padding-bottom: 50px;
+  }
+  .section-eyebrow {
+    font: 600 11.5px "Inter", sans-serif;
+    color: #ff5a3c;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .section-title {
+    font: 700 22px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 12px;
+  }
+  .section-text {
+    font: 400 12.5px/1.7 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+    max-width: 620px;
+    margin-bottom: 18px;
+  }
+  .section-text.wide {
+    max-width: 100%;
+    margin-bottom: 24px;
+  }
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .info-card {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 14px;
+    background: #1a1917;
+  }
+  .info-title {
+    font: 600 11.5px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 4px;
+  }
+  .info-text {
+    font: 400 10.5px/1.5 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .cta-btn {
+    text-decoration: none;
+    display: inline-block;
+    background: #ff5a3c;
+    color: #161514;
+    font: 600 12px "Inter", sans-serif;
+    padding: 10px 18px;
+    border-radius: 6px;
+    transition: transform 0.2s ease;
+  }
+  .cta-btn:hover {
+    transform: scale(1.05);
+  }
+  .process-card {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 22px;
+    background: #1a1917;
+    margin-bottom: 14px;
+  }
+  .process-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+  .process-title {
+    font: 700 15px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+  }
+  .process-badge {
+    font: 600 9px "Inter", sans-serif;
+    color: #ff5a3c;
+    background: rgba(255, 90, 60, 0.12);
+    border-radius: 20px;
+    padding: 4px 10px;
+  }
+  .process-badge.nowrap {
+    white-space: nowrap;
+  }
+  .process-text {
+    font: 400 11.5px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 16px;
+  }
+  .process-note {
+    font: 400 10px/1.5 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.45);
+    margin-top: 12px;
+  }
+  .sub-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .sub-card {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 14px;
+    background: #161514;
+  }
+  .sub-title {
+    font: 600 11px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 5px;
+  }
+  .sub-text {
+    font: 400 10px/1.5 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .pricing-card {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 22px;
+    background: #1a1917;
+    position: relative;
+  }
+  .pricing-card.highlighted {
+    border-color: #ff5a3c;
+    background: #1e1917;
+  }
+  .pricing-tag {
+    position: absolute;
+    top: -10px;
+    left: 22px;
+    background: #ff5a3c;
+    color: #161514;
+    font: 700 9px "Inter", sans-serif;
+    padding: 3px 9px;
+    border-radius: 10px;
+  }
+  .pricing-level {
+    font: 600 9px "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 8px;
+  }
+  .pricing-level.highlighted {
+    color: #ff5a3c;
+  }
+  .pricing-price {
+    font: 700 26px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 2px;
+  }
+  .pricing-duration {
+    font: 400 10.5px "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.45);
+    margin-bottom: 14px;
+  }
+  .pricing-text {
+    font: 400 11px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+  }
+
+  @media (max-width: 900px) {
+    .info-grid,
+    .pricing-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  @media (max-width: 640px) {
+    .info-grid,
+    .sub-grid,
+    .pricing-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 420px) {
+    .info-grid,
+    .sub-grid,
+    .pricing-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

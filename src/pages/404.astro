@@ -1,0 +1,128 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Page Introuvable | Nasap3D" description="Page introuvable." path="/404" noindex hideFooter>
+  <div class="content">
+    <div class="box">
+      <div class="code">4<span class="zero">0</span>4</div>
+      <div class="title">Cette page n'a pas pu être imprimée</div>
+      <div class="text">
+        La page que vous cherchez a été déplacée ou n'existe pas. Revenez à l'accueil ou lancez directement votre
+        devis.
+      </div>
+      <div class="actions">
+        <a href="/" class="btn-primary">Retour à l'accueil</a>
+        <a href="/contact" class="btn-secondary">Nous contacter</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="custom-footer">
+    <div>
+      <a href="/mentions-legales">Mentions légales</a> · <a href="/cgu">CGU</a> · <a href="/confidentialite"
+        >Confidentialité</a
+      > · <a href="/cookies">Cookies</a> · <a href="/impression-3d-nantes">Nantes</a> · <a href="/impression-3d-cholet"
+        >Cholet</a
+      > · <a href="/impression-3d-angers">Angers</a>
+    </div>
+    <div>© 2026 Nasap3D, Site conçu par Nsapp</div>
+  </div>
+</BaseLayout>
+
+<style>
+  .content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 24px;
+  }
+  .box {
+    max-width: 560px;
+    text-align: center;
+    animation: e404FadeUp 0.5s ease both;
+  }
+  @keyframes e404FadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .code {
+    font: 700 84px/1 "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    letter-spacing: -2px;
+    margin-bottom: 14px;
+  }
+  .zero {
+    color: #ff5a3c;
+  }
+  .title {
+    font: 700 20px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 10px;
+  }
+  .text {
+    font: 400 13px/1.7 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+    max-width: 420px;
+    margin: 0 auto 28px;
+  }
+  .actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .btn-primary,
+  .btn-secondary {
+    text-decoration: none;
+    font: 600 13px "Inter", sans-serif;
+    padding: 12px 22px;
+    border-radius: 7px;
+    display: inline-block;
+  }
+  .btn-primary {
+    background: #ff5a3c;
+    color: #161514;
+    transition: transform 0.2s ease;
+  }
+  .btn-primary:hover {
+    transform: scale(1.04);
+  }
+  .btn-secondary {
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: #1e1c1a;
+    color: #f3f1ec;
+    font-weight: 500;
+    transition: border-color 0.2s ease;
+  }
+  .btn-secondary:hover {
+    border-color: #ff5a3c;
+  }
+  .custom-footer {
+    padding: 20px 40px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font: 10px "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.4);
+  }
+  .custom-footer a {
+    color: rgba(255, 255, 255, 0.4);
+  }
+  @media (max-width: 640px) {
+    .custom-footer {
+      flex-direction: column;
+      gap: 8px;
+      text-align: center;
+      padding: 18px 16px;
+    }
+  }
+</style>

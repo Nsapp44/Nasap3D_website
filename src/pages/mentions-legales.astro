@@ -1,0 +1,32 @@
+---
+import LegalLayout from "../layouts/LegalLayout.astro";
+---
+
+<LegalLayout
+  path="/mentions-legales"
+  title="Mentions légales | Nasap3D"
+  description="Mentions légales du site Nasap3D."
+  pageTitle="Mentions légales"
+  sections={[
+    {
+      heading: "Éditeur du site",
+      body: "Nasap3D — micro-entreprise d'impression 3D (FDM), fondée en 2022 par Nolann Sallot.<br>\n      Siège social : 29 rue Mellier, 44100 Nantes, France.<br>\n      Statut : micro-entrepreneur — SIRET [à compléter].<br>\n      Contact : nasap3D@gmail.com — 06 61 43 05 06.",
+    },
+    {
+      heading: "Directeur de la publication",
+      body: "Nolann Sallot, fondateur et Fab Manager de Nasap3D.",
+    },
+    {
+      heading: "Hébergement",
+      body: "Le site et les données applicatives (comptes, commandes) sont hébergés sur un serveur OVH, dans une base de données PostgreSQL gérée par Nasap3D.",
+    },
+    {
+      heading: "Propriété intellectuelle",
+      body: "L'ensemble des contenus présents sur ce site (textes, images, logo, éléments graphiques) est la propriété de Nasap3D, sauf mention contraire, et ne peut être reproduit sans autorisation préalable.",
+    },
+    {
+      heading: "Médiation",
+      body: "Conformément à l'article L.616-1 du Code de la consommation, tout client peut recourir gratuitement à un médiateur de la consommation en cas de litige. [Coordonnées du médiateur à compléter].",
+    },
+  ]}
+/>

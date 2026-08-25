@@ -29,20 +29,8 @@
 	@home path /
 	rewrite @home /Home.dc.html
 
-	@services path /services
-	rewrite @services /Services.dc.html
-
 	@devis path /devis-instantane
 	rewrite @devis "/Devis Instantane.dc.html"
-
-	@machines path /machines
-	rewrite @machines /Machines.dc.html
-
-	@realisations path /realisations
-	rewrite @realisations /Realisations.dc.html
-
-	@apropos path /a-propos
-	rewrite @apropos /About.dc.html
 
 	@contact path /contact
 	rewrite @contact /Contact.dc.html
@@ -56,25 +44,14 @@
 	@admin path /admin
 	rewrite @admin /Admin.dc.html
 
-	@cgu path /cgu
-	rewrite @cgu /CGU.dc.html
-
-	@confidentialite path /confidentialite
-	rewrite @confidentialite /Confidentialite.dc.html
-
-	@cookies path /cookies
-	rewrite @cookies /Cookies.dc.html
-
-	@mentionslegales path /mentions-legales
-	rewrite @mentionslegales /MentionsLegales.dc.html
-
-	# /impression-3d-nantes, /impression-3d-cholet, /impression-3d-angers :
+	# /services, /machines, /realisations, /a-propos, /cgu, /confidentialite,
+	# /cookies, /mentions-legales, /impression-3d-{nantes,cholet,angers}, 404 :
 	# migrées vers Astro (voir C:\Users\Nolann\.claude\plans\idempotent-shimmying-swan.md),
 	# plus besoin de rewrite ici — le build Astro produit déjà ces chemins
 	# directement dans /srv (fichiers statiques, pas de réécriture requise).
 
 	handle_errors {
-		rewrite * /404.dc.html
+		rewrite * /404.html
 		file_server
 	}
 

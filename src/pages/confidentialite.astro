@@ -1,0 +1,32 @@
+---
+import LegalLayout from "../layouts/LegalLayout.astro";
+---
+
+<LegalLayout
+  path="/confidentialite"
+  title="Politique de confidentialité | Nasap3D"
+  description="Politique de confidentialité du site Nasap3D."
+  pageTitle="Politique de confidentialité"
+  sections={[
+    {
+      heading: "Données collectées",
+      body: "Nasap3D collecte les données nécessaires à la gestion des comptes clients (nom, email), au traitement des commandes (adresse, téléphone, fichiers 3D transmis) et aux demandes de contact (nom, email, message, pièce jointe).",
+    },
+    {
+      heading: "Utilisation des données",
+      body: "Ces données sont utilisées exclusivement pour traiter vos devis, commandes et demandes, assurer le suivi de commande et la livraison, et échanger avec vous. Elles ne sont jamais revendues à des tiers.",
+    },
+    {
+      heading: "Hébergement et sous-traitants",
+      body: "Le site et la base de données sont hébergés sur un serveur OVH, sous la responsabilité de Nasap3D. Les paiements sont traités par Stripe, qui ne transmet à Nasap3D aucune donnée bancaire complète. La livraison (France et Union européenne) est confiée à Boxtal et ses transporteurs partenaires (Mondial Relay, Colissimo), à qui sont transmis le nom, le téléphone, l'adresse et la valeur du colis du destinataire. La recherche d'adresse pendant la commande interroge Photon/OpenStreetMap (photon.komoot.io), qui reçoit le texte tapé dans le champ adresse.",
+    },
+    {
+      heading: "Durée de conservation",
+      body: "Les fichiers 3D transmis pour un devis ne sont conservés que le temps nécessaire à son traitement : supprimés automatiquement s'ils ne sont jamais ajoutés au panier ou si le panier reste inactif (sous 1h sans compte, sous 48h avec un compte), puis à nouveau au moment de l'impression une fois la commande honorée. Les commandes et factures sont conservées 10 ans conformément à l'obligation comptable légale (Code de commerce), quelle que soit votre demande de suppression de compte.",
+    },
+    {
+      heading: "Vos droits",
+      body: "Conformément au RGPD, vous disposez d'un droit d'accès, de rectification et de suppression de vos données. Toute demande peut être adressée à nasap3D@gmail.com.",
+    },
+  ]}
+/>

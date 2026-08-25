@@ -1,0 +1,219 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="À Propos de Nasap3D — Atelier d'Impression 3D à Nantes"
+  description="Qui sommes-nous ? Nasap3D est un atelier d'impression 3D basé à Nantes, spécialisé dans le prototypage et la fabrication de pièces sur-mesure."
+  path="/a-propos"
+>
+  <div class="hero">
+    <div class="logo-frame">
+      <div id="nasapLogoWrap" class="logo-wrap">
+        <svg viewBox="0 0 172.42 205.63" width="100%" height="100%" style="overflow:visible;display:block">
+          <path
+            class="branch"
+            style="fill:#f3f1ec"
+            d="M59.71,194.71l-33.25-.17c-1.62,1.48-2.71,4.26-2.51,6.19.15,1.45,1.69,4.28,3.15,4.9l32.72-.03c3.43-2.86,3.35-9.13-.12-10.89Z"
+          ></path>
+          <path
+            class="branch"
+            style="fill:#f3f1ec"
+            d="M60.71,182.05c.95-1.25,2.43-5.42.85-6.56l-25.74-18.35c-1.72-1.23-4.98,1.2-5.93,2.53-1.02,1.42-1.72,4.15-1.08,6.07l26.36,18.87c1.86.35,4.6-1.3,5.55-2.55Z"
+          ></path>
+          <path
+            class="branch"
+            style="fill:#f3f1ec"
+            d="M142.16,185.1c9.62-5.6,17.8-11.77,26.64-17.93.94-1.78.3-5.18-.92-6.66-.95-1.15-3.36-2.6-5.11-2.6-9.2,6.27-17.93,11.88-26.6,18.66-2.86,2.24,2.43,10.61,5.99,8.54Z"
+          ></path>
+          <path
+            class="branch"
+            style="fill:#f3f1ec"
+            d="M169.77,194.16c-10.92-.63-21.66-.75-32.45.1-3.65.29-3.61,9.87.16,10.16,10.69.82,21.3.67,32.34.1,3.51-1.32,3.45-9.88-.04-10.36Z"
+          ></path>
+          <g id="nLetter">
+            <path
+              transform="translate(23.81, 96.17)"
+              style="fill:#f3f1ec"
+              d="M43.49,2.18l18.49.14,27.01,63.2.17-65.52,16.44.02v97.84s-17.86-.01-17.86-.01l-27.68-63.19-.17,63.22-16.4.02V2.18Z"
+            ></path>
+          </g>
+          <g id="headGroup">
+            <path
+              style="fill:#f3f1ec"
+              d="M152.47,0H3.31C1.36,1.06-.06,3.85,0,5.61c.06,1.76,1.17,4.05,2.54,5.55l20.55.12.08,10.48c.02,3.21,1.74,5.92,5.34,5.92h19.65s0,43.18,0,43.18c0,3.72,1.91,7.53,3.59,10.53l6.62.24.25,22.13c.02,1.49,1.6,4.09,2.78,4.78,1.21.7,4.09.72,6.02.69h18.49l6.12-.26c1.68-1.21,3.07-4.91,3.07-7.13l.03-20.19,7.9-.34c1.4-2.93,3.21-6.39,3.21-9.66l.08-43.96,21.11-.04c1.54,0,4.26-2.81,4.28-4.33l.19-12.04,20.87-.12c1.52-.86,2.94-3.83,2.87-5.48ZM82.98,98.02h-12.72v-15.71h12.72v15.71ZM92.71,71.22h-32.87V28.44h32.87v42.78ZM118.11,17.26H35.09v-5.28h83.03v5.28Z"
+            ></path>
+            <rect style="fill:#161514" x="59.84" y="28.44" width="32.87" height="42.78"></rect>
+            <rect style="fill:#161514" x="35.09" y="11.98" width="83.03" height="5.28"></rect>
+            <rect style="fill:#161514" x="70.26" y="82.31" width="12.72" height="15.71"></rect>
+          </g>
+        </svg>
+      </div>
+    </div>
+    <div>
+      <div class="kicker">Qui sommes-nous</div>
+      <div class="hero-title">Nasap3D</div>
+      <div class="hero-subtitle">Impression 3D, rétro-conception & maquettage — Nantes</div>
+      <div class="hero-text">
+        Nasap3D est né en 2022 à Nantes (Canclaux), du croisement entre savoir-faire artisanal et technologie
+        d'impression 3D — une micro-entreprise pensée pour aller vite sans sacrifier la qualité.
+      </div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card"><div class="stat-value">2022</div><div class="stat-label">Année de création</div></div>
+    <div class="stat-card"><div class="stat-value">Nantes</div><div class="stat-label">Atelier basé à Canclaux</div></div>
+    <div class="stat-card"><div class="stat-value">6</div><div class="stat-label">Prestations proposées</div></div>
+  </div>
+
+  <div class="approach">
+    <div class="approach-kicker">Notre approche</div>
+    <div class="approach-title">Artisan-tech, précis et rapide</div>
+    <div class="approach-text">
+      On combine le sur-mesure d'un atelier artisanal et la cadence d'un parc de machines outillé — pour livrer des
+      pièces fiables, dans des délais courts, avec un conseil matière honnête à chaque étape.
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .hero {
+    padding: 56px 24px 0;
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 36px;
+    align-items: center;
+  }
+  .logo-frame {
+    width: 220px;
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .logo-wrap {
+    width: 78%;
+    cursor: pointer;
+  }
+  .logo-wrap :global(.branch) {
+    transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .logo-wrap :global(#nLetter) {
+    transition: transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s;
+  }
+  .logo-wrap :global(#headGroup) {
+    transition:
+      transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+      filter 0.5s ease;
+  }
+  .logo-wrap:hover :global(.branch:nth-of-type(1)) {
+    transform: translate(-14px, 10px) rotate(-8deg);
+  }
+  .logo-wrap:hover :global(.branch:nth-of-type(2)) {
+    transform: translate(-16px, -6px) rotate(6deg);
+  }
+  .logo-wrap:hover :global(.branch:nth-of-type(3)) {
+    transform: translate(16px, -6px) rotate(-6deg);
+  }
+  .logo-wrap:hover :global(.branch:nth-of-type(4)) {
+    transform: translate(14px, 10px) rotate(8deg);
+  }
+  .logo-wrap:hover :global(#nLetter) {
+    transform: translate(0, 9px);
+  }
+  .logo-wrap:hover :global(#headGroup) {
+    transform: translate(0, -22px) scale(1.06);
+    filter: drop-shadow(0 20px 14px rgba(0, 0, 0, 0.45));
+  }
+  .kicker {
+    font: 600 12px "Inter", sans-serif;
+    letter-spacing: 1.2px;
+    color: #ff5a3c;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .hero-title {
+    font: 700 30px/1.15 "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 10px;
+  }
+  .hero-subtitle {
+    font: 500 13px "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 16px;
+  }
+  .hero-text {
+    font: 400 12.5px/1.7 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+    max-width: 480px;
+  }
+  .stats {
+    padding: 44px 24px;
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .stat-card {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 20px;
+    background: #1a1917;
+  }
+  .stat-value {
+    font: 700 22px "Space Grotesk", sans-serif;
+    color: #ff5a3c;
+    margin-bottom: 4px;
+  }
+  .stat-label {
+    font: 400 11px "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .approach {
+    padding: 10px 24px 50px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .approach-kicker {
+    font: 600 11.5px "Inter", sans-serif;
+    color: #ff5a3c;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .approach-title {
+    font: 700 20px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 16px;
+  }
+  .approach-text {
+    font: 400 12.5px/1.8 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+    max-width: 640px;
+  }
+
+  @media (max-width: 900px) {
+    .hero {
+      grid-template-columns: 1fr;
+    }
+    .stats {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  @media (max-width: 640px) {
+    .stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 420px) {
+    .stats {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,36 @@
+---
+import LegalLayout from "../layouts/LegalLayout.astro";
+---
+
+<LegalLayout
+  path="/cgu"
+  title="Conditions Générales d'Utilisation | Nasap3D"
+  description="Conditions générales d'utilisation du site Nasap3D."
+  pageTitle="Conditions Générales d'Utilisation et de Vente"
+  sections={[
+    {
+      heading: "1. Objet",
+      body: "Les présentes CGU encadrent l'utilisation du site Nasap3D et la vente de prestations d'impression 3D, rétro-conception, maquettage, maintenance machine et sessions d'initiation.",
+    },
+    {
+      heading: "2. Devis et commandes",
+      body: "Le configurateur de devis instantané fournit une estimation basée sur les paramètres saisis par le client (fichier, matériau, remplissage, qualité, quantité). Le prix définitif est confirmé après analyse du fichier. Toute demande hors-configurateur (pièce complexe, rétro-conception, maintenance) fait l'objet d'un devis sur-mesure via le formulaire de contact.",
+    },
+    {
+      heading: "3. Paiement",
+      body: "Le paiement s'effectue en ligne, de manière sécurisée, via Stripe, à la validation du panier.",
+    },
+    {
+      heading: "4. Délais et livraison",
+      body: "Les délais indiqués sont donnés à titre indicatif et dépendent de la charge de l'atelier. Le retrait se fait gratuitement à l'atelier (Nantes, Canclaux), sur rendez-vous. En cas d'expédition, des frais de port ainsi qu'un forfait d'emballage de 1,50 € s'ajoutent au prix des pièces ; la livraison est proposée en France et dans les autres pays de l'Union européenne.",
+    },
+    {
+      heading: "5. Garanties",
+      body: "Les interventions de maintenance machine bénéficient d'une garantie de retour de 3 jours. Toute anomalie constatée doit être signalée dans ce délai.",
+    },
+    {
+      heading: "6. Rétractation",
+      body: "Conformément à la réglementation applicable, le droit de rétractation ne s'applique pas aux biens confectionnés selon les spécifications du client (pièces personnalisées).",
+    },
+  ]}
+/>

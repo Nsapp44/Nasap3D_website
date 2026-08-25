@@ -1,17 +1,31 @@
 ---
-
+import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout title="Nasap3D — migration en cours" description="Page d'accueil en cours de migration" path="/">
+  <div class="placeholder">
+    <h1>Accueil — pas encore migré</h1>
+    <p>
+      C'est la dernière page du plan de migration (elle réutilise l'assistant de devis et le formulaire de contact,
+      construits d'abord). Le vrai site continue de tourner sur l'ancien framework en attendant.
+    </p>
+  </div>
+</BaseLayout>
+
+<style>
+  .placeholder {
+    padding: 80px 24px;
+    max-width: 640px;
+    margin: 0 auto;
+    text-align: center;
+    color: #f3f1ec;
+    font-family: "Inter", sans-serif;
+  }
+  .placeholder h1 {
+    font-family: "Space Grotesk", sans-serif;
+  }
+  .placeholder p {
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.6;
+  }
+</style>

@@ -1,0 +1,249 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const FDM_MACHINES = [
+  { img: "machine-h2c.jpg", height: 297, name: "Bambu Lab H2C", badge: "x2", text: "Multi-matériaux haute précision, châssis fermé pour l'ABS/ASA." },
+  { img: "machine-x2d.jpg", height: 297, name: "Bambu Lab X2D", text: "Vitesse et fiabilité pour les séries et le prototypage rapide." },
+  { img: "machine-x1c.jpg", height: 297, name: "Bambu Lab X1C", text: "La polyvalente de l'atelier : détails fins, large gamme de matières." },
+];
+
+const OTHER_MACHINES = [
+  { img: "machine-sla.jpg", height: 318, name: "Imprimante SLA résine", text: "Finitions ultra détaillées pour figurines et pièces techniques." },
+  { img: "machine-laser-fibre.jpg", height: 315, name: "Gravure laser métal (Fibre)", text: "Fibre 20W — gravure inaltérable sur inox, aluminium, laiton, titane." },
+  { img: "machine-presse.png", height: 314, name: "Presse à chaud", text: "Transfert vinyle & sublimation thermique." },
+  { img: "machine-xtool-s1.png", height: 200, name: "Découpe/gravure laser", text: "XTOOL S1 Diode/UV — bois, acrylique, cuir, papier." },
+  { img: "machine-cricut.jpg", height: 200, name: "Cricut", text: "Découpe vinyle, stickers, plastique fin." },
+];
+---
+
+<BaseLayout
+  title="Nos Machines d'Impression 3D | Nasap3D Nantes"
+  description="Découvrez le parc machines de l'atelier Nasap3D à Nantes : imprimantes 3D professionnelles pour le prototypage et la production de pièces."
+  path="/machines"
+>
+  <div class="hero">
+    <div class="kicker">Parc machine</div>
+    <div class="hero-title">L'atelier, machine par machine</div>
+    <div class="hero-intro">
+      Trois imprimantes FDM, une résine SLA, un laser diode/UV, un laser fibre métal, un Cricut et une presse à
+      chaud — de quoi couvrir la plupart des besoins, du prototype au marquage.
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="section-label">Impression 3D — FDM</div>
+    <div class="machine-grid">
+      {
+        FDM_MACHINES.map((m) => (
+          <div class="machine-card">
+            <div class="machine-photo" style={`height:${m.height}px;background-image:url('/assets/${m.img}')`} />
+            <div class="machine-body">
+              <div class="machine-head">
+                <span class="machine-name">{m.name}</span>
+                {m.badge && <span class="machine-badge">{m.badge}</span>}
+              </div>
+              <div class="machine-text">{m.text}</div>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="section-label">Autres machines de l'atelier</div>
+    <div class="machine-grid">
+      {
+        OTHER_MACHINES.map((m) => (
+          <div class="machine-card">
+            <div class="machine-photo" style={`height:${m.height}px;background-image:url('/assets/${m.img}')`} />
+            <div class="machine-body small">
+              <div class="machine-name small">{m.name}</div>
+              <div class="machine-text small">{m.text}</div>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="cta-wrap">
+    <div class="cta-box">
+      <div class="cta-title">Une machine qui fait des siennes ?</div>
+      <div class="cta-text">On propose aussi le diagnostic et la réparation — pas seulement l'impression.</div>
+      <a href="/services#maintenance" class="cta-link">Voir la maintenance machine</a>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .hero,
+  .block,
+  .cta-wrap {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .hero {
+    padding: 56px 24px 30px;
+  }
+  .kicker {
+    font: 600 12px "Inter", sans-serif;
+    letter-spacing: 1.2px;
+    color: #ff5a3c;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .hero-title {
+    font: 700 30px/1.15 "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 10px;
+  }
+  .hero-intro {
+    font: 400 13px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+    max-width: 560px;
+  }
+  .block {
+    padding: 10px 24px 40px;
+  }
+  .section-label {
+    font: 600 9.5px "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 14px;
+  }
+  .machine-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .machine-card {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #1a1917;
+    transition:
+      border-color 0.25s ease,
+      box-shadow 0.25s ease,
+      transform 0.25s ease;
+  }
+  .machine-card:hover {
+    border-color: #ff5a3c;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+    transform: translateY(-3px);
+  }
+  .machine-photo {
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .machine-body {
+    padding: 16px;
+  }
+  .machine-body.small {
+    padding: 14px;
+  }
+  .machine-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .machine-name {
+    font: 700 14px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .machine-head .machine-name {
+    margin-bottom: 0;
+  }
+  .machine-name.small {
+    font-size: 12.5px;
+    margin-bottom: 5px;
+  }
+  .machine-badge {
+    font: 700 9px "Inter", sans-serif;
+    color: #ff5a3c;
+    background: rgba(255, 90, 60, 0.12);
+    border-radius: 4px;
+    padding: 2px 7px;
+  }
+  .machine-text {
+    font: 400 10.5px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .machine-text.small {
+    font-size: 10px;
+    line-height: 1.5;
+  }
+  .cta-wrap {
+    padding: 0 24px 56px;
+    text-align: center;
+  }
+  .cta-box {
+    border: 1px solid rgba(255, 90, 60, 0.3);
+    background: rgba(255, 90, 60, 0.08);
+    border-radius: 12px;
+    padding: 28px;
+    transition:
+      transform 0.25s ease,
+      box-shadow 0.25s ease,
+      border-color 0.25s ease;
+  }
+  .cta-box:hover {
+    border-color: #ff5a3c;
+    transform: scale(1.02);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
+  }
+  .cta-title {
+    font: 700 17px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 6px;
+  }
+  .cta-text {
+    font: 400 11.5px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 14px;
+  }
+  .cta-link {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    width: fit-content;
+    font: 600 11px "Inter", sans-serif;
+    color: #ff5a3c;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    transition:
+      padding 0.25s ease,
+      border-color 0.25s ease,
+      background 0.25s ease;
+  }
+  .cta-box:hover .cta-link {
+    padding: 6px 12px;
+    border-color: #ff5a3c;
+    background: rgba(255, 90, 60, 0.1);
+  }
+
+  @media (max-width: 900px) {
+    .machine-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  @media (max-width: 640px) {
+    .machine-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 420px) {
+    .machine-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

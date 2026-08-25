@@ -1,0 +1,63 @@
+---
+// Structure partagée par les 4 pages légales (CGU/Confidentialité/Cookies/
+// Mentions légales) — identiques au pixel près dans l'ancien framework (voir
+// CGU.dc.html, Confidentialite.dc.html, etc.), seul le contenu changeait.
+import BaseLayout from "./BaseLayout.astro";
+
+interface Section {
+  heading: string;
+  body: string; // peut contenir du HTML simple (<br>) — voir MentionsLegales
+}
+interface Props {
+  path: string;
+  title: string;
+  description: string;
+  pageTitle: string;
+  sections: Section[];
+}
+const { path, title, description, pageTitle, sections } = Astro.props;
+---
+
+<BaseLayout title={title} description={description} path={path}>
+  <div class="legal-content">
+    <div class="legal-title">{pageTitle}</div>
+    <div class="legal-body">
+      {
+        sections.map((s) => (
+          <>
+            <p class="legal-heading">{s.heading}</p>
+            <p class="legal-paragraph" set:html={s.body} />
+          </>
+        ))
+      }
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .legal-content {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 56px 24px 70px;
+  }
+  .legal-title {
+    font: 700 28px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 28px;
+  }
+  .legal-body {
+    font: 400 12.5px/1.8 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.6);
+  }
+  .legal-heading {
+    font: 600 13px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin: 0 0 6px;
+  }
+  .legal-paragraph {
+    margin: 0 0 20px;
+  }
+  .legal-paragraph:last-child {
+    margin: 0;
+  }
+</style>
