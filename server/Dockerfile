@@ -1,5 +1,13 @@
 FROM node:20-bookworm-slim AS build
 WORKDIR /app
+# Prisma's engine-selection at `generate` time (and again at runtime, see the
+# final stage below) shells out to detect the installed OpenSSL version to
+# pick the right query-engine binary — without the openssl package present,
+# it can't detect anything and silently guesses "openssl-1.1.x" instead of
+# actually checking, which may not match what's really on Debian Bookworm
+# (OpenSSL 3.x by default). Installing it here makes `prisma generate` bake
+# in the binary that actually matches the target OS instead of a guess.
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json* ./
 RUN npm install
 COPY . .
@@ -33,8 +41,10 @@ ENV NODE_ENV=production
 # PrusaSlicer's CLI mode (--info / --export-gcode, see slicer.ts) needs
 # xvfb-run despite never opening a real window — confirmed by building and
 # running this image end-to-end (see server/README.md). xauth is xvfb-run's
-# own dependency (fails with "xauth command not found" without it).
-RUN apt-get update && apt-get install -y --no-install-recommends xvfb xauth && rm -rf /var/lib/apt/lists/*
+# own dependency (fails with "xauth command not found" without it). openssl
+# is for Prisma's engine detection at runtime — see the build stage above
+# for why it's needed in both places.
+RUN apt-get update && apt-get install -y --no-install-recommends xvfb xauth openssl && rm -rf /var/lib/apt/lists/*
 COPY --from=prusaslicer /opt/prusaslicer/squashfs-root /opt/prusaslicer/squashfs-root
 RUN printf '#!/bin/sh\nexec xvfb-run --auto-servernum -- /opt/prusaslicer/squashfs-root/AppRun "$@"\n' > /usr/local/bin/prusa-slicer \
     && chmod +x /usr/local/bin/prusa-slicer

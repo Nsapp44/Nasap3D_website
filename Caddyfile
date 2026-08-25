@@ -5,15 +5,24 @@
 # son nom sur le réseau interne du compose — jamais `localhost`, qui
 # désignerait le conteneur Caddy lui-même).
 #
-# `/srv` = racine du dépôt montée en lecture seule dans le conteneur Caddy
-# (voir docker-compose.yml) — pas un chemin à adapter au serveur.
+# `/srv` = fichiers du front-end copiés dans l'image au build (voir
+# Caddy.Dockerfile) — pas un montage du dépôt, donc server/, .git, .env* et
+# docker-compose.yml n'y sont de toute façon jamais présents. Le blocage
+# ci-dessous reste en défense en profondeur si jamais ça change.
+#
+# HTTPS automatique désactivé : géré ailleurs (autre outil déjà en place
+# côté serveur) — Caddy sert ici en HTTP simple, pas de certificat Let's
+# Encrypt demandé par ce conteneur.
+{
+	auto_https off
+}
 
 nasap3d.com, www.nasap3d.com {
 	root * /srv
 	encode gzip
 
-	# Le dépôt entier est monté (front + server/ + fichiers de config) —
-	# jamais servir ce qui n'est pas une page du site.
+	# Défense en profondeur — voir la note ci-dessus, ces chemins ne sont de
+	# toute façon jamais copiés dans l'image.
 	@blocked path /server/* /.git/* /.env* /docker-compose.yml /Caddyfile
 	respond @blocked 404
 

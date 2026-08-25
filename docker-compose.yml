@@ -81,12 +81,11 @@ services:
     depends_on:
       - api
     ports:
+      # HTTPS/Let's Encrypt désactivé (auto_https off dans le Caddyfile) —
+      # géré par un autre outil déjà en place côté serveur, donc pas de
+      # :443 ici : le laisser libre pour ce qui s'en occupe réellement.
       - "80:80"
-      - "443:443"
     volumes:
-      # Persistants entre redémarrages/redéploiements — sans ça, Caddy
-      # redemande un certificat Let's Encrypt à chaque fois (risque de
-      # rate-limit chez Let's Encrypt sur un domaine qui redéploie souvent).
       - caddy_data:/data
       - caddy_config:/config
     profiles:
