@@ -196,7 +196,13 @@ export async function renderModelPreview(container, { fileBuffer, ext, colorHex,
     camera.updateProjectionMatrix();
   }
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  // Anticrénelage désactivé pour la vue qui tourne en continu : son coût se
+  // paie à chaque image, 60 fois par seconde, alors que pour les vues
+  // statiques (une seule image rendue) il ne coûte quasiment rien. Signalé
+  // comme lourd sur Firefox avec de vrais fichiers clients — l'implémentation
+  // WebGL de Firefox gère le MSAA moins efficacement que Chrome sur certaines
+  // configurations.
+  const renderer = new THREE.WebGLRenderer({ antialias: !animate, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(width, height);
   container.innerHTML = '';
@@ -261,13 +267,21 @@ export async function renderModelPreview(container, { fileBuffer, ext, colorHex,
   let disposed = false;
   let frameId = null;
   if (animate) {
-    (function loop() {
+    // Plafonné à ~30 im/s (au lieu des 60 par défaut de requestAnimationFrame)
+    // — signalé lourd sur Firefox avec de vrais fichiers clients. La vitesse
+    // de rotation reste la même (basée sur le temps écoulé, pas sur le
+    // nombre d'images), seul le nombre de rendus WebGL par seconde baisse.
+    const TARGET_FRAME_MS = 1000 / 30;
+    let lastRenderTime = 0;
+    (function loop(now) {
       if (disposed || !container.isConnected) return;
-      object.rotation.y += 0.012;
-      object.rotation.x = Math.sin(Date.now() / 3000) * 0.15;
-      renderer.render(scene, camera);
       frameId = requestAnimationFrame(loop);
-    })();
+      if (now - lastRenderTime < TARGET_FRAME_MS) return;
+      lastRenderTime = now;
+      object.rotation.y = (now / 1000) * 0.72; // même vitesse qu'avant (0.012 rad/image à 60 im/s)
+      object.rotation.x = Math.sin(now / 3000) * 0.15;
+      renderer.render(scene, camera);
+    })(performance.now());
   } else {
     renderer.render(scene, camera);
   }
