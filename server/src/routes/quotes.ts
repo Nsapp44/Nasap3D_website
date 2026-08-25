@@ -50,7 +50,10 @@ function quotePublicView(q: {
 }
 
 export async function quoteRoutes(app: FastifyInstance) {
-  app.post("/quotes", async (request, reply) => {
+  // Sans limite, un script qui boucle dessus peut faire tourner PrusaSlicer
+  // (le plus coûteux du site en CPU) et remplir le stockage/la base à
+  // volonté — voir contact.ts pour le même principe sur /contact/upload.
+  app.post("/quotes", { config: { rateLimit: { max: 15, timeWindow: "1 minute" } } }, async (request, reply) => {
     const settings = await prisma.settings.findUnique({ where: { id: 1 } });
     if (!settings?.quoteEnabled) {
       return reply.code(403).send({ error: "quote_disabled" });
