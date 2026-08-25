@@ -233,17 +233,20 @@ la base ne sont pas sur le même réseau privé.
 
 ### Sauvegardes
 
-`scripts/backup-db.sh` (racine du dépôt) fait un `pg_dump` compressé dans `backups/` et supprime
-les fichiers de plus de 14 jours (`RETENTION_DAYS` pour changer). À planifier en cron quotidien sur
-le serveur, depuis la racine du dépôt :
+**Automatique** : le service `backup` de `docker-compose.yml` (profil `full`, voir
+`scripts/backup/`) tourne avec le reste de la stack et fait un `pg_dump` compressé dans `backups/`
+tous les jours à 3h du matin, avec purge des fichiers de plus de 14 jours (`RETENTION_DAYS` pour
+changer). Rien à planifier à la main — `docker compose --profile full up -d` suffit, comme pour le
+reste. Le job tourne sous un vrai init (`tini`) — un démon cron lancé directement en PID 1 plante
+silencieusement dans ce genre de conteneur minimal (confirmé en testant), d'où sa présence.
 
-```cron
-0 3 * * * cd /chemin/vers/le/depot && ./scripts/backup-db.sh >> backups/backup.log 2>&1
-```
+`scripts/backup-db.sh` (racine du dépôt, exécuté depuis l'hôte via `docker compose exec`) reste
+disponible pour une sauvegarde manuelle ponctuelle — plus besoin de cron dessus, le service Docker
+fait déjà le travail automatique.
 
 Ces fichiers restent sur le même disque que la base — une panne du serveur entier les perdrait
-aussi. Copier `backups/` ailleurs régulièrement (rsync, S3, ...) reste à faire séparément, ce script
-ne fait que le dump local.
+aussi. Copier `backups/` ailleurs régulièrement (rsync, S3, ...) reste à faire séparément, aucun des
+deux ne fait que le dump local.
 
 Pour restaurer :
 

@@ -78,6 +78,22 @@ services:
     profiles:
       - full
 
+  backup:
+    build: ./scripts/backup
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:-nasap3d_dev_only}
+      RETENTION_DAYS: ${RETENTION_DAYS:-14}
+    volumes:
+      # Même dossier que scripts/backup-db.sh (usage manuel/ad-hoc) — les
+      # deux écrivent au même endroit, pas deux emplacements à surveiller.
+      - ./backups:/backups
+    profiles:
+      - full
+
 volumes:
   nasap3d_db_data:
   caddy_data:
