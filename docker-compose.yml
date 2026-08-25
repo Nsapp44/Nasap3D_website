@@ -20,6 +20,8 @@ services:
       - "127.0.0.1:5432:5432"
     volumes:
       - nasap3d_db_data:/var/lib/postgresql/data
+    networks:
+      - nasap3d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U nasap3d -d nasap3d"]
       interval: 5s
@@ -63,6 +65,8 @@ services:
       # joignable depuis l'hôte (utile en dev local, front statique sur
       # :8080 par exemple).
       - "127.0.0.1:3000:3000"
+    networks:
+      - nasap3d
     profiles:
       - full
 
@@ -80,16 +84,28 @@ services:
     restart: unless-stopped
     depends_on:
       - api
-    ports:
-      # HTTPS/Let's Encrypt désactivé (auto_https off dans le Caddyfile) —
-      # géré par un autre outil déjà en place côté serveur, donc pas de
-      # :443 ici : le laisser libre pour ce qui s'en occupe réellement.
-      - "80:80"
+    # Pas de "ports:" ici volontairement — Caddy n'est pas exposé à
+    # l'internet directement. Un reverse proxy déjà en place côté serveur
+    # (autre outil, gère aussi le HTTPS — voir auto_https off dans le
+    # Caddyfile) l'atteint via le réseau Docker "nasap3d_network" ci-dessous,
+    # en tapant le conteneur par son nom : http://caddy:80
+    networks:
+      - nasap3d
     volumes:
       - caddy_data:/data
       - caddy_config:/config
     profiles:
       - full
+
+networks:
+  # Nommé explicitement (au lieu du nom par défaut généré par Compose à
+  # partir du dossier, ex. "refontenasap3d_default") pour qu'un autre projet
+  # docker-compose (le reverse proxy du serveur) puisse le rejoindre de
+  # façon fiable en le déclarant "external: true" sous ce même nom, et
+  # atteindre ce conteneur par le nom de service Docker ("caddy"), sur le
+  # port 80 interne (jamais exposé à l'hôte).
+  nasap3d:
+    name: nasap3d_network
 
 volumes:
   nasap3d_db_data:
