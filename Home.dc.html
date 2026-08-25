@@ -901,7 +901,11 @@ class Component extends DCLogic {
     this._stock = mod;
     const api = await this._api();
     const res = await api.getQuoteEnabled();
-    this.setState({ quoteEnabled: res.ok && res.data ? res.data.quoteEnabled : mod.isQuoteEnabled() });
+    // Si l'API ne répond pas (serveur down), on considère le devis en pause
+    // plutôt que de retomber sur l'ancien drapeau localStorage — celui-ci
+    // vaut "true" par défaut sur un navigateur qui ne l'a jamais eu, ce qui
+    // laissait le configurateur actif (et cassé) pendant une vraie panne.
+    this.setState({ quoteEnabled: res.ok && res.data ? res.data.quoteEnabled : false });
   }
   async _api() {
     if (!this._apiMod) this._apiMod = (await import('./api-client.js')).api;
