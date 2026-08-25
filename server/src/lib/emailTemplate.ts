@@ -74,13 +74,16 @@ function p(html: string, opts?: { small?: boolean; margin?: string }): string {
 }
 
 export function verificationCodeContentHtml(introText: string, code: string): string {
-  const spacedCode = /^\d{6}$/.test(code) ? `${code.slice(0, 3)} ${code.slice(3)}` : code;
+  // Pas d'espace inséré dans le texte lui-même (un visiteur qui copie-colle le
+  // code récupérerait l'espace, que le champ de saisie n'accepte pas) — la
+  // séparation visuelle des chiffres vient uniquement du letter-spacing CSS
+  // ci-dessous.
   return [
     h1("Code de vérification"),
     p(`${escapeHtml(introText)} Ce code est valable 3 minutes.`, { margin: "0 0 24px 0" }),
     `<table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin:0 0 24px 0;">
 <tr><td align="center" style="background-color:#1e1d1b;border:1px solid #33312e;border-radius:4px;padding:20px;">
-<span style="font-family:'Space Grotesk',Arial,Helvetica,sans-serif;font-size:32px;font-weight:700;letter-spacing:8px;color:#ff5a3c;display:block;line-height:36px;">${escapeHtml(spacedCode)}</span>
+<span style="font-family:'Space Grotesk',Arial,Helvetica,sans-serif;font-size:32px;font-weight:700;letter-spacing:8px;color:#ff5a3c;display:block;line-height:36px;">${escapeHtml(code)}</span>
 </td></tr>
 </table>`,
     p("Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email en toute sécurité.", {
