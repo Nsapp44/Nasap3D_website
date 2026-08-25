@@ -1,0 +1,4 @@
+# Shell scripts run inside Linux containers — a CRLF shebang breaks them
+# ("bad interpreter") — force LF regardless of the committer's platform or
+# core.autocrlf setting.
+*.sh text eol=lf

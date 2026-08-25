@@ -45,6 +45,12 @@ RUN npm install --omit=dev
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/slicer-profiles ./slicer-profiles
+# prisma/seed.ts imports straight from src/ (tsx runs it directly, same as
+# `npm run seed` in dev) rather than the compiled dist/ output — so src/
+# has to ship too, not just dist/.
+COPY --from=build /app/src ./src
 RUN npx prisma generate
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
 EXPOSE 3000
-CMD ["node", "dist/index.js"]
+ENTRYPOINT ["./docker-entrypoint.sh"]

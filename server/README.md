@@ -165,7 +165,7 @@ suffit).
 | `npx prisma migrate dev` | Crée une nouvelle migration à partir des changements du schéma (nécessite une DB locale) |
 | `npx prisma migrate deploy` | Applique les migrations existantes (utilisé en CI/prod) |
 | `npx prisma studio` | Explorateur de données graphique |
-| `npm run seed` | Rejoue le seed (idempotent) |
+| `npm run seed` | Rejoue le seed (idempotent) — tourne aussi automatiquement au démarrage du conteneur Docker |
 | `npm test` | Tests (Vitest) |
 
 ## Déploiement (OVH)
@@ -175,6 +175,15 @@ suffit).
 (`ghcr.io/nsapp44/nasap3d-api`) à chaque push sur `master` qui touche `server/`. Le serveur OVH
 n'a donc besoin que de Docker installé, pas de Node/npm/PrusaSlicer — il récupère l'image déjà
 construite.
+
+**Le conteneur fait tout seul au démarrage** (`server/docker-entrypoint.sh`, `ENTRYPOINT` de
+l'image) : `prisma migrate deploy` puis `prisma/seed.ts`, avant de lancer l'API. Aucune commande à
+lancer à la main sur le serveur, à chaque déploiement comme au tout premier. Les deux étapes sont
+sans risque à rejouer à chaque redémarrage : `migrate deploy` n'applique que les migrations pas
+encore appliquées, et le seed est basé sur des `upsert` qui ne touchent jamais les prix/réglages
+déjà modifiés depuis l'admin (voir les commentaires de `prisma/seed.ts`) — il ne fait que garder le
+catalogue (matières, couleurs, profils qualité, paliers de remise) synchronisé avec le code, et
+recrée le compte admin/test seulement s'il n'existe pas déjà.
 
 **Avant le tout premier `docker compose up`** (une fois par serveur, pas à chaque déploiement) :
 créer un `.env` à la racine du dépôt (à côté de `docker-compose.yml` — différent de `server/.env`)

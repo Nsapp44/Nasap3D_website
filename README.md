@@ -45,10 +45,11 @@ l'image déjà construite :
 cp server/.env.example server/.env   # remplir les variables de prod (voir server/README.md)
 docker compose --profile full pull
 docker compose --profile full up -d   # API sur :3000, PostgreSQL en conteneur
-
-# Migrations + données de départ (une fois, depuis server/)
-cd server && npm install && npx prisma migrate deploy && npm run seed
 ```
+
+C'est tout : le conteneur applique lui-même les migrations et le seed (catalogue matières/couleurs,
+compte admin) à chaque démarrage, avant de lancer l'API — pas de `npm install` ni de commande Prisma
+à lancer à la main sur le serveur, voir [`server/README.md`](server/README.md#déploiement-ovh).
 
 Le paquet GHCR est **public** (pas d'authentification nécessaire pour le `pull` depuis OVH), mais
 reste à rendre public manuellement après le tout premier push réussi (GitHub → *Packages* →
