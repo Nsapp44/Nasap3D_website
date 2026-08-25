@@ -6,11 +6,21 @@
 export function apiBase() {
   if (typeof window !== 'undefined' && window.NASAP3D_API_BASE) return window.NASAP3D_API_BASE;
   if (typeof location === 'undefined') return '';
-  // Same-host default: works for local dev (localhost:8080 -> localhost:3000)
-  // and for a prod deploy that exposes the API on a different port of the
-  // same hostname. Override by setting window.NASAP3D_API_BASE before this
-  // script loads if the API lives elsewhere (subdomain, reverse-proxy path).
-  return `${location.protocol}//${location.hostname}:3000`;
+  const host = location.hostname;
+  // Local dev: front on localhost:8080 (python http.server), API on
+  // localhost:3000 (npm run dev / docker-compose, both same host).
+  if (host === 'localhost' || host === '127.0.0.1') {
+    return `${location.protocol}//${host}:3000`;
+  }
+  // Production: the API lives on the "api." subdomain (api.nasap3d.com),
+  // reverse-proxied on the standard HTTPS port — never :3000 directly,
+  // which isn't publicly exposed on purpose (see docker-compose.yml).
+  // Previously this fell through to the same :3000 default as local dev,
+  // which doesn't exist in prod (connection refused on every request) —
+  // the window.NASAP3D_API_BASE override this was meant to need was never
+  // actually set anywhere, so deriving it here removes that dependency.
+  const bareHost = host.replace(/^www\./, '');
+  return `${location.protocol}//api.${bareHost}`;
 }
 
 async function request(method, path, body) {
