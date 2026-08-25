@@ -522,6 +522,16 @@ class Component extends DCLogic {
     ]
   };
   static ALLOWED_EXT = ['.stl', '.obj', '.step', '.stp'];
+  // 3 vrais avis Google copiés à la main depuis la fiche Business — l'API
+  // Place Details plafonne à 5 avis par fiche, non paginable (voir
+  // _loadGoogleRating), donc les compléter ici est la seule façon d'avoir
+  // en permanence au moins 6 avis affichés. Jamais de contenu inventé :
+  // uniquement des avis réels, juste récupérés autrement que par l'API.
+  static MANUAL_REVIEWS = [
+    { rating: 5, text: "Un service au top, excellent contact et produit fini totalement conforme au projet. Il m'a même été livré à l'hôtel à cause de son encombrement et parce que la patron passait par Saumur. Vraiment adorable.", author: 'LE LONDRES Direction' },
+    { rating: 5, text: "Grâce à eux, j'ai pu vraiment faire avancer mon projet de marque. Leur accompagnement sur les pièces 3D ou stikers m'a permis de structurer mes idées, d'y voir plus clair et de passer à l'action avec confiance. Je recommande à 100 % !", author: 'Steeve Barber' },
+    { rating: 5, text: "Parfaite réalisation d'une pièce complexe pour l'aéronautique de loisir. Délai tenu et prix raisonnable. Je recommande vivement cette entreprise", author: 'Jean Tramalloni' }
+  ];
   fileInputRef = React.createRef();
   previewRef = React.createRef();
   analysisPreviewRef = React.createRef();
@@ -964,28 +974,23 @@ class Component extends DCLogic {
     return (lastSpace > 40 ? cut.slice(0, lastSpace) : cut) + '…';
   }
   goReview(delta) {
-    const count = this.state.googleReviews.length || 6;
+    const count = this.state.googleReviews.length + Component.MANUAL_REVIEWS.length;
     this.setState(s => ({ reviewIdx: (s.reviewIdx + delta + count) % count }));
   }
   // Un avis à la fois (pas de carrousel multi-cartes ici) : pas besoin de
   // mesurer la largeur du conteneur, translateX se fait en % plutôt qu'en
   // pixels.
   _buildReviews() {
-    const FALLBACK_REVIEWS = [
-      { stars: '★★★★★', text: '« Pièce livrée en 48h, finition impeccable. »', author: 'M. Dubois' },
-      { stars: '★★★★★', text: '« Devis instantané très pratique, conseil au top. »', author: 'L. Perrin' },
-      { stars: '★★★★☆', text: '« Rétro-conception rapide sur une pièce introuvable. »', author: 'S. Roy' },
-      { stars: '★★★★★', text: '« Maintenance rapide, machine repartie le jour même. »', author: 'K. Morel' },
-      { stars: '★★★★☆', text: '« Bon rapport qualité-prix sur une petite série. »', author: 'A. Fontaine' },
-      { stars: '★★★★★', text: '« Initiation claire, super pédagogue. »', author: 'T. Gauthier' }
-    ];
-    const raw = this.state.googleReviews.length
-      ? this.state.googleReviews.map((r) => ({
-          stars: '★'.repeat(Math.round(r.rating)) + '☆'.repeat(5 - Math.round(r.rating)),
-          text: '« ' + this._truncateReviewText(r.text) + ' »',
-          author: r.author
-        }))
-      : FALLBACK_REVIEWS;
+    // Vrais avis Google (API, filtrés >=4 étoiles avec texte côté serveur)
+    // + les avis manuels ci-dessus — toujours combinés, jamais l'un ou
+    // l'autre : l'API à elle seule ne renvoie souvent que 3-5 avis (son
+    // plafond), donc les avis manuels garantissent un minimum de 6 avis
+    // réels plutôt que de remplacer ceux récupérés en direct.
+    const raw = [...this.state.googleReviews, ...Component.MANUAL_REVIEWS].map((r) => ({
+      stars: '★'.repeat(Math.round(r.rating)) + '☆'.repeat(5 - Math.round(r.rating)),
+      text: '« ' + this._truncateReviewText(r.text) + ' »',
+      author: r.author
+    }));
     const idx = Math.min(this.state.reviewIdx, raw.length - 1);
     return {
       reviews: raw,
