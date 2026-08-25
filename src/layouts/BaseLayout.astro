@@ -8,8 +8,9 @@ interface Props {
   title: string;
   description: string;
   path: string;
+  showAuthIcon?: boolean;
 }
-const { title, description, path } = Astro.props;
+const { title, description, path, showAuthIcon } = Astro.props;
 const canonical = new URL(path, Astro.site).toString();
 ---
 
@@ -30,7 +31,7 @@ const canonical = new URL(path, Astro.site).toString();
   <body>
     <div class="page-shell">
       <MobileNavToggle client:load />
-      <Header currentPath={path} />
+      <Header currentPath={path} showAuthIcon={showAuthIcon} />
       <slot />
       <Footer />
     </div>

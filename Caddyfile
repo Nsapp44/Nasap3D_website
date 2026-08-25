@@ -68,14 +68,10 @@
 	@mentionslegales path /mentions-legales
 	rewrite @mentionslegales /MentionsLegales.dc.html
 
-	@nantes path /impression-3d-nantes
-	rewrite @nantes /Nantes.dc.html
-
-	@cholet path /impression-3d-cholet
-	rewrite @cholet /Cholet.dc.html
-
-	@angers path /impression-3d-angers
-	rewrite @angers /Angers.dc.html
+	# /impression-3d-nantes, /impression-3d-cholet, /impression-3d-angers :
+	# migrées vers Astro (voir C:\Users\Nolann\.claude\plans\idempotent-shimmying-swan.md),
+	# plus besoin de rewrite ici — le build Astro produit déjà ces chemins
+	# directement dans /srv (fichiers statiques, pas de réécriture requise).
 
 	handle_errors {
 		rewrite * /404.dc.html

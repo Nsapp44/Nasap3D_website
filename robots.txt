@@ -3,6 +3,5 @@ Allow: /
 Disallow: /compte
 Disallow: /admin
 Disallow: /panier
-Disallow: /Loading.dc.html
 
 Sitemap: https://nasap3d.com/sitemap.xml

@@ -1,0 +1,223 @@
+---
+// Structure partagée par les 3 pages locales-SEO (Nantes/Cholet/Angers) —
+// identiques à un mot près dans l'ancien framework (voir Nantes.dc.html,
+// Cholet.dc.html, Angers.dc.html), seul le contenu changeait d'une ville à
+// l'autre. showAuthIcon=false : ces pages n'ont jamais eu l'icône réglages
+// dans le header d'origine (contrairement à la plupart des autres pages).
+import BaseLayout from "./BaseLayout.astro";
+
+interface StatCard {
+  title: string;
+  text: string;
+}
+interface FaqItem {
+  q: string;
+  a: string;
+}
+interface Props {
+  path: string;
+  title: string;
+  description: string;
+  heroKicker: string;
+  heroTitle: string;
+  heroIntro: string;
+  sectionKicker: string;
+  sectionIntro: string;
+  statCards: StatCard[];
+  ctaTitle: string;
+  faqKicker: string;
+  faqItems: FaqItem[];
+}
+const {
+  path,
+  title,
+  description,
+  heroKicker,
+  heroTitle,
+  heroIntro,
+  sectionKicker,
+  sectionIntro,
+  statCards,
+  ctaTitle,
+  faqKicker,
+  faqItems,
+} = Astro.props;
+---
+
+<BaseLayout title={title} description={description} path={path} showAuthIcon={false}>
+  <div class="hero">
+    <div class="kicker">{heroKicker}</div>
+    <div class="hero-title">{heroTitle}</div>
+    <div class="hero-intro">{heroIntro}</div>
+  </div>
+
+  <div class="section">
+    <div class="section-kicker">{sectionKicker}</div>
+    <div class="section-intro">{sectionIntro}</div>
+    <div class="stat-grid">
+      {
+        statCards.map((card) => (
+          <div class="stat-card">
+            <div class="stat-title">{card.title}</div>
+            <div class="stat-text" set:html={card.text} />
+          </div>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="cta-wrap">
+    <div class="cta-box">
+      <div class="cta-title">{ctaTitle}</div>
+      <div class="cta-text">Déposez votre fichier et obtenez un prix réel en quelques secondes.</div>
+      <a href="/devis-instantane" class="cta-btn">Obtenir un devis instantané →</a>
+    </div>
+  </div>
+
+  <div class="faq-wrap">
+    <div class="faq-kicker">{faqKicker}</div>
+    <div class="faq-list">
+      {
+        faqItems.map((item) => (
+          <div class="faq-item">
+            <div class="faq-q">{item.q}</div>
+            <div class="faq-a">{item.a}</div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .hero {
+    padding: 56px 24px 0;
+  }
+  .hero .kicker,
+  .section-kicker,
+  .faq-kicker {
+    font: 600 12px "Inter", sans-serif;
+    letter-spacing: 1.2px;
+    color: #ff5a3c;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .section-kicker,
+  .faq-kicker {
+    font-size: 11.5px;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .hero,
+  .section,
+  .cta-wrap,
+  .faq-wrap {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .hero-title {
+    font: 700 32px/1.2 "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 14px;
+  }
+  .hero-intro {
+    font: 400 13.5px/1.7 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+    max-width: 600px;
+  }
+  .section {
+    padding: 44px 24px 0;
+  }
+  .section-intro {
+    font: 400 12.5px/1.8 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+    max-width: 640px;
+    margin-bottom: 20px;
+  }
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 16px;
+    background: #1a1917;
+  }
+  .stat-title {
+    font: 600 11.5px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 4px;
+  }
+  .stat-text {
+    font: 400 11px/1.5 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .cta-wrap {
+    padding: 0 24px 46px;
+  }
+  .cta-box {
+    border: 1px solid rgba(255, 90, 60, 0.3);
+    background: rgba(255, 90, 60, 0.08);
+    border-radius: 12px;
+    padding: 28px;
+    text-align: center;
+  }
+  .cta-title {
+    font: 700 17px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 8px;
+  }
+  .cta-text {
+    font: 400 11.5px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 16px;
+  }
+  .cta-btn {
+    text-decoration: none;
+    display: inline-block;
+    background: #ff5a3c;
+    color: #161514;
+    font: 600 12.5px "Inter", sans-serif;
+    padding: 11px 20px;
+    border-radius: 7px;
+  }
+  .faq-wrap {
+    padding: 0 24px 60px;
+  }
+  .faq-kicker {
+    margin-bottom: 16px;
+  }
+  .faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .faq-item {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background: #1a1917;
+    padding: 14px 16px;
+  }
+  .faq-q {
+    font: 600 12.5px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 6px;
+  }
+  .faq-a {
+    font: 400 11px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+  }
+  @media (max-width: 640px) {
+    .stat-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 420px) {
+    .stat-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
