@@ -59,15 +59,16 @@ correspondent au `docker-compose.yml` à la racine du projet.
 
 | Catégorie | Variables | Sans elles |
 |---|---|---|
-| Base de données | `DATABASE_URL` | Rien ne démarre — obligatoire. |
-| Serveur | `PORT`, `NODE_ENV`, `CORS_ORIGIN`, `FRONT_URL` | `CORS_ORIGIN` doit pointer vers l'origine du front (ex. `http://localhost:8080`), sinon le navigateur bloque les appels API. |
+| Base de données | `DATABASE_URL` | Rien ne démarre — obligatoire. ⚠️ En déploiement Docker, la valeur de `server/.env` est **ignorée** (`docker-compose.yml` impose la sienne) — voir la section [PostgreSQL](#postgresql) plus bas. |
+| Serveur | `PORT`, `NODE_ENV`, `CORS_ORIGIN`, `FRONT_URL`, `API_BASE_URL` | `CORS_ORIGIN` doit pointer vers l'origine du front (ex. `http://localhost:8080`), sinon le navigateur bloque les appels API. `API_BASE_URL` sert à construire le lien de téléchargement de pièce jointe dans l'email de notification de contact. |
 | Notifications | `CONTACT_NOTIFY_EMAIL`, `ORDER_NOTIFY_EMAIL` | Les notifications (contact, nouvelle commande) ne sont juste pas envoyées. |
 | Email (SMTP) | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM` | Chaque email (codes de vérification, reset mot de passe, notifications) s'affiche dans les logs au lieu de partir réellement. Rien n'est bloqué. |
 | Auth | `ARGON2_MEMORY_COST`, `ARGON2_TIME_COST`, `ARGON2_PARALLELISM` | Valeurs par défaut OWASP raisonnables — à ne durcir que si le matériel de prod le permet. |
-| Anti-robot (hCaptcha) | `HCAPTCHA_SITE_KEY`, `HCAPTCHA_SECRET_KEY` | Sans `HCAPTCHA_SECRET_KEY`, la vérification anti-robot est **désactivée automatiquement en dev** (`NODE_ENV != production`) et **bloque tout en prod** — voir `src/lib/captcha.ts`. |
-| Devis (PrusaSlicer) | `PRUSASLICER_BIN` | `POST /quotes` échoue avec `slicing_failed`. |
+| Anti-robot (hCaptcha) | `HCAPTCHA_SECRET_KEY` | Sans elle, la vérification anti-robot est **désactivée automatiquement en dev** (`NODE_ENV != production`) et **bloque tout en prod** — voir `src/lib/captcha.ts`. La clé publique ("site key") n'est **pas** ici : codée en dur dans `api-client.js` (front-end statique, aucun accès à ce `.env`). |
+| Devis (PrusaSlicer) | `PRUSASLICER_BIN` | `POST /quotes` échoue avec `slicing_failed`. ⚠️ En déploiement Docker, la valeur de `server/.env` est **ignorée** (`docker-compose.yml` impose `/usr/local/bin/prusa-slicer` au service `api`). |
 | Avis Google (badge + carrousel, Home.dc.html) | `GOOGLE_PLACES_API_KEY`, `GOOGLE_PLACE_ID` | `GET /google-rating` répond `503 google_places_not_configured` — le badge et les avis du carrousel ne s'affichent juste pas (repli sur les anciens témoignages statiques, voir `_buildReviews()`). Clé à restreindre à l'API Places uniquement dans Google Cloud Console, **sans** restriction de referer HTTP (appel serveur-à-serveur). Rafraîchi au maximum 1×/semaine (`CACHE_MS` dans `src/routes/google.ts`) — l'API Google Place Details plafonne de toute façon à 5 avis par fiche, non paginable. |
 | Livraison (Boxtal) | `BOXTAL_API_KEY_V1/_SECRET_V1`, `BOXTAL_SHIPPER_*` | `POST /shipping/rates` et `POST /checkout` échouent avec `shipping_not_configured`. |
+| Livraison — widget carte (Boxtal) | `BOXTAL_MAP_API_KEY`, `BOXTAL_MAP_API_SECRET` | Paire distincte des clés ci-dessus, pour un endpoint séparé : `GET /shipping/map-token` échoue aussi avec `shipping_not_configured` sans elles — le widget de sélection du point relais ne peut pas s'afficher. Voir `server/SHIPPING.md`. |
 | Paiement (Stripe) | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | `POST /checkout` échoue. Utilisez une clé `sk_test_...`, jamais `sk_live_...` en développement. |
 | Stockage (S3) | `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Repli automatique sur le disque local (`server/uploads/`) — pratique en dev, à configurer avant la mise en prod réelle. |
 
@@ -233,20 +234,20 @@ la base ne sont pas sur le même réseau privé.
 
 ### Sauvegardes
 
-**Automatique** : le service `backup` de `docker-compose.yml` (profil `full`, voir
-`scripts/backup/`) tourne avec le reste de la stack et fait un `pg_dump` compressé dans `backups/`
-tous les jours à 3h du matin, avec purge des fichiers de plus de 14 jours (`RETENTION_DAYS` pour
-changer). Rien à planifier à la main — `docker compose --profile full up -d` suffit, comme pour le
-reste. Le job tourne sous un vrai init (`tini`) — un démon cron lancé directement en PID 1 plante
-silencieusement dans ce genre de conteneur minimal (confirmé en testant), d'où sa présence.
+La sauvegarde de la base de production est gérée en dehors de ce dépôt (solution déjà en place côté
+hébergement) — rien à planifier ici.
 
-`scripts/backup-db.sh` (racine du dépôt, exécuté depuis l'hôte via `docker compose exec`) reste
-disponible pour une sauvegarde manuelle ponctuelle — plus besoin de cron dessus, le service Docker
-fait déjà le travail automatique.
+`scripts/backup-db.sh` (racine du dépôt) reste disponible pour une sauvegarde manuelle ponctuelle si
+besoin : `pg_dump` compressé dans `backups/`, avec purge des fichiers de plus de 14 jours
+(`RETENTION_DAYS` pour changer). Exécuté depuis l'hôte via `docker compose exec` :
+
+```bash
+./scripts/backup-db.sh
+```
 
 Ces fichiers restent sur le même disque que la base — une panne du serveur entier les perdrait
-aussi. Copier `backups/` ailleurs régulièrement (rsync, S3, ...) reste à faire séparément, aucun des
-deux ne fait que le dump local.
+aussi. Ce script ne fait que le dump local, il ne remplace pas une vraie stratégie de sauvegarde
+externalisée.
 
 Pour restaurer :
 
