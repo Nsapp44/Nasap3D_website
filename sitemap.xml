@@ -29,6 +29,18 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://nasap3d.com/Nantes.dc.html</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nasap3d.com/Cholet.dc.html</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nasap3d.com/Angers.dc.html</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://nasap3d.com/CGU.dc.html</loc>
     <priority>0.1</priority>
   </url>

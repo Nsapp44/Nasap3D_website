@@ -52,6 +52,15 @@ nasap3d.com, www.nasap3d.com {
 	@mentionslegales path /mentions-legales
 	rewrite @mentionslegales /MentionsLegales.dc.html
 
+	@nantes path /impression-3d-nantes
+	rewrite @nantes /Nantes.dc.html
+
+	@cholet path /impression-3d-cholet
+	rewrite @cholet /Cholet.dc.html
+
+	@angers path /impression-3d-angers
+	rewrite @angers /Angers.dc.html
+
 	handle_errors {
 		rewrite * /404.dc.html
 		file_server
