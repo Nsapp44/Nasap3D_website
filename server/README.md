@@ -6,6 +6,7 @@ une vraie authentification, un vrai calcul de devis (slicing réel), un vrai pai
 une vraie livraison (Boxtal).
 
 Documents associés :
+
 - `PRICING.md` — formule de prix des pièces imprimées (calculée uniquement côté serveur).
 - `SHIPPING.md` — intégration Boxtal (simulation de tarif + point relais).
 - `slicer-profiles/README.md` — profils d'imprimantes utilisés par PrusaSlicer.
@@ -57,20 +58,20 @@ correspondent au `docker-compose.yml` à la racine du projet.
 
 ## Variables d'environnement
 
-| Catégorie | Variables | Sans elles |
-|---|---|---|
-| Base de données | `DATABASE_URL` | Rien ne démarre — obligatoire. ⚠️ En déploiement Docker, la valeur de `server/.env` est **ignorée** (`docker-compose.yml` impose la sienne) — voir la section [PostgreSQL](#postgresql) plus bas. |
-| Serveur | `PORT`, `NODE_ENV`, `CORS_ORIGIN`, `FRONT_URL`, `API_BASE_URL` | `CORS_ORIGIN` doit pointer vers l'origine du front (ex. `http://localhost:8080`), sinon le navigateur bloque les appels API. `API_BASE_URL` sert à construire le lien de téléchargement de pièce jointe dans l'email de notification de contact. ⚠️ `NODE_ENV` : la valeur de `server/.env` est **ignorée** en déploiement Docker (`docker-compose.yml` impose `production`) — voir la section [PostgreSQL](#postgresql) pour le même principe sur `DATABASE_URL`. Sans `NODE_ENV=production`, hCaptcha se désactive silencieusement au lieu de bloquer, et les cookies de session perdent le flag `Secure`. |
-| Notifications | `CONTACT_NOTIFY_EMAIL`, `ORDER_NOTIFY_EMAIL` | Les notifications (contact, nouvelle commande) ne sont juste pas envoyées. |
-| Email (SMTP) | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM` | Chaque email (codes de vérification, reset mot de passe, notifications) s'affiche dans les logs au lieu de partir réellement. Rien n'est bloqué. |
-| Auth | `ARGON2_MEMORY_COST`, `ARGON2_TIME_COST`, `ARGON2_PARALLELISM` | Valeurs par défaut OWASP raisonnables — à ne durcir que si le matériel de prod le permet. |
-| Anti-robot (hCaptcha) | `HCAPTCHA_SECRET_KEY` | Sans elle, la vérification anti-robot est **désactivée automatiquement en dev** (`NODE_ENV != production`) et **bloque tout en prod** — voir `src/lib/captcha.ts`. La clé publique ("site key") n'est **pas** ici : codée en dur dans `api-client.js` (front-end statique, aucun accès à ce `.env`). |
-| Devis (PrusaSlicer) | `PRUSASLICER_BIN` | `POST /quotes` échoue avec `slicing_failed`. ⚠️ En déploiement Docker, la valeur de `server/.env` est **ignorée** (`docker-compose.yml` impose `/usr/local/bin/prusa-slicer` au service `api`). |
-| Avis Google (badge + carrousel, Home.dc.html) | `GOOGLE_PLACES_API_KEY`, `GOOGLE_PLACE_ID` | `GET /google-rating` répond `503 google_places_not_configured` — le badge et les avis du carrousel ne s'affichent juste pas (repli sur les anciens témoignages statiques, voir `_buildReviews()`). Clé à restreindre à l'API Places uniquement dans Google Cloud Console, **sans** restriction de referer HTTP (appel serveur-à-serveur). Rafraîchi au maximum 1×/semaine (`CACHE_MS` dans `src/routes/google.ts`) — l'API Google Place Details plafonne de toute façon à 5 avis par fiche, non paginable. |
-| Livraison (Boxtal) | `BOXTAL_API_KEY_V1/_SECRET_V1`, `BOXTAL_SHIPPER_*` | `POST /shipping/rates` et `POST /checkout` échouent avec `shipping_not_configured`. |
-| Livraison — widget carte (Boxtal) | `BOXTAL_MAP_API_KEY`, `BOXTAL_MAP_API_SECRET` | Paire distincte des clés ci-dessus, pour un endpoint séparé : `GET /shipping/map-token` échoue aussi avec `shipping_not_configured` sans elles — le widget de sélection du point relais ne peut pas s'afficher. Voir `server/SHIPPING.md`. |
-| Paiement (Stripe) | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | `POST /checkout` échoue. Utilisez une clé `sk_test_...`, jamais `sk_live_...` en développement. |
-| Stockage (S3) | `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Repli automatique sur le disque local (`server/uploads/`) — pratique en dev, à configurer avant la mise en prod réelle. |
+| Catégorie                                     | Variables                                                              | Sans elles                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Base de données                               | `DATABASE_URL`                                                         | Rien ne démarre — obligatoire. ⚠️ En déploiement Docker, la valeur de `server/.env` est **ignorée** (`docker-compose.yml` impose la sienne) — voir la section [PostgreSQL](#postgresql) plus bas.                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Serveur                                       | `PORT`, `NODE_ENV`, `CORS_ORIGIN`, `FRONT_URL`, `API_BASE_URL`         | `CORS_ORIGIN` doit pointer vers l'origine du front (ex. `http://localhost:8080`), sinon le navigateur bloque les appels API. `API_BASE_URL` sert à construire le lien de téléchargement de pièce jointe dans l'email de notification de contact. ⚠️ `NODE_ENV` : la valeur de `server/.env` est **ignorée** en déploiement Docker (`docker-compose.yml` impose `production`) — voir la section [PostgreSQL](#postgresql) pour le même principe sur `DATABASE_URL`. Sans `NODE_ENV=production`, hCaptcha se désactive silencieusement au lieu de bloquer, et les cookies de session perdent le flag `Secure`. |
+| Notifications                                 | `CONTACT_NOTIFY_EMAIL`, `ORDER_NOTIFY_EMAIL`                           | Les notifications (contact, nouvelle commande) ne sont juste pas envoyées.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Email (SMTP)                                  | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM`    | Chaque email (codes de vérification, reset mot de passe, notifications) s'affiche dans les logs au lieu de partir réellement. Rien n'est bloqué.                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Auth                                          | `ARGON2_MEMORY_COST`, `ARGON2_TIME_COST`, `ARGON2_PARALLELISM`         | Valeurs par défaut OWASP raisonnables — à ne durcir que si le matériel de prod le permet.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Anti-robot (hCaptcha)                         | `HCAPTCHA_SECRET_KEY`                                                  | Sans elle, la vérification anti-robot est **désactivée automatiquement en dev** (`NODE_ENV != production`) et **bloque tout en prod** — voir `src/lib/captcha.ts`. La clé publique ("site key") n'est **pas** ici : codée en dur dans `api-client.js` (front-end statique, aucun accès à ce `.env`).                                                                                                                                                                                                                                                                                                         |
+| Devis (PrusaSlicer)                           | `PRUSASLICER_BIN`                                                      | `POST /quotes` échoue avec `slicing_failed`. ⚠️ En déploiement Docker, la valeur de `server/.env` est **ignorée** (`docker-compose.yml` impose `/usr/local/bin/prusa-slicer` au service `api`).                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Avis Google (badge + carrousel, Home.dc.html) | `GOOGLE_PLACES_API_KEY`, `GOOGLE_PLACE_ID`                             | `GET /google-rating` répond `503 google_places_not_configured` — le badge et les avis du carrousel ne s'affichent juste pas (repli sur les anciens témoignages statiques, voir `_buildReviews()`). Clé à restreindre à l'API Places uniquement dans Google Cloud Console, **sans** restriction de referer HTTP (appel serveur-à-serveur). Rafraîchi au maximum 1×/semaine (`CACHE_MS` dans `src/routes/google.ts`) — l'API Google Place Details plafonne de toute façon à 5 avis par fiche, non paginable.                                                                                                   |
+| Livraison (Boxtal)                            | `BOXTAL_API_KEY_V1/_SECRET_V1`, `BOXTAL_SHIPPER_*`                     | `POST /shipping/rates` et `POST /checkout` échouent avec `shipping_not_configured`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Livraison — widget carte (Boxtal)             | `BOXTAL_MAP_API_KEY`, `BOXTAL_MAP_API_SECRET`                          | Paire distincte des clés ci-dessus, pour un endpoint séparé : `GET /shipping/map-token` échoue aussi avec `shipping_not_configured` sans elles — le widget de sélection du point relais ne peut pas s'afficher. Voir `server/SHIPPING.md`.                                                                                                                                                                                                                                                                                                                                                                   |
+| Paiement (Stripe)                             | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`                           | `POST /checkout` échoue. Utilisez une clé `sk_test_...`, jamais `sk_live_...` en développement.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Stockage (S3)                                 | `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Repli automatique sur le disque local (`server/uploads/`) — pratique en dev, à configurer avant la mise en prod réelle.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 ## Base de données
 
@@ -92,10 +93,10 @@ pas aux comptes déjà créés.
 
 ### Comptes créés par le seed
 
-| Rôle | Email | Mot de passe |
-|---|---|---|
-| Admin | `admin@nasap3d.com` (ou `SEED_ADMIN_EMAIL`) | celui communiqué séparément (ou `SEED_ADMIN_PASSWORD`) — **à changer après la première connexion** |
-| Client de test | `client@nasap3d.com` | `Client2026!` (conservé tel quel à la demande, pour ne pas casser les tests manuels existants) |
+| Rôle           | Email                                       | Mot de passe                                                                                       |
+| -------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Admin          | `admin@nasap3d.com` (ou `SEED_ADMIN_EMAIL`) | celui communiqué séparément (ou `SEED_ADMIN_PASSWORD`) — **à changer après la première connexion** |
+| Client de test | `client@nasap3d.com`                        | `Client2026!` (conservé tel quel à la demande, pour ne pas casser les tests manuels existants)     |
 
 Les deux mots de passe sont hashés en Argon2id avant stockage ; aucun n'est jamais écrit en
 clair en base ni dans les logs. Les deux comptes seedés sont marqués email-vérifié d'office (ils
@@ -144,6 +145,7 @@ npm test
 ```
 
 Vitest. Deux catégories :
+
 - **Tests unitaires** (`pricing.test.ts`, `password.test.ts`, `tokens.test.ts`,
   `recaptcha.test.ts`) — fonctions pures, aucune dépendance externe. `pricing.test.ts` est le
   plus important : il vérifie que le calcul de prix est déterministe et ignore tout champ
@@ -159,15 +161,15 @@ suffit).
 
 ## Scripts utiles
 
-| Commande | Effet |
-|---|---|
-| `npm run dev` | API en local avec rechargement à chaud |
-| `npm run build` / `npm start` | Build de prod puis lancement |
-| `npx prisma migrate dev` | Crée une nouvelle migration à partir des changements du schéma (nécessite une DB locale) |
-| `npx prisma migrate deploy` | Applique les migrations existantes (utilisé en CI/prod) |
-| `npx prisma studio` | Explorateur de données graphique |
-| `npm run seed` | Rejoue le seed (idempotent) — tourne aussi automatiquement au démarrage du conteneur Docker |
-| `npm test` | Tests (Vitest) |
+| Commande                      | Effet                                                                                       |
+| ----------------------------- | ------------------------------------------------------------------------------------------- |
+| `npm run dev`                 | API en local avec rechargement à chaud                                                      |
+| `npm run build` / `npm start` | Build de prod puis lancement                                                                |
+| `npx prisma migrate dev`      | Crée une nouvelle migration à partir des changements du schéma (nécessite une DB locale)    |
+| `npx prisma migrate deploy`   | Applique les migrations existantes (utilisé en CI/prod)                                     |
+| `npx prisma studio`           | Explorateur de données graphique                                                            |
+| `npm run seed`                | Rejoue le seed (idempotent) — tourne aussi automatiquement au démarrage du conteneur Docker |
+| `npm test`                    | Tests (Vitest)                                                                              |
 
 ## Déploiement (OVH)
 
@@ -206,13 +208,13 @@ Pas de base à provisionner séparément : `docker-compose.yml` inclut déjà un
 (`postgres:16-alpine`) qui tourne comme conteneur, avec un volume Docker (`nasap3d_db_data`) pour
 que les données survivent aux redémarrages/redéploiements. Les identifiants par défaut :
 
-| | Valeur |
-|---|---|
-| Utilisateur | `nasap3d` |
-| Base | `nasap3d` |
+|                                  | Valeur                                                                |
+| -------------------------------- | --------------------------------------------------------------------- |
+| Utilisateur                      | `nasap3d`                                                             |
+| Base                             | `nasap3d`                                                             |
 | Hôte (depuis le conteneur `api`) | `db` (nom du service dans le réseau Docker interne, pas une vraie IP) |
-| Port | `5432` |
-| Mot de passe | voir ci-dessous |
+| Port                             | `5432`                                                                |
+| Mot de passe                     | voir ci-dessous                                                       |
 
 **`DATABASE_URL` dans `server/.env` n'est pas utilisé par ce déploiement** — c'est
 `docker-compose.yml` qui construit et impose la vraie valeur au conteneur `api`
@@ -239,7 +241,7 @@ docker compose --profile full up -d
 Les paquets GHCR sont **publics** (choix fait pour ce projet — pas besoin d'authentification pour le
 `pull` depuis le serveur OVH), mais chacun reste à rendre public manuellement après son tout premier
 push réussi : sur GitHub → onglet **Packages** du repo → `nasap3d-api` (ou `nasap3d-caddy`) →
-*Package settings* → *Change visibility* → *Public* (comportement par défaut de GHCR : un paquet
+_Package settings_ → _Change visibility_ → _Public_ (comportement par défaut de GHCR : un paquet
 publié via `GITHUB_TOKEN` est privé au premier push, quelle que soit la visibilité du repo) — à
 faire une fois pour chacun des deux paquets.
 
@@ -271,6 +273,7 @@ gunzip -c backups/nasap3d-<horodatage>.sql.gz | docker compose exec -T db psql -
 ```
 
 Avant de passer en production, vérifier concrètement :
+
 - `NODE_ENV=production` (active le fail-closed de la vérification anti-robot, entre autres).
 - `STRIPE_SECRET_KEY` est bien une clé `sk_live_...` (et pas la clé de test utilisée en dev).
 - `SMTP_*` est configuré — sans ça, les codes de vérification et notifications ne partent jamais
@@ -295,6 +298,7 @@ autonome, n'a besoin ni de libfuse ni des libs du système), l'extrait au moment
 **Construit et testé pour de vrai le 2026-08-12** (`docker compose --profile full up -d --build`
 puis un vrai `POST /quotes` avec plusieurs STL réels, plusieurs qualités/infill). Deux bugs
 trouvés et corrigés à cette occasion :
+
 - `xvfb-run` a besoin du paquet `xauth` (`xvfb-run: error: xauth command not found`) — ajouté à
   côté de `xvfb` dans l'`apt-get install`.
 - `slicer-profiles/` (contient `h2c.ini`) n'était pas copié dans l'image finale (seuls `dist` et

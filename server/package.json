@@ -14,7 +14,10 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "seed": "tsx prisma/seed.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint ."
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -38,10 +41,15 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
     "@types/node": "^20.14.15",
     "@types/nodemailer": "^8.0.1",
     "@types/pdfkit": "^0.13.4",
+    "eslint": "10.9.1",
+    "globals": "17.11.0",
+    "prettier": "3.9.6",
     "typescript": "^5.5.4",
+    "typescript-eslint": "8.68.0",
     "vitest": "^3.2.7"
   }
 }

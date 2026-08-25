@@ -1,14 +1,10 @@
+// Must stay the first import: dotenv populates process.env from server/.env
+// (bind-mounted in Docker, see docker-compose.yml) before any other import
+// below — including their own transitive imports — gets a chance to read it
+// at module top-level. A file's own static imports evaluate in source order,
+// so this ordering is enough on its own; no extra trick needed.
 import "dotenv/config";
-import { sanitizeEnv } from "./lib/sanitizeEnv.js";
-
-// Static imports are hoisted in ES modules — everything below would run
-// before a plain `import { buildApp } ...` here even if written after this
-// call, since import execution always happens first regardless of source
-// order. A dynamic import() is a real runtime statement, not hoisted, so
-// this is the only way to guarantee every other module sees already-clean
-// process.env values, including ones read at their own top level.
-sanitizeEnv();
-const { buildApp } = await import("./app.js");
+import { buildApp } from "./app.js";
 import { sweepExpiredQuoteFiles } from "./lib/quoteCleanup.js";
 import { sweepAbandonedCarts } from "./lib/cartCleanup.js";
 import { sweepOrderTracking } from "./lib/orderTracking.js";
@@ -17,12 +13,10 @@ import { sweepRejectedOrders } from "./lib/orders.js";
 const app = await buildApp();
 
 const port = Number(process.env.PORT || 3000);
-app
-  .listen({ port, host: "0.0.0.0" })
-  .catch((err) => {
-    app.log.error(err);
-    process.exit(1);
-  });
+app.listen({ port, host: "0.0.0.0" }).catch((err) => {
+  app.log.error(err);
+  process.exit(1);
+});
 
 // Reclaims storage for quotes that expired without ever becoming an order
 // (abandoned mid-configurator, or left in a cart nobody came back to) — see

@@ -83,20 +83,29 @@ export function verificationCodeContentHtml(introText: string, code: string): st
 <span style="font-family:'Space Grotesk',Arial,Helvetica,sans-serif;font-size:32px;font-weight:700;letter-spacing:8px;color:#ff5a3c;display:block;line-height:36px;">${escapeHtml(spacedCode)}</span>
 </td></tr>
 </table>`,
-    p("Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email en toute sécurité.", { small: true, margin: "0" }),
+    p("Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email en toute sécurité.", {
+      small: true,
+      margin: "0",
+    }),
   ].join("\n");
 }
 
 export function passwordResetContentHtml(resetUrl: string): string {
   return [
     h1("Réinitialisation de mot de passe"),
-    p("Une demande de réinitialisation de mot de passe a été effectuée pour votre compte. Cliquez sur le bouton ci-dessous pour en définir un nouveau :", { margin: "0 0 24px 0" }),
+    p(
+      "Une demande de réinitialisation de mot de passe a été effectuée pour votre compte. Cliquez sur le bouton ci-dessous pour en définir un nouveau :",
+      { margin: "0 0 24px 0" },
+    ),
     `<table border="0" cellpadding="0" cellspacing="0" style="margin:0 0 24px 0;">
 <tr><td align="center" style="background-color:#ff5a3c;border-radius:4px;">
 <a href="${escapeHtml(resetUrl)}" target="_blank" style="display:inline-block;padding:14px 28px;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:15px;font-weight:600;color:#161514;text-decoration:none;min-height:20px;line-height:20px;">Réinitialiser mon mot de passe</a>
 </td></tr>
 </table>`,
-    p("Ce lien expire dans 60 minutes. Si vous n'avez pas demandé cette réinitialisation, aucune action n'est requise.", { small: true, margin: "0" }),
+    p(
+      "Ce lien expire dans 60 minutes. Si vous n'avez pas demandé cette réinitialisation, aucune action n'est requise.",
+      { small: true, margin: "0" },
+    ),
   ].join("\n");
 }
 
@@ -118,13 +127,18 @@ ${trs}
 export function orderPlacedContentHtml(ref: string, totalLabel: string, accountUrl: string): string {
   return [
     h1("Commande reçue"),
-    p("Nous avons bien reçu votre commande d'impression 3D. Avant tout paiement, nous vérifions que la pièce peut être réalisée telle quelle (24 à 48h maximum) :"),
+    p(
+      "Nous avons bien reçu votre commande d'impression 3D. Avant tout paiement, nous vérifions que la pièce peut être réalisée telle quelle (24 à 48h maximum) :",
+    ),
     orderInfoTable([
       ["Référence :", ref],
       ["Statut :", "Expertise en cours", "#ff5a3c"],
       ["Montant si acceptée :", totalLabel],
     ]),
-    p(`Vous recevrez un email dès que l'expertise sera terminée, avec le lien pour régler le paiement. Suivez l'avancement depuis <a href="${escapeHtml(accountUrl)}" style="color:#ff5a3c;text-decoration:underline;">votre compte</a>.`, { margin: "0" }),
+    p(
+      `Vous recevrez un email dès que l'expertise sera terminée, avec le lien pour régler le paiement. Suivez l'avancement depuis <a href="${escapeHtml(accountUrl)}" style="color:#ff5a3c;text-decoration:underline;">votre compte</a>.`,
+      { margin: "0" },
+    ),
   ].join("\n");
 }
 
@@ -153,14 +167,23 @@ export function orderRejectedContentHtml(ref: string, contactUrl: string): strin
       ["Référence :", ref],
       ["Statut :", "Non réalisable en l'état", "#ff5a3c"],
     ]),
-    p(`Aucun paiement n'a été prélevé. Répondez à cet email ou passez par le <a href="${escapeHtml(contactUrl)}" style="color:#ff5a3c;text-decoration:underline;">formulaire de contact</a> en indiquant le numéro de commande — nous serons ravis d'en discuter et de voir ce qui est possible.`, { margin: "0" }),
+    p(
+      `Aucun paiement n'a été prélevé. Répondez à cet email ou passez par le <a href="${escapeHtml(contactUrl)}" style="color:#ff5a3c;text-decoration:underline;">formulaire de contact</a> en indiquant le numéro de commande — nous serons ravis d'en discuter et de voir ce qui est possible.`,
+      { margin: "0" },
+    ),
   ].join("\n");
 }
 
 // Contenu entièrement issu du formulaire public — chaque valeur doit être
 // échappée, un expéditeur du formulaire ne doit jamais pouvoir injecter du
 // HTML dans l'email reçu par l'admin.
-export function contactNotificationContentHtml(name: string, email: string, subject: string, message: string, attachmentUrl?: string): string {
+export function contactNotificationContentHtml(
+  name: string,
+  email: string,
+  subject: string,
+  message: string,
+  attachmentUrl?: string,
+): string {
   const attachmentLine = attachmentUrl
     ? `<br /><br /><strong>Pièce jointe :</strong> <a href="${escapeHtml(attachmentUrl)}" style="color:#ff5a3c;text-decoration:underline;">voir dans l'admin</a>`
     : "";

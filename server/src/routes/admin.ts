@@ -69,9 +69,10 @@ export async function adminRoutes(app: FastifyInstance) {
   // ---- Orders -----------------------------------------------------------
   app.get("/admin/orders", async (request, reply) => {
     const query = request.query as { status?: string; q?: string };
-    const status = query.status && (ORDER_FILTER_STATUSES as readonly string[]).includes(query.status)
-      ? (query.status as (typeof ORDER_FILTER_STATUSES)[number])
-      : undefined;
+    const status =
+      query.status && (ORDER_FILTER_STATUSES as readonly string[]).includes(query.status)
+        ? (query.status as (typeof ORDER_FILTER_STATUSES)[number])
+        : undefined;
     // Une recherche texte (numéro de commande, email, n° client — utile
     // pour retrouver une commande en SAV sans savoir dans quel statut elle
     // se trouve) ignore volontairement le filtre de statut : le cas
@@ -285,13 +286,14 @@ export async function adminRoutes(app: FastifyInstance) {
     const order = await prisma.order.findUnique({ where: { id } });
     if (!order) return reply.code(404).send({ error: "not_found" });
     if (!order.boxtalOrderRef) return reply.code(409).send({ error: "label_not_purchased" });
-    if (order.status === "DELIVERED") return reply.send({ shippingLabelUrl: null, labelPending: false, trackingNumber: null, autoDelivered: false });
+    if (order.status === "DELIVERED")
+      return reply.send({ shippingLabelUrl: null, labelPending: false, trackingNumber: null, autoDelivered: false });
 
     try {
       const result = await refreshOrderTrackingStatus(id);
       const fresh = await prisma.order.findUnique({ where: { id } });
       return reply.send({
-        shippingLabelUrl: result?.autoDelivered ? null : fresh?.shippingLabelUrl ?? null,
+        shippingLabelUrl: result?.autoDelivered ? null : (fresh?.shippingLabelUrl ?? null),
         labelPending: !result?.autoDelivered && !fresh?.shippingLabelUrl,
         trackingNumber: result?.trackingNumber ?? null,
         autoDelivered: !!result?.autoDelivered,
@@ -335,7 +337,10 @@ export async function adminRoutes(app: FastifyInstance) {
 
   app.patch("/admin/orders/:id", async (request, reply) => {
     const { id } = request.params as { id: string };
-    const schema = z.object({ status: z.enum(ORDER_STATUSES).optional(), trackingNumber: z.string().trim().min(1).max(60).optional() });
+    const schema = z.object({
+      status: z.enum(ORDER_STATUSES).optional(),
+      trackingNumber: z.string().trim().min(1).max(60).optional(),
+    });
     const body = schema.safeParse(request.body);
     if (!body.success) return reply.code(400).send({ error: "invalid_body" });
     if (!body.data.status && !body.data.trackingNumber) return reply.code(400).send({ error: "invalid_body" });

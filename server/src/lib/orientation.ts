@@ -36,7 +36,11 @@ function parseBinaryStl(buffer: Buffer, count: number): Triangle[] {
   const triangles: Triangle[] = [];
   let offset = 84;
   for (let i = 0; i < count; i++) {
-    const normal: [number, number, number] = [buffer.readFloatLE(offset), buffer.readFloatLE(offset + 4), buffer.readFloatLE(offset + 8)];
+    const normal: [number, number, number] = [
+      buffer.readFloatLE(offset),
+      buffer.readFloatLE(offset + 4),
+      buffer.readFloatLE(offset + 8),
+    ];
     const v: Triangle["v"] = [
       [buffer.readFloatLE(offset + 12), buffer.readFloatLE(offset + 16), buffer.readFloatLE(offset + 20)],
       [buffer.readFloatLE(offset + 24), buffer.readFloatLE(offset + 28), buffer.readFloatLE(offset + 32)],
@@ -66,9 +70,15 @@ function parseAsciiStl(text: string): Triangle[] {
 
 function triangleArea(v: Triangle["v"]): number {
   const [a, b, c] = v;
-  const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2];
-  const vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
-  const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx;
+  const ux = b[0] - a[0],
+    uy = b[1] - a[1],
+    uz = b[2] - a[2];
+  const vx = c[0] - a[0],
+    vy = c[1] - a[1],
+    vz = c[2] - a[2];
+  const cx = uy * vz - uz * vy,
+    cy = uz * vx - ux * vz,
+    cz = ux * vy - uy * vx;
   return Math.sqrt(cx * cx + cy * cy + cz * cz) / 2;
 }
 
@@ -84,16 +94,19 @@ const CANDIDATES: { rotateXDeg: number; rotateYDeg: number }[] = [
 ];
 
 function rotatePoint(p: [number, number, number], xDeg: number, yDeg: number): [number, number, number] {
-  const xr = (xDeg * Math.PI) / 180, yr = (yDeg * Math.PI) / 180;
+  const xr = (xDeg * Math.PI) / 180,
+    yr = (yDeg * Math.PI) / 180;
   let [x, y, z] = p;
   // Rotate around X, then around Y — matches PrusaSlicer applying
   // --rotate-x before --rotate-y (see transformArgs in lib/slicer.ts).
-  let y2 = y * Math.cos(xr) - z * Math.sin(xr);
+  const y2 = y * Math.cos(xr) - z * Math.sin(xr);
   let z2 = y * Math.sin(xr) + z * Math.cos(xr);
-  y = y2; z = z2;
+  y = y2;
+  z = z2;
   const x2 = x * Math.cos(yr) + z * Math.sin(yr);
   z2 = -x * Math.sin(yr) + z * Math.cos(yr);
-  x = x2; z = z2;
+  x = x2;
+  z = z2;
   return [x, y, z];
 }
 
@@ -133,10 +146,14 @@ export function suggestOrientation(triangles: Triangle[]): OrientationSuggestion
   if (triangles.length === 0) return null;
 
   const candidates: OrientationCandidate[] = CANDIDATES.map(({ rotateXDeg, rotateYDeg }) => {
-    let minZ = Infinity, maxZ = -Infinity;
+    let minZ = Infinity,
+      maxZ = -Infinity;
     const rotated = triangles.map((t) => {
       const v = t.v.map((p) => rotatePoint(p, rotateXDeg, rotateYDeg)) as Triangle["v"];
-      for (const p of v) { if (p[2] < minZ) minZ = p[2]; if (p[2] > maxZ) maxZ = p[2]; }
+      for (const p of v) {
+        if (p[2] < minZ) minZ = p[2];
+        if (p[2] > maxZ) maxZ = p[2];
+      }
       // Re-derive the normal's Z from the rotated triangle rather than
       // rotating the stored normal separately — avoids any mismatch if a
       // source file's normals aren't perfectly unit/consistent.
@@ -147,9 +164,15 @@ export function suggestOrientation(triangles: Triangle[]): OrientationSuggestion
     let contactAreaMm2 = 0;
     for (const v of rotated) {
       const area = triangleArea(v);
-      const ux = v[1][0] - v[0][0], uy = v[1][1] - v[0][1], uz = v[1][2] - v[0][2];
-      const vx = v[2][0] - v[0][0], vy = v[2][1] - v[0][1], vz = v[2][2] - v[0][2];
-      const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+      const ux = v[1][0] - v[0][0],
+        uy = v[1][1] - v[0][1],
+        uz = v[1][2] - v[0][2];
+      const vx = v[2][0] - v[0][0],
+        vy = v[2][1] - v[0][1],
+        vz = v[2][2] - v[0][2];
+      const nx = uy * vz - uz * vy,
+        ny = uz * vx - ux * vz,
+        nz = ux * vy - uy * vx;
       const len = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
       const normalZ = nz / len;
       // A triangle resting on the bed is ALWAYS downward-facing by
@@ -164,7 +187,10 @@ export function suggestOrientation(triangles: Triangle[]): OrientationSuggestion
       // was instead being flipped onto its 30x8 edge (height 40mm) by the
       // old scoring. A real overhang is only a downward face that ISN'T
       // resting on the bed (a bridge/ledge mid-air needing support).
-      const isBedContact = v[0][2] - minZ < BED_CONTACT_EPSILON_MM && v[1][2] - minZ < BED_CONTACT_EPSILON_MM && v[2][2] - minZ < BED_CONTACT_EPSILON_MM;
+      const isBedContact =
+        v[0][2] - minZ < BED_CONTACT_EPSILON_MM &&
+        v[1][2] - minZ < BED_CONTACT_EPSILON_MM &&
+        v[2][2] - minZ < BED_CONTACT_EPSILON_MM;
       if (isBedContact) {
         contactAreaMm2 += area;
       } else if (normalZ < OVERHANG_NORMAL_Z) {

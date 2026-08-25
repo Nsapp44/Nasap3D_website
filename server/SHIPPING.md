@@ -3,6 +3,7 @@
 ## Ce qui est fait
 
 Au moment de payer, le client :
+
 1. saisit son adresse de livraison (nom, téléphone, adresse, code postal, ville) ;
 2. clique sur "Calculer les frais de livraison" — le serveur appelle en
    temps réel l'API de Boxtal et renvoie deux tarifs réels : **Mondial
@@ -41,8 +42,7 @@ juste une adresse comme pour la cotation) — voir `BOXTAL_SHIPPER_FIRSTNAME
 /_LASTNAME/_COMPANY/_EMAIL/_PHONE` dans `.env`.
 
 **Pas de bac à sable sur ce compte** : comme pour la cotation, seul l'hôte
-de production authentifie avec ces clés — `test.envoimoinscher.com` renvoie
-401. Contrairement à la cotation (gratuite, sans effet de bord), `api/v1/
+de production authentifie avec ces clés — `test.envoimoinscher.com` renvoie 401. Contrairement à la cotation (gratuite, sans effet de bord), `api/v1/
 order` engage de l'argent réel à chaque appel. Demander à Boxtal des
 identifiants sandbox séparés pour ce compte avant de tester ce flux pour de
 vrai sans facturation.
@@ -99,11 +99,11 @@ de chaque catégorie.
     Marge des 5% volontairement petite : la marge de 1cm par face est déjà
     retirée du volume, pas besoin d'en rajouter une deuxième par-dessus.
     Sert surtout à éviter qu'une commande avec par exemple 2 grosses pièces
-    + 1 petite tienne "sur le papier" pièce par pièce mais pas une fois
-    regroupées dans le même carton (pas de vrai bin-packing 3D ici, ce sont
-    des pièces imprimées irrégulières, pas des blocs).
-  Si aucun des 3 formats ne convient (`pickParcelCm()` renvoie `null`), voir
-  "Pièces hors gabarit" plus bas.
+    - 1 petite tienne "sur le papier" pièce par pièce mais pas une fois
+      regroupées dans le même carton (pas de vrai bin-packing 3D ici, ce sont
+      des pièces imprimées irrégulières, pas des blocs).
+      Si aucun des 3 formats ne convient (`pickParcelCm()` renvoie `null`), voir
+      "Pièces hors gabarit" plus bas.
 - **1,50 € de frais d'emballage** (`PACKAGING_FEE_CENTS` dans `boxtal.ts`)
   ajoutés au prix brut du transporteur dans `quoteShippingRates()` — donc
   répercutés à la fois sur l'aperçu affiché en panier et sur le montant
@@ -137,6 +137,7 @@ même le vrai emballage) plutôt que par ce bouton.
 sont nécessaires avant que la commande puisse être remise au transporteur,
 à partir du temps d'impression total du panier (`getCartTotalPrintMinutes`
 dans `cart.ts`, qty-weighted — même principe que le poids) :
+
 - moins de 12h d'impression : 2 jours fixes ;
 - 12h ou plus : 2 jours + le temps d'impression converti en jours calendaires
   pleins en supposant une impression continue (`ceil(heures / 24)`) — ex.
@@ -177,7 +178,7 @@ compte sandbox (cotation **et** achat réel d'étiquette, gratuit en sandbox) :
   `shipper.phone`/`recipient.phone` sans le `+` — y compris le format local
   français brut (`"0661430506"`), pas seulement le préfixe `"0033..."` comme
   supposé initialement (erreur réelle rencontrée en prod : `shipper.phone: Le
-  numéro de téléphone n'est pas valide: 0661430506`) — mais **accepte**
+numéro de téléphone n'est pas valide: 0661430506`) — mais **accepte**
   `"+33..."` (avec ou sans espaces). `BOXTAL_SHIPPER_PHONE` reste en format
   local français dans `.env` (plus lisible à configurer) mais est désormais
   **toujours** converti en `+33...` (`toInternationalFrPhone()`) avant envoi,
@@ -248,6 +249,7 @@ l'adresse du siège social telle qu'elle apparaît dans
 `GET api/v1/order_status/{ref}/informations` (déjà utilisé pour
 `label_available`/`label_url`) renvoie aussi deux champs jusqu'ici ignorés,
 confirmés en testant en réel sur le sandbox :
+
 - `carrier_reference` — le vrai numéro de suivi transporteur (ex.
   `CR260813000000000NT3`), jamais présent dans la réponse d'achat initiale
   (`POST api/v1/order`), seulement récupérable après coup via cet endpoint.
@@ -264,6 +266,7 @@ place). Comme il n'y a qu'un seul état observé, c'est un best-effort à
 vérifier si un vrai passage en livraison ne se détecte pas correctement.
 
 `lib/orderTracking.ts` centralise tout ça :
+
 - `refreshOrderTrackingStatus(orderId)` — un appel Boxtal, met à jour le
   numéro de suivi, et passe la commande en DELIVERED (+ purge, voir plus
   bas) si `isLikelyDelivered`. Appelé par le bouton "Vérifier" de l'admin

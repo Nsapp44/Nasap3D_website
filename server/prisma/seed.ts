@@ -1,7 +1,14 @@
+import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { nextCustomerNo } from "../src/lib/counter.js";
 import { hashPassword } from "../src/lib/password.js";
 
+// Runs as its own process in docker-entrypoint.sh, separate from — and
+// before — `node dist/index.js`, so index.ts's own `dotenv/config` import
+// never reaches this one: without its own, SEED_ADMIN_EMAIL/PASSWORD would
+// read as undefined here (server/.env is bind-mounted, not injected via
+// env_file: — see docker-compose.yml), silently falling back to the
+// hardcoded default admin credentials instead of the real ones.
 const prisma = new PrismaClient();
 
 // Mirrors the color catalogue currently hardcoded in the front-end's stock.js
@@ -21,14 +28,30 @@ const MATERIALS: {
     densityGCm3: 1.26,
     pricePerKgCents: 2200,
     colors: [
-      ["Jade White", "#f4f4ef"], ["Beige", "#dcc6a0"], ["Green", "#00744d"],
-      ["Mistletoe Green", "#37603c"], ["Grass Green", "#61c680"], ["Turquoise", "#00b1a9"],
-      ["Cobalt Blue", "#0056b3"], ["Blue", "#0057ba"], ["Ice Blue", "#a0dce8"],
-      ["Cyan", "#0093c3"], ["Purple", "#6b3fa0"], ["Magenta", "#ec008c"],
-      ["Pink", "#f5a7c4"], ["Red", "#c0141b"], ["Maroon Red", "#9d2235"],
-      ["Orange", "#ff6a13"], ["Yellow", "#f4ee2a"], ["Gold", "#c8a951"],
-      ["Silver", "#a6a9aa"], ["Gray", "#8e9089"], ["Charcoal", "#3f3f3f"],
-      ["Black", "#0f0f0f"], ["Brown", "#7a4a2b"], ["Bronze", "#8c6239"],
+      ["Jade White", "#f4f4ef"],
+      ["Beige", "#dcc6a0"],
+      ["Green", "#00744d"],
+      ["Mistletoe Green", "#37603c"],
+      ["Grass Green", "#61c680"],
+      ["Turquoise", "#00b1a9"],
+      ["Cobalt Blue", "#0056b3"],
+      ["Blue", "#0057ba"],
+      ["Ice Blue", "#a0dce8"],
+      ["Cyan", "#0093c3"],
+      ["Purple", "#6b3fa0"],
+      ["Magenta", "#ec008c"],
+      ["Pink", "#f5a7c4"],
+      ["Red", "#c0141b"],
+      ["Maroon Red", "#9d2235"],
+      ["Orange", "#ff6a13"],
+      ["Yellow", "#f4ee2a"],
+      ["Gold", "#c8a951"],
+      ["Silver", "#a6a9aa"],
+      ["Gray", "#8e9089"],
+      ["Charcoal", "#3f3f3f"],
+      ["Black", "#0f0f0f"],
+      ["Brown", "#7a4a2b"],
+      ["Bronze", "#8c6239"],
     ],
   },
   {
@@ -37,10 +60,18 @@ const MATERIALS: {
     densityGCm3: 1.28,
     pricePerKgCents: 2600,
     colors: [
-      ["White", "#f4f4ef"], ["Black", "#0f0f0f"], ["Gray", "#8e9089"],
-      ["Blue", "#0057ba"], ["Green", "#3c8c47"], ["Orange", "#ff6a13"],
-      ["Red", "#c0141b"], ["Yellow", "#f4ee2a"], ["Lime Green", "#a6ce39"],
-      ["Peanut Brown", "#7a4a2b"], ["Translucent Teal", "#4fb3a9"], ["Dark Red", "#7c1723"],
+      ["White", "#f4f4ef"],
+      ["Black", "#0f0f0f"],
+      ["Gray", "#8e9089"],
+      ["Blue", "#0057ba"],
+      ["Green", "#3c8c47"],
+      ["Orange", "#ff6a13"],
+      ["Red", "#c0141b"],
+      ["Yellow", "#f4ee2a"],
+      ["Lime Green", "#a6ce39"],
+      ["Peanut Brown", "#7a4a2b"],
+      ["Translucent Teal", "#4fb3a9"],
+      ["Dark Red", "#7c1723"],
     ],
   },
   {
@@ -49,9 +80,15 @@ const MATERIALS: {
     densityGCm3: 1.04,
     pricePerKgCents: 2400,
     colors: [
-      ["Black", "#0f0f0f"], ["White", "#f4f4ef"], ["Red", "#c0141b"],
-      ["Blue", "#0057ba"], ["Gray", "#8e9089"], ["Orange", "#ff6a13"],
-      ["Yellow", "#f4ee2a"], ["Green", "#3c8c47"], ["Tangerine Yellow", "#ffb100"],
+      ["Black", "#0f0f0f"],
+      ["White", "#f4f4ef"],
+      ["Red", "#c0141b"],
+      ["Blue", "#0057ba"],
+      ["Gray", "#8e9089"],
+      ["Orange", "#ff6a13"],
+      ["Yellow", "#f4ee2a"],
+      ["Green", "#3c8c47"],
+      ["Tangerine Yellow", "#ffb100"],
       ["Navy Blue", "#1c2b4a"],
     ],
   },
@@ -61,8 +98,12 @@ const MATERIALS: {
     densityGCm3: 1.05,
     pricePerKgCents: 2800,
     colors: [
-      ["White", "#f4f4ef"], ["Black", "#0f0f0f"], ["Gray", "#8e9089"],
-      ["Red", "#c0141b"], ["Blue", "#0057ba"], ["Green", "#3c8c47"],
+      ["White", "#f4f4ef"],
+      ["Black", "#0f0f0f"],
+      ["Gray", "#8e9089"],
+      ["Red", "#c0141b"],
+      ["Blue", "#0057ba"],
+      ["Green", "#3c8c47"],
     ],
   },
   {
@@ -71,8 +112,11 @@ const MATERIALS: {
     densityGCm3: 1.22,
     pricePerKgCents: 3200,
     colors: [
-      ["Black", "#0f0f0f"], ["White", "#f4f4ef"], ["Red", "#c0141b"],
-      ["Yellow", "#f4ee2a"], ["Blue", "#0057ba"],
+      ["Black", "#0f0f0f"],
+      ["White", "#f4f4ef"],
+      ["Red", "#c0141b"],
+      ["Yellow", "#f4ee2a"],
+      ["Blue", "#0057ba"],
     ],
   },
   {
@@ -81,16 +125,20 @@ const MATERIALS: {
     densityGCm3: 1.09,
     pricePerKgCents: 4500,
     colors: [
-      ["Black (CF)", "#0f0f0f"], ["Gray (CF)", "#6b6d66"], ["Natural", "#d8d3c8"],
+      ["Black (CF)", "#0f0f0f"],
+      ["Gray (CF)", "#6b6d66"],
+      ["Natural", "#d8d3c8"],
     ],
   },
   {
     key: "PP",
     label: "PP",
-    densityGCm3: 0.90,
+    densityGCm3: 0.9,
     pricePerKgCents: 3000,
     colors: [
-      ["Black", "#0f0f0f"], ["White", "#f4f4ef"], ["Gray", "#8e9089"],
+      ["Black", "#0f0f0f"],
+      ["White", "#f4f4ef"],
+      ["Gray", "#8e9089"],
     ],
   },
 ];
@@ -98,7 +146,7 @@ const MATERIALS: {
 // Mirrors Devis Instantane.dc.html's quality steps.
 const QUALITIES = [
   { key: "Rapide", label: "Rapide", layerHeightMm: 0.28, timeMultiplier: 0.7 },
-  { key: "Standard", label: "Standard", layerHeightMm: 0.20, timeMultiplier: 1.0 },
+  { key: "Standard", label: "Standard", layerHeightMm: 0.2, timeMultiplier: 1.0 },
   { key: "Fine", label: "Fine", layerHeightMm: 0.12, timeMultiplier: 1.6 },
 ];
 

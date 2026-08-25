@@ -72,10 +72,12 @@ const PACKING_EFFICIENCY = 0.95;
 // exceed what's available). Pure/exported so routes/admin.ts can tell a
 // genuine best fit apart from the "doesn't fit anything" case without
 // duplicating this logic.
-export function pickParcelCm(requirement: {
-  maxItemBboxMm: { xMm: number; yMm: number; zMm: number } | null;
-  totalVolumeMm3: number;
-} | null): ParcelCm | null {
+export function pickParcelCm(
+  requirement: {
+    maxItemBboxMm: { xMm: number; yMm: number; zMm: number } | null;
+    totalVolumeMm3: number;
+  } | null,
+): ParcelCm | null {
   if (!requirement?.maxItemBboxMm) return null;
   const { maxItemBboxMm, totalVolumeMm3 } = requirement;
   const partSortedMm = [maxItemBboxMm.xMm, maxItemBboxMm.yMm, maxItemBboxMm.zMm]
@@ -88,9 +90,7 @@ export function pickParcelCm(requirement: {
     // Same 1cm-per-side margin as above (PARCEL_MARGIN_MM), subtracted from
     // the box this time instead of added to the piece — the volume check
     // uses the box's actual *usable* volume, not its raw outer volume.
-    const usableVolumeMm3 = boxSortedMm
-      .map((mm) => Math.max(0, mm - 2 * PARCEL_MARGIN_MM))
-      .reduce((a, b) => a * b, 1);
+    const usableVolumeMm3 = boxSortedMm.map((mm) => Math.max(0, mm - 2 * PARCEL_MARGIN_MM)).reduce((a, b) => a * b, 1);
     const volumeFits = totalVolumeMm3 <= usableVolumeMm3 * PACKING_EFFICIENCY;
     if (itemFits && volumeFits) return box;
   }
@@ -334,7 +334,10 @@ export function applyPackagingMargin(pieceWeightG: number): number {
 export async function quoteShippingRates(
   recipient: ShippingAddress,
   pieceWeightG: number,
-  parcelRequirement: { maxItemBboxMm: { xMm: number; yMm: number; zMm: number } | null; totalVolumeMm3: number } | null = null,
+  parcelRequirement: {
+    maxItemBboxMm: { xMm: number; yMm: number; zMm: number } | null;
+    totalVolumeMm3: number;
+  } | null = null,
   totalPrintMinutes: number = 0,
 ): Promise<ShippingRates> {
   const shipper = shipperAddress();
@@ -383,6 +386,7 @@ export async function quoteShippingRates(
   const doc = xmlParser.parse(xml);
   if (doc?.error) throw new BoxtalApiError(`boxtal cotation error: ${JSON.stringify(doc.error).slice(0, 300)}`);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- xmlParser.parse() output is untyped by design (external API's XML shape)
   const offers: any[] = doc?.cotation?.shipment?.offer ?? [];
   let relay: ShippingRate | null = null;
   let home: ShippingRate | null = null;
@@ -407,7 +411,8 @@ export async function quoteShippingRates(
       (serviceCode === "CpourToi" || serviceCode === "CpourToiEurope") &&
       deliveryTypeCode === "PICKUP_POINT"
     ) {
-      const label = serviceCode === "CpourToiEurope" ? "Mondial Relay — Point Relais (Europe)" : "Mondial Relay — Point Relais";
+      const label =
+        serviceCode === "CpourToiEurope" ? "Mondial Relay — Point Relais (Europe)" : "Mondial Relay — Point Relais";
       if (!relay || cents < relay.cents) relay = { operatorCode, serviceCode, label, cents, estimatedDeliveryDate };
     }
     if (
@@ -415,7 +420,10 @@ export async function quoteShippingRates(
       (serviceCode === "ColissimoAccess" || serviceCode === "ColissimoAccessInternational") &&
       deliveryTypeCode === "HOME"
     ) {
-      const label = serviceCode === "ColissimoAccessInternational" ? "Colissimo — Livraison à domicile (international)" : "Colissimo — Livraison à domicile";
+      const label =
+        serviceCode === "ColissimoAccessInternational"
+          ? "Colissimo — Livraison à domicile (international)"
+          : "Colissimo — Livraison à domicile";
       if (!home || cents < home.cents) home = { operatorCode, serviceCode, label, cents, estimatedDeliveryDate };
     }
   }
@@ -611,9 +619,16 @@ export async function checkLabelStatus(boxtalOrderRef: string): Promise<BoxtalOr
   // labels the right way (`shipment.labels.label`, see purchaseShippingLabel
   // above — same field name, one level shallower here since this response
   // has no `shipment` wrapper).
-  const labelAvailable = doc?.order?.label_available === "1" || String(doc?.order?.label_available).toLowerCase() === "true";
+  const labelAvailable =
+    doc?.order?.label_available === "1" || String(doc?.order?.label_available).toLowerCase() === "true";
   const labelUrl: string | null = doc?.order?.labels?.label?.[0] ?? null;
   const carrierReference: string | null = doc?.order?.carrier_reference || null;
   const state: string | null = doc?.order?.state || null;
-  return { labelAvailable, labelUrl, carrierReference, state, isLikelyDelivered: !!state && DELIVERED_STATE_RE.test(state) };
+  return {
+    labelAvailable,
+    labelUrl,
+    carrierReference,
+    state,
+    isLikelyDelivered: !!state && DELIVERED_STATE_RE.test(state),
+  };
 }

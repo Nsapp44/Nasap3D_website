@@ -62,64 +62,76 @@ export async function authRoutes(app: FastifyInstance) {
     if (existing) return reply.code(409).send({ error: "email_taken" });
 
     const passwordHash = await hashPassword(password);
-    const { id, expiresAt } = await createPendingSignupCode(email, { email, passwordHash } satisfies PendingSignupPayload);
+    const { id, expiresAt } = await createPendingSignupCode(email, {
+      email,
+      passwordHash,
+    } satisfies PendingSignupPayload);
     return reply.code(201).send({ pendingId: id, expiresAt });
   });
 
   // Step 2/2: confirms the code and only THEN creates the account —
   // emailVerifiedAt is set immediately since control of the mailbox was
   // just proven, unlike the old create-first-verify-after flow.
-  app.post("/auth/signup/confirm", { config: { rateLimit: { max: 15, timeWindow: "1 minute" } } }, async (request, reply) => {
-    const schema = z.object({ pendingId: z.string(), code: z.string().trim().length(6) });
-    const body = schema.safeParse(request.body);
-    if (!body.success) return reply.code(400).send({ error: "invalid_body" });
+  app.post(
+    "/auth/signup/confirm",
+    { config: { rateLimit: { max: 15, timeWindow: "1 minute" } } },
+    async (request, reply) => {
+      const schema = z.object({ pendingId: z.string(), code: z.string().trim().length(6) });
+      const body = schema.safeParse(request.body);
+      if (!body.success) return reply.code(400).send({ error: "invalid_body" });
 
-    let payload: PendingSignupPayload;
-    try {
-      payload = await consumePendingSignupCode<PendingSignupPayload>(body.data.pendingId, body.data.code);
-    } catch (err) {
-      if (err instanceof NoPendingCodeError) return reply.code(400).send({ error: "no_pending_code" });
-      if (err instanceof TooManyAttemptsError) return reply.code(429).send({ error: "too_many_attempts" });
-      if (err instanceof WrongCodeError) return reply.code(400).send({ error: "wrong_code" });
-      throw err;
-    }
+      let payload: PendingSignupPayload;
+      try {
+        payload = await consumePendingSignupCode<PendingSignupPayload>(body.data.pendingId, body.data.code);
+      } catch (err) {
+        if (err instanceof NoPendingCodeError) return reply.code(400).send({ error: "no_pending_code" });
+        if (err instanceof TooManyAttemptsError) return reply.code(429).send({ error: "too_many_attempts" });
+        if (err instanceof WrongCodeError) return reply.code(400).send({ error: "wrong_code" });
+        throw err;
+      }
 
-    // Re-check: someone else could have taken the email during the 3-minute
-    // window between the request and this confirmation.
-    const existing = await prisma.user.findUnique({ where: { email: payload.email } });
-    if (existing) return reply.code(409).send({ error: "email_taken" });
+      // Re-check: someone else could have taken the email during the 3-minute
+      // window between the request and this confirmation.
+      const existing = await prisma.user.findUnique({ where: { email: payload.email } });
+      if (existing) return reply.code(409).send({ error: "email_taken" });
 
-    const user = await prisma.user.create({
-      data: {
-        email: payload.email,
-        passwordHash: payload.passwordHash,
-        customerNo: await nextCustomerNo(),
-        role: "CLIENT",
-        emailVerifiedAt: new Date(),
-      },
-    });
+      const user = await prisma.user.create({
+        data: {
+          email: payload.email,
+          passwordHash: payload.passwordHash,
+          customerNo: await nextCustomerNo(),
+          role: "CLIENT",
+          emailVerifiedAt: new Date(),
+        },
+      });
 
-    const guestSessionId = request.cookies[GUEST_COOKIE];
-    if (guestSessionId) await mergeGuestCartIntoUser(guestSessionId, user.id);
+      const guestSessionId = request.cookies[GUEST_COOKIE];
+      if (guestSessionId) await mergeGuestCartIntoUser(guestSessionId, user.id);
 
-    const { raw, expiresAt } = await createSession(user.id);
-    setSessionCookie(reply, raw, expiresAt);
-    return reply.code(201).send({ user: publicUser(user) });
-  });
+      const { raw, expiresAt } = await createSession(user.id);
+      setSessionCookie(reply, raw, expiresAt);
+      return reply.code(201).send({ user: publicUser(user) });
+    },
+  );
 
-  app.post("/auth/signup/resend", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (request, reply) => {
-    const schema = z.object({ pendingId: z.string() });
-    const body = schema.safeParse(request.body);
-    if (!body.success) return reply.code(400).send({ error: "invalid_body" });
+  app.post(
+    "/auth/signup/resend",
+    { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } },
+    async (request, reply) => {
+      const schema = z.object({ pendingId: z.string() });
+      const body = schema.safeParse(request.body);
+      if (!body.success) return reply.code(400).send({ error: "invalid_body" });
 
-    const record = await prisma.verificationCode.findUnique({ where: { id: body.data.pendingId } });
-    if (!record || record.userId !== null || !record.payload) return reply.code(400).send({ error: "no_pending_code" });
-    const { email } = JSON.parse(record.payload) as PendingSignupPayload;
+      const record = await prisma.verificationCode.findUnique({ where: { id: body.data.pendingId } });
+      if (!record || record.userId !== null || !record.payload)
+        return reply.code(400).send({ error: "no_pending_code" });
+      const { email } = JSON.parse(record.payload) as PendingSignupPayload;
 
-    const result = await resendPendingSignupCode(body.data.pendingId, email);
-    if (!result.ok) return reply.code(result.error === "too_soon" ? 429 : 400).send({ error: result.error });
-    return reply.send({ ok: true, expiresAt: result.expiresAt });
-  });
+      const result = await resendPendingSignupCode(body.data.pendingId, email);
+      if (!result.ok) return reply.code(result.error === "too_soon" ? 429 : 400).send({ error: result.error });
+      return reply.send({ ok: true, expiresAt: result.expiresAt });
+    },
+  );
 
   app.post("/auth/login", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (request, reply) => {
     const body = loginSchema.safeParse(request.body);
@@ -157,35 +169,39 @@ export async function authRoutes(app: FastifyInstance) {
     return reply.send({ user: user ? publicUser(user) : null });
   });
 
-  app.post("/auth/forgot-password", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (request, reply) => {
-    const schema = z.object({ email: z.string(), captchaToken: z.string().optional() });
-    const body = schema.safeParse(request.body);
-    if (!body.success) return reply.code(400).send({ error: "invalid_body" });
+  app.post(
+    "/auth/forgot-password",
+    { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } },
+    async (request, reply) => {
+      const schema = z.object({ email: z.string(), captchaToken: z.string().optional() });
+      const body = schema.safeParse(request.body);
+      if (!body.success) return reply.code(400).send({ error: "invalid_body" });
 
-    const rc = await verifyCaptcha(body.data.captchaToken);
-    if (!rc.ok) return reply.code(400).send({ error: "captcha_failed", reason: rc.reason });
+      const rc = await verifyCaptcha(body.data.captchaToken);
+      if (!rc.ok) return reply.code(400).send({ error: "captcha_failed", reason: rc.reason });
 
-    const user = await prisma.user.findUnique({ where: { email: body.data.email } });
-    // Always the same response — do not reveal whether the address exists.
-    if (user && !user.deletedAt) {
-      const raw = generateToken();
-      await prisma.passwordResetToken.create({
-        data: {
-          userId: user.id,
-          tokenHash: hashToken(raw),
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        },
-      });
-      const resetUrl = `${process.env.FRONT_URL || "http://localhost:8080"}/Account.dc.html?resetToken=${raw}`;
-      await sendMail(
-        user.email,
-        "Réinitialisation de votre mot de passe Nasap3D",
-        `Cliquez sur ce lien pour choisir un nouveau mot de passe (valable 1h) : ${resetUrl}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez cet email.`,
-        renderEmailHtml("Réinitialisation de votre mot de passe Nasap3D", passwordResetContentHtml(resetUrl)),
-      );
-    }
-    return reply.send({ ok: true });
-  });
+      const user = await prisma.user.findUnique({ where: { email: body.data.email } });
+      // Always the same response — do not reveal whether the address exists.
+      if (user && !user.deletedAt) {
+        const raw = generateToken();
+        await prisma.passwordResetToken.create({
+          data: {
+            userId: user.id,
+            tokenHash: hashToken(raw),
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+          },
+        });
+        const resetUrl = `${process.env.FRONT_URL || "http://localhost:8080"}/Account.dc.html?resetToken=${raw}`;
+        await sendMail(
+          user.email,
+          "Réinitialisation de votre mot de passe Nasap3D",
+          `Cliquez sur ce lien pour choisir un nouveau mot de passe (valable 1h) : ${resetUrl}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez cet email.`,
+          renderEmailHtml("Réinitialisation de votre mot de passe Nasap3D", passwordResetContentHtml(resetUrl)),
+        );
+      }
+      return reply.send({ ok: true });
+    },
+  );
 
   app.post("/auth/reset-password", async (request, reply) => {
     const schema = z.object({ token: z.string(), newPassword: z.string() });

@@ -55,7 +55,13 @@ export async function googleRoutes(app: FastifyInstance) {
       result?: {
         rating?: number;
         user_ratings_total?: number;
-        reviews?: Array<{ author_name: string; rating: number; text: string; relative_time_description: string; time: number }>;
+        reviews?: Array<{
+          author_name: string;
+          rating: number;
+          text: string;
+          relative_time_description: string;
+          time: number;
+        }>;
       };
     };
     if (data.status !== "OK" || typeof data.result?.rating !== "number") {
@@ -65,9 +71,20 @@ export async function googleRoutes(app: FastifyInstance) {
 
     const reviews: GoogleReview[] = (data.result.reviews ?? [])
       .filter((r) => r.rating >= MIN_REVIEW_STARS && r.text?.trim())
-      .map((r) => ({ author: r.author_name, rating: r.rating, text: r.text, relativeTime: r.relative_time_description, time: r.time }));
+      .map((r) => ({
+        author: r.author_name,
+        rating: r.rating,
+        text: r.text,
+        relativeTime: r.relative_time_description,
+        time: r.time,
+      }));
 
-    cache = { rating: data.result.rating, totalReviews: data.result.user_ratings_total ?? 0, reviews, fetchedAt: Date.now() };
+    cache = {
+      rating: data.result.rating,
+      totalReviews: data.result.user_ratings_total ?? 0,
+      reviews,
+      fetchedAt: Date.now(),
+    };
     return reply.send({ rating: cache.rating, totalReviews: cache.totalReviews, reviews: cache.reviews });
   });
 }

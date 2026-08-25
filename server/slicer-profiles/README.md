@@ -16,8 +16,8 @@ profils BambuStudio réels et de les reporter ici (`max_print_speed`,
 `perimeter_speed`, `infill_speed`, `travel_speed`, accélérations...) — dites-le
 moi et on affine ensemble une fois que le reste tourne.
 
-| Fichier | Machine | Plateau (mm) | Hauteur max (mm) |
-|---|---|---|---|
-| `x1c.ini` | Bambu Lab X1C | 256×256 | 256 |
-| `h2c.ini` | Bambu Lab H2C | 330×320 | 325 |
-| `x2d.ini` | Bambu Lab X2D | 256×256 | 256 |
+| Fichier   | Machine       | Plateau (mm) | Hauteur max (mm) |
+| --------- | ------------- | ------------ | ---------------- |
+| `x1c.ini` | Bambu Lab X1C | 256×256      | 256              |
+| `h2c.ini` | Bambu Lab H2C | 330×320      | 325              |
+| `x2d.ini` | Bambu Lab X2D | 256×256      | 256              |

@@ -67,7 +67,8 @@ export async function refreshOrderTrackingStatus(orderId: string): Promise<{
 
   const data: Record<string, unknown> = {};
   if (status.labelUrl && status.labelUrl !== order.shippingLabelUrl) data.shippingLabelUrl = status.labelUrl;
-  if (status.carrierReference && status.carrierReference !== order.trackingNumber) data.trackingNumber = status.carrierReference;
+  if (status.carrierReference && status.carrierReference !== order.trackingNumber)
+    data.trackingNumber = status.carrierReference;
   if (Object.keys(data).length > 0) await prisma.order.update({ where: { id: orderId }, data });
 
   return { trackingNumber: status.carrierReference ?? order.trackingNumber, state: status.state, autoDelivered: false };

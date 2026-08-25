@@ -13,15 +13,11 @@ function client() {
 }
 
 export async function putObject(key: string, data: Buffer): Promise<void> {
-  await client().send(
-    new PutObjectCommand({ Bucket: process.env.S3_BUCKET, Key: key, Body: data }),
-  );
+  await client().send(new PutObjectCommand({ Bucket: process.env.S3_BUCKET, Key: key, Body: data }));
 }
 
 export async function getObject(key: string): Promise<Buffer> {
-  const res = await client().send(
-    new GetObjectCommand({ Bucket: process.env.S3_BUCKET, Key: key }),
-  );
+  const res = await client().send(new GetObjectCommand({ Bucket: process.env.S3_BUCKET, Key: key }));
   const chunks: Buffer[] = [];
   for await (const chunk of res.Body as AsyncIterable<Buffer>) chunks.push(chunk as Buffer);
   return Buffer.concat(chunks);

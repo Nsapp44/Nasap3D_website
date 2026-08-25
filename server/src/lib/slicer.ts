@@ -49,13 +49,49 @@ const MATERIAL_MAX_VOLUMETRIC_SPEED: Record<string, number> = {
 // Quality — closest match for "Rapide" is their 0.24mm Standard tier, since
 // 0.4mm nozzles don't have an official 0.28mm preset). The instant quote
 // only ever slices against the H2C (see PRINTERS below).
-const QUALITY_SPEEDS: Record<string, {
-  outerWall: number; innerWall: number; infill: number; solidInfill: number;
-  topSurface: number; travel: number; firstLayer: number; accel: number;
-}> = {
-  Rapide: { outerWall: 200, innerWall: 300, infill: 350, solidInfill: 250, topSurface: 200, travel: 1000, firstLayer: 50, accel: 8000 },
-  Standard: { outerWall: 200, innerWall: 300, infill: 350, solidInfill: 250, topSurface: 200, travel: 1000, firstLayer: 50, accel: 8000 },
-  Fine: { outerWall: 60, innerWall: 120, infill: 100, solidInfill: 100, topSurface: 60, travel: 500, firstLayer: 30, accel: 4000 },
+const QUALITY_SPEEDS: Record<
+  string,
+  {
+    outerWall: number;
+    innerWall: number;
+    infill: number;
+    solidInfill: number;
+    topSurface: number;
+    travel: number;
+    firstLayer: number;
+    accel: number;
+  }
+> = {
+  Rapide: {
+    outerWall: 200,
+    innerWall: 300,
+    infill: 350,
+    solidInfill: 250,
+    topSurface: 200,
+    travel: 1000,
+    firstLayer: 50,
+    accel: 8000,
+  },
+  Standard: {
+    outerWall: 200,
+    innerWall: 300,
+    infill: 350,
+    solidInfill: 250,
+    topSurface: 200,
+    travel: 1000,
+    firstLayer: 50,
+    accel: 8000,
+  },
+  Fine: {
+    outerWall: 60,
+    innerWall: 120,
+    infill: 100,
+    solidInfill: 100,
+    topSurface: 60,
+    travel: 500,
+    firstLayer: 30,
+    accel: 4000,
+  },
 };
 
 export interface ModelInfo {
@@ -82,7 +118,14 @@ const PROFILES_DIR = path.resolve(process.cwd(), "slicer-profiles");
 // quote actually runs against, so there's no real fleet-picking logic to
 // maintain — a part either fits the H2C's bed/height or it doesn't.
 export const PRINTERS: PrinterProfile[] = [
-  { key: "h2c", label: "Bambu Lab H2C", bedXMm: 330, bedYMm: 320, heightMm: 325, iniPath: path.join(PROFILES_DIR, "h2c.ini") },
+  {
+    key: "h2c",
+    label: "Bambu Lab H2C",
+    bedXMm: 330,
+    bedYMm: 320,
+    heightMm: 325,
+    iniPath: path.join(PROFILES_DIR, "h2c.ini"),
+  },
 ];
 
 // Rejects a part that doesn't fit the H2C's bed/height (with a couple mm of
@@ -111,7 +154,11 @@ function bin(): string {
 // corrected size. rotateXDeg/rotateYDeg: from suggestOrientation() (see
 // lib/orientation.ts) — applied before scale doesn't matter here since
 // rotation and uniform scale commute for AABB purposes.
-export interface ModelTransform { scale?: number; rotateXDeg?: number; rotateYDeg?: number }
+export interface ModelTransform {
+  scale?: number;
+  rotateXDeg?: number;
+  rotateYDeg?: number;
+}
 
 function transformArgs(opts: ModelTransform): string[] {
   const args: string[] = [];
@@ -215,14 +262,14 @@ export async function sliceModel(filePath: string, opts: SliceOptions): Promise<
       `layer_height = ${opts.layerHeightMm}`,
       `fill_density = ${opts.infillPct}%`,
       `filament_density = ${opts.densityGCm3}`,
-      `filament_diameter = 1.75,1.75,1.75,1.75,1.75`,
+      "filament_diameter = 1.75,1.75,1.75,1.75,1.75",
       `temperature = ${temps.nozzle},${temps.nozzle},${temps.nozzle},${temps.nozzle},${temps.nozzle}`,
       `first_layer_temperature = ${temps.nozzle},${temps.nozzle},${temps.nozzle},${temps.nozzle},${temps.nozzle}`,
       `bed_temperature = ${temps.bed}`,
       `first_layer_bed_temperature = ${temps.bed}`,
-      `perimeters = 2`,
-      `top_solid_layers = 4`,
-      `bottom_solid_layers = 4`,
+      "perimeters = 2",
+      "top_solid_layers = 4",
+      "bottom_solid_layers = 4",
       // Supports étaient absents du profil jusqu'ici — un vrai manque : une
       // pièce avec surplombs se serait vue estimer un temps/poids (donc un
       // prix) sans le matériau/temps de support réellement nécessaire à
@@ -233,10 +280,10 @@ export async function sliceModel(filePath: string, opts: SliceOptions): Promise<
       // l'UI FR de PrusaSlicer — grid/snug/organic sont les 3 styles
       // possibles). support_material_threshold=0 = détection automatique du
       // seuil, recommandé par PrusaSlicer lui-même plutôt qu'un angle fixe.
-      `support_material = 1`,
-      `support_material_auto = 1`,
-      `support_material_style = snug`,
-      `support_material_threshold = 0`,
+      "support_material = 1",
+      "support_material_auto = 1",
+      "support_material_style = snug",
+      "support_material_threshold = 0",
       // Vitesses/accélération réelles Bambu Lab (H2C, voir MATERIAL_TEMPS/
       // QUALITY_SPEEDS ci-dessus pour la source) — remplacent les vitesses
       // par défaut de PrusaSlicer, bien trop lentes pour ces machines.
@@ -260,7 +307,16 @@ export async function sliceModel(filePath: string, opts: SliceOptions): Promise<
     await writeFile(configPath, configLines);
 
     const outPath = path.join(dir, "out.gcode");
-    const args = ["--load", configPath, "--ensure-on-bed", ...transformArgs(opts), "--export-gcode", "-o", outPath, filePath];
+    const args = [
+      "--load",
+      configPath,
+      "--ensure-on-bed",
+      ...transformArgs(opts),
+      "--export-gcode",
+      "-o",
+      outPath,
+      filePath,
+    ];
     await execFileAsync(bin(), args, { timeout: 120_000, maxBuffer: 10 * 1024 * 1024 });
 
     const gcode = await readFile(outPath, "utf8");

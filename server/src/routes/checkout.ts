@@ -3,7 +3,12 @@ import Stripe from "stripe";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../lib/session.js";
-import { getCartSummary, getCartTotalWeightG, getCartParcelRequirement, getCartTotalPrintMinutes } from "../lib/cart.js";
+import {
+  getCartSummary,
+  getCartTotalWeightG,
+  getCartParcelRequirement,
+  getCartTotalPrintMinutes,
+} from "../lib/cart.js";
 import { stripe } from "../lib/stripeClient.js";
 import { createOrderFromCart, EmptyCartError, type ShippingSelection } from "../lib/orders.js";
 import { quoteShippingRates, BoxtalConfigError, BoxtalApiError } from "../lib/boxtal.js";
@@ -21,9 +26,17 @@ import { sendOrderPlacedEmail, notifyAdminOrderToReview, notifyAdminOrderPaid } 
 function zonedMidnightUtc(timeZone: string, at: Date): Date {
   const parts = Object.fromEntries(
     new Intl.DateTimeFormat("en-US", {
-      timeZone, year: "numeric", month: "2-digit", day: "2-digit",
-      hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
-    }).formatToParts(at).map((p) => [p.type, p.value]),
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+    })
+      .formatToParts(at)
+      .map((p) => [p.type, p.value]),
   );
   const asIfUtc = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
   const offsetMs = asIfUtc - at.getTime();
@@ -103,7 +116,13 @@ export async function checkoutRoutes(app: FastifyInstance) {
       // the packaging fee (see boxtal.ts) or parcel-box logic applies.
       shipping = {
         mode: "PICKUP",
-        rate: { operatorCode: "PICKUP", serviceCode: "PICKUP", label: "Retrait à l'atelier", cents: 0, estimatedDeliveryDate: null },
+        rate: {
+          operatorCode: "PICKUP",
+          serviceCode: "PICKUP",
+          label: "Retrait à l'atelier",
+          cents: 0,
+          estimatedDeliveryDate: null,
+        },
         weightG: 0,
         parcelCm: { length: 0, width: 0, height: 0 },
         oversized: false,

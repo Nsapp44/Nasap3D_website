@@ -22,13 +22,24 @@ const MAX_FILE_BYTES = 150 * 1024 * 1024;
 const MIN_SCALE = 0.001;
 const MAX_SCALE = 2000;
 
-function quotePublicView(q: {
-  id: string; fileName: string; volumeCm3: number | null; weightG: number | null;
-  estimatedTimeMin: number | null; unitPriceCents: number | null; totalPriceCents: number | null;
-  quantity: number; infillPct: number; status: string;
-  material: { key: string; label: string }; color: { colorName: string; colorHex: string };
-  quality: { key: string; label: string };
-}, discountPct: number) {
+function quotePublicView(
+  q: {
+    id: string;
+    fileName: string;
+    volumeCm3: number | null;
+    weightG: number | null;
+    estimatedTimeMin: number | null;
+    unitPriceCents: number | null;
+    totalPriceCents: number | null;
+    quantity: number;
+    infillPct: number;
+    status: string;
+    material: { key: string; label: string };
+    color: { colorName: string; colorHex: string };
+    quality: { key: string; label: string };
+  },
+  discountPct: number,
+) {
   return {
     id: q.id,
     fileName: q.fileName,
@@ -121,7 +132,8 @@ export async function quoteRoutes(app: FastifyInstance) {
       // before anything else runs. Never fails the quote on its own: a
       // parse hiccup or an unusual/degenerate mesh just falls back to no
       // rotation (0, 0), same as before this feature existed.
-      let rotateXDeg = 0, rotateYDeg = 0;
+      let rotateXDeg = 0,
+        rotateYDeg = 0;
       try {
         const stlBuffer = ext === ".stl" ? fileBuffer : await exportTransformedStl(tmpPath, {});
         const triangles = parseStlTriangles(stlBuffer);

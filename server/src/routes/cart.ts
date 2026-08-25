@@ -43,7 +43,7 @@ export async function cartRoutes(app: FastifyInstance) {
       },
     });
 
-    const identity = user ? { userId: user.id } as const : { sessionId: sessionId! } as const;
+    const identity = user ? ({ userId: user.id } as const) : ({ sessionId: sessionId! } as const);
     const summary = await getCartSummary(identity);
     return reply.code(201).send(summary);
   });
@@ -57,7 +57,8 @@ export async function cartRoutes(app: FastifyInstance) {
     const identity = await identityFor(request, reply);
     const item = await prisma.cartItem.findUnique({ where: { id } });
     if (!item) return reply.code(404).send({ error: "not_found" });
-    const owns = ("userId" in identity && item.userId === identity.userId) ||
+    const owns =
+      ("userId" in identity && item.userId === identity.userId) ||
       ("sessionId" in identity && item.sessionId === identity.sessionId);
     if (!owns) return reply.code(404).send({ error: "not_found" });
 
@@ -71,7 +72,8 @@ export async function cartRoutes(app: FastifyInstance) {
     const identity = await identityFor(request, reply);
     const item = await prisma.cartItem.findUnique({ where: { id } });
     if (!item) return reply.code(404).send({ error: "not_found" });
-    const owns = ("userId" in identity && item.userId === identity.userId) ||
+    const owns =
+      ("userId" in identity && item.userId === identity.userId) ||
       ("sessionId" in identity && item.sessionId === identity.sessionId);
     if (!owns) return reply.code(404).send({ error: "not_found" });
 

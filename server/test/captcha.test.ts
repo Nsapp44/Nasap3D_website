@@ -35,9 +35,12 @@ describe("verifyCaptcha", () => {
 
   it("rejects when hCaptcha reports success:false", async () => {
     process.env.HCAPTCHA_SECRET_KEY = "test-secret";
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      json: async () => ({ success: false, "error-codes": ["invalid-input-response"] }),
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        json: async () => ({ success: false, "error-codes": ["invalid-input-response"] }),
+      }),
+    );
     const result = await verifyCaptcha("some-token");
     expect(result.ok).toBe(false);
     expect(result.reason).toBe("invalid-input-response");
@@ -45,9 +48,12 @@ describe("verifyCaptcha", () => {
 
   it("accepts when hCaptcha reports success:true — deterministic, no score involved", async () => {
     process.env.HCAPTCHA_SECRET_KEY = "test-secret";
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-      json: async () => ({ success: true }),
-    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        json: async () => ({ success: true }),
+      }),
+    );
     const result = await verifyCaptcha("some-token");
     expect(result.ok).toBe(true);
   });

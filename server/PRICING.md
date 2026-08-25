@@ -100,6 +100,7 @@ kg de chaque matériau (écran Stock de l'admin) — c'est là qu'elle vit
 naturellement, pas dans un multiplicateur caché.
 
 Trois paramètres pilotent tout :
+
 - `pricePerKgCents` — un par matériau, modifiable depuis l'écran Stock de
   l'admin.
 - `hourlyRateCents` — le taux horaire atelier, modifiable depuis l'écran
@@ -113,6 +114,7 @@ Trois paramètres pilotent tout :
 ### Pourquoi pas de « multiplicateur qualité » ou « multiplicateur matériau » séparé ?
 
 Un vrai calcul physique les rend inutiles et plus honnête :
+
 - La **qualité** (hauteur de couche) influence déjà directement le temps
   d'impression mesuré par le slicer — une pièce en « Fine » (0,12mm) prend
   mécaniquement plus de temps qu'en « Rapide » (0,28mm), donc coûte déjà plus
@@ -126,15 +128,15 @@ Petite pièce (proche d'un benchy à échelle réduite), PLA, qualité Standard,
 quantité 1. Taux horaire : 5,00 €/h.
 
 | Mesure par le slicer | Valeur |
-|---|---|
-| Poids | 8 g |
-| Temps estimé | 15 min |
+| -------------------- | ------ |
+| Poids                | 8 g    |
+| Temps estimé         | 15 min |
 
-| Calcul | Détail | Résultat |
-|---|---|---|
-| Coût matière | 8 g ÷ 1000 × 22,00 €/kg | 0,176 € |
-| Coût machine | 15 min ÷ 60 × 5,00 €/h | 1,250 € |
-| Avant plancher | 0,176 + 1,250 | 1,43 € |
+| Calcul            | Détail                                       | Résultat   |
+| ----------------- | -------------------------------------------- | ---------- |
+| Coût matière      | 8 g ÷ 1000 × 22,00 €/kg                      | 0,176 €    |
+| Coût machine      | 15 min ÷ 60 × 5,00 €/h                       | 1,250 €    |
+| Avant plancher    | 0,176 + 1,250                                | 1,43 €     |
 | **Prix unitaire** | max(8,90 €, 1,43 €) → le plancher s'applique | **8,90 €** |
 
 C'est le cas typique d'une petite pièce rapide : le calcul brut (matière +
@@ -147,16 +149,16 @@ séparée.
 Cube de test 50×50×50mm, PETG, remplissage 60%, qualité Fine (couche
 0,12mm), quantité 1. Taux horaire : 5,00 €/h.
 
-| Mesure par le slicer | Valeur |
-|---|---|
-| Poids | 103,16 g |
-| Temps estimé | 348,9 min (5h49) |
+| Mesure par le slicer | Valeur           |
+| -------------------- | ---------------- |
+| Poids                | 103,16 g         |
+| Temps estimé         | 348,9 min (5h49) |
 
-| Calcul | Détail | Résultat |
-|---|---|---|
-| Coût matière | 103,16 g ÷ 1000 × 26,00 €/kg | 2,682 € |
-| Coût machine | 348,9 min ÷ 60 × 5,00 €/h | 29,074 € |
-| Avant plancher | 2,682 + 29,074 | 31,76 € |
+| Calcul            | Détail                                                    | Résultat    |
+| ----------------- | --------------------------------------------------------- | ----------- |
+| Coût matière      | 103,16 g ÷ 1000 × 26,00 €/kg                              | 2,682 €     |
+| Coût machine      | 348,9 min ÷ 60 × 5,00 €/h                                 | 29,074 €    |
+| Avant plancher    | 2,682 + 29,074                                            | 31,76 €     |
 | **Prix unitaire** | max(8,90 €, 31,76 €) → le calcul dépasse déjà le plancher | **31,76 €** |
 
 On voit bien ici que c'est le **temps machine qui domine largement** le prix
@@ -167,11 +169,11 @@ atelier où la place sur l'imprimante coûte plus cher que la matière.
 
 Seedées par défaut, modifiables depuis l'admin :
 
-| Paramètre | Valeur de départ | Où l'ajuster |
-|---|---|---|
-| Taux horaire atelier | 5,00 €/h | Admin → Réglages |
-| Prix plancher par pièce | 8,90 € | Admin → Réglages |
-| Prix filament | PLA 22€/kg, PETG 26€/kg, ABS 24€/kg, ASA 28€/kg, TPU 32€/kg, Nylon 45€/kg, PP 30€/kg | Admin → Stock |
+| Paramètre               | Valeur de départ                                                                     | Où l'ajuster     |
+| ----------------------- | ------------------------------------------------------------------------------------ | ---------------- |
+| Taux horaire atelier    | 5,00 €/h                                                                             | Admin → Réglages |
+| Prix plancher par pièce | 8,90 €                                                                               | Admin → Réglages |
+| Prix filament           | PLA 22€/kg, PETG 26€/kg, ABS 24€/kg, ASA 28€/kg, TPU 32€/kg, Nylon 45€/kg, PP 30€/kg | Admin → Stock    |
 
 **Ce sont des estimations de départ, pas vos vrais coûts** — ajustez-les à
 vos chiffres réels (le taux horaire est le levier le plus direct pour monter
@@ -184,7 +186,7 @@ ou baisser tous les prix d'un coup).
   publiés par Bambu Lab eux-mêmes (dépôt public `bambulab/BambuStudio`,
   profils H2C — pris comme référence pour les 3 machines) : ce ne sont donc
   pas des estimations inventées, mais les vraies valeurs d'usine. Elles
-  restent génériques (pas *vos* réglages personnels calibrés dans
+  restent génériques (pas _vos_ réglages personnels calibrés dans
   BambuStudio).
 - **Rapide et Standard utilisent actuellement les mêmes vitesses**
   (`src/lib/slicer.ts`, `QUALITY_SPEEDS`) — seule la hauteur de couche

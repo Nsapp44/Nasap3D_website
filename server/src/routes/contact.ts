@@ -21,32 +21,36 @@ export async function contactRoutes(app: FastifyInstance) {
   // emailed: most mailboxes reject/strip attachments over ~25MB, well under
   // our 50MB cap here), and the notification email links to the admin
   // download route below instead.
-  app.post("/contact/upload", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (request, reply) => {
-    // Filet en plus de la limite par minute ci-dessus — un vrai visiteur
-    // n'approche jamais 50 pièces jointes/heure, un script en boucle si.
-    if (!checkLongWindowLimit(`contact-upload:${request.ip}`, 50, 60 * 60 * 1000)) {
-      return reply.code(429).send({ error: "too_many_requests" });
-    }
-    const parts = request.parts({ limits: { fileSize: MAX_CONTACT_FILE_BYTES } });
-    let fileBuffer: Buffer | null = null;
-    let fileName = "";
-    for await (const part of parts) {
-      if (part.type === "file") {
-        fileName = part.filename;
-        const chunks: Buffer[] = [];
-        for await (const chunk of part.file) chunks.push(chunk as Buffer);
-        fileBuffer = Buffer.concat(chunks);
-        if (part.file.truncated) return reply.code(413).send({ error: "file_too_large" });
+  app.post(
+    "/contact/upload",
+    { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } },
+    async (request, reply) => {
+      // Filet en plus de la limite par minute ci-dessus — un vrai visiteur
+      // n'approche jamais 50 pièces jointes/heure, un script en boucle si.
+      if (!checkLongWindowLimit(`contact-upload:${request.ip}`, 50, 60 * 60 * 1000)) {
+        return reply.code(429).send({ error: "too_many_requests" });
       }
-    }
-    if (!fileBuffer || !fileName) return reply.code(400).send({ error: "missing_file" });
-    const ext = path.extname(fileName).toLowerCase();
-    if (!ALLOWED_CONTACT_EXT.has(ext)) return reply.code(400).send({ error: "unsupported_file_type" });
+      const parts = request.parts({ limits: { fileSize: MAX_CONTACT_FILE_BYTES } });
+      let fileBuffer: Buffer | null = null;
+      let fileName = "";
+      for await (const part of parts) {
+        if (part.type === "file") {
+          fileName = part.filename;
+          const chunks: Buffer[] = [];
+          for await (const chunk of part.file) chunks.push(chunk as Buffer);
+          fileBuffer = Buffer.concat(chunks);
+          if (part.file.truncated) return reply.code(413).send({ error: "file_too_large" });
+        }
+      }
+      if (!fileBuffer || !fileName) return reply.code(400).send({ error: "missing_file" });
+      const ext = path.extname(fileName).toLowerCase();
+      if (!ALLOWED_CONTACT_EXT.has(ext)) return reply.code(400).send({ error: "unsupported_file_type" });
 
-    const fileKey = newFileKey(fileName);
-    await saveFile(fileKey, fileBuffer);
-    return reply.code(201).send({ fileKey, fileName });
-  });
+      const fileKey = newFileKey(fileName);
+      await saveFile(fileKey, fileBuffer);
+      return reply.code(201).send({ fileKey, fileName });
+    },
+  );
 
   app.post("/contact", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (request, reply) => {
     const schema = z.object({
@@ -85,14 +89,22 @@ export async function contactRoutes(app: FastifyInstance) {
         const attachmentUrl = created.fileKey
           ? `${process.env.API_BASE_URL || "http://localhost:3000"}/admin/contact-messages/${created.id}/file`
           : undefined;
-        const attachmentLine = attachmentUrl ? `\n\nPièce jointe (${body.data.fileName}) : ${attachmentUrl} (connecté en admin)` : "";
+        const attachmentLine = attachmentUrl
+          ? `\n\nPièce jointe (${body.data.fileName}) : ${attachmentUrl} (connecté en admin)`
+          : "";
         await sendMail(
           notify,
           `[Contact Nasap3D] ${body.data.subject}`,
           `De : ${body.data.name} <${body.data.email}>\n\n${body.data.message || "(pas de message)"}${attachmentLine}`,
           renderEmailHtml(
             `[Contact Nasap3D] ${body.data.subject}`,
-            contactNotificationContentHtml(body.data.name, body.data.email, body.data.subject, body.data.message || "(pas de message)", attachmentUrl),
+            contactNotificationContentHtml(
+              body.data.name,
+              body.data.email,
+              body.data.subject,
+              body.data.message || "(pas de message)",
+              attachmentUrl,
+            ),
           ),
         );
       } catch (err) {

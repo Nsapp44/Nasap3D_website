@@ -90,18 +90,20 @@ export async function createOrderFromCart(
               };
             }),
             ...(summary.smallOrderFeeCents > 0
-              ? [{
-                  quoteJobId: null,
-                  nameSnapshot: "Frais de petite commande",
-                  materialSnapshot: "",
-                  colorNameSnapshot: "",
-                  colorHexSnapshot: "",
-                  infillSnapshot: 0,
-                  qualitySnapshot: "",
-                  qty: 1,
-                  unitPriceCents: summary.smallOrderFeeCents,
-                  lineTotalCents: summary.smallOrderFeeCents,
-                }]
+              ? [
+                  {
+                    quoteJobId: null,
+                    nameSnapshot: "Frais de petite commande",
+                    materialSnapshot: "",
+                    colorNameSnapshot: "",
+                    colorHexSnapshot: "",
+                    infillSnapshot: 0,
+                    qualitySnapshot: "",
+                    qty: 1,
+                    unitPriceCents: summary.smallOrderFeeCents,
+                    lineTotalCents: summary.smallOrderFeeCents,
+                  },
+                ]
               : []),
           ],
         },

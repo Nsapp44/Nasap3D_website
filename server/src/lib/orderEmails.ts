@@ -2,7 +2,12 @@
 // or EXPERTISE -> REJECTED). Kept separate from routes/checkout.ts and
 // routes/admin.ts (both need these) rather than duplicated in either.
 import { sendMail } from "./mailer.js";
-import { renderEmailHtml, orderPlacedContentHtml, orderAcceptedContentHtml, orderRejectedContentHtml } from "./emailTemplate.js";
+import {
+  renderEmailHtml,
+  orderPlacedContentHtml,
+  orderAcceptedContentHtml,
+  orderRejectedContentHtml,
+} from "./emailTemplate.js";
 
 function frontUrl() {
   return process.env.FRONT_URL || "http://localhost:8080";

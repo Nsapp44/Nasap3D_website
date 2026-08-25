@@ -97,7 +97,10 @@ export async function canResend(userId: string, purpose: VerificationPurpose): P
 // email+passwordHash, and the User row is only created once the code is
 // confirmed. Keyed by the VerificationCode's own id (returned to the client
 // as `pendingId`) rather than userId, since there's no user to scope it to.
-export async function createPendingSignupCode(email: string, payload: unknown): Promise<{ id: string; expiresAt: Date }> {
+export async function createPendingSignupCode(
+  email: string,
+  payload: unknown,
+): Promise<{ id: string; expiresAt: Date }> {
   const code = generateNumericCode();
   const expiresAt = new Date(Date.now() + CODE_EXPIRY_MS);
   // No userId: this code precedes account creation (see doc comment above).
@@ -125,7 +128,13 @@ export async function createPendingSignupCode(email: string, payload: unknown): 
 
 export async function consumePendingSignupCode<T = unknown>(id: string, code: string): Promise<T> {
   const record = await prisma.verificationCode.findUnique({ where: { id } });
-  if (!record || record.userId !== null || record.purpose !== "SIGNUP" || record.usedAt || record.expiresAt < new Date()) {
+  if (
+    !record ||
+    record.userId !== null ||
+    record.purpose !== "SIGNUP" ||
+    record.usedAt ||
+    record.expiresAt < new Date()
+  ) {
     throw new NoPendingCodeError();
   }
   if (record.attempts >= MAX_ATTEMPTS) throw new TooManyAttemptsError();
