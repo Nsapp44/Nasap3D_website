@@ -27,6 +27,8 @@ dans `server/`.
 ├── api-client.js        Client JS partagé vers l'API (server/)
 ├── viewer3d.js           Aperçu 3D réel (three.js + occt-import-js pour le STEP)
 ├── vendor/               Dépendances front vendorisées (three.js, occt-import-js, intl-tel-input, boxtal-parcel-point-map)
+├── Caddyfile             Reverse proxy + URLs propres (voir Caddy.Dockerfile, image ghcr.io/nsapp44/nasap3d-caddy)
+├── docker-compose.yml    Toute la stack (db, api, caddy) — voir server/README.md "Déploiement (OVH)"
 ├── server/                API réelle (Fastify + TypeScript + PostgreSQL/Prisma)
 │   ├── PRICING.md         Formule de calcul de prix (détaillée, avec exemples)
 │   ├── SHIPPING.md         Intégration Boxtal
@@ -36,28 +38,30 @@ dans `server/`.
 
 ## Déploiement (OVH)
 
-`.github/workflows/docker-publish.yml` build et publie l'image de l'API sur GitHub Container
-Registry (`ghcr.io/nsapp44/nasap3d-api`) à chaque push sur `master` qui touche `server/`. Le
-serveur OVH n'a donc besoin que de Docker installé, pas de Node/npm/PrusaSlicer — il récupère
-l'image déjà construite :
+Deux images pré-construites, publiées sur GitHub Container Registry à chaque push sur `master` qui
+les concerne : `ghcr.io/nsapp44/nasap3d-api` (`.github/workflows/docker-publish.yml`, déclenché par
+`server/**`) et `ghcr.io/nsapp44/nasap3d-caddy` (`.github/workflows/docker-publish-caddy.yml`,
+déclenché par les fichiers du front-end + `Caddyfile`). Le serveur OVH n'a donc besoin que de Docker
+installé — pas de Node/npm/PrusaSlicer, et pas besoin non plus que le dépôt soit cloné/à jour sur
+l'hôte pour que le site soit servi, tout est déjà dans les images :
 
 ```bash
 cp server/.env.example server/.env   # remplir les variables de prod (voir server/README.md)
 docker compose --profile full pull
-docker compose --profile full up -d   # API sur :3000, PostgreSQL en conteneur
+docker compose --profile full up -d   # Caddy sur :80/:443, API en interne, PostgreSQL en conteneur
 ```
 
-C'est tout : le conteneur applique lui-même les migrations et le seed (catalogue matières/couleurs,
-compte admin) à chaque démarrage, avant de lancer l'API — pas de `npm install` ni de commande Prisma
-à lancer à la main sur le serveur, voir [`server/README.md`](server/README.md#déploiement-ovh).
+C'est tout : le conteneur API applique lui-même les migrations et le seed (catalogue
+matières/couleurs, compte admin) à chaque démarrage — pas de `npm install` ni de commande Prisma à
+lancer à la main sur le serveur, voir [`server/README.md`](server/README.md#déploiement-ovh).
 
-Le paquet GHCR est **public** (pas d'authentification nécessaire pour le `pull` depuis OVH), mais
-reste à rendre public manuellement après le tout premier push réussi (GitHub → *Packages* →
-`nasap3d-api` → *Package settings* → *Change visibility* → *Public*).
+Les deux paquets GHCR sont **publics** (pas d'authentification nécessaire pour le `pull` depuis
+OVH), mais chacun reste à rendre public manuellement après son tout premier push réussi (GitHub →
+*Packages* → `nasap3d-api` ou `nasap3d-caddy` → *Package settings* → *Change visibility* →
+*Public*).
 
-Le front-end statique (`*.dc.html`) est servi indépendamment de l'API — checklist de mise en
-prod complète (variables obligatoires, PrusaSlicer dans l'image Docker, PostgreSQL non managé par
-OVH) : voir [`server/README.md`](server/README.md#déploiement-ovh).
+Checklist de mise en prod complète (variables obligatoires, PrusaSlicer dans l'image Docker,
+PostgreSQL non managé par OVH) : voir [`server/README.md`](server/README.md#déploiement-ovh).
 
 Pour développer en local plutôt qu'en déployer, voir [`server/README.md`](server/README.md).
 

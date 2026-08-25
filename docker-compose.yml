@@ -58,7 +58,16 @@ services:
       - full
 
   caddy:
-    image: caddy:2-alpine
+    # Pré-construite (Caddyfile + front-end statique déjà copiés dedans,
+    # voir Caddy.Dockerfile) et publiée par
+    # .github/workflows/docker-publish-caddy.yml à chaque push sur master
+    # qui touche le front — `docker compose --profile full pull` suffit,
+    # pas besoin que le dépôt soit cloné/à jour sur le serveur pour que le
+    # site soit servi. `--build` reste possible en dev local.
+    image: ghcr.io/nsapp44/nasap3d-caddy:latest
+    build:
+      context: .
+      dockerfile: Caddy.Dockerfile
     restart: unless-stopped
     depends_on:
       - api
@@ -66,10 +75,6 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      # Lecture seule : Caddy ne sert que des fichiers statiques, jamais
-      # besoin d'écrire dans le dépôt.
-      - .:/srv:ro
       # Persistants entre redémarrages/redéploiements — sans ça, Caddy
       # redemande un certificat Let's Encrypt à chaque fois (risque de
       # rate-limit chez Let's Encrypt sur un domaine qui redéploie souvent).
