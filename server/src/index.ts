@@ -1,5 +1,14 @@
 import "dotenv/config";
-import { buildApp } from "./app.js";
+import { sanitizeEnv } from "./lib/sanitizeEnv.js";
+
+// Static imports are hoisted in ES modules — everything below would run
+// before a plain `import { buildApp } ...` here even if written after this
+// call, since import execution always happens first regardless of source
+// order. A dynamic import() is a real runtime statement, not hoisted, so
+// this is the only way to guarantee every other module sees already-clean
+// process.env values, including ones read at their own top level.
+sanitizeEnv();
+const { buildApp } = await import("./app.js");
 import { sweepExpiredQuoteFiles } from "./lib/quoteCleanup.js";
 import { sweepAbandonedCarts } from "./lib/cartCleanup.js";
 import { sweepOrderTracking } from "./lib/orderTracking.js";
