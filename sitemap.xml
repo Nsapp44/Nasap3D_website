@@ -1,59 +1,59 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://nasap3d.com/Home.dc.html</loc>
+    <loc>https://nasap3d.com/</loc>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://nasap3d.com/Devis%20Instantane.dc.html</loc>
+    <loc>https://nasap3d.com/devis-instantane</loc>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://nasap3d.com/Services.dc.html</loc>
+    <loc>https://nasap3d.com/services</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nasap3d.com/Machines.dc.html</loc>
+    <loc>https://nasap3d.com/machines</loc>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nasap3d.com/Realisations.dc.html</loc>
+    <loc>https://nasap3d.com/realisations</loc>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nasap3d.com/About.dc.html</loc>
+    <loc>https://nasap3d.com/a-propos</loc>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://nasap3d.com/Contact.dc.html</loc>
+    <loc>https://nasap3d.com/contact</loc>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://nasap3d.com/Nantes.dc.html</loc>
+    <loc>https://nasap3d.com/impression-3d-nantes</loc>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nasap3d.com/Cholet.dc.html</loc>
+    <loc>https://nasap3d.com/impression-3d-cholet</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://nasap3d.com/Angers.dc.html</loc>
+    <loc>https://nasap3d.com/impression-3d-angers</loc>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://nasap3d.com/CGU.dc.html</loc>
+    <loc>https://nasap3d.com/cgu</loc>
     <priority>0.1</priority>
   </url>
   <url>
-    <loc>https://nasap3d.com/Confidentialite.dc.html</loc>
+    <loc>https://nasap3d.com/confidentialite</loc>
     <priority>0.1</priority>
   </url>
   <url>
-    <loc>https://nasap3d.com/Cookies.dc.html</loc>
+    <loc>https://nasap3d.com/cookies</loc>
     <priority>0.1</priority>
   </url>
   <url>
-    <loc>https://nasap3d.com/MentionsLegales.dc.html</loc>
+    <loc>https://nasap3d.com/mentions-legales</loc>
     <priority>0.1</priority>
   </url>
 </urlset>
