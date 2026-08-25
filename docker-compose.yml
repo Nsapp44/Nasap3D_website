@@ -46,6 +46,15 @@ services:
       # uses the Linux binary server/Dockerfile actually installs, no
       # matter what's in the .env file used for local dev.
       PRUSASLICER_BIN: /usr/local/bin/prusa-slicer
+      # server/.env.example defaults to NODE_ENV=development (for `npm run
+      # dev`) — env_file above would otherwise silently override the
+      # Dockerfile's own `ENV NODE_ENV=production` with that dev value at
+      # container start (runtime env always wins over an image's baked-in
+      # ENV). This profile ("full") is the production/OVH deployment, so it
+      # must always be "production" here regardless of server/.env — this
+      # gates the hCaptcha fail-closed behavior and the Secure cookie flag
+      # (see src/lib/captcha.ts, session.ts, guestSession.ts).
+      NODE_ENV: production
     ports:
       # Loopback uniquement : une fois Caddy en place (service ci-dessous),
       # c'est lui la seule porte d'entrée publique (80/443, HTTPS). Exposer
