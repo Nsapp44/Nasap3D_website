@@ -16,6 +16,7 @@ import {
 import { publicUser } from "../lib/serialize.js";
 import { generateToken, hashToken } from "../lib/tokens.js";
 import { sendMail } from "../lib/mailer.js";
+import { renderEmailHtml, passwordResetContentHtml } from "../lib/emailTemplate.js";
 import { mergeGuestCartIntoUser } from "../lib/cart.js";
 import {
   createPendingSignupCode,
@@ -180,6 +181,7 @@ export async function authRoutes(app: FastifyInstance) {
         user.email,
         "Réinitialisation de votre mot de passe Nasap3D",
         `Cliquez sur ce lien pour choisir un nouveau mot de passe (valable 1h) : ${resetUrl}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez cet email.`,
+        renderEmailHtml("Réinitialisation de votre mot de passe Nasap3D", passwordResetContentHtml(resetUrl)),
       );
     }
     return reply.send({ ok: true });

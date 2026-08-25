@@ -2,6 +2,7 @@
 // or EXPERTISE -> REJECTED). Kept separate from routes/checkout.ts and
 // routes/admin.ts (both need these) rather than duplicated in either.
 import { sendMail } from "./mailer.js";
+import { renderEmailHtml, orderPlacedContentHtml, orderAcceptedContentHtml, orderRejectedContentHtml } from "./emailTemplate.js";
 
 function frontUrl() {
   return process.env.FRONT_URL || "http://localhost:8080";
@@ -16,10 +17,12 @@ function eur(cents: number) {
 // and is queued for a feasibility check.
 export async function sendOrderPlacedEmail(to: string, ref: string, totalCents: number) {
   try {
+    const accountUrl = `${frontUrl()}/Account.dc.html`;
     await sendMail(
       to,
       `Commande ${ref} reçue — expertise en cours`,
-      `Nous avons bien reçu votre commande ${ref} (${eur(totalCents)}).\n\nAvant tout paiement, nous vérifions que votre pièce peut être réalisée telle quelle (24 à 48h maximum). Vous recevrez un email dès que ce sera fait, avec le lien pour régler le paiement — si vous ne recevez rien passé ce délai, n'hésitez pas à revenir voir votre compte.\n\nSuivez l'avancement depuis votre compte : ${frontUrl()}/Account.dc.html`,
+      `Nous avons bien reçu votre commande ${ref} (${eur(totalCents)}).\n\nAvant tout paiement, nous vérifions que votre pièce peut être réalisée telle quelle (24 à 48h maximum). Vous recevrez un email dès que ce sera fait, avec le lien pour régler le paiement — si vous ne recevez rien passé ce délai, n'hésitez pas à revenir voir votre compte.\n\nSuivez l'avancement depuis votre compte : ${accountUrl}`,
+      renderEmailHtml(`Commande ${ref} reçue`, orderPlacedContentHtml(ref, eur(totalCents), accountUrl)),
     );
   } catch (err) {
     console.error("[orderEmails] order-placed email failed", err);
@@ -30,10 +33,12 @@ export async function sendOrderPlacedEmail(to: string, ref: string, totalCents: 
 // customer can now pay (button in their account).
 export async function sendOrderAcceptedEmail(to: string, ref: string, totalCents: number) {
   try {
+    const accountUrl = `${frontUrl()}/Account.dc.html`;
     await sendMail(
       to,
       `Commande ${ref} acceptée — paiement à finaliser`,
-      `Bonne nouvelle : votre commande ${ref} (${eur(totalCents)}) a été validée après expertise.\n\nIl ne reste plus qu'à régler le paiement pour lancer la production — direction votre compte : ${frontUrl()}/Account.dc.html\n\nÀ bientôt !`,
+      `Bonne nouvelle : votre commande ${ref} (${eur(totalCents)}) a été validée après expertise.\n\nIl ne reste plus qu'à régler le paiement pour lancer la production — direction votre compte : ${accountUrl}\n\nÀ bientôt !`,
+      renderEmailHtml(`Commande ${ref} acceptée`, orderAcceptedContentHtml(ref, eur(totalCents), accountUrl)),
     );
   } catch (err) {
     console.error("[orderEmails] order-accepted email failed", err);
@@ -45,10 +50,12 @@ export async function sendOrderAcceptedEmail(to: string, ref: string, totalCents
 // explaining why in the email itself (the reason is discussed by reply).
 export async function sendOrderRejectedEmail(to: string, ref: string) {
   try {
+    const contactUrl = `${frontUrl()}/Contact.dc.html`;
     await sendMail(
       to,
       `Commande ${ref} — problème de faisabilité`,
-      `Après examen, nous ne sommes malheureusement pas en mesure de réaliser votre commande ${ref} telle quelle.\n\nAucun paiement n'a été prélevé. Répondez à cet email ou passez par le formulaire de contact (${frontUrl()}/Contact.dc.html) en indiquant le numéro de commande — nous serons ravis d'en discuter et de voir ce qui est possible.`,
+      `Après examen, nous ne sommes malheureusement pas en mesure de réaliser votre commande ${ref} telle quelle.\n\nAucun paiement n'a été prélevé. Répondez à cet email ou passez par le formulaire de contact (${contactUrl}) en indiquant le numéro de commande — nous serons ravis d'en discuter et de voir ce qui est possible.`,
+      renderEmailHtml(`Commande ${ref} — problème de faisabilité`, orderRejectedContentHtml(ref, contactUrl)),
     );
   } catch (err) {
     console.error("[orderEmails] order-rejected email failed", err);

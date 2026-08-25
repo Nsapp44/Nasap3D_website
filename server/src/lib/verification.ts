@@ -1,6 +1,7 @@
 import { prisma } from "./prisma.js";
 import { hashToken, generateNumericCode } from "./tokens.js";
 import { sendMail } from "./mailer.js";
+import { renderEmailHtml, verificationCodeContentHtml } from "./emailTemplate.js";
 import type { VerificationPurpose } from "@prisma/client";
 
 // Shared lifetime for every 6-digit code in the app (signup, email change,
@@ -39,7 +40,12 @@ export async function createAndSendVerificationCode(
     },
   });
   try {
-    await sendMail(recipientEmail, subject, `${bodyIntro}\n\nVotre code de vérification : ${code}\n\nIl est valable 3 minutes.`);
+    await sendMail(
+      recipientEmail,
+      subject,
+      `${bodyIntro}\n\nVotre code de vérification : ${code}\n\nIl est valable 3 minutes.`,
+      renderEmailHtml(subject, verificationCodeContentHtml(bodyIntro, code)),
+    );
   } catch (err) {
     console.error(`[verification] sendMail failed for purpose=${purpose}`, err);
   }
@@ -104,10 +110,12 @@ export async function createPendingSignupCode(email: string, payload: unknown): 
     },
   });
   try {
+    const intro = "Bienvenue chez Nasap3D ! Saisissez ce code pour créer votre compte.";
     await sendMail(
       email,
       "Votre code de vérification Nasap3D",
-      `Bienvenue chez Nasap3D ! Saisissez ce code pour créer votre compte.\n\nVotre code de vérification : ${code}\n\nIl est valable 3 minutes.`,
+      `${intro}\n\nVotre code de vérification : ${code}\n\nIl est valable 3 minutes.`,
+      renderEmailHtml("Votre code de vérification Nasap3D", verificationCodeContentHtml(intro, code)),
     );
   } catch (err) {
     console.error("[verification] sendMail failed for pending signup", err);
@@ -155,10 +163,12 @@ export async function resendPendingSignupCode(
     data: { codeHash: hashToken(code), attempts: 0, expiresAt },
   });
   try {
+    const intro = "Voici votre nouveau code de vérification.";
     await sendMail(
       email,
       "Votre code de vérification Nasap3D",
-      `Voici votre nouveau code de vérification : ${code}\n\nIl est valable 3 minutes.`,
+      `${intro}\n\nVotre code de vérification : ${code}\n\nIl est valable 3 minutes.`,
+      renderEmailHtml("Votre code de vérification Nasap3D", verificationCodeContentHtml(intro, code)),
     );
   } catch (err) {
     console.error("[verification] sendMail failed for pending signup resend", err);

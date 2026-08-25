@@ -5,6 +5,7 @@ import { prisma } from "../lib/prisma.js";
 import { isValidEmail } from "../lib/password.js";
 import { verifyCaptcha } from "../lib/captcha.js";
 import { sendMail } from "../lib/mailer.js";
+import { renderEmailHtml, contactNotificationContentHtml } from "../lib/emailTemplate.js";
 import { newFileKey, saveFile, readFileByKey } from "../lib/storage.js";
 import { requireAdmin } from "../lib/session.js";
 
@@ -75,13 +76,18 @@ export async function contactRoutes(app: FastifyInstance) {
       // misconfigured) must not turn into a 500 for someone who just
       // successfully submitted the form.
       try {
-        const attachmentLine = created.fileKey
-          ? `\n\nPièce jointe (${body.data.fileName}) : ${process.env.API_BASE_URL || "http://localhost:3000"}/admin/contact-messages/${created.id}/file (connecté en admin)`
-          : "";
+        const attachmentUrl = created.fileKey
+          ? `${process.env.API_BASE_URL || "http://localhost:3000"}/admin/contact-messages/${created.id}/file`
+          : undefined;
+        const attachmentLine = attachmentUrl ? `\n\nPièce jointe (${body.data.fileName}) : ${attachmentUrl} (connecté en admin)` : "";
         await sendMail(
           notify,
           `[Contact Nasap3D] ${body.data.subject}`,
           `De : ${body.data.name} <${body.data.email}>\n\n${body.data.message || "(pas de message)"}${attachmentLine}`,
+          renderEmailHtml(
+            `[Contact Nasap3D] ${body.data.subject}`,
+            contactNotificationContentHtml(body.data.name, body.data.email, body.data.subject, body.data.message || "(pas de message)", attachmentUrl),
+          ),
         );
       } catch (err) {
         request.log.error(err, "contact notification email failed");
