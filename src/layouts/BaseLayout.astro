@@ -21,6 +21,7 @@ const canonical = new URL(path, Astro.site).toString();
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" href="/assets/logo-icon.png" />
     <title>{title}</title>
     <meta name="description" content={description} />
     {noindex && <meta name="robots" content="noindex,nofollow" />}
@@ -33,7 +34,7 @@ const canonical = new URL(path, Astro.site).toString();
     <slot name="head" />
   </head>
   <body>
-    <div class="page-shell">
+    <div class={`page-shell${hideFooter ? " page-shell-flex" : ""}`}>
       <MobileNavToggle client:load />
       <Header currentPath={path} showAuthIcon={showAuthIcon} />
       <slot />
@@ -46,6 +47,13 @@ const canonical = new URL(path, Astro.site).toString();
   .page-shell {
     background: #161514;
     min-height: 100vh;
+  }
+  /* Réservé aux pages avec footer custom (404) qui ont besoin d'un vrai
+     flex column pour coller leur propre footer en bas — appliqué seulement
+     via hideFooter pour ne jamais affecter la largeur du contenu des
+     autres pages (un bug réel : le passer en global cassait max-width +
+     margin:auto sur toutes les pages, voir historique de commit). */
+  .page-shell-flex {
     display: flex;
     flex-direction: column;
   }
