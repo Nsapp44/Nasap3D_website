@@ -36,7 +36,7 @@ export async function sendMail(to: string, subject: string, body: string, html?:
     return;
   }
   await t.sendMail({
-    from: process.env.MAIL_FROM || "Nasap3D <noreply@nasap3d.com>",
+    from: process.env.MAIL_FROM || "Nasap3D <no-reply@nasap3d.com>",
     to,
     subject,
     text: body,
