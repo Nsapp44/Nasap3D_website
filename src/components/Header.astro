@@ -3,10 +3,10 @@ import NavAuthIcon from "./NavAuthIcon";
 
 interface Props {
   currentPath: string;
-  // Nantes/Cholet/Angers (les pages locales-SEO 100% statiques) n'ont
-  // jamais eu ni l'icône réglages ni le badge du panier dans l'ancien
-  // framework — écart préservé tel quel plutôt que "corrigé"
-  // silencieusement, pour une parité exacte.
+  // Nantes/Cholet/Angers n'avaient pas l'icône réglages dans l'ancien
+  // framework — écart volontairement préservé. Le badge du panier, lui,
+  // doit rester visible partout (signalé comme un vrai oubli, pas une
+  // différence voulue) — voir cart-count plus bas, non lié à cette prop.
   showAuthIcon?: boolean;
 }
 const { currentPath, showAuthIcon = true } = Astro.props;
@@ -60,7 +60,7 @@ const NAV_ITEMS = [
         <circle cx="19" cy="21" r="1"></circle>
         <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
       </svg>
-      {showAuthIcon && <span class="cart-count">0</span>}
+      <span class="cart-count">0</span>
     </a>
   </div>
 
