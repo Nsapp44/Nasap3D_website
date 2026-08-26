@@ -22,9 +22,12 @@
     if (document.getElementById(STYLE_ID)) return;
     var st = document.createElement('style');
     st.id = STYLE_ID;
+    // Chemins propres (/devis-instantane, /panier) — les hrefs littéraux en
+    // .dc.html ont été retirés de toutes les pages, ces sélecteurs ne
+    // matchaient donc plus rien depuis ce changement.
     st.textContent =
-      'html.' + CLS + ' a[href="Devis Instantane.dc.html"],' +
-      'html.' + CLS + ' a[href="Cart.dc.html"],' +
+      'html.' + CLS + ' a[href="/devis-instantane"],' +
+      'html.' + CLS + ' a[href="/panier"],' +
       'html.' + CLS + ' [data-quote-nav]{display:none !important}';
     (document.head || document.documentElement).appendChild(st);
   }

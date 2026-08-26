@@ -1,0 +1,14 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import CartPage from "../components/CartPage";
+---
+
+<BaseLayout title="Panier | Nasap3D" description="Panier." path="/panier" noindex>
+  <Fragment slot="head">
+    <link rel="stylesheet" href="/vendor/intl-tel-input/css/intlTelInput.min.css" />
+    <script is:inline src="/vendor/boxtal-parcel-point-map.js"></script>
+    <script is:inline src="/vendor/intl-tel-input/js/intlTelInputWithUtils.min.js"></script>
+  </Fragment>
+
+  <CartPage client:load />
+</BaseLayout>
