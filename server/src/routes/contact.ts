@@ -5,7 +5,7 @@ import { prisma } from "../lib/prisma.js";
 import { isValidEmail } from "../lib/password.js";
 import { verifyCaptcha } from "../lib/captcha.js";
 import { sendMail } from "../lib/mailer.js";
-import { renderEmailHtml, contactNotificationContentHtml } from "../lib/emailTemplate.js";
+import { renderEmailHtml, contactNotificationContentHtml, contactConfirmationContentHtml } from "../lib/emailTemplate.js";
 import { newFileKey, saveFile, readFileByKey } from "../lib/storage.js";
 import { checkLongWindowLimit } from "../lib/longWindowLimit.js";
 import { requireAdmin } from "../lib/session.js";
@@ -110,6 +110,21 @@ export async function contactRoutes(app: FastifyInstance) {
       } catch (err) {
         request.log.error(err, "contact notification email failed");
       }
+    }
+
+    // Accusé de réception à l'expéditeur — distinct de la notification admin
+    // ci-dessus (destinataire différent, contenu différent). Même principe :
+    // un souci SMTP ne doit jamais faire échouer la soumission du formulaire.
+    try {
+      const subjectLine = `Message bien reçu — ${body.data.subject}`;
+      await sendMail(
+        body.data.email,
+        subjectLine,
+        `Bonjour ${body.data.name},\n\nNous avons bien reçu votre message « ${body.data.subject} » et revenons vers vous dans les meilleurs délais.\n\nCeci est une confirmation automatique — inutile de renvoyer votre message.`,
+        renderEmailHtml(subjectLine, contactConfirmationContentHtml(body.data.name, body.data.subject)),
+      );
+    } catch (err) {
+      request.log.error(err, "contact confirmation email failed");
     }
 
     return reply.send({ ok: true });

@@ -177,6 +177,20 @@ export function orderRejectedContentHtml(ref: string, contactUrl: string): strin
   ].join("\n");
 }
 
+// Accusé de réception envoyé à l'expéditeur du formulaire de contact — texte
+// fixe, `name`/`subject` sont les deux seules valeurs issues du formulaire et
+// restent échappées comme partout ailleurs dans ce fichier.
+export function contactConfirmationContentHtml(name: string, subject: string): string {
+  return [
+    h1("Message bien reçu"),
+    p(`Bonjour ${escapeHtml(name)},`, { margin: "0 0 16px 0" }),
+    p(
+      `Nous avons bien reçu votre message${subject ? ` « ${escapeHtml(subject)} »` : ""} et revenons vers vous dans les meilleurs délais.`,
+    ),
+    p("Ceci est une confirmation automatique — inutile de renvoyer votre message.", { small: true, margin: "0" }),
+  ].join("\n");
+}
+
 // Contenu entièrement issu du formulaire public — chaque valeur doit être
 // échappée, un expéditeur du formulaire ne doit jamais pouvoir injecter du
 // HTML dans l'email reçu par l'admin.
