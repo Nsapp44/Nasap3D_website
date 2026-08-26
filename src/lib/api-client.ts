@@ -165,9 +165,6 @@ export const api = {
   async getQuoteEnabled() {
     return request<{ quoteEnabled: boolean }>("GET", "/quote-enabled");
   },
-  async getGoogleRating() {
-    return request("GET", "/google-rating");
-  },
   // ---- Admin ----
   async adminGetMaterials() {
     return request("GET", "/admin/materials");
