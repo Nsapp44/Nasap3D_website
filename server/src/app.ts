@@ -33,6 +33,19 @@ export async function buildApp(opts: { logger?: boolean } = {}) {
   // hCaptcha alone, with no independent limit on request volume.
   await app.register(rateLimit, { global: false });
 
+  // Every response here can vary per visitor (session cookie, guest cart
+  // id, admin auth) — an intermediary cache (a reverse proxy, a CDN) that
+  // doesn't specifically know to key its cache by cookie can otherwise
+  // serve one visitor's response (e.g. their cart) to a completely
+  // different visitor. Explicit "no-store" is a hard instruction any
+  // well-behaved cache must obey, rather than relying on every proxy in
+  // front of this API to correctly special-case cookie-scoped responses.
+  // Confirmed live: a visitor reported seeing another visitor's cart.
+  app.addHook("onSend", async (_request, reply, payload) => {
+    reply.header("Cache-Control", "private, no-store");
+    return payload;
+  });
+
   // Any error not already handled explicitly by a route (e.g. the DB being
   // unreachable) must never reach the client as a raw stack trace/message —
   // that leaks internals (file paths, connection strings, query shape).
