@@ -1,0 +1,40 @@
+---
+// Pas de BaseLayout ici : Admin.dc.html n'avait ni la nav publique ni le
+// footer du site — juste son propre header minimal (logo+badge ADMIN,
+// onglets Commandes/Stock, Déconnexion), reproduit tel quel dans AdminPage.
+import AdminPage from "../components/admin/AdminPage";
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" href="/assets/logo-icon.png" />
+    <title>Administration | Nasap3D</title>
+    <meta name="robots" content="noindex,nofollow" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <AdminPage client:load />
+  </body>
+</html>
+
+<style is:global>
+  body {
+    margin: 0;
+    background: #161514;
+    font-family: "Inter", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a {
+    color: #ff5a3c;
+  }
+  a:hover {
+    color: #ff7a5c;
+  }
+</style>

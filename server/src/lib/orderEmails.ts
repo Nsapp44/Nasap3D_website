@@ -77,7 +77,7 @@ export async function notifyAdminOrderToReview(ref: string, customerEmail: strin
     await sendMail(
       notify,
       `Nouvelle commande à expertiser — ${ref}`,
-      `Nouvelle commande sur nasap3d.com, en attente d'expertise (pas encore payée).\n\nRéférence : ${ref}\nClient : ${customerEmail}\nTotal si acceptée : ${eur(totalCents)}\n\nVoir dans l'admin : ${frontUrl()}/Admin.dc.html`,
+      `Nouvelle commande sur nasap3d.com, en attente d'expertise (pas encore payée).\n\nRéférence : ${ref}\nClient : ${customerEmail}\nTotal si acceptée : ${eur(totalCents)}\n\nVoir dans l'admin : ${frontUrl()}/admin`,
     );
   } catch (err) {
     console.error("[orderEmails] admin review notification failed", err);
@@ -92,7 +92,7 @@ export async function notifyAdminOrderPaid(ref: string, customerEmail: string | 
     await sendMail(
       notify,
       `Commande payée — ${ref} — ${eur(totalCents)}`,
-      `Commande payée sur nasap3d.com.\n\nRéférence : ${ref}\nClient : ${customerEmail || "(email inconnu)"}\nTotal : ${eur(totalCents)}\n\nVoir dans l'admin : ${frontUrl()}/Admin.dc.html`,
+      `Commande payée sur nasap3d.com.\n\nRéférence : ${ref}\nClient : ${customerEmail || "(email inconnu)"}\nTotal : ${eur(totalCents)}\n\nVoir dans l'admin : ${frontUrl()}/admin`,
     );
   } catch (err) {
     console.error("[orderEmails] admin paid notification failed", err);
