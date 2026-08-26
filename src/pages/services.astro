@@ -388,11 +388,14 @@ const INITIATION_TIERS = [
      "Nous contacter" quand le devis est en pause — le CSS scoped d'Astro ne
      traverse pas la frontière vers un composant client, donc cette règle
      doit sortir du scoping pour continuer à s'appliquer aux deux. */
-  :global(.cta-btn) {
+  :global(.cta-btn),
+  :global(.cta-btn:hover) {
     text-decoration: none;
+    color: #161514;
+  }
+  :global(.cta-btn) {
     display: inline-block;
     background: #ff5a3c;
-    color: #161514;
     font: 600 12px "Inter", sans-serif;
     padding: 10px 18px;
     border-radius: 6px;

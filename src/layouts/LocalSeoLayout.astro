@@ -179,11 +179,14 @@ const {
   /* :global() : rendu par QuoteCta (îlot React) pour pouvoir basculer vers
      "Nous contacter" quand le devis est en pause — le CSS scoped d'Astro ne
      traverse pas la frontière vers un composant client. */
-  :global(.cta-btn) {
+  :global(.cta-btn),
+  :global(.cta-btn:hover) {
     text-decoration: none;
+    color: #161514;
+  }
+  :global(.cta-btn) {
     display: inline-block;
     background: #ff5a3c;
-    color: #161514;
     font: 600 12.5px "Inter", sans-serif;
     padding: 11px 20px;
     border-radius: 7px;

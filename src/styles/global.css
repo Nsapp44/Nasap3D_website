@@ -178,6 +178,8 @@ a:hover {
    stylesheet rule) — same visual effect, plain CSS class instead. Used by
    every plain-text nav/footer link that scales+reddens on hover. */
 .nav-hover-scale {
+  text-decoration: none;
+  color: inherit;
   transition:
     transform 0.2s ease,
     color 0.2s ease;
