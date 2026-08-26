@@ -195,7 +195,13 @@ const DEVIS_INDEX = 2; // position d'origine de "Devis instantané" dans la nav
       transform: scale(1);
       padding: 8px 16px 14px;
     }
-    .nav-links > :global(*) {
+    /* Descendant (pas enfant direct) : QuoteNavLink est un îlot client,
+       Astro l'enveloppe dans son propre élément (astro-island) — un
+       sélecteur ">" ne l'atteint pas, ce qui laissait son survol/tap
+       zoomer comme sur desktop au lieu de rester figé comme les autres
+       liens du menu mobile. */
+    .nav-links :global(a),
+    .nav-links :global(span) {
       display: block;
       width: 100%;
       padding: 12px 4px;
@@ -203,7 +209,8 @@ const DEVIS_INDEX = 2; // position d'origine de "Devis instantané" dans la nav
       transition: none;
       transform: none;
     }
-    .nav-links > :global(*:hover) {
+    .nav-links :global(a:hover),
+    .nav-links :global(span:hover) {
       transform: none;
     }
     .nav-current {
