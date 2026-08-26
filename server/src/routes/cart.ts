@@ -20,7 +20,7 @@ export async function cartRoutes(app: FastifyInstance) {
     return reply.send(summary);
   });
 
-  app.post("/cart", async (request, reply) => {
+  app.post("/cart", { config: { rateLimit: { max: 30, timeWindow: "1 minute" } } }, async (request, reply) => {
     const schema = z.object({ quoteJobId: z.string(), qty: z.number().int().positive().max(2000).optional() });
     const body = schema.safeParse(request.body);
     if (!body.success) return reply.code(400).send({ error: "invalid_body" });
@@ -48,7 +48,7 @@ export async function cartRoutes(app: FastifyInstance) {
     return reply.code(201).send(summary);
   });
 
-  app.patch("/cart/:id", async (request, reply) => {
+  app.patch("/cart/:id", { config: { rateLimit: { max: 60, timeWindow: "1 minute" } } }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const schema = z.object({ qty: z.number().int().positive().max(2000) });
     const body = schema.safeParse(request.body);
@@ -67,7 +67,7 @@ export async function cartRoutes(app: FastifyInstance) {
     return reply.send(summary);
   });
 
-  app.delete("/cart/:id", async (request, reply) => {
+  app.delete("/cart/:id", { config: { rateLimit: { max: 30, timeWindow: "1 minute" } } }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const identity = await identityFor(request, reply);
     const item = await prisma.cartItem.findUnique({ where: { id } });

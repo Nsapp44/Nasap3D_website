@@ -203,7 +203,7 @@ export async function authRoutes(app: FastifyInstance) {
     },
   );
 
-  app.post("/auth/reset-password", async (request, reply) => {
+  app.post("/auth/reset-password", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (request, reply) => {
     const schema = z.object({ token: z.string(), newPassword: z.string() });
     const body = schema.safeParse(request.body);
     if (!body.success) return reply.code(400).send({ error: "invalid_body" });
