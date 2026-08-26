@@ -13,6 +13,14 @@ a:hover {
   color: #ff7a5c;
 }
 
+/* Paired with the inline script in BaseLayout.astro's <head> — hides
+   anything gated behind the quote-enabled flag before first paint when the
+   cached value says paused, instead of showing it then yanking it away a
+   moment later once React hydrates and corrects it. */
+html.n3d-quote-paused .n3d-quote-gate {
+  display: none !important;
+}
+
 /* PrinterLoaderIcon.tsx — animated "printer laying filament" loading icon,
    used by ContactForm (file upload + submit spinner) and QuoteWizard later. */
 .printer-loader-svg {

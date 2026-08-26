@@ -10,7 +10,7 @@ import { useQuoteEnabled } from "../hooks/useQuoteEnabled";
 export default function QuoteCta({ className, label = "Obtenir un devis instantané →" }: { className: string; label?: string }) {
   const { quoteEnabled } = useQuoteEnabled();
   return quoteEnabled ? (
-    <a href="/devis-instantane" className={className}>
+    <a href="/devis-instantane" className={`${className} n3d-quote-gate`}>
       {label}
     </a>
   ) : (

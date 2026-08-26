@@ -33,6 +33,27 @@ const canonical = new URL(path, Astro.site).toString();
       rel="stylesheet"
     />
     <slot name="head" />
+    <script is:inline>
+      // Every page is static HTML (output: 'static', no per-request SSR) —
+      // it always bakes in the optimistic "quote enabled" default for
+      // anything gated by useQuoteEnabled, since sessionStorage doesn't
+      // exist at build time. When the flag is actually paused, that static
+      // markup is visibly wrong for the split-second between first paint
+      // and the React island hydrating and correcting it — worse than a
+      // typical hydration flash because it reads as "it works, then it
+      // doesn't" rather than a neutral loading state. This runs before the
+      // body is even parsed (classic flash-of-wrong-theme pattern) and
+      // hides anything marked .n3d-quote-gate immediately if the last known
+      // value (see useQuoteEnabled) says paused — React's own hydration
+      // then renders the same correct state, so there's nothing to
+      // reconcile. A first-ever visit (no cached value yet) still shows the
+      // optimistic default for one page, same trade-off as before.
+      try {
+        if (sessionStorage.getItem("nasap3d-quote-enabled") === "false") {
+          document.documentElement.classList.add("n3d-quote-paused");
+        }
+      } catch {}
+    </script>
   </head>
   <body>
     <div class={`page-shell${hideFooter ? " page-shell-flex" : ""}`}>

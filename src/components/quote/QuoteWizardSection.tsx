@@ -28,5 +28,14 @@ export default function QuoteWizardSection() {
     );
   }
 
-  return <QuoteWizard />;
+  // Wrapped (not just returned bare) so the pre-hydration static markup —
+  // always this branch, see useQuoteEnabled — can be hidden by the
+  // n3d-quote-gate mechanism when the cached flag says paused, instead of
+  // showing a working wizard for a moment on a page that's actually paused.
+  // The paused branch above is never tagged, so it's unaffected either way.
+  return (
+    <div className="n3d-quote-gate" style={{ display: "contents" }}>
+      <QuoteWizard />
+    </div>
+  );
 }

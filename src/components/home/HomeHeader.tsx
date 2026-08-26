@@ -85,7 +85,7 @@ export default function HomeHeader() {
           </a>
         ))}
         {quoteEnabled && (
-          <a href="/devis-instantane" className="nav-hover-scale">
+          <a href="/devis-instantane" className="nav-hover-scale n3d-quote-gate">
             Devis instantané
           </a>
         )}

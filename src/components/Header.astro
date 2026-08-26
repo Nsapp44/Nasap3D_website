@@ -48,7 +48,9 @@ const DEVIS_INDEX = 2; // position d'origine de "Devis instantané" dans la nav
         ),
       )
     }
-    <QuoteNavLink isCurrent={currentPath === "/devis-instantane"} client:load />
+    <span class="n3d-quote-gate" style="display:contents">
+      <QuoteNavLink isCurrent={currentPath === "/devis-instantane"} client:load />
+    </span>
     {
       NAV_ITEMS.slice(DEVIS_INDEX).map((item) =>
         item.href === currentPath ? (
