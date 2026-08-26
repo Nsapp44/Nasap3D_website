@@ -328,10 +328,27 @@ export function useQuoteWizard() {
     setFileState(f);
     setFileError(null);
   }
+  // Also re-runs on `step`, not just `file`: previewRef's DOM node only
+  // exists while step 1 is showing (see QuoteWizard.tsx's JSX), so coming
+  // back to step 1 via goStep() needs a fresh render into the newly
+  // (re)mounted node too, not just the initial upload. A useEffect — not a
+  // setTimeout(fn, 0) — is what actually guarantees the DOM has committed
+  // first: a bare setTimeout races the render/commit and can fire before
+  // the ref is attached, silently rendering into nothing (confirmed live:
+  // this was exactly what made step 3's "Analyse terminée" preview show an
+  // empty box before this fix).
   useEffect(() => {
-    if (file) renderPreview();
+    if (file && step === 1) renderPreview();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [file]);
+  }, [file, step]);
+
+  // Same reasoning as above, for the step-3 analysis preview: its DOM node
+  // only exists once analysisReady is true (see QuoteWizard.tsx), so this
+  // must wait for that commit rather than a same-tick setTimeout.
+  useEffect(() => {
+    if (step === 3 && analysisReady) renderAnalysisPreview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, analysisReady]);
 
   function dropFile() {
     if (file) return;
@@ -405,27 +422,25 @@ export function useQuoteWizard() {
     setAnalyzing(false);
     setAnalysisReady(true);
     setQuote((res.data as { quote: QuoteResult }).quote);
-    setTimeout(renderAnalysisPreview, 0);
+    // Preview render is handled by the [step, analysisReady] effect above —
+    // it needs the step-3 DOM node to exist first, which this setState
+    // batch hasn't committed yet at this point in the function.
   }
 
   function next() {
     if (step === 1 && !scaleFitsPrinter()) return;
     const nextStep = Math.min(4, step + 1);
     setStep(nextStep);
-    if (nextStep === 3) {
-      if (!analysisReady && !analyzing) submitQuote();
-      else if (analysisReady) setTimeout(renderAnalysisPreview, 0);
-    }
+    if (nextStep === 3 && !analysisReady && !analyzing) submitQuote();
+    // Re-entering step 3 with analysisReady already true is handled by the
+    // [step, analysisReady] effect above (step changing is enough to
+    // re-trigger it here, since analysisReady doesn't change in that case).
   }
   function goStep(n: number) {
     if (n >= step) return;
     setStep(n);
-    // Going back to step 1 remounts previewRef's DOM node (the step-1
-    // subtree is removed/re-added) — the old renderer's canvas was in the
-    // now-destroyed node, so without a fresh render the viewer comes back
-    // black. Nothing here resets file/color/scale, so every choice
-    // survives going back.
-    if (n === 1 && file) setTimeout(renderPreview, 0);
+    // Re-rendering into step 1's remounted previewRef node is handled by
+    // the [file, step] effect above.
   }
   function retryAnalysis() {
     setAnalysisError(null);
