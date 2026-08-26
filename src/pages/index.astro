@@ -1,31 +1,463 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import HomeHeader from "../components/home/HomeHeader";
+import MeshBackground from "../components/home/MeshBackground";
+import NPrintLogo from "../components/home/NPrintLogo";
+import ServicesGrid from "../components/home/ServicesGrid";
+import RealisationsCarousel from "../components/home/RealisationsCarousel";
+import HomeReviewsCarousel from "../components/home/HomeReviewsCarousel";
+import QuoteWizardSection from "../components/quote/QuoteWizardSection";
+import ContactForm from "../components/ContactForm";
+import ContactMap from "../components/ContactMap";
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  name: "Nasap3D",
+  image: "https://nasap3d.com/assets/logo.png",
+  url: "https://nasap3d.com/",
+  telephone: "+33661430506",
+  email: "nasap3D@gmail.com",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "29 rue Mellier",
+    postalCode: "44100",
+    addressLocality: "Nantes",
+    addressCountry: "FR",
+  },
+  geo: { "@type": "GeoCoordinates", latitude: 47.21023, longitude: -1.580297 },
+  areaServed: ["Nantes", "Cholet", "Angers"],
+  priceRange: "€€",
+};
 ---
 
-<BaseLayout title="Nasap3D — migration en cours" description="Page d'accueil en cours de migration" path="/">
-  <div class="placeholder">
-    <h1>Accueil — pas encore migré</h1>
-    <p>
-      C'est la dernière page du plan de migration (elle réutilise l'assistant de devis et le formulaire de contact,
-      construits d'abord). Le vrai site continue de tourner sur l'ancien framework en attendant.
-    </p>
+<BaseLayout
+  title="Impression 3D à Nantes — Devis Instantané en Ligne | Nasap3D"
+  description="Nasap3D, atelier d'impression 3D à Nantes : devis instantané en ligne avec prix calculé sur votre fichier, prototypage, pièces et petites séries, livraison en France."
+  path="/"
+  hideHeader
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script is:inline src="https://js.hcaptcha.com/1/api.js?render=explicit&hl=fr" async defer></script>
+  </Fragment>
+
+  <HomeHeader client:load />
+
+  <div id="sec-accueil" class="hero-wrap">
+    <MeshBackground client:load />
+    <div class="hero-fade"></div>
+    <div class="hero-content">
+      <div class="hero-title">As soon as possible.<br />Sans compromis sur la qualité.</div>
+      <div class="hero-subtitle">
+        Prototypage, rétro-conception, maquettage, petites séries. Le savoir-faire artisan, la cadence d'un atelier
+        outillé — à Nantes.
+      </div>
+      <div class="hero-ctas">
+        <a href="/devis-instantane" class="hero-cta-primary">Obtenir un devis instantané</a>
+        <a href="#sec-services" class="hero-cta-secondary">Nos services</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="section section-alt configurator-section">
+    <div class="section-inner">
+      <div class="eyebrow">Devis instantané</div>
+      <QuoteWizardSection client:load />
+    </div>
+  </div>
+
+  <div class="section section-alt banner-section">
+    <div class="section-inner">
+      <a href="/devis-instantane" class="advice-banner">
+        <div>
+          <div class="advice-title">Besoin d'aide pour choisir vos réglages ?</div>
+          <div class="advice-text">Remplissage, qualité, taille max, matériau — le guide complet + devis détaillé.</div>
+        </div>
+        <div class="advice-link">Voir les conseils →</div>
+      </a>
+    </div>
+  </div>
+
+  <div id="sec-services" class="section">
+    <div class="section-inner">
+      <div class="eyebrow">Nos services</div>
+      <div class="eyebrow-sub">Chaque prestation a sa page dédiée</div>
+      <ServicesGrid client:load />
+    </div>
+  </div>
+
+  <div class="section section-alt">
+    <div class="section-inner">
+      <HomeReviewsCarousel idPrefix="nasap-google-home" client:load />
+    </div>
+  </div>
+
+  <div id="sec-apropos" class="section about-section">
+    <div class="section-inner about-grid">
+      <NPrintLogo client:load />
+      <div>
+        <div class="eyebrow">Qui sommes-nous</div>
+        <div class="about-title">Nasap3D — artisan de l'impression 3D</div>
+        <div class="about-text">
+          Nasap3D est né en 2022 à Nantes, du croisement entre savoir-faire artisanal et technologie d'impression 3D.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sec-realisations" class="section section-alt">
+    <div class="section-inner">
+      <div class="eyebrow">Réalisations</div>
+      <RealisationsCarousel client:load />
+    </div>
+  </div>
+
+  <div id="sec-machines" class="section">
+    <div class="section-inner">
+      <div class="eyebrow">Parc machine</div>
+      <div class="machines-subhead">Impression 3D</div>
+      <div class="machines-grid-3">
+        <div class="machine-card">
+          <div class="machine-img" style="background-image:url('/assets/machine-h2c.jpg')"></div>
+          <div class="machine-name">Bambu Lab H2C<span class="machine-qty">x2</span></div>
+        </div>
+        <div class="machine-card">
+          <div class="machine-img" style="background-image:url('/assets/machine-x2d.jpg')"></div>
+          <div class="machine-name">Bambu Lab X2D</div>
+        </div>
+        <div class="machine-card">
+          <div class="machine-img" style="background-image:url('/assets/machine-x1c.jpg')"></div>
+          <div class="machine-name">Bambu Lab X1C</div>
+        </div>
+      </div>
+
+      <div class="machines-subhead">Autres machines de l'atelier</div>
+      <div class="machines-grid-5">
+        <div class="machine-card">
+          <div class="machine-img machine-img-tall" style="background-image:url('/assets/machine-sla.jpg')"></div>
+          <div class="machine-name-sm">Imprimante SLA résine</div>
+        </div>
+        <div class="machine-card">
+          <div class="machine-img machine-img-tall" style="background-image:url('/assets/machine-xtool-s1.png')"></div>
+          <div class="machine-name-sm">Découpeuse laser - XTOOL S1 Diode/UV</div>
+        </div>
+        <div class="machine-card">
+          <div class="machine-img machine-img-tall" style="background-image:url('/assets/machine-laser-fibre.jpg')"></div>
+          <div class="machine-name-sm">Découpeuse laser - Fibre 20w</div>
+        </div>
+        <div class="machine-card">
+          <div class="machine-img machine-img-tall" style="background-image:url('/assets/machine-cricut.jpg')"></div>
+          <div class="machine-name-sm">Cricut - découpe vinyle, stickers, plastique</div>
+        </div>
+        <div class="machine-card">
+          <div class="machine-img machine-img-tall" style="background-image:url('/assets/machine-presse.png')"></div>
+          <div class="machine-name-sm">Presse à chaud - transfert vinyle &amp; sublimation</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sec-contact" class="section section-alt">
+    <div class="section-inner contact-grid">
+      <div>
+        <div class="eyebrow">Contact</div>
+        <ContactForm client:load />
+      </div>
+      <div class="contact-info">
+        <div class="contact-info-title">Nasap3D</div>
+        29 rue Mellier, 44100 Nantes<br />06 61 43 05 06<br />nasap3D@gmail.com
+        <div class="contact-map">
+          <ContactMap height="300px" client:load />
+        </div>
+      </div>
+    </div>
   </div>
 </BaseLayout>
 
 <style>
-  .placeholder {
-    padding: 80px 24px;
-    max-width: 640px;
-    margin: 0 auto;
+  .hero-wrap {
+    position: relative;
+    overflow: hidden;
+    padding: 56px 24px 40px;
     text-align: center;
+    background: #161514;
+  }
+  .hero-fade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 90px;
+    background: linear-gradient(to bottom, transparent, #161514);
+    z-index: 1;
+    pointer-events: none;
+  }
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .hero-title {
+    font: 700 40px/1.12 "Space Grotesk", sans-serif;
     color: #f3f1ec;
-    font-family: "Inter", sans-serif;
+    margin-bottom: 16px;
   }
-  .placeholder h1 {
-    font-family: "Space Grotesk", sans-serif;
+  .hero-subtitle {
+    font: 400 13.5px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+    max-width: 520px;
+    margin: 0 auto 24px;
   }
-  .placeholder p {
-    color: rgba(255, 255, 255, 0.6);
-    line-height: 1.6;
+  .hero-ctas {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 34px;
+  }
+  .hero-cta-primary,
+  .hero-cta-secondary {
+    text-decoration: none;
+    font: 600 13px "Inter", sans-serif;
+    padding: 12px 22px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .hero-cta-primary {
+    background: #ff5a3c;
+    color: #161514;
+  }
+  .hero-cta-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(255, 90, 60, 0.35);
+  }
+  .hero-cta-secondary {
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: #1e1c1a;
+    color: #f3f1ec;
+    font-weight: 500;
+  }
+  .hero-cta-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+    border-color: #ff5a3c;
+  }
+
+  .section {
+    padding: 44px 24px;
+    background: #161514;
+  }
+  .section-alt {
+    background: #141312;
+  }
+  .configurator-section,
+  .banner-section {
+    padding: 40px 24px;
+  }
+  .banner-section {
+    padding-top: 0;
+  }
+  .section-inner {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .eyebrow {
+    font: 600 11.5px "Inter", sans-serif;
+    color: #ff5a3c;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .eyebrow-sub {
+    font: 400 11.5px "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 18px;
+  }
+  .configurator-section .eyebrow {
+    margin-bottom: 20px;
+  }
+
+  .advice-banner {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border: 1px solid rgba(255, 90, 60, 0.35);
+    background: rgba(255, 90, 60, 0.1);
+    border-radius: 10px;
+    padding: 20px 24px;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+  .advice-banner:hover {
+    border-color: #ff5a3c;
+    transform: scale(1.02);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
+  }
+  .advice-title {
+    font: 700 14px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 3px;
+  }
+  .advice-text {
+    font: 400 11px/1.5 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+  }
+  .advice-link {
+    font: 600 11px "Inter", sans-serif;
+    color: #ff5a3c;
+    white-space: nowrap;
+    width: fit-content;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    transition: padding 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+  }
+  .advice-banner:hover .advice-link {
+    padding: 6px 12px;
+    border-color: #ff5a3c;
+    background: rgba(255, 90, 60, 0.1);
+  }
+
+  .about-grid {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 24px;
+    align-items: center;
+  }
+  .about-title {
+    font: 700 19px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 8px;
+  }
+  .about-text {
+    font: 400 12px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.5);
+    max-width: 520px;
+  }
+
+  .machines-subhead {
+    font: 600 9.5px "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 10px;
+  }
+  .machines-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 26px;
+  }
+  .machines-grid-5 {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+  .machine-card {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #1a1917;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+  }
+  .machine-card:hover {
+    border-color: #ff5a3c;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+    transform: translateY(-3px);
+  }
+  .machine-img {
+    aspect-ratio: 1/1;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .machine-img-tall {
+    aspect-ratio: auto;
+    height: 185px;
+  }
+  .machine-name {
+    padding: 10px 12px;
+    font: 600 11px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .machine-qty {
+    font: 700 8.5px "Inter", sans-serif;
+    color: #ff5a3c;
+    background: rgba(255, 90, 60, 0.12);
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
+  .machine-name-sm {
+    padding: 10px 12px;
+    font: 600 10.5px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    line-height: 1.3;
+  }
+
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+  }
+  .contact-info {
+    font: 400 11.5px/1.8 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .contact-info-title {
+    font: 600 13px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 8px;
+  }
+  .contact-map {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 16px;
+    box-sizing: border-box;
+  }
+
+  @media (max-width: 900px) {
+    .machines-grid-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .machines-grid-5 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .about-grid {
+      grid-template-columns: 1fr;
+      text-align: center;
+    }
+    .contact-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 640px) {
+    .machines-grid-3 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .machines-grid-5 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 480px) {
+    .hero-title {
+      font-size: 28px;
+    }
+  }
+  @media (max-width: 420px) {
+    .machines-grid-3,
+    .machines-grid-5 {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

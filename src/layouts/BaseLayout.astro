@@ -11,8 +11,9 @@ interface Props {
   showAuthIcon?: boolean;
   noindex?: boolean;
   hideFooter?: boolean;
+  hideHeader?: boolean;
 }
-const { title, description, path, showAuthIcon, noindex = false, hideFooter = false } = Astro.props;
+const { title, description, path, showAuthIcon, noindex = false, hideFooter = false, hideHeader = false } = Astro.props;
 const canonical = new URL(path, Astro.site).toString();
 ---
 
@@ -36,7 +37,7 @@ const canonical = new URL(path, Astro.site).toString();
   <body>
     <div class={`page-shell${hideFooter ? " page-shell-flex" : ""}`}>
       <MobileNavToggle client:load />
-      <Header currentPath={path} showAuthIcon={showAuthIcon} />
+      {!hideHeader && <Header currentPath={path} showAuthIcon={showAuthIcon} />}
       <slot />
       {!hideFooter && <Footer />}
     </div>

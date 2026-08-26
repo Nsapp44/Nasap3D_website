@@ -26,15 +26,10 @@
 	@blocked path /server/* /.git/* /.env* /docker-compose.yml /Caddyfile
 	respond @blocked 404
 
-	@home path /
-	rewrite @home /Home.dc.html
-
-	# /services, /machines, /realisations, /a-propos, /cgu, /confidentialite,
-	# /cookies, /mentions-legales, /impression-3d-{nantes,cholet,angers},
-	# /contact, /panier, /admin, /devis-instantane, /compte, 404 :
-	# migrées vers Astro (voir C:\Users\Nolann\.claude\plans\idempotent-shimmying-swan.md),
-	# plus besoin de rewrite ici — le build Astro produit déjà ces chemins
-	# directement dans /srv (fichiers statiques, pas de réécriture requise).
+	# Toutes les pages sont migrées vers Astro (voir
+	# C:\Users\Nolann\.claude\plans\idempotent-shimmying-swan.md) — plus
+	# besoin de rewrite ici, le build Astro produit déjà les bons chemins
+	# directement dans /srv (fichiers statiques, aucune réécriture requise).
 
 	handle_errors {
 		rewrite * /404.html

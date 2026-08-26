@@ -11,7 +11,7 @@ const NASAP3D_COORDS: [number, number] = [47.21023, -1.580297];
 // Leaflet map centered on the workshop — ported from Contact.dc.html's
 // _initMap(). Leaflet itself stays a CDN <script>/<link> (see contact.astro),
 // not bundled, matching the original.
-export default function ContactMap() {
+export default function ContactMap({ height = "420px" }: { height?: string }) {
   const mapElRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -66,5 +66,5 @@ export default function ContactMap() {
     };
   }, []);
 
-  return <div ref={mapElRef} style={{ width: "100%", height: "420px" }} />;
+  return <div ref={mapElRef} style={{ width: "100%", height }} />;
 }
