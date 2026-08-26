@@ -19,14 +19,29 @@ export default function CartLineThumbnail({ quoteJobId, fileName, colorHex }: { 
   useEffect(() => {
     if (!renderable) return;
     let cancelled = false;
-    fetch(api.quoteFileUrl(quoteJobId), { credentials: "include" })
-      .then((res) => (res.ok ? res.arrayBuffer() : null))
-      .then((buf) => {
+    // One retry after a transient failure — reported live as "sometimes
+    // doesn't load after navigating quickly": a single dropped/failed fetch
+    // (e.g. a request cancelled mid-flight by the browser's own connection
+    // limit while other page assets are also loading) otherwise leaves the
+    // thumbnail permanently blank for that page load, with nothing to
+    // prompt a second attempt.
+    async function load(attempt = 0) {
+      try {
+        const res = await fetch(api.quoteFileUrl(quoteJobId), { credentials: "include" });
+        if (cancelled) return;
+        if (!res.ok) throw new Error(String(res.status));
+        const buf = await res.arrayBuffer();
         if (!cancelled) setBuffer(buf);
-      })
-      .catch(() => {
-        if (!cancelled) setBuffer(null);
-      });
+      } catch {
+        if (cancelled) return;
+        if (attempt < 1) {
+          setTimeout(() => load(attempt + 1), 600);
+        } else {
+          setBuffer(null);
+        }
+      }
+    }
+    load();
     return () => {
       cancelled = true;
     };
