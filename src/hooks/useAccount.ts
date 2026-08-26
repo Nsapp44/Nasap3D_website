@@ -98,8 +98,14 @@ export function useAccount() {
   const [pendingSignupId, setPendingSignupId] = useState<string | null>(null);
   const [, forceTick] = useState(0);
 
-  const [payBusy, setPayBusy] = useState(false);
-  const [cancelOrderPopup, setCancelOrderPopup] = useState(false);
+  // Which order's "Payer avec Stripe" button is mid-redirect, if any — a
+  // plain boolean would light up every pay button at once when a customer
+  // has several orders awaiting payment.
+  const [payBusyId, setPayBusyId] = useState<string | null>(null);
+  // Holds the id of the order the popup targets, not just whether it's
+  // open — needed now that a customer can have several cancellable orders
+  // at once (see activeOrders below), each with its own "Annuler" button.
+  const [cancelOrderPopup, setCancelOrderPopup] = useState<string | null>(null);
   const [cancelBusy, setCancelBusy] = useState(false);
 
   // Kept here (not local to SettingsPanel) because resendCode() below needs
@@ -417,26 +423,30 @@ export function useAccount() {
     setDeletePwd("");
   }
 
-  const activeOrder = orders.find((o) => o.status !== "DELIVERED") || null;
+  // Every order still worth showing an action card for — not just the
+  // single most-recent one. A customer can have several orders awaiting
+  // payment at once (e.g. two separate expertise quotes accepted around
+  // the same time) and each needs its own visible "Payer avec Stripe".
+  const activeOrders = orders.filter((o) => o.status !== "DELIVERED");
 
-  async function payActiveOrder() {
-    if (payBusy || !activeOrder) return;
-    setPayBusy(true);
-    const res = await api.payOrder(activeOrder.id);
+  async function payOrder(orderId: string) {
+    if (payBusyId) return;
+    setPayBusyId(orderId);
+    const res = await api.payOrder(orderId);
     const data = res.data as { url?: string } | null;
     if (!res.ok || !data?.url) {
-      setPayBusy(false);
+      setPayBusyId(null);
       window.alert("Le paiement n'a pas pu démarrer, réessayez.");
       return;
     }
     window.location.href = data.url;
   }
   async function confirmCancelOrder() {
-    if (cancelBusy || !activeOrder) return;
+    if (cancelBusy || !cancelOrderPopup) return;
     setCancelBusy(true);
-    const res = await api.cancelOrder(activeOrder.id);
+    const res = await api.cancelOrder(cancelOrderPopup);
     setCancelBusy(false);
-    setCancelOrderPopup(false);
+    setCancelOrderPopup(null);
     if (!res.ok) {
       window.alert("La commande n'a pas pu être annulée, réessayez.");
       return;
@@ -460,7 +470,7 @@ export function useAccount() {
     setResetToken,
     orders,
     invoices,
-    activeOrder,
+    activeOrders,
     popupMessage,
     popupConfirm,
     setPopupMessage,
@@ -484,8 +494,8 @@ export function useAccount() {
     logout,
     goSettings,
     goDashboard,
-    payBusy,
-    payActiveOrder,
+    payBusyId,
+    payOrder,
     cancelOrderPopup,
     setCancelOrderPopup,
     cancelBusy,

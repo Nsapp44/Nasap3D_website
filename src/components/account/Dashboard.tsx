@@ -30,14 +30,7 @@ const ORDER_STEPS = ["Expertise", "Paiement", "Payée", "En impression", "Expéd
 const STEP_IDX: Record<string, number> = { EXPERTISE: 0, AWAITING_PAYMENT: 1, PENDING: 2, PRINTING: 3, READY: 4 };
 
 export default function Dashboard({ account }: { account: Account }) {
-  const { activeOrder, orders, invoices, authEmail, customerNo, checkoutNotice, goSettings, logout } = account;
-  const activeOrderIsRejected = !!activeOrder && activeOrder.status === "REJECTED";
-  const activeOrderIsExpertise = !!activeOrder && activeOrder.status === "EXPERTISE";
-  const activeOrderIsAwaitingPayment = !!activeOrder && activeOrder.status === "AWAITING_PAYMENT";
-  const activeOrderIsPickup = !!activeOrder && activeOrder.shippingMode === "PICKUP";
-  const activeOrderShowsTracking = !!activeOrder && !!activeOrder.shippingMode && activeOrder.shippingMode !== "PICKUP" && !["EXPERTISE", "AWAITING_PAYMENT"].includes(activeOrder.status);
-  const stepIdx = activeOrder ? (STEP_IDX[activeOrder.status] ?? 0) : 0;
-  const stepProgressPct = ORDER_STEPS.length > 1 ? Math.round((stepIdx / (ORDER_STEPS.length - 1)) * 100) : 0;
+  const { activeOrders, orders, invoices, authEmail, customerNo, checkoutNotice, goSettings, logout } = account;
 
   return (
     <div className="dash">
@@ -88,69 +81,83 @@ export default function Dashboard({ account }: { account: Account }) {
         </div>
       </div>
 
-      {activeOrder && (
+      {activeOrders.length > 0 && (
         <>
-          <div className="section-label">Commande en cours</div>
-          <div className="active-order-card">
-            <div className="active-order-head">
-              <div className="active-order-ref">Commande #{activeOrder.ref}</div>
-              <div className="active-order-desc">{activeOrder.items.map((i) => `${i.nameSnapshot} · ${i.materialSnapshot} · x${i.qty}`).join(" + ")}</div>
-            </div>
+          <div className="section-label">{activeOrders.length > 1 ? "Commandes en cours" : "Commande en cours"}</div>
+          <div className="active-orders-col">
+            {activeOrders.map((order) => {
+              const isRejected = order.status === "REJECTED";
+              const isExpertise = order.status === "EXPERTISE";
+              const isAwaitingPayment = order.status === "AWAITING_PAYMENT";
+              const isPickup = order.shippingMode === "PICKUP";
+              const showsTracking = !!order.shippingMode && order.shippingMode !== "PICKUP" && !["EXPERTISE", "AWAITING_PAYMENT"].includes(order.status);
+              const stepIdx = STEP_IDX[order.status] ?? 0;
+              const stepProgressPct = ORDER_STEPS.length > 1 ? Math.round((stepIdx / (ORDER_STEPS.length - 1)) * 100) : 0;
 
-            {activeOrderIsRejected ? (
-              <div className="rejected-block">
-                <div className="rejected-title">Problème de faisabilité</div>
-                Nous ne sommes malheureusement pas en mesure de réaliser cette pièce telle quelle. Aucun paiement n'a été prélevé — contactez-nous par{" "}
-                <a href="/contact">mail</a> en indiquant le numéro de commande pour en discuter.
-              </div>
-            ) : (
-              <>
-                <div className="step-current-label">
-                  Étape actuelle : <span className="step-current-value">{ORDER_STEPS[stepIdx]}</span>
-                </div>
-                <div className="order-steps-bar">
-                  <div className="order-steps-line" style={{ background: `linear-gradient(to right, #ff5a3c 0%, #ff5a3c ${stepProgressPct}%, rgba(255,255,255,.15) ${stepProgressPct}%, rgba(255,255,255,.15) 100%)` }} />
-                  <div className="order-steps-row">
-                    {ORDER_STEPS.map((label, i) => {
-                      const done = i < stepIdx;
-                      const active = i === stepIdx;
-                      return (
-                        <div key={label} className="order-step">
-                          <span className={`order-step-dot${done || active ? " on" : ""}`}>{done ? "✓" : i + 1}</span>
-                          <span className={`order-step-label${active ? " active" : done ? " done" : ""}`}>{label}</span>
+              return (
+                <div key={order.id} className="active-order-card">
+                  <div className="active-order-head">
+                    <div className="active-order-ref">Commande #{order.ref}</div>
+                    <div className="active-order-desc">{order.items.map((i) => `${i.nameSnapshot} · ${i.materialSnapshot} · x${i.qty}`).join(" + ")}</div>
+                  </div>
+
+                  {isRejected ? (
+                    <div className="rejected-block">
+                      <div className="rejected-title">Problème de faisabilité</div>
+                      Nous ne sommes malheureusement pas en mesure de réaliser cette pièce telle quelle. Aucun paiement n'a été prélevé — contactez-nous par{" "}
+                      <a href="/contact">mail</a> en indiquant le numéro de commande pour en discuter.
+                    </div>
+                  ) : (
+                    <>
+                      <div className="step-current-label">
+                        Étape actuelle : <span className="step-current-value">{ORDER_STEPS[stepIdx]}</span>
+                      </div>
+                      <div className="order-steps-bar">
+                        <div className="order-steps-line" style={{ background: `linear-gradient(to right, #ff5a3c 0%, #ff5a3c ${stepProgressPct}%, rgba(255,255,255,.15) ${stepProgressPct}%, rgba(255,255,255,.15) 100%)` }} />
+                        <div className="order-steps-row">
+                          {ORDER_STEPS.map((label, i) => {
+                            const done = i < stepIdx;
+                            const active = i === stepIdx;
+                            return (
+                              <div key={label} className="order-step">
+                                <span className={`order-step-dot${done || active ? " on" : ""}`}>{done ? "✓" : i + 1}</span>
+                                <span className={`order-step-label${active ? " active" : done ? " done" : ""}`}>{label}</span>
+                              </div>
+                            );
+                          })}
                         </div>
-                      );
-                    })}
-                  </div>
+                      </div>
+                      {isAwaitingPayment && (
+                        <div onClick={() => account.payOrder(order.id)} className="pay-btn">
+                          {account.payBusyId === order.id ? "Redirection…" : "Payer avec Stripe"}
+                        </div>
+                      )}
+                      {isExpertise && (
+                        <div onClick={() => account.setCancelOrderPopup(order.id)} className="cancel-order-btn">
+                          Annuler la commande
+                        </div>
+                      )}
+                      {showsTracking && (
+                        <div className="tracking-block">
+                          {order.trackingNumber ? (
+                            <>
+                              Numéro de suivi : <span className="tracking-number">{order.trackingNumber}</span>
+                            </>
+                          ) : (
+                            "Numéro de suivi pas encore disponible."
+                          )}
+                        </div>
+                      )}
+                      {isPickup && (
+                        <div className="pickup-block">
+                          Vous récupérez la commande directement à l'atelier, sur rendez-vous : <strong>29 rue Mellier, 44100 Nantes</strong>. Dès que votre pièce est prête, nous vous appelons pour convenir d'un horaire.
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
-                {activeOrderIsAwaitingPayment && (
-                  <div onClick={account.payActiveOrder} className="pay-btn">
-                    {account.payBusy ? "Redirection…" : "Payer avec Stripe"}
-                  </div>
-                )}
-                {activeOrderIsExpertise && (
-                  <div onClick={() => account.setCancelOrderPopup(true)} className="cancel-order-btn">
-                    Annuler la commande
-                  </div>
-                )}
-                {activeOrderShowsTracking && (
-                  <div className="tracking-block">
-                    {activeOrder.trackingNumber ? (
-                      <>
-                        Numéro de suivi : <span className="tracking-number">{activeOrder.trackingNumber}</span>
-                      </>
-                    ) : (
-                      "Numéro de suivi pas encore disponible."
-                    )}
-                  </div>
-                )}
-                {activeOrderIsPickup && (
-                  <div className="pickup-block">
-                    Vous récupérez la commande directement à l'atelier, sur rendez-vous : <strong>29 rue Mellier, 44100 Nantes</strong>. Dès que votre pièce est prête, nous vous appelons pour convenir d'un horaire.
-                  </div>
-                )}
-              </>
-            )}
+              );
+            })}
           </div>
         </>
       )}
@@ -219,7 +226,8 @@ export default function Dashboard({ account }: { account: Account }) {
         .support-notice strong { color: #f3f1ec; font-weight: 600; }
         .support-icon { color: #ff5a3c; flex: none; margin-top: 1px; }
         .section-label { font: 600 11.5px 'Inter',sans-serif; color: #ff5a3c; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
-        .active-order-card { border: 1px solid rgba(255,255,255,.1); border-radius: 12px; background: #1a1917; padding: 24px; margin-bottom: 36px; }
+        .active-orders-col { display: flex; flex-direction: column; gap: 16px; margin-bottom: 36px; }
+        .active-order-card { border: 1px solid rgba(255,255,255,.1); border-radius: 12px; background: #1a1917; padding: 24px; }
         .active-order-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; flex-wrap: wrap; gap: 6px; }
         .active-order-ref { font: 600 13px 'Space Grotesk',sans-serif; color: #f3f1ec; }
         .active-order-desc { font: 400 10.5px 'Inter',sans-serif; color: rgba(255,255,255,.45); }

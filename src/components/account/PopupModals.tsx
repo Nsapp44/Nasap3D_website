@@ -89,7 +89,7 @@ export default function PopupModals({ account }: { account: Account }) {
           <div className="popup-modal">
             <div className="popup-text">Êtes-vous sûr de vouloir supprimer la commande ?</div>
             <div className="popup-btn-row">
-              <div onClick={() => setCancelOrderPopup(false)} className="popup-btn-cancel">
+              <div onClick={() => setCancelOrderPopup(null)} className="popup-btn-cancel">
                 Retour
               </div>
               <div onClick={confirmCancelOrder} className="popup-btn-danger">
