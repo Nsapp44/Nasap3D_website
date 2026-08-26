@@ -1,5 +1,5 @@
 import { useQuoteWizard } from "../../hooks/useQuoteWizard";
-import PrinterLoaderIcon from "./PrinterLoaderIcon";
+import PrinterLoaderIcon from "../PrinterLoaderIcon";
 
 // Ported 1:1 from Devis Instantane.dc.html's configurator (also embedded on
 // Home, see Phase 8) — the wizard box only; the surrounding hero/advice/FAQ
