@@ -51,16 +51,25 @@ export function useCart() {
 
   async function incQty(id: string, qty: number) {
     const res = await api.updateCartItem(id, qty + 1);
-    if (res.ok) setCart(res.data as Cart);
+    if (res.ok) {
+      setCart(res.data as Cart);
+      window.dispatchEvent(new Event("nasap3d-cart-changed"));
+    }
   }
   async function decQty(id: string, qty: number) {
     if (qty <= 1) return;
     const res = await api.updateCartItem(id, qty - 1);
-    if (res.ok) setCart(res.data as Cart);
+    if (res.ok) {
+      setCart(res.data as Cart);
+      window.dispatchEvent(new Event("nasap3d-cart-changed"));
+    }
   }
   async function removeItem(id: string) {
     const res = await api.removeCartItem(id);
-    if (res.ok) setCart(res.data as Cart);
+    if (res.ok) {
+      setCart(res.data as Cart);
+      window.dispatchEvent(new Event("nasap3d-cart-changed"));
+    }
   }
 
   return { cart, loaded, incQty, decQty, removeItem };

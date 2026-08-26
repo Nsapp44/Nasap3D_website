@@ -1,6 +1,7 @@
 ---
 import NavAuthIcon from "./NavAuthIcon";
 import QuoteNavLink from "./QuoteNavLink";
+import CartBadge from "./CartBadge";
 
 interface Props {
   currentPath: string;
@@ -80,7 +81,7 @@ const DEVIS_INDEX = 2; // position d'origine de "Devis instantané" dans la nav
         <circle cx="19" cy="21" r="1"></circle>
         <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
       </svg>
-      <span class="cart-count">0</span>
+      <CartBadge client:load />
     </a>
   </div>
 
@@ -140,7 +141,10 @@ const DEVIS_INDEX = 2; // position d'origine de "Devis instantané" dans la nav
     border-bottom: 2px solid #ff5a3c;
     padding-bottom: 4px;
   }
-  .cart-count {
+  /* :global() : le badge est rendu par CartBadge (îlot client:load),
+     enveloppé dans son propre <astro-island> — hors de la frontière du CSS
+     scopé de ce fichier (même classe de bug que QuoteNavLink, voir plus bas). */
+  .cart-link :global(.cart-count) {
     position: absolute;
     top: -9px;
     right: -9px;
