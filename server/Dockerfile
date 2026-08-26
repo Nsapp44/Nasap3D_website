@@ -45,7 +45,24 @@ ENV NODE_ENV=production
 # is for Prisma's engine detection at runtime — see the build stage above
 # for why it's needed in both places.
 RUN apt-get update && apt-get install -y --no-install-recommends xvfb xauth openssl && rm -rf /var/lib/apt/lists/*
-COPY --from=prusaslicer /opt/prusaslicer/squashfs-root /opt/prusaslicer/squashfs-root
+# /app itself needs to be node-owned so the local-disk storage fallback can
+# create ./uploads on demand (storage.ts) — chowning it here, while it's
+# still empty, is metadata-only (nothing to duplicate). Everything COPY'd
+# into it below stays root-owned on purpose: the app only ever reads
+# dist/prisma/node_modules at runtime, never writes to them, so root
+# ownership (world-readable by default) is enough — no need to chown any of
+# that, which is what used to cost ~1.4GB (see the prusaslicer COPY below).
+RUN chown node:node /app
+# --chown here (metadata baked directly into this layer's content) instead
+# of a later `RUN chown -R /opt/prusaslicer` — chowning *after* copying
+# ~987MB of already-written files doesn't modify them in place, the overlay
+# filesystem duplicates every touched file into a new layer. That duplicate
+# (plus node_modules, chowned the same way in a previous version of this
+# file) was nearly doubling the image for zero behavior change; xvfb-run
+# still needs to write its own lock/socket files next to where it runs from,
+# which is the actual reason this directory (unlike the ones above) needs to
+# be node-owned at all.
+COPY --from=prusaslicer --chown=node:node /opt/prusaslicer/squashfs-root /opt/prusaslicer/squashfs-root
 RUN printf '#!/bin/sh\nexec xvfb-run --auto-servernum -- /opt/prusaslicer/squashfs-root/AppRun "$@"\n' > /usr/local/bin/prusa-slicer \
     && chmod +x /usr/local/bin/prusa-slicer
 ENV PRUSASLICER_BIN=/usr/local/bin/prusa-slicer
@@ -65,11 +82,7 @@ RUN chmod +x docker-entrypoint.sh
 
 # Run as the non-root `node` user the base image already ships (uid 1000) —
 # least privilege: a compromised API process shouldn't have root inside its
-# own container. Needs write access to /app itself (the local-disk storage
-# fallback creates ./uploads on demand, see storage.ts) and to the
-# PrusaSlicer install (xvfb-run writes its own lock/socket files next to
-# where it runs from).
-RUN chown -R node:node /app /opt/prusaslicer
+# own container.
 USER node
 
 EXPOSE 3000
