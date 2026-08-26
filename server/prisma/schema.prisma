@@ -363,12 +363,25 @@ model Invoice {
 }
 
 model ContactMessage {
-  id             String   @id @default(cuid())
+  id             String               @id @default(cuid())
   name           String
   email          String
   subject        String
   message        String
-  fileKey        String?
-  fileName       String?
-  createdAt      DateTime @default(now())
+  files          ContactMessageFile[]
+  createdAt      DateTime             @default(now())
+}
+
+// Several attachments per message, not just one — see ContactForm.tsx. Kept
+// as its own table rather than a JSON column, same shape as every other
+// one-to-many in this schema (e.g. Order/OrderItem).
+model ContactMessageFile {
+  id                String         @id @default(cuid())
+  contactMessageId  String
+  contactMessage    ContactMessage @relation(fields: [contactMessageId], references: [id], onDelete: Cascade)
+  fileKey           String
+  fileName          String
+  downloadedAt      DateTime?
+
+  @@index([contactMessageId])
 }

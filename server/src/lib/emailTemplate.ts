@@ -199,10 +199,13 @@ export function contactNotificationContentHtml(
   email: string,
   subject: string,
   message: string,
-  attachmentUrl?: string,
+  attachments: Array<{ url: string; name: string }> = [],
 ): string {
-  const attachmentLine = attachmentUrl
-    ? `<br /><br /><strong>Pièce jointe :</strong> <a href="${escapeHtml(attachmentUrl)}" style="color:#ff5a3c;text-decoration:underline;">voir dans l'admin</a>`
+  const attachmentLine = attachments.length
+    ? "<br /><br /><strong>Pièces jointes :</strong><br />" +
+      attachments
+        .map((a) => `<a href="${escapeHtml(a.url)}" style="color:#ff5a3c;text-decoration:underline;">${escapeHtml(a.name)}</a>`)
+        .join("<br />")
     : "";
   return [
     h1("Nouveau message reçu"),

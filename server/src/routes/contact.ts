@@ -6,7 +6,7 @@ import { isValidEmail } from "../lib/password.js";
 import { verifyCaptcha } from "../lib/captcha.js";
 import { sendMail } from "../lib/mailer.js";
 import { renderEmailHtml, contactNotificationContentHtml, contactConfirmationContentHtml } from "../lib/emailTemplate.js";
-import { newFileKey, saveFile, readFileByKey } from "../lib/storage.js";
+import { newFileKey, saveFile, readFileByKey, deleteFile } from "../lib/storage.js";
 import { checkLongWindowLimit } from "../lib/longWindowLimit.js";
 import { requireAdmin } from "../lib/session.js";
 
@@ -58,8 +58,15 @@ export async function contactRoutes(app: FastifyInstance) {
       email: z.string(),
       subject: z.string().min(1).max(80),
       message: z.string().max(1000).optional().default(""),
-      fileKey: z.string().optional(),
-      fileName: z.string().optional(),
+      // Attachments are optional and never required to submit the form —
+      // only name/email/subject are. Capped at 5: plenty for "a broken part
+      // photo + a CAD file", not enough to be an abuse vector on top of the
+      // per-upload rate limit above.
+      files: z
+        .array(z.object({ fileKey: z.string(), fileName: z.string() }))
+        .max(5)
+        .optional()
+        .default([]),
       captchaToken: z.string().optional(),
     });
     const body = schema.safeParse(request.body);
@@ -75,9 +82,9 @@ export async function contactRoutes(app: FastifyInstance) {
         email: body.data.email,
         subject: body.data.subject,
         message: body.data.message,
-        fileKey: body.data.fileKey,
-        fileName: body.data.fileName,
+        files: { create: body.data.files.map((f) => ({ fileKey: f.fileKey, fileName: f.fileName })) },
       },
+      include: { files: true },
     });
 
     const notify = process.env.CONTACT_NOTIFY_EMAIL;
@@ -86,16 +93,14 @@ export async function contactRoutes(app: FastifyInstance) {
       // misconfigured) must not turn into a 500 for someone who just
       // successfully submitted the form.
       try {
-        const attachmentUrl = created.fileKey
-          ? `${process.env.API_BASE_URL || "http://localhost:3000"}/admin/contact-messages/${created.id}/file`
-          : undefined;
-        const attachmentLine = attachmentUrl
-          ? `\n\nPièce jointe (${body.data.fileName}) : ${attachmentUrl} (connecté en admin)`
-          : "";
+        const base = process.env.API_BASE_URL || "http://localhost:3000";
+        const attachmentLines = created.files
+          .map((f) => `\n\nPièce jointe (${f.fileName}) : ${base}/admin/contact-messages/${created.id}/files/${f.id} (connecté en admin)`)
+          .join("");
         await sendMail(
           notify,
           `[Contact Nasap3D] ${body.data.subject}`,
-          `De : ${body.data.name} <${body.data.email}>\n\n${body.data.message || "(pas de message)"}${attachmentLine}`,
+          `De : ${body.data.name} <${body.data.email}>\n\n${body.data.message || "(pas de message)"}${attachmentLines}`,
           renderEmailHtml(
             `[Contact Nasap3D] ${body.data.subject}`,
             contactNotificationContentHtml(
@@ -103,7 +108,7 @@ export async function contactRoutes(app: FastifyInstance) {
               body.data.email,
               body.data.subject,
               body.data.message || "(pas de message)",
-              attachmentUrl,
+              created.files.map((f) => ({ url: `${base}/admin/contact-messages/${created.id}/files/${f.id}`, name: f.fileName })),
             ),
           ),
         );
@@ -130,14 +135,23 @@ export async function contactRoutes(app: FastifyInstance) {
     return reply.send({ ok: true });
   });
 
-  app.get("/admin/contact-messages/:id/file", { preHandler: requireAdmin }, async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const msg = await prisma.contactMessage.findUnique({ where: { id } });
-    if (!msg || !msg.fileKey) return reply.code(404).send({ error: "not_found" });
+  // Deletes the file from storage right after this first successful
+  // download — the admin explicitly asked for "gone as soon as I've
+  // downloaded it" over any retention delay, accepting that a lost/failed
+  // download means asking the customer to resend. `downloadedAt` keeps the
+  // row (and its filename) around so a second click gives a clear "already
+  // downloaded" instead of a bare 404.
+  app.get("/admin/contact-messages/:id/files/:fileId", { preHandler: requireAdmin }, async (request, reply) => {
+    const { id, fileId } = request.params as { id: string; fileId: string };
+    const file = await prisma.contactMessageFile.findFirst({ where: { id: fileId, contactMessageId: id } });
+    if (!file) return reply.code(404).send({ error: "not_found" });
+    if (file.downloadedAt) return reply.code(410).send({ error: "already_downloaded", downloadedAt: file.downloadedAt });
 
-    const buffer = await readFileByKey(msg.fileKey);
+    const buffer = await readFileByKey(file.fileKey);
+    await deleteFile(file.fileKey);
+    await prisma.contactMessageFile.update({ where: { id: file.id }, data: { downloadedAt: new Date() } });
     return reply
-      .header("Content-Disposition", `attachment; filename="${(msg.fileName || "piece-jointe").replace(/"/g, "")}"`)
+      .header("Content-Disposition", `attachment; filename="${file.fileName.replace(/"/g, "")}"`)
       .header("Content-Type", "application/octet-stream")
       .send(buffer);
   });

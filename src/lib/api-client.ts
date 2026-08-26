@@ -116,8 +116,7 @@ export const api = {
     email: string;
     subject: string;
     message?: string;
-    fileKey?: string;
-    fileName?: string;
+    files?: { fileKey: string; fileName: string }[];
     captchaToken?: string;
   }) {
     return request("POST", "/contact", input);

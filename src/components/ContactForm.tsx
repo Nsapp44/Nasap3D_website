@@ -3,22 +3,29 @@ import { api } from "../lib/api-client";
 import { useHcaptcha } from "../hooks/useHcaptcha";
 import PrinterLoaderIcon from "./PrinterLoaderIcon";
 
-type FileState = "none" | "uploading" | "ready";
+interface AttachedFile {
+  id: string;
+  name: string;
+  status: "uploading" | "ready" | "error";
+  fileKey: string | null;
+  error: string | null;
+}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_FILE_BYTES = 50 * 1024 * 1024;
+const MAX_FILES = 5;
 
-// Ported 1:1 from Contact.dc.html's Component class — same fields, same
-// validation, same file-upload/drag-drop flow, same hCaptcha reset-after-
-// every-submit behavior (a solved token is single-use).
+// Ported from Contact.dc.html's Component class — same fields, same
+// validation, same hCaptcha reset-after-every-submit behavior (a solved
+// token is single-use). Attachments were single-file in the original;
+// extended to several (up to MAX_FILES, matching the server's own cap) —
+// still never required to submit, only name/email/subject are.
 export default function ContactForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const [fileState, setFileState] = useState<FileState>("none");
-  const [fileName, setFileName] = useState("");
-  const [fileKey, setFileKey] = useState<string | null>(null);
-  const [fileError, setFileError] = useState<string | null>(null);
+  const [files, setFiles] = useState<AttachedFile[]>([]);
   const [dragging, setDragging] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
@@ -28,43 +35,49 @@ export default function ContactForm() {
   const sentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { containerRef: captchaRef, token: captchaToken, reset: resetCaptcha } = useHcaptcha();
 
-  const uploading = fileState === "uploading";
+  const uploading = files.some((f) => f.status === "uploading");
   const canSend = name.trim().length > 0 && EMAIL_RE.test(email) && subject.trim().length > 0 && !uploading && !submitting;
+  const canAttachMore = files.length < MAX_FILES;
 
-  function attachFile() {
-    if (fileState !== "none") return;
+  function attachFiles() {
+    if (!canAttachMore) return;
     fileInputRef.current?.click();
   }
 
-  function removeFile() {
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    setFileState("none");
-    setFileKey(null);
-    setFileName("");
-    setFileError(null);
+  function removeFile(id: string) {
+    setFiles((cur) => cur.filter((f) => f.id !== id));
   }
 
-  async function uploadFile(file: File) {
-    if (file.size > 50 * 1024 * 1024) {
-      setFileError("Fichier trop volumineux (50 Mo max).");
+  async function uploadOne(file: File) {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    if (file.size > MAX_FILE_BYTES) {
+      setFiles((cur) => [...cur, { id, name: file.name, status: "error", fileKey: null, error: "Fichier trop volumineux (50 Mo max)." }]);
       return;
     }
-    setFileState("uploading");
-    setFileError(null);
+    setFiles((cur) => [...cur, { id, name: file.name, status: "uploading", fileKey: null, error: null }]);
     const res = await api.uploadContactFile(file);
-    if (!res.ok || !res.data) {
-      setFileState("none");
-      setFileError("Échec de l'envoi du fichier, réessayez.");
-      return;
-    }
-    setFileState("ready");
-    setFileName(res.data.fileName);
-    setFileKey(res.data.fileKey);
+    setFiles((cur) =>
+      cur.map((f) =>
+        f.id === id
+          ? res.ok && res.data
+            ? { ...f, status: "ready", fileKey: res.data.fileKey, name: res.data.fileName }
+            : { ...f, status: "error", error: "Échec de l'envoi, réessayez." }
+          : f,
+      ),
+    );
+  }
+
+  function addFiles(list: FileList | null) {
+    if (!list) return;
+    const room = MAX_FILES - files.length;
+    Array.from(list)
+      .slice(0, Math.max(0, room))
+      .forEach(uploadOne);
   }
 
   function onFileInputChange(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) uploadFile(file);
+    addFiles(e.target.files);
+    e.target.value = "";
   }
 
   function onDragOver(e: DragEvent) {
@@ -78,8 +91,7 @@ export default function ContactForm() {
   function onDrop(e: DragEvent) {
     e.preventDefault();
     setDragging(false);
-    const file = e.dataTransfer?.files?.[0];
-    if (file && fileState === "none") uploadFile(file);
+    addFiles(e.dataTransfer?.files ?? null);
   }
 
   async function submit() {
@@ -95,8 +107,7 @@ export default function ContactForm() {
       email,
       subject,
       message,
-      fileKey: fileKey ?? undefined,
-      fileName: fileName || undefined,
+      files: files.filter((f) => f.status === "ready" && f.fileKey).map((f) => ({ fileKey: f.fileKey!, fileName: f.name })),
       captchaToken,
     });
     await resetCaptcha();
@@ -115,9 +126,7 @@ export default function ContactForm() {
     setEmail("");
     setSubject("");
     setMessage("");
-    setFileState("none");
-    setFileKey(null);
-    setFileName("");
+    setFiles([]);
     if (sentTimerRef.current) clearTimeout(sentTimerRef.current);
     sentTimerRef.current = setTimeout(() => setSent(false), 5000);
   }
@@ -180,36 +189,38 @@ export default function ContactForm() {
       </div>
 
       <div>
-        <input ref={fileInputRef} type="file" onChange={onFileInputChange} style={{ display: "none" }} />
-        {fileState === "none" && (
+        <input ref={fileInputRef} type="file" multiple onChange={onFileInputChange} style={{ display: "none" }} />
+        {files.map((f) => (
+          <div key={f.id} className={`file-row${f.status === "error" ? " file-row-error" : ""}`}>
+            {f.status === "uploading" && (
+              <span className="loader-icon-tiny">
+                <PrinterLoaderIcon maskId={`plMaskContactUpload-${f.id}`} />
+              </span>
+            )}
+            <span className="file-row-name">
+              {f.status === "ready" && "✓ "}
+              {f.name}
+              {f.status === "error" && f.error ? ` — ${f.error}` : ""}
+            </span>
+            <span onClick={() => removeFile(f.id)} className="file-remove">
+              Retirer
+            </span>
+          </div>
+        ))}
+        {canAttachMore && (
           <div
-            onClick={attachFile}
+            onClick={attachFiles}
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
             onDrop={onDrop}
             className={`file-drop${dragging ? " dragging" : ""}`}
           >
-            + Joindre un fichier (pièce cassée, plan, photo…)
+            + Joindre {files.length > 0 ? "un autre fichier" : "un ou plusieurs fichiers"} (pièce cassée, plan, photo…)
           </div>
         )}
-        {fileError && <div className="file-error">{fileError}</div>}
-        {uploading && (
-          <div className="file-uploading">
-            <span className="loader-icon-sm" style={{ ["--pl-nozzle-fill" as string]: "#1a1917" }}>
-              <PrinterLoaderIcon maskId="plMaskContactUpload" />
-            </span>
-            Chargement du fichier…
-          </div>
-        )}
-        {fileState === "ready" && (
-          <div className="file-ready">
-            <span>✓ {fileName}</span>
-            <span onClick={removeFile} className="file-remove">
-              Retirer
-            </span>
-          </div>
-        )}
-        <div className="file-hint">.stl .step .pdf .jpg .png — 50 Mo max</div>
+        <div className="file-hint">
+          .stl .step .pdf .jpg .png — 50 Mo max par fichier, {MAX_FILES} fichiers max
+        </div>
       </div>
 
       <div ref={captchaRef} className="captcha-slot" />
@@ -242,23 +253,19 @@ export default function ContactForm() {
           border: 1.5px dashed rgba(255,255,255,.25); border-radius: 6px; padding: 14px; font: 12px 'Inter',sans-serif;
           color: rgba(255,255,255,.4); text-align: center; cursor: pointer; transform: scale(1); background: transparent;
           box-shadow: none; transition: border-color .2s ease, background .2s ease, box-shadow .2s ease, color .2s ease, transform .2s ease;
+          margin-bottom: 6px;
         }
         .file-drop.dragging {
           border-color: #ff5a3c; color: #ff5a3c; transform: scale(1.05); background: rgba(255,90,60,.1);
           box-shadow: 0 0 0 3px rgba(255,90,60,.18), 0 0 18px rgba(255,90,60,.35);
         }
-        .file-error { font: 600 10.5px 'Inter',sans-serif; color: #ff8a70; margin-top: 6px; }
-        .file-uploading {
-          border: 1.5px dashed rgba(255,90,60,.4); border-radius: 6px; padding: 32px 14px; font: 13px 'Inter',sans-serif;
-          color: rgba(255,255,255,.6); text-align: center; display: flex; flex-direction: column; align-items: center;
-          justify-content: center; gap: 14px;
+        .file-row {
+          border: 1px solid rgba(255,90,60,.35); background: rgba(255,90,60,.08); border-radius: 6px; padding: 10px 14px;
+          font: 12px 'Inter',sans-serif; color: #f3f1ec; display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
         }
-        .loader-icon-sm { width: 60px; height: 60px; display: inline-block; color: #ff5a3c; }
-        .loader-icon-tiny { width: 11px; height: 11px; display: inline-block; color: #fff; --pl-nozzle-fill: #ff5a3c; }
-        .file-ready {
-          border: 1px solid rgba(255,90,60,.35); background: rgba(255,90,60,.08); border-radius: 6px; padding: 14px;
-          font: 12px 'Inter',sans-serif; color: #f3f1ec; display: flex; align-items: center; justify-content: space-between; gap: 10px;
-        }
+        .file-row-error { border-color: rgba(255,138,112,.4); background: rgba(255,90,60,.05); }
+        .file-row-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .loader-icon-tiny { width: 11px; height: 11px; display: inline-block; flex: none; color: #fff; --pl-nozzle-fill: #ff5a3c; }
         .file-remove { flex: none; cursor: pointer; color: rgba(255,255,255,.5); font: 600 11px 'Inter',sans-serif; text-decoration: underline; }
         .file-hint { font: 9px ui-monospace,monospace; color: rgba(255,255,255,.3); margin-top: 3px; }
         .captcha-slot { display: flex; justify-content: center; margin-bottom: 14px; }
