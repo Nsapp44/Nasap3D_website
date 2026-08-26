@@ -1,0 +1,420 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import QuoteWizardSection from "../components/quote/QuoteWizardSection";
+import GoogleReviewsCarousel from "../components/GoogleReviewsCarousel";
+import FaqAccordion from "../components/FaqAccordion";
+
+const faqs = [
+  { q: "Quels formats de fichiers acceptez-vous ?", a: "STL, OBJ et STEP. Pas de fichier prêt ? Contactez-nous pour être accompagné." },
+  { q: "Quelle taille de pièce est possible ?", a: "Jusqu'à 330 × 320 × 325 mm selon la machine. Les pièces plus grandes peuvent être imprimées en plusieurs parties puis assemblées." },
+  { q: "Quels sont les délais ?", a: "Ils dépendent du volume, du remplissage, de la qualité choisie et de la charge de l'atelier." },
+  { q: "Comment choisir mon matériau ?", a: "Le configurateur propose PLA, PETG, ABS, ASA, TPU, PP et Nylon (le PEEK/PEKK n'est pas proposé). Un doute ? Consultez le guide ci-dessus ou contactez-nous." },
+  { q: "Comment se passent le paiement et la livraison ?", a: "Paiement en ligne sécurisé via Stripe à la validation du panier. Retrait à Nantes (Canclaux) ou expédition." },
+];
+
+const infillLevels = [
+  { pct: 15, label: "Minimum, déco fragile", density: "1" },
+  { pct: 30, label: "Décoratif standard", density: "2" },
+  { pct: 40, label: "Usage courant", density: "3" },
+  { pct: 60, label: "Renforcé", density: "4" },
+  { pct: 80, label: "Forte contrainte", density: "5" },
+  { pct: 100, label: "Quasi plein", density: "6" },
+];
+
+const qualities = [
+  { title: "Rapide — 0,28 mm", text: "Couche épaisse : impression plus rapide et moins chère. Bon pour les pièces brutes ou les gros volumes, lignes de couche visibles." },
+  { title: "Standard — 0,20 mm", text: "Le réglage par défaut : bon compromis détail / délai pour la majorité des pièces fonctionnelles." },
+  { title: "Fine — 0,12 mm", text: "Plus de détails et une surface plus lisse, au prix d'un temps d'impression nettement plus long." },
+];
+
+const printers = [
+  { name: "Bambu Lab X1C", dims: "256 × 256 × 256 mm" },
+  { name: "Bambu Lab H2C", dims: "330 × 320 × 325 mm" },
+  { name: "Bambu Lab X2D", dims: "256 × 256 × 256 mm" },
+];
+
+const materialsAdvice = [
+  { name: "PLA", text: "Déco, prototypes visuels, usage intérieur" },
+  { name: "PETG", text: "Résistant, extérieur, contact humide" },
+  { name: "ABS / ASA", text: "Chaleur, UV, pièces techniques" },
+  { name: "TPU", text: "Flexible, amortissant, joints" },
+  { name: "PP", text: "Résistance chimique, pliable" },
+  { name: "Nylon", text: "Pièces mécaniques, friction, usure" },
+  { name: "PEEK / PEKK", text: "Non proposés actuellement", disabled: true },
+];
+---
+
+<BaseLayout
+  title="Devis Instantané Impression 3D — Prix en Ligne | Nasap3D"
+  description="Déposez votre fichier STL, OBJ ou STEP et obtenez un prix réel en quelques secondes, calculé par un vrai tranchage PrusaSlicer. Commande et paiement en ligne."
+  path="/devis-instantane"
+>
+  <div class="di-hero">
+    <div class="di-breadcrumb"><a href="/">Accueil</a> / Devis instantané</div>
+    <div class="di-eyebrow">Configurateur &amp; conseils</div>
+    <div class="di-title">Votre devis en 2 minutes — et les bons réglages pour bien choisir.</div>
+    <div class="di-subtitle">Déposez votre fichier, choisissez vos options, l'analyse automatique calcule le prix. Pas sûr d'un réglage ? Les explications sont juste en dessous.</div>
+  </div>
+
+  <div class="di-section di-wizard-wrap">
+    <QuoteWizardSection client:load />
+  </div>
+
+  <div class="di-section">
+    <div class="di-kicker">Sous le capot</div>
+    <div class="di-h2">Taux de remplissage : ce que ça change</div>
+    <div class="di-lead">L'intérieur d'une pièce n'est pas plein : une structure interne la renforce tout en économisant du temps et de la matière.</div>
+    <div class="di-infill-grid">
+      {
+        infillLevels.map((lvl) => (
+          <div class="di-infill-card">
+            <div class={`di-infill-swatch di-infill-swatch--${lvl.density}`} />
+            <div class="di-infill-pct">{lvl.pct}%</div>
+            <div class="di-infill-label">{lvl.label}</div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="di-section">
+    <div class="di-kicker">Vitesse ou finition</div>
+    <div class="di-h2">Qualité d'impression, en clair</div>
+    <div class="di-quality-grid">
+      {
+        qualities.map((q) => (
+          <div class="di-card">
+            <div class="di-card-title">{q.title}</div>
+            <div class="di-card-text">{q.text}</div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="di-section">
+    <div class="di-kicker">Aller plus loin</div>
+    <div class="di-h2">Impression multicouleur</div>
+    <div class="di-multicolor-banner">
+      <div class="di-multicolor-text">L'impression multicouleur (plusieurs teintes sur une même pièce) est possible, mais uniquement sur devis sur-mesure — le configurateur ne la couvre pas. Décrivez votre projet et nous vous répondons avec un tarif adapté.</div>
+      <a href="/contact" class="di-multicolor-cta">Me contacter</a>
+    </div>
+  </div>
+
+  <div class="di-section">
+    <div class="di-kicker">Gabarit</div>
+    <div class="di-h2">Quelle taille de pièce est possible ?</div>
+    <div class="di-printers-grid">
+      {
+        printers.map((p) => (
+          <div class="di-card di-printer-card">
+            <div class="di-printer-name">{p.name}</div>
+            <div class="di-printer-dims">{p.dims}</div>
+          </div>
+        ))
+      }
+    </div>
+    <div class="di-printer-note">Pièce plus grande ? Elle peut être imprimée en plusieurs parties puis assemblée — décrivez votre projet via le <a href="/contact">formulaire de contact</a> pour un devis sur-mesure.</div>
+  </div>
+
+  <div class="di-section">
+    <div class="di-kicker">Bien choisir</div>
+    <div class="di-h2">Quel matériau pour quel usage ?</div>
+    <div class="di-materials-grid">
+      {
+        materialsAdvice.map((m) => (
+          <div class={`di-material-card${m.disabled ? " disabled" : ""}`}>
+            <div class="di-material-name">{m.name}</div>
+            <div class="di-material-text">{m.text}</div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="di-section">
+    <GoogleReviewsCarousel idPrefix="nasap-google-devis" client:load />
+  </div>
+
+  <div class="di-section">
+    <div class="di-kicker">Avant de vous lancer</div>
+    <div class="di-h2">Questions fréquentes</div>
+    <FaqAccordion items={faqs} client:load />
+  </div>
+
+  <div class="di-section di-cta-final-wrap">
+    <div class="di-cta-final">
+      <div class="di-cta-title">Une pièce complexe ou un besoin sur-mesure ?</div>
+      <div class="di-cta-text">Le configurateur ne couvre pas tout — écrivez-nous directement pour la rétro-conception, les séries ou la maintenance.</div>
+      <a href="/contact" class="di-cta-btn">Contacter Nasap3D</a>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .di-hero {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 36px 24px 30px;
+  }
+  .di-breadcrumb {
+    font: 500 10.5px "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.35);
+    margin-bottom: 14px;
+  }
+  .di-breadcrumb a {
+    color: rgba(255, 255, 255, 0.35);
+    text-decoration: none;
+  }
+  .di-eyebrow {
+    font: 600 12px "Inter", sans-serif;
+    letter-spacing: 1.2px;
+    color: #ff5a3c;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .di-title {
+    font: 700 32px/1.15 "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 12px;
+    max-width: 600px;
+  }
+  .di-subtitle {
+    font: 400 13px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+    max-width: 560px;
+  }
+
+  .di-section {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 10px 24px 46px;
+  }
+  .di-wizard-wrap {
+    padding: 0 24px 50px;
+  }
+  .di-kicker {
+    font: 600 11.5px "Inter", sans-serif;
+    color: #ff5a3c;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .di-h2 {
+    font: 700 20px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 16px;
+  }
+  .di-lead {
+    font: 400 12px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+    max-width: 640px;
+    margin-bottom: 20px;
+  }
+
+  .di-infill-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+  }
+  .di-infill-card {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 14px;
+    background: #1a1917;
+  }
+  .di-infill-swatch {
+    height: 44px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 10px;
+  }
+  .di-infill-swatch--1 {
+    background: repeating-linear-gradient(45deg, rgba(255, 90, 60, 0.08), rgba(255, 90, 60, 0.08) 3px, transparent 3px, transparent 26px);
+  }
+  .di-infill-swatch--2 {
+    background: repeating-linear-gradient(45deg, rgba(255, 90, 60, 0.12), rgba(255, 90, 60, 0.12) 3px, transparent 3px, transparent 22px);
+  }
+  .di-infill-swatch--3 {
+    background: repeating-linear-gradient(45deg, rgba(255, 90, 60, 0.16), rgba(255, 90, 60, 0.16) 4px, transparent 4px, transparent 18px);
+  }
+  .di-infill-swatch--4 {
+    background: repeating-linear-gradient(45deg, rgba(255, 90, 60, 0.22), rgba(255, 90, 60, 0.22) 5px, transparent 5px, transparent 13px);
+  }
+  .di-infill-swatch--5 {
+    background: repeating-linear-gradient(45deg, rgba(255, 90, 60, 0.3), rgba(255, 90, 60, 0.3) 6px, transparent 6px, transparent 10px);
+  }
+  .di-infill-swatch--6 {
+    background: rgba(255, 90, 60, 0.4);
+  }
+  .di-infill-pct {
+    font: 700 15px "Space Grotesk", sans-serif;
+    color: #ff5a3c;
+  }
+  .di-infill-label {
+    font: 400 9.5px/1.4 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .di-card {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 18px;
+    background: #1a1917;
+  }
+  .di-card-title {
+    font: 600 13px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 6px;
+  }
+  .di-card-text {
+    font: 400 10.5px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .di-quality-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+
+  .di-multicolor-banner {
+    border: 1px solid rgba(255, 90, 60, 0.3);
+    background: rgba(255, 90, 60, 0.08);
+    border-radius: 10px;
+    padding: 20px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .di-multicolor-text {
+    max-width: 600px;
+    font: 400 12px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.6);
+  }
+  .di-multicolor-cta {
+    text-decoration: none;
+    white-space: nowrap;
+    background: #ff5a3c;
+    color: #161514;
+    font: 600 12px "Inter", sans-serif;
+    padding: 11px 18px;
+    border-radius: 7px;
+  }
+
+  .di-printers-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .di-printer-card {
+    padding: 16px;
+  }
+  .di-printer-name {
+    font: 600 12px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 4px;
+  }
+  .di-printer-dims {
+    font: 400 11px "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .di-printer-note {
+    font: 400 11.5px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.45);
+  }
+  .di-printer-note a {
+    color: #ff5a3c;
+  }
+
+  .di-materials-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .di-material-card {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 14px;
+    background: #1a1917;
+  }
+  .di-material-card.disabled {
+    opacity: 0.5;
+  }
+  .di-material-name {
+    font: 600 12px "Space Grotesk", sans-serif;
+    color: #ff5a3c;
+    margin-bottom: 5px;
+  }
+  .di-material-card.disabled .di-material-name {
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .di-material-text {
+    font: 400 10px/1.5 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .di-material-card.disabled .di-material-text {
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  .di-cta-final-wrap {
+    text-align: center;
+  }
+  .di-cta-final {
+    border: 1px solid rgba(255, 90, 60, 0.3);
+    background: rgba(255, 90, 60, 0.08);
+    border-radius: 12px;
+    padding: 32px;
+  }
+  .di-cta-title {
+    font: 700 18px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 8px;
+  }
+  .di-cta-text {
+    font: 400 11.5px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 16px;
+  }
+  .di-cta-btn {
+    text-decoration: none;
+    display: inline-block;
+    background: #ff5a3c;
+    color: #161514;
+    font: 600 12.5px "Inter", sans-serif;
+    padding: 11px 20px;
+    border-radius: 7px;
+  }
+
+  @media (max-width: 900px) {
+    .di-infill-grid,
+    .di-quality-grid,
+    .di-printers-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .di-materials-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 640px) {
+    .di-quality-grid,
+    .di-printers-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 480px) {
+    .di-title {
+      font-size: 24px;
+    }
+  }
+  @media (max-width: 420px) {
+    .di-infill-grid,
+    .di-quality-grid,
+    .di-printers-grid,
+    .di-materials-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
