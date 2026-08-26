@@ -212,8 +212,8 @@ export async function checkoutRoutes(app: FastifyInstance) {
       line_items: lineItems,
       customer_email: request.user!.email,
       invoice_creation: { enabled: true },
-      success_url: `${process.env.FRONT_URL}/Account.dc.html?paid=1`,
-      cancel_url: `${process.env.FRONT_URL}/Account.dc.html?canceled=1`,
+      success_url: `${process.env.FRONT_URL}/compte?paid=1`,
+      cancel_url: `${process.env.FRONT_URL}/compte?canceled=1`,
       metadata: { orderId: order.id },
     });
 

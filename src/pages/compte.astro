@@ -1,0 +1,12 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import AccountPage from "../components/account/AccountPage";
+---
+
+<BaseLayout title="Mon Espace Client | Nasap3D" description="Gérez votre compte, vos commandes et vos factures Nasap3D." path="/compte" noindex>
+  <Fragment slot="head">
+    <script is:inline src="https://js.hcaptcha.com/1/api.js?render=explicit&hl=fr" async defer></script>
+  </Fragment>
+
+  <AccountPage client:load />
+</BaseLayout>

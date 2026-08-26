@@ -29,12 +29,9 @@
 	@home path /
 	rewrite @home /Home.dc.html
 
-	@compte path /compte
-	rewrite @compte /Account.dc.html
-
 	# /services, /machines, /realisations, /a-propos, /cgu, /confidentialite,
 	# /cookies, /mentions-legales, /impression-3d-{nantes,cholet,angers},
-	# /contact, /panier, /admin, /devis-instantane, 404 :
+	# /contact, /panier, /admin, /devis-instantane, /compte, 404 :
 	# migrées vers Astro (voir C:\Users\Nolann\.claude\plans\idempotent-shimmying-swan.md),
 	# plus besoin de rewrite ici — le build Astro produit déjà ces chemins
 	# directement dans /srv (fichiers statiques, pas de réécriture requise).

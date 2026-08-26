@@ -191,7 +191,7 @@ export async function authRoutes(app: FastifyInstance) {
             expiresAt: new Date(Date.now() + 60 * 60 * 1000),
           },
         });
-        const resetUrl = `${process.env.FRONT_URL || "http://localhost:8080"}/Account.dc.html?resetToken=${raw}`;
+        const resetUrl = `${process.env.FRONT_URL || "http://localhost:8080"}/compte?resetToken=${raw}`;
         await sendMail(
           user.email,
           "Réinitialisation de votre mot de passe Nasap3D",

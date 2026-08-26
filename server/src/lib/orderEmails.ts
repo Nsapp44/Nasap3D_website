@@ -22,7 +22,7 @@ function eur(cents: number) {
 // and is queued for a feasibility check.
 export async function sendOrderPlacedEmail(to: string, ref: string, totalCents: number) {
   try {
-    const accountUrl = `${frontUrl()}/Account.dc.html`;
+    const accountUrl = `${frontUrl()}/compte`;
     await sendMail(
       to,
       `Commande ${ref} reçue — expertise en cours`,
@@ -38,7 +38,7 @@ export async function sendOrderPlacedEmail(to: string, ref: string, totalCents: 
 // customer can now pay (button in their account).
 export async function sendOrderAcceptedEmail(to: string, ref: string, totalCents: number) {
   try {
-    const accountUrl = `${frontUrl()}/Account.dc.html`;
+    const accountUrl = `${frontUrl()}/compte`;
     await sendMail(
       to,
       `Commande ${ref} acceptée — paiement à finaliser`,
