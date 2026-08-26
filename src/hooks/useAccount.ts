@@ -31,6 +31,15 @@ const MAX_CODE_RESENDS = 3;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_RE = /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>_\-+=~`[\]/\\;']).{8,}$/;
 
+// A missing/unparseable expiresAt (dropped field, network hiccup) must never
+// leave verifyExpiresAt holding NaN — that propagates straight into the
+// countdown's Math.floor/% arithmetic and renders as "NaN:NaN" instead of
+// the intended "Code expiré." fallback.
+function parseExpiresAt(value: string | undefined): number {
+  const t = value ? new Date(value).getTime() : NaN;
+  return Number.isFinite(t) ? t : Date.now() - 1;
+}
+
 function errorMessage(data: unknown): string {
   const code = (data as { error?: string } | null)?.error;
   const messages: Record<string, string> = {
@@ -167,7 +176,7 @@ export function useAccount() {
     setVerifyPurpose("signup");
     setVerifyCode("");
     setVerifyMessage(null);
-    setVerifyExpiresAt(new Date(expiresAt).getTime());
+    setVerifyExpiresAt(parseExpiresAt(expiresAt));
     setVerifyResendCount(0);
     startVerifyCountdown();
   }
@@ -275,7 +284,7 @@ export function useAccount() {
       const data = res.data as { expiresAt: string };
       setVerifyMessage("Un nouveau code a été envoyé.");
       setVerifyMessageOk(true);
-      setVerifyExpiresAt(new Date(data.expiresAt).getTime());
+      setVerifyExpiresAt(parseExpiresAt(data.expiresAt));
       setVerifyResendCount((n) => n + 1);
       startVerifyCountdown();
     } else {
@@ -345,7 +354,7 @@ export function useAccount() {
     setVerifyPurpose("email");
     setVerifyCode("");
     setVerifyMessage(null);
-    setVerifyExpiresAt(new Date(data.expiresAt).getTime());
+    setVerifyExpiresAt(parseExpiresAt(data.expiresAt));
     setVerifyResendCount(0);
     startVerifyCountdown();
   }
@@ -373,7 +382,7 @@ export function useAccount() {
     setVerifyPurpose("password");
     setVerifyCode("");
     setVerifyMessage(null);
-    setVerifyExpiresAt(new Date(data.expiresAt).getTime());
+    setVerifyExpiresAt(parseExpiresAt(data.expiresAt));
     setVerifyResendCount(0);
     startVerifyCountdown();
   }

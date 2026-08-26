@@ -22,6 +22,7 @@ export default function AuthPanel({ onLoginSuccess, onSignupCodeSent, onError, o
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -41,6 +42,10 @@ export default function AuthPanel({ onLoginSuccess, onSignupCodeSent, onError, o
       onPopupMessage("Le mot de passe doit contenir au moins 8 caractères, 1 majuscule et 1 caractère spécial.");
       return;
     }
+    if (mode === "signup" && password !== confirmPassword) {
+      onPopupMessage("Les mots de passe ne correspondent pas.");
+      return;
+    }
     if (!captchaToken) {
       onPopupMessage("Merci de valider la case de vérification anti-robot.");
       return;
@@ -57,6 +62,7 @@ export default function AuthPanel({ onLoginSuccess, onSignupCodeSent, onError, o
       }
       const data = res.data as { pendingId: string; expiresAt: string };
       setPassword("");
+      setConfirmPassword("");
       onSignupCodeSent(data.pendingId, email, data.expiresAt);
       return;
     }
@@ -126,6 +132,15 @@ export default function AuthPanel({ onLoginSuccess, onSignupCodeSent, onError, o
               )}
             </span>
           </div>
+          {mode === "signup" && (
+            <input
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              type={showPassword ? "text" : "password"}
+              placeholder="Confirmer le mot de passe"
+              className="auth-input"
+            />
+          )}
         </div>
         {mode === "signup" && <div className="auth-hint">8 caractères minimum, avec au moins 1 majuscule et 1 caractère spécial.</div>}
         {mode === "login" && (
@@ -145,7 +160,14 @@ export default function AuthPanel({ onLoginSuccess, onSignupCodeSent, onError, o
         </div>
         <div className="auth-switch">
           {mode === "login" ? "Pas encore de compte ?" : "Déjà un compte ?"}{" "}
-          <span onClick={() => setMode((m) => (m === "login" ? "signup" : "login"))} className="auth-switch-action">
+          <span
+            onClick={() => {
+              setMode((m) => (m === "login" ? "signup" : "login"));
+              setPassword("");
+              setConfirmPassword("");
+            }}
+            className="auth-switch-action"
+          >
             {mode === "login" ? "S'inscrire" : "Se connecter"}
           </span>
         </div>
