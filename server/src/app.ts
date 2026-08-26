@@ -22,7 +22,19 @@ import { customerOrderRoutes } from "./routes/orders.js";
 // routes) and exercise it with Fastify's .inject() — no open port, no
 // separate process — without also calling .listen().
 export async function buildApp(opts: { logger?: boolean } = {}) {
-  const app = Fastify({ logger: opts.logger ?? true });
+  // Fastify's default per-request logging (an "incoming request" + a
+  // "request completed" line, each with the full req/res objects, for
+  // *every* call — /health polls, /materials, /cart, etc.) drowns out
+  // anything worth actually noticing in the terminal. Logging is instead
+  // done once per response below, and only for the requests worth seeing.
+  const app = Fastify({ logger: opts.logger ?? true, disableRequestLogging: true });
+
+  // Signal only: a compact one-liner for failed requests (4xx/5xx), skipping
+  // /health entirely — a real error is worth seeing, a routine poll isn't.
+  app.addHook("onResponse", async (request, reply) => {
+    if (reply.statusCode < 400 || request.url.startsWith("/health")) return;
+    request.log.warn(`${request.method} ${request.url} -> ${reply.statusCode}`);
+  });
 
   await app.register(cors, {
     origin: (process.env.CORS_ORIGIN || "").split(",").filter(Boolean),

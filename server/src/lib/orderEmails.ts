@@ -10,7 +10,7 @@ import {
 } from "./emailTemplate.js";
 
 function frontUrl() {
-  return process.env.FRONT_URL || "http://localhost:8080";
+  return process.env.FRONT_URL || "http://localhost:4321";
 }
 
 function eur(cents: number) {
