@@ -102,7 +102,7 @@ export async function quoteRoutes(app: FastifyInstance) {
     const colorId = fields.colorId;
     const qualityKey = fields.quality;
     const infillPct = parseInt(fields.infillPct, 10);
-    const quantity = Math.max(1, parseInt(fields.quantity, 10) || 1);
+    const quantity = Math.min(2000, Math.max(1, parseInt(fields.quantity, 10) || 1));
     const scale = fields.scale !== undefined ? parseFloat(fields.scale) : 1;
 
     if (!materialKey || !colorId || !qualityKey || !Number.isFinite(infillPct)) {

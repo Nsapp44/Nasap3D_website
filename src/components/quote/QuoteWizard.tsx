@@ -60,7 +60,12 @@ export default function QuoteWizard() {
                 <div className="qw-file-ready">
                   <div className="qw-file-head">
                     <span className="qw-file-name">{w.file.name}</span>
-                    <span className="qw-file-check">✓</span>
+                    <span className="qw-file-head-right">
+                      <span className="qw-file-check">✓</span>
+                      <span onClick={w.removeFile} className="qw-file-remove" title="Retirer ce fichier">
+                        Retirer
+                      </span>
+                    </span>
                   </div>
                   <div className="qw-file-body">
                     <div className="qw-preview-wrap">
@@ -227,7 +232,7 @@ export default function QuoteWizard() {
               <div className="qw-qty-row">
                 <span onClick={() => w.setQty(Math.max(1, w.qty - 1))} className="qw-qty-btn">–</span>
                 {w.qty}
-                <span onClick={() => w.setQty(w.qty + 1)} className="qw-qty-btn">+</span>
+                <span onClick={() => w.setQty(Math.min(2000, w.qty + 1))} className="qw-qty-btn">+</span>
                 {pct > 0 && <span className="qw-discount-badge">−{pct}%</span>}
               </div>
               {w.showDiscountInfo && (
@@ -344,9 +349,12 @@ export default function QuoteWizard() {
         .qw-hint { font: 400 9.5px/1.5 'Inter',sans-serif; color: rgba(255,255,255,.4); margin-bottom: 16px; }
 
         .qw-file-ready { border: 1px solid rgba(255,90,60,.3); background: #101010; border-radius: 8px; padding: 14px; margin-bottom: 16px; animation: qwFadeUp .35s ease; }
-        .qw-file-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-        .qw-file-name { font: 600 10px 'Inter',sans-serif; color: rgba(255,255,255,.5); }
+        .qw-file-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 10px; }
+        .qw-file-name { font: 600 10px 'Inter',sans-serif; color: rgba(255,255,255,.5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .qw-file-head-right { display: flex; align-items: center; gap: 10px; flex: none; }
         .qw-file-check { width: 16px; height: 16px; border-radius: 50%; background: #ff5a3c; color: #161514; font: 700 10px/16px 'Inter',sans-serif; text-align: center; }
+        .qw-file-remove { font: 600 9.5px 'Inter',sans-serif; color: rgba(255,255,255,.45); cursor: pointer; text-decoration: underline; }
+        .qw-file-remove:hover { color: #ff8a70; }
         .qw-file-body { display: flex; flex-wrap: wrap; gap: 12px; }
         .qw-preview-wrap { flex: 1 1 240px; min-width: 220px; min-height: 260px; align-self: stretch; position: relative; }
         .qw-preview { width: 100%; height: 100%; background: #161514; border-radius: 6px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; }

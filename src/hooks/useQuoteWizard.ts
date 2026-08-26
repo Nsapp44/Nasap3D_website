@@ -354,6 +354,27 @@ export function useQuoteWizard() {
     if (file) return;
     fileInputRef.current?.click();
   }
+  // Not in the original — added on request, to let someone swap the
+  // uploaded file for a different one without reloading the page. Clears
+  // everything that file fed into (size/preview/thin-wall flag and any
+  // already-run analysis, since a different file invalidates all of it) and
+  // disposes the live preview handle, matching what a fresh file selection
+  // would already do via the [file, step] effect above.
+  function removeFile() {
+    if (previewHandleRef.current) {
+      previewHandleRef.current.dispose();
+      previewHandleRef.current = null;
+    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setFileState(null);
+    setFileError(null);
+    setSizeMm(null);
+    setThinWallWarning(false);
+    setPreviewUnavailable(false);
+    setAnalysisReady(false);
+    setAnalysisError(null);
+    setQuote(null);
+  }
   function onFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     setFile(e.target.files && e.target.files[0]);
   }
@@ -504,6 +525,7 @@ export function useQuoteWizard() {
     selectMaterial,
     discountFor,
     dropFile,
+    removeFile,
     onFileInputChange,
     onDragOver,
     onDragLeave,

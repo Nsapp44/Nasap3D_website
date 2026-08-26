@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { api } from "../lib/api-client";
 import { useAuth } from "../hooks/useAuth";
-import { useCart, type CartLine } from "../hooks/useCart";
+import { useCart, MAX_LINE_QTY, type CartLine } from "../hooks/useCart";
 import CartLineThumbnail from "./CartLineThumbnail";
 import PhoneInput, { type PhoneInputHandle } from "./PhoneInput";
 import BoxtalRelayMap, { type RelayPoint, type RelaySearchParams } from "./BoxtalRelayMap";
@@ -319,7 +319,11 @@ export default function CartPage() {
                       –
                     </span>
                     <span className="qty-value">{item.qty}</span>
-                    <span className="qty-btn" onClick={() => incQty(item.id, item.qty)}>
+                    <span
+                      className={`qty-btn${item.qty >= MAX_LINE_QTY ? " qty-btn-disabled" : ""}`}
+                      onClick={() => incQty(item.id, item.qty)}
+                      title={item.qty >= MAX_LINE_QTY ? `${MAX_LINE_QTY} pièces maximum` : undefined}
+                    >
                       +
                     </span>
                     {item.discountPct > 0 && <span className="discount-chip">−{item.discountPct}%</span>}
@@ -643,6 +647,7 @@ export default function CartPage() {
         .line-color-dot.small { width: 9px; height: 9px; }
         .line-qty-row { display: flex; align-items: center; gap: 8px; }
         .qty-btn { width: 20px; height: 20px; border: 1px solid rgba(255,255,255,.25); border-radius: 5px; text-align: center; line-height: 18px; font: 12px 'Inter',sans-serif; color: #e8e6e1; cursor: pointer; }
+        .qty-btn-disabled { opacity: .35; cursor: not-allowed; }
         .qty-value { font: 600 12px 'Inter',sans-serif; color: #f3f1ec; min-width: 16px; text-align: center; }
         .discount-chip { font: 700 9px 'Inter',sans-serif; color: #ff5a3c; background: rgba(255,90,60,.12); border-radius: 4px; padding: 2px 6px; }
         .line-right { text-align: right; }

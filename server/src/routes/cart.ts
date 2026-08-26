@@ -21,7 +21,7 @@ export async function cartRoutes(app: FastifyInstance) {
   });
 
   app.post("/cart", async (request, reply) => {
-    const schema = z.object({ quoteJobId: z.string(), qty: z.number().int().positive().optional() });
+    const schema = z.object({ quoteJobId: z.string(), qty: z.number().int().positive().max(2000).optional() });
     const body = schema.safeParse(request.body);
     if (!body.success) return reply.code(400).send({ error: "invalid_body" });
 
@@ -50,7 +50,7 @@ export async function cartRoutes(app: FastifyInstance) {
 
   app.patch("/cart/:id", async (request, reply) => {
     const { id } = request.params as { id: string };
-    const schema = z.object({ qty: z.number().int().positive() });
+    const schema = z.object({ qty: z.number().int().positive().max(2000) });
     const body = schema.safeParse(request.body);
     if (!body.success) return reply.code(400).send({ error: "invalid_body" });
 

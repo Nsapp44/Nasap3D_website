@@ -25,6 +25,7 @@ export interface Cart {
 }
 
 const EMPTY_CART: Cart = { lines: [], subtotalCents: 0, discountCents: 0, smallOrderFeeCents: 0, totalCents: 0, minOrderCents: 2000 };
+export const MAX_LINE_QTY = 2000;
 
 // Ported from Cart.dc.html's _loadCart/incQty/decQty/removeItem — same
 // 'nasap3d-cart-changed' event (dispatched elsewhere, e.g. after adding an
@@ -50,6 +51,7 @@ export function useCart() {
   }, [load]);
 
   async function incQty(id: string, qty: number) {
+    if (qty >= MAX_LINE_QTY) return;
     const res = await api.updateCartItem(id, qty + 1);
     if (res.ok) {
       setCart(res.data as Cart);
