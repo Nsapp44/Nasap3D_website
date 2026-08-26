@@ -18,52 +18,59 @@ complet, adossés à un vrai back-end (plus aucun état simulé en `localStorage
 
 ## Architecture
 
-Le front-end est un site **statique** — des pages `*.dc.html` (composants « Design Component » :
-HTML + une classe de logique JS par page, voir `support.js`) qui appellent une **API séparée**
-dans `server/`.
+Le front-end est un site **Astro** (`output: 'static'`, îlots React pour tout ce qui est
+interactif — devis, panier, compte, admin) qui appelle une **API séparée** dans `server/`. Les
+deux sont fusionnés dans **une seule image Docker** en production : `server/Dockerfile` construit
+le site Astro dans un stage dédié et Fastify le sert directement (`@fastify/static`, en secours de
+toute route qui ne correspond à aucune route API) — plus de conteneur reverse-proxy séparé.
 
 ```
-├── *.dc.html            Pages du site (front-end statique)
-├── api-client.js        Client JS partagé vers l'API (server/)
-├── viewer3d.js           Aperçu 3D réel (three.js + occt-import-js pour le STEP)
-├── vendor/               Dépendances front vendorisées (three.js, occt-import-js, intl-tel-input, boxtal-parcel-point-map)
-├── Caddyfile             Reverse proxy + URLs propres (voir Caddy.Dockerfile, image ghcr.io/nsapp44/nasap3d-caddy)
-├── docker-compose.yml    Toute la stack (db, api, caddy) — voir server/README.md "Déploiement (OVH)"
-├── server/                API réelle (Fastify + TypeScript + PostgreSQL/Prisma)
-│   ├── PRICING.md         Formule de calcul de prix (détaillée, avec exemples)
-│   ├── SHIPPING.md         Intégration Boxtal
-│   └── README.md           Installation, variables d'environnement, tests
-└── HANDOFF_CLAUDE_CODE.md  Brief d'origine ayant cadré la construction du back-end
+├── src/                   Site Astro (pages, composants React, hooks, styles)
+│   ├── pages/              Routage par fichier
+│   ├── components/         Composants Astro + îlots React (devis, panier, compte, admin, accueil)
+│   ├── hooks/               État/logique des îlots (un hook par flux : devis, panier, compte...)
+│   └── lib/                 Client API, utilitaires partagés
+├── public/                 Fichiers servis tels quels (assets, vendor JS non-bundlé, robots/sitemap)
+├── astro.config.mjs
+├── docker-compose.yml      Toute la stack (db, api — l'api sert aussi le site) — voir server/README.md
+├── server/                 API réelle (Fastify + TypeScript + PostgreSQL/Prisma)
+│   ├── Dockerfile           Multi-stage : API + build Astro, assemblés dans une seule image
+│   ├── PRICING.md           Formule de calcul de prix (détaillée, avec exemples)
+│   ├── SHIPPING.md           Intégration Boxtal
+│   └── README.md             Installation, variables d'environnement, tests
+└── HANDOFF_CLAUDE_CODE.md   Brief d'origine ayant cadré la construction du back-end
 ```
 
 ## Déploiement (OVH)
 
-Deux images pré-construites, publiées sur GitHub Container Registry à chaque push sur `master` qui
-les concerne : `ghcr.io/nsapp44/nasap3d-api` (`.github/workflows/docker-publish.yml`, déclenché par
-`server/**`) et `ghcr.io/nsapp44/nasap3d-caddy` (`.github/workflows/docker-publish-caddy.yml`,
-déclenché par les fichiers du front-end + `Caddyfile`). Le serveur OVH n'a donc besoin que de Docker
-installé — pas de Node/npm/PrusaSlicer, et pas besoin non plus que le dépôt soit cloné/à jour sur
-l'hôte pour que le site soit servi, tout est déjà dans les images :
+Une image pré-construite, publiée sur GitHub Container Registry à chaque push sur `master` qui la
+concerne (`.github/workflows/docker-publish.yml`, déclenché par `server/**` et le code Astro
+`src/`/`public/`/`astro.config.mjs`). Le serveur OVH n'a donc besoin que de Docker installé — pas de
+Node/npm/PrusaSlicer, et pas besoin non plus que le dépôt soit cloné/à jour sur l'hôte pour que le
+site soit servi, tout est déjà dans l'image :
 
 ```bash
 cp server/.env.example server/.env   # remplir les variables de prod (voir server/README.md)
 docker compose --profile full pull
-docker compose --profile full up -d   # Caddy sur :80/:443, API en interne, PostgreSQL en conteneur
+docker compose --profile full up -d   # API + site sur :3000 (interne), PostgreSQL en conteneur
 ```
 
 C'est tout : le conteneur API applique lui-même les migrations et le seed (catalogue
 matières/couleurs, compte admin) à chaque démarrage — pas de `npm install` ni de commande Prisma à
 lancer à la main sur le serveur, voir [`server/README.md`](server/README.md#déploiement-ovh).
 
-Les deux paquets GHCR sont **publics** (pas d'authentification nécessaire pour le `pull` depuis
-OVH), mais chacun reste à rendre public manuellement après son tout premier push réussi (GitHub →
-*Packages* → `nasap3d-api` ou `nasap3d-caddy` → *Package settings* → *Change visibility* →
-*Public*).
+Le reverse proxy déjà en place côté serveur OVH (gère aussi le HTTPS) doit joindre le conteneur par
+son nom Docker sur le réseau `nasap3d_network` : `api:3000` — pas de port publié publiquement.
+
+Le paquet GHCR est **public** (pas d'authentification nécessaire pour le `pull` depuis OVH), mais
+reste à rendre public manuellement après son tout premier push réussi (GitHub → *Packages* →
+`nasap3d-api` → *Package settings* → *Change visibility* → *Public*).
 
 Checklist de mise en prod complète (variables obligatoires, PrusaSlicer dans l'image Docker,
 PostgreSQL non managé par OVH) : voir [`server/README.md`](server/README.md#déploiement-ovh).
 
-Pour développer en local plutôt qu'en déployer, voir [`server/README.md`](server/README.md).
+Pour développer en local plutôt qu'en déployer, voir [`server/README.md`](server/README.md) (API)
+et lancer `npm run dev` à la racine du dépôt (site Astro, `:4321`).
 
 ## Documents associés
 

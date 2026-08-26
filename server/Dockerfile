@@ -1,3 +1,8 @@
+# Build context is the repo root (see docker-compose.yml / the publish
+# workflow) — not just server/ — because this image now serves the built
+# Astro site too (see the web-build stage and the final COPY into ./public),
+# and the Astro project lives at the repo root, a sibling of server/, not
+# inside it. Every COPY below is written relative to that root accordingly.
 FROM node:20-bookworm-slim AS build
 WORKDIR /app
 # Prisma's engine-selection at `generate` time (and again at runtime, see the
@@ -8,10 +13,27 @@ WORKDIR /app
 # (OpenSSL 3.x by default). Installing it here makes `prisma generate` bake
 # in the binary that actually matches the target OS instead of a guess.
 RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
-COPY package.json package-lock.json* ./
+COPY server/package.json server/package-lock.json* ./
 RUN npm install
-COPY . .
+COPY server/ .
 RUN npx prisma generate
+RUN npm run build
+
+# --- Front-end (Astro, static output) — merged into this same image so one
+# Fastify process serves both the API and the site; Caddy (a separate
+# container previously) is gone entirely, see Caddy.Dockerfile's git history
+# and the migration plan's "Pipeline de déploiement" section. Node 22+ is
+# required here (see the root package.json's engines field) — deliberately a
+# different major than the API's own Node 20, this stage's output is just
+# static files, discarded after this build, so there's no runtime version to
+# keep in sync with the API.
+FROM node:22-alpine AS web-build
+WORKDIR /web
+COPY package.json package-lock.json* ./
+RUN npm ci
+COPY astro.config.mjs tsconfig.json ./
+COPY src/ src/
+COPY public/ public/
 RUN npm run build
 
 # --- PrusaSlicer CLI (real slicing happens here, server-side — never on the
@@ -67,7 +89,7 @@ RUN printf '#!/bin/sh\nexec xvfb-run --auto-servernum -- /opt/prusaslicer/squash
     && chmod +x /usr/local/bin/prusa-slicer
 ENV PRUSASLICER_BIN=/usr/local/bin/prusa-slicer
 
-COPY package.json package-lock.json* ./
+COPY server/package.json server/package-lock.json* ./
 RUN npm install --omit=dev
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
@@ -77,7 +99,11 @@ COPY --from=build /app/slicer-profiles ./slicer-profiles
 # has to ship too, not just dist/.
 COPY --from=build /app/src ./src
 RUN npx prisma generate
-COPY docker-entrypoint.sh ./
+# The Astro build's static output — served by @fastify/static as a fallback
+# for any request that doesn't match a real API route (see app.ts). This is
+# what used to be the separate Caddy container's whole job.
+COPY --from=web-build /web/dist ./public
+COPY server/docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
 # Run as the non-root `node` user the base image already ships (uid 1000) —

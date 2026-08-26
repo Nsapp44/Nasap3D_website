@@ -1,8 +1,12 @@
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 import Fastify, { type FastifyError } from "fastify";
 import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
 import multipart from "@fastify/multipart";
 import rateLimit from "@fastify/rate-limit";
+import fastifyStatic from "@fastify/static";
 import { authRoutes } from "./routes/auth.js";
 import { accountRoutes } from "./routes/account.js";
 import { contactRoutes } from "./routes/contact.js";
@@ -73,6 +77,28 @@ export async function buildApp(opts: { logger?: boolean } = {}) {
   // Own encapsulated scope: registers a raw-buffer body parser needed to
   // verify Stripe's webhook signature, without affecting any other route.
   await app.register(stripeWebhookRoutes);
+
+  // The built Astro site (server/Dockerfile's web-build stage copies it to
+  // ./public, a sibling of ./dist — see that Dockerfile's final COPY) —
+  // Caddy served this from a separate container before; now this one
+  // process does both, so the reverse proxy in front of it only has one
+  // thing to reach. Registered dead last: every API route above already
+  // matched exactly what it wants, so this only ever catches requests
+  // nothing else claimed. Guarded by existsSync because `npm run dev`
+  // outside Docker has no ./public here at all — the Astro dev server
+  // handles the front end on its own port in that case, and
+  // @fastify/static throws at registration time if `root` doesn't exist.
+  const publicDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../public");
+  if (existsSync(publicDir)) {
+    await app.register(fastifyStatic, { root: publicDir });
+    app.setNotFoundHandler((request, reply) => {
+      if (request.method !== "GET" && request.method !== "HEAD") {
+        reply.code(404).send({ error: "not_found" });
+        return;
+      }
+      reply.code(404).sendFile("404.html");
+    });
+  }
 
   return app;
 }

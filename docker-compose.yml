@@ -31,10 +31,14 @@ services:
   api:
     # Pulled from GHCR by default (built by .github/workflows/docker-publish.yml
     # on every push to master) — `docker compose --profile full pull` on the
-    # OVH server, no local build needed. `--build` (local dev) still works:
-    # it builds from ./server and tags the result with this same name.
+    # OVH server, no local build needed. `--build` (local dev) still works.
+    # Context is the repo root, not ./server: this image now also builds and
+    # serves the Astro site (see server/Dockerfile's web-build stage) — Caddy
+    # (a separate container/image, previously) is gone entirely.
     image: ghcr.io/nsapp44/nasap3d-api:latest
-    build: ./server
+    build:
+      context: .
+      dockerfile: server/Dockerfile
     restart: unless-stopped
     depends_on:
       db:
@@ -65,42 +69,16 @@ services:
       # (see src/lib/captcha.ts, session.ts, guestSession.ts).
       NODE_ENV: production
     ports:
-      # Loopback uniquement : une fois Caddy en place (service ci-dessous),
-      # c'est lui la seule porte d'entrée publique (80/443, HTTPS). Exposer
-      # aussi le :3000 à tout Internet permettrait de contourner Caddy et de
-      # taper l'API en HTTP direct, sans TLS. 127.0.0.1:3000 reste
-      # joignable depuis l'hôte (utile en dev local, front statique sur
-      # :8080 par exemple).
+      # Loopback uniquement — useful for local dev/debugging directly against
+      # the container. In production, the reverse proxy already running on
+      # the OVH host (a separate tool, handles TLS) reaches this container by
+      # its Docker DNS name on the "nasap3d_network" below (api:3000), the
+      # same way it used to reach caddy:80 — not through this published port,
+      # which stays loopback-only so :3000 is never exposed to the internet
+      # directly, unauthenticated, without TLS.
       - "127.0.0.1:3000:3000"
     networks:
       - nasap3d
-    profiles:
-      - full
-
-  caddy:
-    # Pré-construite (Caddyfile + front-end statique déjà copiés dedans,
-    # voir Caddy.Dockerfile) et publiée par
-    # .github/workflows/docker-publish-caddy.yml à chaque push sur master
-    # qui touche le front — `docker compose --profile full pull` suffit,
-    # pas besoin que le dépôt soit cloné/à jour sur le serveur pour que le
-    # site soit servi. `--build` reste possible en dev local.
-    image: ghcr.io/nsapp44/nasap3d-caddy:latest
-    build:
-      context: .
-      dockerfile: Caddy.Dockerfile
-    restart: unless-stopped
-    depends_on:
-      - api
-    # Pas de "ports:" ici volontairement — Caddy n'est pas exposé à
-    # l'internet directement. Un reverse proxy déjà en place côté serveur
-    # (autre outil, gère aussi le HTTPS — voir auto_https off dans le
-    # Caddyfile) l'atteint via le réseau Docker "nasap3d_network" ci-dessous,
-    # en tapant le conteneur par son nom : http://caddy:80
-    networks:
-      - nasap3d
-    volumes:
-      - caddy_data:/data
-      - caddy_config:/config
     profiles:
       - full
 
@@ -109,12 +87,10 @@ networks:
   # partir du dossier, ex. "refontenasap3d_default") pour qu'un autre projet
   # docker-compose (le reverse proxy du serveur) puisse le rejoindre de
   # façon fiable en le déclarant "external: true" sous ce même nom, et
-  # atteindre ce conteneur par le nom de service Docker ("caddy"), sur le
-  # port 80 interne (jamais exposé à l'hôte).
+  # atteindre ce conteneur par le nom de service Docker ("api"), sur le
+  # port 3000 interne (jamais exposé publiquement à l'hôte).
   nasap3d:
     name: nasap3d_network
 
 volumes:
   nasap3d_db_data:
-  caddy_data:
-  caddy_config:

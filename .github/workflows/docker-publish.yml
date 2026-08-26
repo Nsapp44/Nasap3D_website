@@ -1,14 +1,22 @@
 name: Build & publish API image
 
-# Builds server/Dockerfile (Node API + PrusaSlicer CLI) and pushes it to
-# GitHub Container Registry so the OVH server can `docker compose pull`
-# instead of rebuilding (npm install + PrusaSlicer AppImage download) on
-# every deploy — see server/README.md "Déploiement (OVH)".
+# Builds server/Dockerfile (Node API + PrusaSlicer CLI + the Astro site,
+# merged into one image — Caddy used to serve the site separately, see this
+# workflow's own git history) and pushes it to GitHub Container Registry so
+# the OVH server can `docker compose pull` instead of rebuilding on every
+# deploy — see server/README.md "Déploiement (OVH)". Context is the repo
+# root, not server/, since the Astro project lives there too.
 on:
   push:
     branches: [master]
     paths:
       - "server/**"
+      - "src/**"
+      - "public/**"
+      - "astro.config.mjs"
+      - "tsconfig.json"
+      - "package.json"
+      - "package-lock.json"
       - ".github/workflows/docker-publish.yml"
 
 env:
@@ -33,7 +41,8 @@ jobs:
 
       - uses: docker/build-push-action@v6
         with:
-          context: ./server
+          context: .
+          file: server/Dockerfile
           push: true
           tags: |
             ${{ env.IMAGE }}:latest

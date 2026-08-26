@@ -1,0 +1,39 @@
+# Build context is the repo root (see docker-compose.yml / the publish
+# workflow) — server/Dockerfile now builds both the API and the Astro site
+# from here. Replaces the old server/.dockerignore, which only applied back
+# when the build context was ./server.
+
+# Never let real secrets end up in an image layer.
+.env
+.env.*
+!.env.example
+server/.env
+server/.env.*
+!server/.env.example
+
+# Host-installed / build-output stuff each stage builds fresh itself.
+node_modules
+dist
+server/dist
+.astro
+
+# Windows-only PrusaSlicer install used for local `npm run dev` outside
+# Docker (server/Dockerfile fetches its own Linux build) — large, irrelevant
+# to the image, and slow to send to the Docker daemon on every build.
+server/.tools
+
+# Real customer-uploaded files — never bake these into an image layer.
+uploads
+server/uploads
+
+# Not needed to build either stage's output.
+server/test
+backups
+screenshots
+scripts
+
+.git
+.github
+.claude
+.playwright-mcp
+*.md

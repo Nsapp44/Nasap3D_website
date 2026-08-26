@@ -173,11 +173,13 @@ suffit).
 
 ## Déploiement (OVH)
 
-`docker-compose.yml` (racine du projet) inclut un service `api` derrière le profil `full`.
-`.github/workflows/docker-publish.yml` build et publie l'image sur GitHub Container Registry
-(`ghcr.io/nsapp44/nasap3d-api`) à chaque push sur `master` qui touche `server/`. Le serveur OVH
-n'a donc besoin que de Docker installé, pas de Node/npm/PrusaSlicer — il récupère l'image déjà
-construite.
+`docker-compose.yml` (racine du projet) inclut un service `api` derrière le profil `full`. Son
+image sert à la fois l'API **et** le site Astro — un seul conteneur, plus de reverse-proxy séparé
+(voir la section Caddy plus bas pour l'historique). `.github/workflows/docker-publish.yml` build et
+publie l'image sur GitHub Container Registry (`ghcr.io/nsapp44/nasap3d-api`) à chaque push sur
+`master` qui touche `server/` ou le code Astro (`src/`, `public/`, `astro.config.mjs`). Le serveur
+OVH n'a donc besoin que de Docker installé, pas de Node/npm/PrusaSlicer/Astro — il récupère l'image
+déjà construite.
 
 **Le conteneur fait tout seul au démarrage** (`server/docker-entrypoint.sh`, `ENTRYPOINT` de
 l'image) : `prisma migrate deploy` puis `prisma/seed.ts`, avant de lancer l'API. Aucune commande à
@@ -188,19 +190,17 @@ déjà modifiés depuis l'admin (voir les commentaires de `prisma/seed.ts`) — 
 catalogue (matières, couleurs, profils qualité, paliers de remise) synchronisé avec le code, et
 recrée le compte admin/test seulement s'il n'existe pas déjà.
 
-### Caddy (front-end statique + reverse proxy)
+### Front-end (site Astro, servi par ce même conteneur)
 
-Même principe que l'API : `Caddy.Dockerfile` (racine du dépôt) copie le `Caddyfile` et les fichiers
-du front-end statique (`*.dc.html`, JS/CSS partagés, `assets/`, `vendor/`, `sitemap.xml`,
-`robots.txt`) directement dans l'image au moment du build, plutôt que de les monter depuis le
-disque du serveur au démarrage. `.github/workflows/docker-publish-caddy.yml` la publie sur
-`ghcr.io/nsapp44/nasap3d-caddy` à chaque push sur `master` qui touche le front — le serveur récupère
-l'image déjà construite (`docker compose --profile full pull`), pas besoin que le dépôt soit cloné
-ou à jour sur l'hôte pour que le site soit servi. `server/`, `.git`, `.env*` et `docker-compose.yml`
-ne sont jamais copiés dans cette image (voir les commentaires de `Caddy.Dockerfile`).
-
-Caddy est la seule porte d'entrée publique (ports 80/443, HTTPS automatique via Let's Encrypt) —
-voir la restriction du port `3000` de l'API à `127.0.0.1` plus haut dans `docker-compose.yml`.
+`Dockerfile` a un stage dédié (`web-build`, Node 22 — voir le `engines` du `package.json` racine)
+qui build le site Astro (`npm ci && npm run build`) et copie sa sortie statique dans `./public` de
+l'image finale. `src/app.ts` enregistre `@fastify/static` sur ce dossier, en secours de toute
+requête qui ne correspond à aucune route API — l'API garde toujours la priorité. Ce conteneur `api`
+est donc la seule porte d'entrée publique désormais (plus de conteneur Caddy séparé, retiré lors de
+la fusion — voir l'historique git de `Caddy.Dockerfile`/`Caddyfile` si besoin de contexte) ; le
+reverse proxy déjà en place côté serveur OVH (gère le HTTPS) doit joindre `api:3000` sur le réseau
+Docker `nasap3d_network`, jamais un port publié publiquement — voir la restriction à `127.0.0.1`
+sur le port `3000` dans `docker-compose.yml`.
 
 ### PostgreSQL
 
@@ -238,12 +238,11 @@ docker compose --profile full up -d
 
 (`--build` reste possible pour builder localement à la place — utile en dev, voir plus haut.)
 
-Les paquets GHCR sont **publics** (choix fait pour ce projet — pas besoin d'authentification pour le
-`pull` depuis le serveur OVH), mais chacun reste à rendre public manuellement après son tout premier
-push réussi : sur GitHub → onglet **Packages** du repo → `nasap3d-api` (ou `nasap3d-caddy`) →
-_Package settings_ → _Change visibility_ → _Public_ (comportement par défaut de GHCR : un paquet
-publié via `GITHUB_TOKEN` est privé au premier push, quelle que soit la visibilité du repo) — à
-faire une fois pour chacun des deux paquets.
+Le paquet GHCR est **public** (choix fait pour ce projet — pas besoin d'authentification pour le
+`pull` depuis le serveur OVH), mais reste à rendre public manuellement après son tout premier push
+réussi : sur GitHub → onglet **Packages** du repo → `nasap3d-api` → _Package settings_ → _Change
+visibility_ → _Public_ (comportement par défaut de GHCR : un paquet publié via `GITHUB_TOKEN` est
+privé au premier push, quelle que soit la visibilité du repo).
 
 Le PostgreSQL n'est pas managé par OVH dans ce schéma : c'est un conteneur (ou une instance
 dédiée) que vous administrez vous-même — activer `sslmode=require` sur `DATABASE_URL` si l'API et
