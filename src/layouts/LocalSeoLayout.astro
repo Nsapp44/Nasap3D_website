@@ -5,6 +5,7 @@
 // l'autre. showAuthIcon=false : ces pages n'ont jamais eu l'icône réglages
 // dans le header d'origine (contrairement à la plupart des autres pages).
 import BaseLayout from "./BaseLayout.astro";
+import QuoteCta from "../components/QuoteCta";
 
 interface StatCard {
   title: string;
@@ -70,7 +71,7 @@ const {
     <div class="cta-box">
       <div class="cta-title">{ctaTitle}</div>
       <div class="cta-text">Déposez votre fichier et obtenez un prix réel en quelques secondes.</div>
-      <a href="/devis-instantane" class="cta-btn">Obtenir un devis instantané →</a>
+      <QuoteCta className="cta-btn" client:load />
     </div>
   </div>
 
@@ -175,7 +176,10 @@ const {
     color: rgba(255, 255, 255, 0.55);
     margin-bottom: 16px;
   }
-  .cta-btn {
+  /* :global() : rendu par QuoteCta (îlot React) pour pouvoir basculer vers
+     "Nous contacter" quand le devis est en pause — le CSS scoped d'Astro ne
+     traverse pas la frontière vers un composant client. */
+  :global(.cta-btn) {
     text-decoration: none;
     display: inline-block;
     background: #ff5a3c;

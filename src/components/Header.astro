@@ -1,5 +1,6 @@
 ---
 import NavAuthIcon from "./NavAuthIcon";
+import QuoteNavLink from "./QuoteNavLink";
 
 interface Props {
   currentPath: string;
@@ -10,16 +11,23 @@ interface Props {
   showAuthIcon?: boolean;
 }
 const { currentPath, showAuthIcon = true } = Astro.props;
+// Le panier n'est pas dans NAV_ITEMS (c'est une icône, pas un lien texte) —
+// sur /panier, l'original le marquait "page actuelle" (soulignement rouge)
+// directement sur l'icône plutôt que sur un lien de la nav.
+const cartIsCurrent = currentPath === "/panier";
 
+// "Devis instantané" est rendu à part (voir QuoteNavLink) : c'est le seul
+// lien qui doit disparaître quand le devis est en pause, donc le seul qui a
+// besoin d'être un îlot client — les autres restent du HTML statique.
 const NAV_ITEMS = [
   { href: "/", label: "Accueil" },
   { href: "/services", label: "Services" },
-  { href: "/devis-instantane", label: "Devis instantané" },
   { href: "/a-propos", label: "À propos" },
   { href: "/realisations", label: "Réalisations" },
   { href: "/machines", label: "Machines" },
   { href: "/contact", label: "Contact" },
 ];
+const DEVIS_INDEX = 2; // position d'origine de "Devis instantané" dans la nav
 ---
 
 <div class="site-header">
@@ -29,7 +37,19 @@ const NAV_ITEMS = [
 
   <div class="nav-links">
     {
-      NAV_ITEMS.map((item) =>
+      NAV_ITEMS.slice(0, DEVIS_INDEX).map((item) =>
+        item.href === currentPath ? (
+          <span class="nav-current nav-hover-scale">{item.label}</span>
+        ) : (
+          <a href={item.href} class="nav-hover-scale">
+            {item.label}
+          </a>
+        ),
+      )
+    }
+    <QuoteNavLink isCurrent={currentPath === "/devis-instantane"} client:load />
+    {
+      NAV_ITEMS.slice(DEVIS_INDEX).map((item) =>
         item.href === currentPath ? (
           <span class="nav-current nav-hover-scale">{item.label}</span>
         ) : (
@@ -44,7 +64,7 @@ const NAV_ITEMS = [
   <div class="header-account">
     <a href="/compte" class="nav-hover-scale">Compte</a>
     {showAuthIcon && <NavAuthIcon client:load />}
-    <a href="/panier" class="cart-link">
+    <a href="/panier" class={`cart-link${cartIsCurrent ? " cart-current" : ""}`}>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="19"
@@ -114,6 +134,11 @@ const NAV_ITEMS = [
     position: relative;
     display: inline-flex;
     align-items: center;
+  }
+  .cart-current {
+    color: #f3f1ec;
+    border-bottom: 2px solid #ff5a3c;
+    padding-bottom: 4px;
   }
   .cart-count {
     position: absolute;

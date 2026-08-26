@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import QuoteCta from "../components/QuoteCta";
 
 const QUICK_NAV = [
   { href: "#retroconception", label: "Rétro-conception" },
@@ -171,7 +172,7 @@ const INITIATION_TIERS = [
         <div class="sub-card"><div class="sub-title">Séries</div><div class="sub-text">Jusqu'à 500 pièces</div></div>
         <div class="sub-card"><div class="sub-title">Matières</div><div class="sub-text">PLA, PETG, ABS, ASA, TPU, PP, Nylon</div></div>
       </div>
-      <a href="/devis-instantane" class="cta-btn">Obtenir un devis instantané →</a>
+      <QuoteCta className="cta-btn" client:load />
     </div>
 
     <div class="process-card">
@@ -382,7 +383,12 @@ const INITIATION_TIERS = [
     font: 400 10.5px/1.5 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.5);
   }
-  .cta-btn {
+  /* :global() : un des boutons "Obtenir un devis instantané" est rendu par
+     QuoteCta (îlot React, voir ce composant) pour pouvoir basculer vers
+     "Nous contacter" quand le devis est en pause — le CSS scoped d'Astro ne
+     traverse pas la frontière vers un composant client, donc cette règle
+     doit sortir du scoping pour continuer à s'appliquer aux deux. */
+  :global(.cta-btn) {
     text-decoration: none;
     display: inline-block;
     background: #ff5a3c;
@@ -392,7 +398,7 @@ const INITIATION_TIERS = [
     border-radius: 6px;
     transition: transform 0.2s ease;
   }
-  .cta-btn:hover {
+  :global(.cta-btn:hover) {
     transform: scale(1.05);
   }
   .process-card {
