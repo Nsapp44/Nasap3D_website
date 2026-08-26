@@ -30,6 +30,7 @@ const canonical = new URL(path, Astro.site).toString();
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
+    <slot name="head" />
   </head>
   <body>
     <div class="page-shell">

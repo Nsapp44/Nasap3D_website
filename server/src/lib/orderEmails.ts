@@ -55,7 +55,7 @@ export async function sendOrderAcceptedEmail(to: string, ref: string, totalCents
 // explaining why in the email itself (the reason is discussed by reply).
 export async function sendOrderRejectedEmail(to: string, ref: string) {
   try {
-    const contactUrl = `${frontUrl()}/Contact.dc.html`;
+    const contactUrl = `${frontUrl()}/contact`;
     await sendMail(
       to,
       `Commande ${ref} — problème de faisabilité`,

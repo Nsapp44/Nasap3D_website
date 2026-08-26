@@ -13,6 +13,166 @@ a:hover {
   color: #ff7a5c;
 }
 
+/* PrinterLoaderIcon.tsx — animated "printer laying filament" loading icon,
+   used by ContactForm (file upload + submit spinner) and QuoteWizard later. */
+.printer-loader-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.printer-loader-svg .filament {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.printer-loader-svg .stack {
+  animation: plShiftDown 2.5s linear infinite;
+}
+.printer-loader-svg .nozzle {
+  fill: var(--pl-nozzle-fill, #161514);
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  animation: plNozzleMove 2.5s linear infinite;
+}
+.printer-loader-svg .line-lr {
+  stroke-dasharray: 100;
+  animation: plDrawLr 2.5s linear infinite;
+}
+.printer-loader-svg .arc-r {
+  stroke-dasharray: 100;
+  animation: plDrawArcR 2.5s linear infinite;
+}
+.printer-loader-svg .line-rl {
+  stroke-dasharray: 100;
+  animation: plDrawRl 2.5s linear infinite;
+}
+.printer-loader-svg .arc-l {
+  stroke-dasharray: 100;
+  animation: plDrawArcL 2.5s linear infinite;
+}
+@keyframes plShiftDown {
+  0%,
+  38% {
+    transform: translateY(0px);
+  }
+  50%,
+  88% {
+    transform: translateY(10px);
+  }
+  100% {
+    transform: translateY(20px);
+  }
+}
+@keyframes plNozzleMove {
+  0% {
+    transform: translateX(-25px);
+  }
+  38% {
+    transform: translateX(25px);
+  }
+  44% {
+    transform: translateX(30px);
+  }
+  50% {
+    transform: translateX(25px);
+  }
+  88% {
+    transform: translateX(-25px);
+  }
+  94% {
+    transform: translateX(-30px);
+  }
+  100% {
+    transform: translateX(-25px);
+  }
+}
+@keyframes plDrawLr {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  38%,
+  100% {
+    stroke-dashoffset: 50;
+  }
+}
+@keyframes plDrawArcR {
+  0%,
+  38% {
+    stroke-dashoffset: 100;
+  }
+  50%,
+  100% {
+    stroke-dashoffset: 84.3;
+  }
+}
+@keyframes plDrawRl {
+  0%,
+  50% {
+    stroke-dashoffset: 100;
+  }
+  88%,
+  100% {
+    stroke-dashoffset: 50;
+  }
+}
+@keyframes plDrawArcL {
+  0%,
+  88% {
+    stroke-dashoffset: 100;
+  }
+  100% {
+    stroke-dashoffset: 84.3;
+  }
+}
+
+/* ContactMap.tsx / Leaflet marker pulse (the workshop's location pin). */
+@keyframes mapPulse {
+  0% {
+    transform: scale(0.4);
+    opacity: 0.85;
+  }
+  70% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+.nasap-pulse-wrap {
+  position: relative;
+  width: 20px;
+  height: 20px;
+}
+.nasap-pulse-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px;
+  border-radius: 50%;
+  background: #ff5a3c;
+  animation: mapPulse 1.8s ease-out infinite;
+}
+.nasap-pulse-dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin: -5px;
+  border-radius: 50%;
+  background: #ff5a3c;
+  border: 2px solid #fff;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+  box-sizing: border-box;
+}
+
 /* Replaces the old framework's style-hover="transform:scale(1.18);color:#ff5a3c"
    directive (support.js injected this per-element via a generated
    stylesheet rule) — same visual effect, plain CSS class instead. Used by

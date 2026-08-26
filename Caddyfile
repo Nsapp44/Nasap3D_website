@@ -32,9 +32,6 @@
 	@devis path /devis-instantane
 	rewrite @devis "/Devis Instantane.dc.html"
 
-	@contact path /contact
-	rewrite @contact /Contact.dc.html
-
 	@panier path /panier
 	rewrite @panier /Cart.dc.html
 
@@ -45,7 +42,8 @@
 	rewrite @admin /Admin.dc.html
 
 	# /services, /machines, /realisations, /a-propos, /cgu, /confidentialite,
-	# /cookies, /mentions-legales, /impression-3d-{nantes,cholet,angers}, 404 :
+	# /cookies, /mentions-legales, /impression-3d-{nantes,cholet,angers},
+	# /contact, 404 :
 	# migrées vers Astro (voir C:\Users\Nolann\.claude\plans\idempotent-shimmying-swan.md),
 	# plus besoin de rewrite ici — le build Astro produit déjà ces chemins
 	# directement dans /srv (fichiers statiques, pas de réécriture requise).
