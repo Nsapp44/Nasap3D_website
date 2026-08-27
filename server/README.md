@@ -39,7 +39,7 @@ Documents associés :
 
 ## Prérequis
 
-- Node.js 20+
+- Node.js 22+
 - Docker (pour PostgreSQL en local — ou un PostgreSQL 16 déjà installé)
 - PrusaSlicer (CLI) installé quelque part sur la machine, pour que le devis instantané fonctionne
   réellement — voir `PRUSASLICER_BIN` plus bas. Sans lui, tout le reste de l'API fonctionne, seul

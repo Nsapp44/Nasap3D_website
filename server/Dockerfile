@@ -3,7 +3,7 @@
 # Astro site too (see the web-build stage and the final COPY into ./public),
 # and the Astro project lives at the repo root, a sibling of server/, not
 # inside it. Every COPY below is written relative to that root accordingly.
-FROM node:20-bookworm-slim AS build
+FROM node:22-bookworm-slim AS build
 WORKDIR /app
 # Prisma's engine-selection at `generate` time (and again at runtime, see the
 # final stage below) shells out to detect the installed OpenSSL version to
@@ -23,10 +23,10 @@ RUN npm run build
 # Fastify process serves both the API and the site; Caddy (a separate
 # container previously) is gone entirely, see Caddy.Dockerfile's git history
 # and the migration plan's "Pipeline de déploiement" section. Node 22+ is
-# required here (see the root package.json's engines field) — deliberately a
-# different major than the API's own Node 20, this stage's output is just
-# static files, discarded after this build, so there's no runtime version to
-# keep in sync with the API.
+# required here (see the root package.json's engines field) — same major as
+# the API's own stages below, kept in sync on purpose rather than by
+# coincidence, though this stage's output is just static files discarded
+# after this build, so there's no strict runtime requirement to match.
 FROM node:22-alpine AS web-build
 WORKDIR /web
 COPY package.json package-lock.json* ./
@@ -47,7 +47,7 @@ RUN npm run build
 # to need neither libfuse nor the target system's own libraries) that keeps
 # tracking the 2.9.x line. Bump the version/URL below if a newer one is
 # needed; check https://github.com/probonopd/PrusaSlicer.AppImage/releases.
-FROM node:20-bookworm-slim AS prusaslicer
+FROM node:22-bookworm-slim AS prusaslicer
 WORKDIR /opt/prusaslicer
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl && rm -rf /var/lib/apt/lists/*
 RUN curl -fL -o PrusaSlicer.AppImage \
@@ -56,7 +56,7 @@ RUN curl -fL -o PrusaSlicer.AppImage \
     && ./PrusaSlicer.AppImage --appimage-extract \
     && rm PrusaSlicer.AppImage
 
-FROM node:20-bookworm-slim
+FROM node:22-bookworm-slim
 WORKDIR /app
 ENV NODE_ENV=production
 
