@@ -36,7 +36,12 @@ export default function ContactForm() {
   const { containerRef: captchaRef, token: captchaToken, reset: resetCaptcha } = useHcaptcha();
 
   const uploading = files.some((f) => f.status === "uploading");
-  const canSend = name.trim().length > 0 && EMAIL_RE.test(email) && subject.trim().length > 0 && !uploading && !submitting;
+  // A too-large/failed file stays listed (with its error) until the visitor
+  // removes it — sending anyway would just silently drop it server-side
+  // (only files with status "ready" are included in the submit payload),
+  // which reads as "I attached it" while the admin never actually gets it.
+  const hasFileError = files.some((f) => f.status === "error");
+  const canSend = name.trim().length > 0 && EMAIL_RE.test(email) && subject.trim().length > 0 && !uploading && !submitting && !hasFileError;
   const canAttachMore = files.length < MAX_FILES;
 
   function attachFiles() {
