@@ -51,6 +51,7 @@ function errorMessage(data: unknown): string {
     captcha_failed: "Vérification anti-robot échouée, merci de cocher la case et réessayer.",
     invalid_or_expired_token: "Ce lien de réinitialisation est invalide ou a expiré.",
     network_error: "Impossible de contacter le serveur, réessayez dans un instant.",
+    mail_send_failed: "L'email n'a pas pu être envoyé, merci de réessayer dans un instant.",
   };
   return (code && messages[code]) || "Une erreur est survenue, merci de réessayer.";
 }

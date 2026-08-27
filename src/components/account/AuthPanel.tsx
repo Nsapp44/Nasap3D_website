@@ -156,7 +156,7 @@ export default function AuthPanel({ onLoginSuccess, onSignupCodeSent, onError, o
           </div>
         )}
         <div ref={captchaRef} className="captcha-slot" />
-        <div onClick={submit} className="auth-submit">
+        <div onClick={submit} className={`auth-submit${busy ? " busy" : ""}`}>
           {busy && <Loader size={14} />}
           <span>{mode === "login" ? "Se connecter" : "S'inscrire"}</span>
         </div>
@@ -193,6 +193,7 @@ export default function AuthPanel({ onLoginSuccess, onSignupCodeSent, onError, o
         .forgot-link { font: 500 10.5px 'Inter',sans-serif; color: rgba(255,255,255,.45); cursor: pointer; }
         .captcha-slot { display: flex; justify-content: center; margin-bottom: 14px; }
         .auth-submit { display: flex; align-items: center; justify-content: center; gap: 8px; background: #ff5a3c; color: #161514; font: 600 12.5px 'Inter',sans-serif; padding: 11px; border-radius: 7px; cursor: pointer; }
+        .auth-submit.busy { opacity: .55; cursor: not-allowed; }
         .auth-switch { text-align: center; margin-top: 16px; font: 400 11px 'Inter',sans-serif; color: rgba(255,255,255,.45); }
         .auth-switch-action { color: #ff5a3c; cursor: pointer; font-weight: 600; }
       `}</style>

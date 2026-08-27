@@ -226,8 +226,8 @@ export default function ContactForm() {
 
       <div ref={captchaRef} className="captcha-slot" />
 
-      <div onClick={submit} className={`send-btn${canSend ? " enabled" : ""}`}>
-        {uploading && <Loader size={14} />}
+      <div onClick={submit} className={`send-btn${canSend ? " enabled" : ""}${submitting || uploading ? " busy" : ""}`}>
+        {(submitting || uploading) && <Loader size={14} />}
         <span>Envoyer le message</span>
       </div>
 
@@ -271,6 +271,7 @@ export default function ContactForm() {
           display: flex; align-items: center; gap: 8px; transition: background .2s ease, color .2s ease;
         }
         .send-btn.enabled { background: #ff5a3c; color: #161514; border: none; cursor: pointer; }
+        .send-btn.busy { opacity: .55; cursor: not-allowed; }
         .sent-msg { font: 600 11px 'Inter',sans-serif; color: #ff5a3c; }
         .error-msg { font: 600 11px 'Inter',sans-serif; color: #ff8a70; }
       `}</style>
