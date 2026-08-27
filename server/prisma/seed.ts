@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { sanitizeEnv } from "../src/lib/sanitizeEnv.js";
 import { PrismaClient } from "@prisma/client";
 import { nextCustomerNo } from "../src/lib/counter.js";
 import { hashPassword } from "../src/lib/password.js";
@@ -9,6 +10,12 @@ import { hashPassword } from "../src/lib/password.js";
 // read as undefined here (server/.env is bind-mounted, not injected via
 // env_file: — see docker-compose.yml), silently falling back to the
 // hardcoded default admin credentials instead of the real ones.
+//
+// sanitizeEnv() (see server/src/lib/sanitizeEnv.ts) strips accidental
+// quotes the same way index.ts does — this file reads SEED_ADMIN_EMAIL/
+// PASSWORD and implicitly DATABASE_URL (via `new PrismaClient()` below),
+// both real candidates for the same quoting bug.
+sanitizeEnv();
 const prisma = new PrismaClient();
 
 // Mirrors the color catalogue currently hardcoded in the front-end's stock.js

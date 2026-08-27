@@ -1,10 +1,17 @@
-// Must stay the first import: dotenv populates process.env from server/.env
-// (bind-mounted in Docker, see docker-compose.yml) before any other import
-// below — including their own transitive imports — gets a chance to read it
-// at module top-level. A file's own static imports evaluate in source order,
-// so this ordering is enough on its own; no extra trick needed.
+// dotenv must stay the first import: it populates process.env from
+// server/.env (bind-mounted in Docker, see docker-compose.yml) before
+// anything else gets a chance to read it. sanitizeEnv() then needs to run
+// before ./app.js is evaluated — but static imports are hoisted in ES
+// modules, so a plain `import { buildApp } from "./app.js"` placed after
+// the sanitizeEnv() call below would still execute before it, defeating
+// the whole point for any module in app.js's graph that reads an env var
+// at its own top level. A dynamic import() is a real runtime statement,
+// not hoisted, so it's the only way to guarantee that.
 import "dotenv/config";
-import { buildApp } from "./app.js";
+import { sanitizeEnv } from "./lib/sanitizeEnv.js";
+
+sanitizeEnv();
+const { buildApp } = await import("./app.js");
 import { sweepExpiredQuoteFiles } from "./lib/quoteCleanup.js";
 import { sweepAbandonedCarts } from "./lib/cartCleanup.js";
 import { sweepOrderTracking } from "./lib/orderTracking.js";
