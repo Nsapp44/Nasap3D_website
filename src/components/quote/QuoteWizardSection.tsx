@@ -1,11 +1,29 @@
 import { useQuoteEnabled } from "../../hooks/useQuoteEnabled";
 import QuoteWizard from "./QuoteWizard";
+import PrinterLoaderIcon from "../PrinterLoaderIcon";
 
 // Gates the configurator behind the server-authoritative quoteEnabled flag
 // (see useQuoteEnabled) — the paused message replaces the whole wizard,
 // same as Devis Instantane.dc.html's quotePaused/quoteEnabled sc-if pair.
 export default function QuoteWizardSection() {
-  const { quoteEnabled } = useQuoteEnabled();
+  const { quoteEnabled, loading } = useQuoteEnabled();
+
+  // Genuinely unknown yet (only ever true on a visitor's first-ever page
+  // this session — see useQuoteEnabled) — showing this instead of guessing
+  // means the wizard/paused message never has to flash-then-correct.
+  if (loading) {
+    return (
+      <div className="quote-loading">
+        <span className="quote-loading-icon">
+          <PrinterLoaderIcon maskId="plMaskQuoteSectionLoading" />
+        </span>
+        <style>{`
+          .quote-loading { border: 1px solid rgba(255,255,255,.1); background: #1a1917; border-radius: 12px; padding: 60px 28px; display: flex; align-items: center; justify-content: center; }
+          .quote-loading-icon { width: 40px; height: 40px; color: rgba(255,255,255,.5); }
+        `}</style>
+      </div>
+    );
+  }
 
   if (!quoteEnabled) {
     return (
@@ -28,14 +46,5 @@ export default function QuoteWizardSection() {
     );
   }
 
-  // Wrapped (not just returned bare) so the pre-hydration static markup —
-  // always this branch, see useQuoteEnabled — can be hidden by the
-  // n3d-quote-gate mechanism when the cached flag says paused, instead of
-  // showing a working wizard for a moment on a page that's actually paused.
-  // The paused branch above is never tagged, so it's unaffected either way.
-  return (
-    <div className="n3d-quote-gate" style={{ display: "contents" }}>
-      <QuoteWizard />
-    </div>
-  );
+  return <QuoteWizard />;
 }

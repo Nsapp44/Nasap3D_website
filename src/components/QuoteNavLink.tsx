@@ -1,4 +1,5 @@
 import { useQuoteEnabled } from "../hooks/useQuoteEnabled";
+import PrinterLoaderIcon from "./PrinterLoaderIcon";
 
 // The "Devis instantané" nav link, hidden while the workshop is paused
 // (Settings.quoteEnabled=false) — ported from Home.dc.html's
@@ -7,10 +8,18 @@ import { useQuoteEnabled } from "../hooks/useQuoteEnabled";
 // known client-side; every other page previously just left this link up
 // permanently regardless of pause state, which is the bug being fixed here.
 export default function QuoteNavLink({ isCurrent }: { isCurrent: boolean }) {
-  // quoteEnabled defaults to true (optimistic) until the real check
-  // resolves, same as the original — shows immediately, only disappears if
-  // actually confirmed paused, instead of flashing hidden on every load.
-  const { quoteEnabled } = useQuoteEnabled();
+  const { quoteEnabled, loading } = useQuoteEnabled();
+  // A brief, honest "we don't know yet" instead of guessing — see
+  // useQuoteEnabled's own comment. Only ever visible on a visitor's
+  // first-ever page this session; every page after that already has the
+  // real answer cached, before this even renders.
+  if (loading) {
+    return (
+      <span style={{ display: "inline-flex", width: 15, height: 15, color: "rgba(255,255,255,.5)" }}>
+        <PrinterLoaderIcon maskId="plMaskNavQuote" />
+      </span>
+    );
+  }
   if (!quoteEnabled) return null;
   return isCurrent ? (
     <span className="nav-current nav-hover-scale">Devis instantané</span>

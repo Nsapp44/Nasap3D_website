@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { api } from "../lib/api-client";
 
 // Replaces navguard.js + stock.js's isQuoteEnabled()/setQuoteEnabled()
@@ -12,53 +12,49 @@ import { api } from "../lib/api-client";
 // (paused) rather than defaulting to true — a broken configurator is worse
 // than a visible maintenance message.
 const CACHE_KEY = "nasap3d-quote-enabled";
-// Set synchronously by the inline script in BaseLayout.astro's <head> when
-// the cached value says paused, to hide .n3d-quote-gate elements before
-// first paint (see that script's own comment). Must be kept in sync here
-// too: if the cache was stale (said paused, but the real fetch below comes
-// back enabled, or vice versa), the class has to be corrected once the real
-// answer is known — otherwise a stale "paused" class would keep hiding
-// content this hook has since determined should actually be visible.
-const HTML_CLASS = "n3d-quote-paused";
 
-function cachedValue(): boolean {
-  if (typeof sessionStorage === "undefined") return true;
+// null = not known yet (no cached value, and the real fetch hasn't resolved
+// this page load). Every consumer renders an explicit loading state for
+// that case instead of guessing — output:'static' means the server-rendered
+// markup can never know the real flag (no per-request rendering, and
+// sessionStorage doesn't exist server-side either way), so guessing
+// optimistically used to show working content for a moment on a page that
+// was actually paused, then yank it away once the real answer arrived. A
+// loading state is never wrong, just brief — see PrinterLoaderIcon usage in
+// the consumers of this hook.
+function cachedValue(): boolean | null {
+  if (typeof sessionStorage === "undefined") return null;
   const raw = sessionStorage.getItem(CACHE_KEY);
-  return raw === null ? true : raw === "true";
+  return raw === null ? null : raw === "true";
 }
 
 export function useQuoteEnabled() {
-  // Always true on the very first render, matching astro dev's per-request
-  // SSR and the production static build alike — both render this component
-  // with no access to sessionStorage, so they always assume enabled. Using
-  // the cached value here instead (this hook's first version) made the
-  // client's initial render disagree with that server-rendered markup
-  // whenever the cache said paused, which is a real React hydration-mismatch
-  // error (confirmed live), not just a cosmetic flash — React then discards
-  // and re-renders the whole subtree, losing the CSS-gate's whole point.
-  // The cached value is applied a moment later instead, in the effect below
-  // — safe once mounted, and invisible either way since the inline script
-  // in BaseLayout.astro's <head> already hid .n3d-quote-gate via CSS before
-  // any of this ever ran.
-  const [quoteEnabled, setQuoteEnabled] = useState(true);
-  const [loading, setLoading] = useState(true);
+  // Always null on the very first render, matching astro dev's per-request
+  // SSR and the production static build alike (both have zero access to
+  // sessionStorage) — no hydration mismatch risk, since server and client
+  // agree on "unknown" before anything client-only runs.
+  const [quoteEnabled, setQuoteEnabled] = useState<boolean | null>(null);
 
-  useEffect(() => {
+  // useLayoutEffect, not useEffect: applies a cached value synchronously
+  // after the DOM commits but *before* the browser paints, so a visitor on
+  // their second+ page this session never actually sees the loading state
+  // flash in — it only shows for real on a visitor's first-ever page,
+  // while the network round-trip is still genuinely in flight.
+  useLayoutEffect(() => {
     const cached = cachedValue();
-    if (!cached) setQuoteEnabled(false);
+    if (cached !== null) setQuoteEnabled(cached);
 
     let cancelled = false;
     api.getQuoteEnabled().then((res) => {
       if (cancelled) return;
       const value = res.ok && res.data ? res.data.quoteEnabled : false;
       setQuoteEnabled(value);
-      setLoading(false);
-      document.documentElement.classList.toggle(HTML_CLASS, !value);
       try {
         sessionStorage.setItem(CACHE_KEY, String(value));
       } catch {
         // Private browsing / storage disabled — the flag just re-fetches
-        // fresh (and can flash) on every page instead, no functional loss.
+        // fresh (and shows the loading state) on every page instead, no
+        // functional loss.
       }
     });
     return () => {
@@ -66,5 +62,5 @@ export function useQuoteEnabled() {
     };
   }, []);
 
-  return { quoteEnabled, loading };
+  return { quoteEnabled, loading: quoteEnabled === null };
 }
