@@ -47,7 +47,7 @@ export async function accountRoutes(app: FastifyInstance) {
     // new code — no separate resend endpoint needed.
     if (!(await canResend(user.id, "EMAIL_CHANGE"))) return reply.code(429).send({ error: "too_soon" });
 
-    const { expiresAt } = await createAndSendVerificationCode(
+    const { expiresAt, mailSent } = await createAndSendVerificationCode(
       user.id,
       "EMAIL_CHANGE",
       body.data.newEmail,
@@ -55,6 +55,7 @@ export async function accountRoutes(app: FastifyInstance) {
       `Saisissez ce code sur nasap3d.com pour confirmer que ${body.data.newEmail} est bien votre nouvelle adresse.`,
       { newEmail: body.data.newEmail } satisfies EmailChangePayload,
     );
+    if (!mailSent) return reply.code(502).send({ error: "mail_send_failed" });
     return reply.send({ ok: true, expiresAt });
   });
 
@@ -99,7 +100,7 @@ export async function accountRoutes(app: FastifyInstance) {
     if (!isValidPassword(body.data.newPassword)) return reply.code(400).send({ error: "weak_password" });
     if (!(await canResend(user.id, "PASSWORD_CHANGE"))) return reply.code(429).send({ error: "too_soon" });
 
-    const { expiresAt } = await createAndSendVerificationCode(
+    const { expiresAt, mailSent } = await createAndSendVerificationCode(
       user.id,
       "PASSWORD_CHANGE",
       user.email,
@@ -107,6 +108,7 @@ export async function accountRoutes(app: FastifyInstance) {
       "Une demande de changement de mot de passe a été faite sur votre compte Nasap3D. Saisissez ce code pour la confirmer.",
       { newPasswordHash: await hashPassword(body.data.newPassword) } satisfies PasswordChangePayload,
     );
+    if (!mailSent) return reply.code(502).send({ error: "mail_send_failed" });
     return reply.send({ ok: true, expiresAt });
   });
 

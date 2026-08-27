@@ -62,10 +62,15 @@ export async function authRoutes(app: FastifyInstance) {
     if (existing) return reply.code(409).send({ error: "email_taken" });
 
     const passwordHash = await hashPassword(password);
-    const { id, expiresAt } = await createPendingSignupCode(email, {
+    const { id, expiresAt, mailSent } = await createPendingSignupCode(email, {
       email,
       passwordHash,
     } satisfies PendingSignupPayload);
+    // The pending code row exists either way, but there's no point handing
+    // the client a pendingId for a code that never actually reached their
+    // mailbox — they'd be stuck on the "enter your code" popup with nothing
+    // to enter. Submitting the form again creates a fresh attempt instead.
+    if (!mailSent) return reply.code(502).send({ error: "mail_send_failed" });
     return reply.code(201).send({ pendingId: id, expiresAt });
   });
 
@@ -129,6 +134,7 @@ export async function authRoutes(app: FastifyInstance) {
 
       const result = await resendPendingSignupCode(body.data.pendingId, email);
       if (!result.ok) return reply.code(result.error === "too_soon" ? 429 : 400).send({ error: result.error });
+      if (!result.mailSent) return reply.code(502).send({ error: "mail_send_failed" });
       return reply.send({ ok: true, expiresAt: result.expiresAt });
     },
   );

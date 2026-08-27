@@ -88,10 +88,15 @@ export async function contactRoutes(app: FastifyInstance) {
     });
 
     const notify = process.env.CONTACT_NOTIFY_EMAIL;
+    // Whether the admin notification specifically failed — surfaced to the
+    // client below. The message is still saved either way (so a retry isn't
+    // strictly required to preserve it), but there's no admin UI for
+    // contact messages at all, purely email-driven — if this one email
+    // never arrives, the message is effectively invisible to anyone who
+    // could act on it, unlike the customer's own confirmation email below
+    // (a courtesy, not the only record).
+    let notifyFailed = false;
     if (notify) {
-      // The message is already saved above — a mail hiccup (SMTP down,
-      // misconfigured) must not turn into a 500 for someone who just
-      // successfully submitted the form.
       try {
         const base = process.env.API_BASE_URL || "http://localhost:3000";
         const attachmentLines = created.files
@@ -113,13 +118,15 @@ export async function contactRoutes(app: FastifyInstance) {
           ),
         );
       } catch (err) {
+        notifyFailed = true;
         request.log.error(err, "contact notification email failed");
       }
     }
 
     // Accusé de réception à l'expéditeur — distinct de la notification admin
-    // ci-dessus (destinataire différent, contenu différent). Même principe :
-    // un souci SMTP ne doit jamais faire échouer la soumission du formulaire.
+    // ci-dessus (destinataire différent, contenu différent). A failure here
+    // alone doesn't fail the request: it's a courtesy copy, not the only
+    // record of the message (unlike the notification above).
     try {
       const subjectLine = `Message bien reçu — ${body.data.subject}`;
       await sendMail(
@@ -132,6 +139,7 @@ export async function contactRoutes(app: FastifyInstance) {
       request.log.error(err, "contact confirmation email failed");
     }
 
+    if (notifyFailed) return reply.code(502).send({ error: "mail_send_failed" });
     return reply.send({ ok: true });
   });
 

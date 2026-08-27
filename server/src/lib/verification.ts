@@ -17,9 +17,11 @@ const MAX_ATTEMPTS = 8;
 // Shared by three flows: verifying a new account, confirming a new email
 // address, and confirming a password change (see routes/auth.ts and
 // routes/account.ts). `payload` is whatever the confirm step needs once the
-// code checks out (new email, new password hash, ...) — never blocks the
-// caller if SMTP isn't configured yet (see mailer.ts). Returns `expiresAt`
-// so the caller can hand it to the client for a countdown display.
+// code checks out (new email, new password hash, ...). The code is created
+// either way — a mail hiccup shouldn't corrupt state — but `mailSent: false`
+// tells the caller to surface an error instead of the normal "check your
+// email" response: a code that was never actually delivered leaves the
+// visitor stuck with no way to know why nothing arrived, see mailer.ts.
 export async function createAndSendVerificationCode(
   userId: string,
   purpose: VerificationPurpose,
@@ -27,7 +29,7 @@ export async function createAndSendVerificationCode(
   subject: string,
   bodyIntro: string,
   payload?: unknown,
-): Promise<{ expiresAt: Date }> {
+): Promise<{ expiresAt: Date; mailSent: boolean }> {
   const code = generateNumericCode();
   const expiresAt = new Date(Date.now() + CODE_EXPIRY_MS);
   await prisma.verificationCode.create({
@@ -39,6 +41,7 @@ export async function createAndSendVerificationCode(
       expiresAt,
     },
   });
+  let mailSent = true;
   try {
     await sendMail(
       recipientEmail,
@@ -47,9 +50,10 @@ export async function createAndSendVerificationCode(
       renderEmailHtml(subject, verificationCodeContentHtml(bodyIntro, code)),
     );
   } catch (err) {
+    mailSent = false;
     console.error(`[verification] sendMail failed for purpose=${purpose}`, err);
   }
-  return { expiresAt };
+  return { expiresAt, mailSent };
 }
 
 export class WrongCodeError extends Error {}
@@ -100,7 +104,7 @@ export async function canResend(userId: string, purpose: VerificationPurpose): P
 export async function createPendingSignupCode(
   email: string,
   payload: unknown,
-): Promise<{ id: string; expiresAt: Date }> {
+): Promise<{ id: string; expiresAt: Date; mailSent: boolean }> {
   const code = generateNumericCode();
   const expiresAt = new Date(Date.now() + CODE_EXPIRY_MS);
   // No userId: this code precedes account creation (see doc comment above).
@@ -112,6 +116,7 @@ export async function createPendingSignupCode(
       expiresAt,
     },
   });
+  let mailSent = true;
   try {
     const intro = "Bienvenue chez Nasap3D ! Saisissez ce code pour créer votre compte.";
     await sendMail(
@@ -121,9 +126,10 @@ export async function createPendingSignupCode(
       renderEmailHtml("Votre code de vérification Nasap3D", verificationCodeContentHtml(intro, code)),
     );
   } catch (err) {
+    mailSent = false;
     console.error("[verification] sendMail failed for pending signup", err);
   }
-  return { id: record.id, expiresAt };
+  return { id: record.id, expiresAt, mailSent };
 }
 
 export async function consumePendingSignupCode<T = unknown>(id: string, code: string): Promise<T> {
@@ -155,7 +161,9 @@ export async function consumePendingSignupCode<T = unknown>(id: string, code: st
 export async function resendPendingSignupCode(
   id: string,
   email: string,
-): Promise<{ ok: true; expiresAt: Date } | { ok: false; error: "too_soon" | "no_pending_code" }> {
+): Promise<
+  { ok: true; expiresAt: Date; mailSent: boolean } | { ok: false; error: "too_soon" | "no_pending_code" }
+> {
   const record = await prisma.verificationCode.findUnique({ where: { id } });
   // Note: an EXPIRED code is exactly the normal case a resend is for — only
   // an already-consumed or altogether unknown id is a dead end here.
@@ -171,6 +179,7 @@ export async function resendPendingSignupCode(
     where: { id },
     data: { codeHash: hashToken(code), attempts: 0, expiresAt },
   });
+  let mailSent = true;
   try {
     const intro = "Voici votre nouveau code de vérification.";
     await sendMail(
@@ -180,7 +189,8 @@ export async function resendPendingSignupCode(
       renderEmailHtml("Votre code de vérification Nasap3D", verificationCodeContentHtml(intro, code)),
     );
   } catch (err) {
+    mailSent = false;
     console.error("[verification] sendMail failed for pending signup resend", err);
   }
-  return { ok: true, expiresAt };
+  return { ok: true, expiresAt, mailSent };
 }
