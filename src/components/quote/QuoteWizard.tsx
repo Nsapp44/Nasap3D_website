@@ -438,20 +438,6 @@ export default function QuoteWizard() {
         .qw-toast { margin-top: 14px; border: 1px solid rgba(255,90,60,.35); background: rgba(255,90,60,.08); border-radius: 8px; padding: 10px 14px; font: 600 11px 'Inter',sans-serif; color: #f3f1ec; animation: qwFadeUp .3s ease; }
         .qw-toast a { color: #ff5a3c; }
 
-        .printer-loader-svg { width: 100%; height: 100%; display: block; }
-        .printer-loader-svg .filament { fill: none; stroke: currentColor; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
-        .printer-loader-svg .stack { animation: plShiftDown 2.5s linear infinite; }
-        .printer-loader-svg .nozzle { fill: var(--pl-nozzle-fill,#161514); stroke: currentColor; stroke-width: 2.5; stroke-linejoin: round; animation: plNozzleMove 2.5s linear infinite; }
-        .printer-loader-svg .line-lr { stroke-dasharray: 100; animation: plDrawLr 2.5s linear infinite; }
-        .printer-loader-svg .arc-r { stroke-dasharray: 100; animation: plDrawArcR 2.5s linear infinite; }
-        .printer-loader-svg .line-rl { stroke-dasharray: 100; animation: plDrawRl 2.5s linear infinite; }
-        .printer-loader-svg .arc-l { stroke-dasharray: 100; animation: plDrawArcL 2.5s linear infinite; }
-        @keyframes plShiftDown { 0%,38% { transform: translateY(0px); } 50%,88% { transform: translateY(10px); } 100% { transform: translateY(20px); } }
-        @keyframes plNozzleMove { 0% { transform: translateX(-25px); } 38% { transform: translateX(25px); } 44% { transform: translateX(30px); } 50% { transform: translateX(25px); } 88% { transform: translateX(-25px); } 94% { transform: translateX(-30px); } 100% { transform: translateX(-25px); } }
-        @keyframes plDrawLr { 0% { stroke-dashoffset: 100; } 38%,100% { stroke-dashoffset: 50; } }
-        @keyframes plDrawArcR { 0%,38% { stroke-dashoffset: 100; } 50%,100% { stroke-dashoffset: 84.3; } }
-        @keyframes plDrawRl { 0%,50% { stroke-dashoffset: 100; } 88%,100% { stroke-dashoffset: 50; } }
-        @keyframes plDrawArcL { 0%,88% { stroke-dashoffset: 100; } 100% { stroke-dashoffset: 84.3; } }
         @keyframes qwFadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
         @media (max-width: 900px) {
