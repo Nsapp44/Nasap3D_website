@@ -21,8 +21,31 @@ html.n3d-quote-paused .n3d-quote-gate {
   display: none !important;
 }
 
+/* Loader.tsx — plain CSS border-spin, used for short generic waits (a file
+   upload, an API round-trip: ContactForm's file rows/send button,
+   AuthPanel's submit button) — see that component for why it's not
+   PrinterLoaderIcon. `border-color` needs its own longhand here since
+   inline `style` can only set the shorthand `border` (color included) as
+   one string, and this needs the color split between two different values
+   (see the two-value border-color trick this shape depends on). */
+.css-loader {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border-style: solid;
+  border-color: currentColor transparent;
+  display: inline-block;
+  flex: none;
+  animation: cssLoaderSpin 1s infinite linear;
+}
+@keyframes cssLoaderSpin {
+  to {
+    transform: rotate(0.5turn);
+  }
+}
+
 /* PrinterLoaderIcon.tsx — animated "printer laying filament" loading icon,
-   used by ContactForm (file upload + submit spinner) and QuoteWizard later. */
+   used by QuoteWizard's analysis step and elsewhere page-loading is
+   print-themed rather than a generic short wait. */
 .printer-loader-svg {
   width: 100%;
   height: 100%;

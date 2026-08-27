@@ -1,7 +1,7 @@
 import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { api } from "../lib/api-client";
 import { useHcaptcha } from "../hooks/useHcaptcha";
-import PrinterLoaderIcon from "./PrinterLoaderIcon";
+import Loader from "./Loader";
 
 interface AttachedFile {
   id: string;
@@ -197,11 +197,7 @@ export default function ContactForm() {
         <input ref={fileInputRef} type="file" multiple onChange={onFileInputChange} style={{ display: "none" }} />
         {files.map((f) => (
           <div key={f.id} className={`file-row${f.status === "error" ? " file-row-error" : ""}`}>
-            {f.status === "uploading" && (
-              <span className="loader-icon-tiny">
-                <PrinterLoaderIcon maskId={`plMaskContactUpload-${f.id}`} />
-              </span>
-            )}
+            {f.status === "uploading" && <Loader size={14} color="#ff5a3c" />}
             <span className="file-row-name">
               {f.status === "ready" && "✓ "}
               {f.name}
@@ -231,11 +227,7 @@ export default function ContactForm() {
       <div ref={captchaRef} className="captcha-slot" />
 
       <div onClick={submit} className={`send-btn${canSend ? " enabled" : ""}`}>
-        {uploading && (
-          <span className="loader-icon-tiny">
-            <PrinterLoaderIcon maskId="plMaskContactSend" />
-          </span>
-        )}
+        {uploading && <Loader size={14} />}
         <span>Envoyer le message</span>
       </div>
 
@@ -270,7 +262,6 @@ export default function ContactForm() {
         }
         .file-row-error { border-color: rgba(255,138,112,.4); background: rgba(255,90,60,.05); }
         .file-row-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .loader-icon-tiny { width: 11px; height: 11px; display: inline-block; flex: none; color: #fff; --pl-nozzle-fill: #ff5a3c; }
         .file-remove { flex: none; cursor: pointer; color: rgba(255,255,255,.5); font: 600 11px 'Inter',sans-serif; text-decoration: underline; }
         .file-hint { font: 9px ui-monospace,monospace; color: rgba(255,255,255,.3); margin-top: 3px; }
         .captcha-slot { display: flex; justify-content: center; margin-bottom: 14px; }

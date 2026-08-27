@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { api } from "../../lib/api-client";
 import { useHcaptcha } from "../../hooks/useHcaptcha";
+import Loader from "../Loader";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_RE = /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>_\-+=~`[\]/\\;']).{8,}$/;
@@ -156,7 +157,8 @@ export default function AuthPanel({ onLoginSuccess, onSignupCodeSent, onError, o
         )}
         <div ref={captchaRef} className="captcha-slot" />
         <div onClick={submit} className="auth-submit">
-          {mode === "login" ? "Se connecter" : "S'inscrire"}
+          {busy && <Loader size={14} />}
+          <span>{mode === "login" ? "Se connecter" : "S'inscrire"}</span>
         </div>
         <div className="auth-switch">
           {mode === "login" ? "Pas encore de compte ?" : "Déjà un compte ?"}{" "}
@@ -190,7 +192,7 @@ export default function AuthPanel({ onLoginSuccess, onSignupCodeSent, onError, o
         .remember-checkbox { width: 13px; height: 13px; accent-color: #ff5a3c; cursor: pointer; }
         .forgot-link { font: 500 10.5px 'Inter',sans-serif; color: rgba(255,255,255,.45); cursor: pointer; }
         .captcha-slot { display: flex; justify-content: center; margin-bottom: 14px; }
-        .auth-submit { text-align: center; background: #ff5a3c; color: #161514; font: 600 12.5px 'Inter',sans-serif; padding: 11px; border-radius: 7px; cursor: pointer; }
+        .auth-submit { display: flex; align-items: center; justify-content: center; gap: 8px; background: #ff5a3c; color: #161514; font: 600 12.5px 'Inter',sans-serif; padding: 11px; border-radius: 7px; cursor: pointer; }
         .auth-switch { text-align: center; margin-top: 16px; font: 400 11px 'Inter',sans-serif; color: rgba(255,255,255,.45); }
         .auth-switch-action { color: #ff5a3c; cursor: pointer; font-weight: 600; }
       `}</style>
