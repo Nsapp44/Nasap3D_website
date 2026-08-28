@@ -47,5 +47,13 @@ jobs:
           tags: |
             ${{ env.IMAGE }}:latest
             ${{ env.IMAGE }}:${{ github.sha }}
+          # Baked into the image and surfaced on GET /health — the fastest
+          # way to confirm which build is actually running on the server
+          # (`docker compose pull && up -d` doesn't always mean the
+          # container actually restarted with the new image; this settles
+          # it without guessing, see the mail-auth investigation this
+          # session where "did the fix even deploy?" came up repeatedly).
+          build-args: |
+            GIT_SHA=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

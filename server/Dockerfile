@@ -59,6 +59,14 @@ RUN curl -fL -o PrusaSlicer.AppImage \
 FROM node:22-bookworm-slim
 WORKDIR /app
 ENV NODE_ENV=production
+# Set by the publish workflow to the real commit SHA (docker-publish.yml's
+# build-args); stays "dev" for a plain local `docker build`/`docker compose
+# up --build`. Surfaced on GET /health (see app.ts) so it's possible to
+# confirm which exact build is actually running on the server without
+# guessing — a real point of confusion this session ("did the fix even
+# deploy?").
+ARG GIT_SHA=dev
+ENV GIT_SHA=$GIT_SHA
 
 # PrusaSlicer's CLI mode (--info / --export-gcode, see slicer.ts) needs
 # xvfb-run despite never opening a real window — confirmed by building and

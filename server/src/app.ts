@@ -74,7 +74,12 @@ export async function buildApp(opts: { logger?: boolean } = {}) {
     reply.code(status).send({ error: err.message });
   });
 
-  app.get("/health", async () => ({ ok: true }));
+  // version = the commit SHA baked in at image build time (see Dockerfile's
+  // GIT_SHA arg + docker-publish.yml) — "dev" for a plain local build.
+  // Confirms exactly which build is actually running, e.g. right after a
+  // redeploy, instead of guessing whether it really picked up the latest
+  // image.
+  app.get("/health", async () => ({ ok: true, version: process.env.GIT_SHA || "dev" }));
 
   await app.register(authRoutes);
   await app.register(accountRoutes);
