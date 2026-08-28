@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import NavAuthIcon from "../NavAuthIcon";
 import CartBadge from "../CartBadge";
-import PrinterLoaderIcon from "../PrinterLoaderIcon";
-import { useQuoteEnabled } from "../../hooks/useQuoteEnabled";
+import { useQuoteEnabledCached } from "../../hooks/useQuoteEnabled";
 
 const SECTIONS = ["accueil", "services", "apropos", "realisations", "machines", "contact"];
 
@@ -25,10 +24,12 @@ const NAV_ITEMS: NavItem[] = [
 // the shared Header.astro (see BaseLayout's hideHeader). Devis instantané is
 // inserted at the same position as everywhere else, gated the same way
 // (QuoteNavLink elsewhere, inlined here since this component already needs
-// its own quoteEnabled read for the same reason).
+// its own quoteEnabled read for the same reason) — trusts the cache only,
+// same as QuoteNavLink: QuoteWizardSection (also on this page) is the one
+// doing the real check, this nav link just reflects whatever it last found.
 export default function HomeHeader() {
   const [activeNav, setActiveNav] = useState("accueil");
-  const { quoteEnabled, loading: quoteLoading } = useQuoteEnabled();
+  const quoteEnabled = useQuoteEnabledCached();
 
   useEffect(() => {
     function updateActiveNav() {
@@ -85,13 +86,8 @@ export default function HomeHeader() {
             {item.label}
           </a>
         ))}
-        {quoteLoading && (
-          <span style={{ display: "inline-flex", width: 15, height: 15, color: "rgba(255,255,255,.5)" }}>
-            <PrinterLoaderIcon maskId="plMaskHomeNavQuote" />
-          </span>
-        )}
-        {!quoteLoading && quoteEnabled && (
-          <a href="/devis-instantane" className="nav-hover-scale">
+        {quoteEnabled && (
+          <a href="/devis-instantane" className="nav-hover-scale n3d-quote-gate">
             Devis instantané
           </a>
         )}

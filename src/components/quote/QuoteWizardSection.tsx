@@ -25,6 +25,13 @@ export default function QuoteWizardSection() {
     );
   }
 
+  // Still inside the grace period (see useQuoteEnabled) — not yet decided
+  // to show the loader, but quoteEnabled being null here (falsy, same as
+  // the real "paused" false) must not be read as "paused" — that would
+  // flash the paused banner for up to GRACE_MS on every single first-ever
+  // page, exactly the flash this whole hook exists to avoid.
+  if (quoteEnabled === null) return null;
+
   if (!quoteEnabled) {
     return (
       <div className="quote-paused">

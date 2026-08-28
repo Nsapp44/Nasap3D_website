@@ -13,6 +13,25 @@ a:hover {
   color: #ff7a5c;
 }
 
+/* Pre-hydration quote-enabled gating — pairs with the blocking inline
+   script in BaseLayout.astro's <head>. output:'static' means the built
+   markup always ships with the optimistic "enabled" state (see
+   useQuoteEnabledCached's useState(true) default): there is no per-request
+   render that could know the real flag. Without this, a visitor with
+   "paused" already cached still sees "Devis instantané" for the brief real
+   time it takes React to hydrate and correct it on every single page load
+   (Astro does full page reloads, not client routing, so this gap repeats
+   every navigation) — confirmed live, not just a theoretical gap. The
+   inline script reads the exact same sessionStorage key synchronously
+   before first paint and flips this class, so the correct state is on
+   screen immediately, no JS framework involved.
+   Only used where "paused" means "hide, nothing to show instead"
+   (QuoteNavLink, HomeHeader's nav link) — QuoteCta swaps between two
+   different CTAs instead and isn't gated this way, see its own comment. */
+html.n3d-quote-paused .n3d-quote-gate {
+  display: none !important;
+}
+
 /* Loader.tsx — plain CSS border-spin, used for short generic waits (a file
    upload, an API round-trip: ContactForm's file rows/send button,
    AuthPanel's submit button) — see that component for why it's not

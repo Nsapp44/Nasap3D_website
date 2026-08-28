@@ -22,6 +22,22 @@ const canonical = new URL(path, Astro.site).toString();
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline>
+      // Runs synchronously before anything below paints — see the
+      // .n3d-quote-gate rules in global.css for why this exists. Reads the
+      // exact same sessionStorage key as useQuoteEnabledCached (hooks/
+      // useQuoteEnabled.ts): if a previous real check on Home/devis-
+      // instantane already found the workshop paused, this hides the
+      // "Devis instantané" nav link/CTA before the very first frame instead
+      // of showing it and yanking it away once React hydrates.
+      (function () {
+        try {
+          if (sessionStorage.getItem("nasap3d-quote-enabled") === "false") {
+            document.documentElement.classList.add("n3d-quote-paused");
+          }
+        } catch (e) {}
+      })();
+    </script>
     <link rel="icon" type="image/png" href="/assets/logo-icon.png" />
     <title>{title}</title>
     <meta name="description" content={description} />
