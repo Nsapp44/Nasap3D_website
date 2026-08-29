@@ -10,21 +10,44 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "start": "node server-entry.mjs",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "seed": "tsx prisma/seed.ts",
+    "test": "vitest run"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@astrojs/node": "^11.1.4",
     "@astrojs/react": "^6.0.4",
+    "@aws-sdk/client-s3": "^3.1120.0",
+    "@prisma/client": "^6.19.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
+    "argon2": "^0.41.1",
     "astro": "^7.2.7",
+    "dotenv": "^17.4.2",
+    "fast-xml-parser": "^5.11.1",
+    "nodemailer": "^9.0.6",
+    "pino": "^10.3.1",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "stripe": "^22.6.0",
+    "tsx": "^4.23.12",
+    "zod": "^4.4.3"
   },
   "allowScripts": {
     "esbuild": true
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
-    "typescript": "^6.0.3"
+    "@types/nodemailer": "^8.0.1",
+    "prisma": "^6.19.3",
+    "typescript": "^6.0.3",
+    "vitest": "^3.2.7"
   }
 }

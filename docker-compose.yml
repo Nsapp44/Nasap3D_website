@@ -32,41 +32,41 @@ services:
     # Pulled from GHCR by default (built by .github/workflows/docker-publish.yml
     # on every push to master) — `docker compose --profile full pull` on the
     # OVH server, no local build needed. `--build` (local dev) still works.
-    # Context is the repo root, not ./server: this image now also builds and
-    # serves the Astro site (see server/Dockerfile's web-build stage) — Caddy
-    # (a separate container/image, previously) is gone entirely.
+    # Single Astro SSR app now (see Dockerfile at the repo root) — no more
+    # separate server/ backend, and no separate Caddy container/image either.
     image: ghcr.io/nsapp44/nasap3d-api:latest
     build:
       context: .
-      dockerfile: server/Dockerfile
+      dockerfile: Dockerfile
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     # Bind-mounted (not `env_file:`) so the app loads it itself via the
-    # `dotenv` package (see server/src/index.ts's `import "dotenv/config"`,
+    # `dotenv` package (see server-entry.mjs's `import "dotenv/config"`,
     # already the same mechanism `npm run dev` uses locally) — dotenv
     # correctly strips quotes around values (KEY="value" -> value), unlike
     # Compose's own `env_file:`, which injects them into the container
     # environment completely as-is, quotes included. Confirmed in production:
     # a quoted S3_REGION broke the AWS SDK with a doubly-quoted region string.
     volumes:
-      - ./server/.env:/app/.env:ro
+      - ./.env:/app/.env:ro
     environment:
       DATABASE_URL: postgresql://nasap3d:${POSTGRES_PASSWORD:-nasap3d_dev_only}@db:5432/nasap3d
-      # server/.env's PRUSASLICER_BIN is the Windows dev path (for `npm run
-      # dev` outside Docker) — override it here so the container always
-      # uses the Linux binary server/Dockerfile actually installs, no
-      # matter what's in the .env file used for local dev.
+      # .env's PRUSASLICER_BIN is the Windows dev path (for `npm run dev`
+      # outside Docker) — override it here so the container always uses the
+      # Linux binary the Dockerfile actually installs, no matter what's in
+      # the .env file used for local dev.
       PRUSASLICER_BIN: /usr/local/bin/prusa-slicer
-      # server/.env.example defaults to NODE_ENV=development (for `npm run
-      # dev`) — env_file above would otherwise silently override the
-      # Dockerfile's own `ENV NODE_ENV=production` with that dev value at
-      # container start (runtime env always wins over an image's baked-in
-      # ENV). This profile ("full") is the production/OVH deployment, so it
-      # must always be "production" here regardless of server/.env — this
-      # gates the hCaptcha fail-closed behavior and the Secure cookie flag
-      # (see src/lib/captcha.ts, session.ts, guestSession.ts).
+      # .env.example defaults to NODE_ENV=development (for `npm run dev`) —
+      # env_file above would otherwise silently override the Dockerfile's
+      # own `ENV NODE_ENV=production` with that dev value at container start
+      # (runtime env always wins over an image's baked-in ENV). This profile
+      # ("full") is the production/OVH deployment, so it must always be
+      # "production" here regardless of .env — this gates the hCaptcha
+      # fail-closed behavior and the Secure cookie flag (see
+      # src/lib/server/captcha.ts, src/lib/server/session.ts,
+      # src/lib/api/cookies.ts).
       NODE_ENV: production
     ports:
       # Loopback uniquement — useful for local dev/debugging directly against

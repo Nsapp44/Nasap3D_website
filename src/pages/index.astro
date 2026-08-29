@@ -1,7 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import HomeHeader from "../components/home/HomeHeader";
-import MeshBackground from "../components/home/MeshBackground";
 import NPrintLogo from "../components/home/NPrintLogo";
 import ServicesGrid from "../components/home/ServicesGrid";
 import RealisationsCarousel from "../components/home/RealisationsCarousel";
@@ -47,7 +46,10 @@ const jsonLd = {
   <HomeHeader client:load />
 
   <div id="sec-accueil" class="hero-wrap">
-    <MeshBackground client:load />
+    <canvas id="nasap-mesh-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;"></canvas>
+    <script>
+      import "../scripts/mesh-background";
+    </script>
     <div class="hero-fade"></div>
     <div class="hero-content">
       <div class="hero-title">As soon as possible.<br />Sans compromis sur la qualité.</div>

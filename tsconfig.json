@@ -9,7 +9,6 @@
     "public",
     "node_modules",
     "vendor",
-    "server",
     "assets",
     "backups",
     "screenshots",

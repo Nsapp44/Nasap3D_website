@@ -43,7 +43,9 @@ const ITEMS = [
     {
       ITEMS.map((it) => (
         <div class="gallery-card">
-          <div class="gallery-photo" style={`background-image:url('/assets/${it.img}')`} />
+          <div class="gallery-photo">
+            <img src={`/assets/${it.img}`} alt={it.label} loading="lazy" />
+          </div>
           <div class="gallery-body">
             <div class="gallery-label">{it.label}</div>
             <div class="gallery-desc">{it.desc}</div>
@@ -112,10 +114,18 @@ const ITEMS = [
     transform: translateY(-3px);
   }
   .gallery-photo {
+    position: relative;
     aspect-ratio: 4 / 5;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
+    overflow: hidden;
+  }
+  .gallery-photo img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
   }
   .gallery-body {
     padding: 14px;

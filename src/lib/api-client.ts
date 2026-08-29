@@ -1,7 +1,9 @@
-// Shared front-end client for the real back-end API (server/). Ported
-// near-verbatim from api-client.js (the pre-Astro version) — same endpoints,
-// same request shape, same env-derivation logic. Auth is a single httpOnly
-// session cookie, never a token in JS, so every call sends credentials.
+// Shared front-end client for the API — now the same Astro SSR app as the
+// front-end itself (src/pages/api/), not a separate backend process.
+// Same-origin as of the SSR migration: every call below is a relative
+// /api/... path, no cross-origin request, no CORS layer needed for the
+// site's own front-end. Auth is a single httpOnly session cookie, never a
+// token in JS, so every call sends credentials.
 
 export interface ApiResult<T = unknown> {
   ok: boolean;
@@ -15,18 +17,13 @@ declare global {
   }
 }
 
+// Kept as a function (not a plain constant) so window.NASAP3D_API_BASE can
+// still override it — used for local diagnostic scripts that point a page
+// at a different running instance without editing this file (see this
+// session's hCaptcha-dev-bypass testing pattern).
 export function apiBase(): string {
   if (typeof window !== "undefined" && window.NASAP3D_API_BASE) return window.NASAP3D_API_BASE;
-  if (typeof location === "undefined") return "";
-  const host = location.hostname;
-  // Local dev: front on localhost:4321 (astro dev) or :8080, API on
-  // localhost:3000 (npm run dev / docker-compose, both same host).
-  if (host === "localhost" || host === "127.0.0.1") {
-    return `${location.protocol}//${host}:3000`;
-  }
-  // Production: the API lives on the "api." subdomain (api.nasap3d.com).
-  const bareHost = host.replace(/^www\./, "");
-  return `${location.protocol}//api.${bareHost}`;
+  return "/api";
 }
 
 async function request<T = unknown>(method: string, path: string, body?: unknown): Promise<ApiResult<T>> {
