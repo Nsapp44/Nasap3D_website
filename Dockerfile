@@ -17,6 +17,7 @@ RUN npm install
 COPY astro.config.mjs tsconfig.json ./
 COPY prisma/ prisma/
 COPY bootstrap/ bootstrap/
+COPY slicer-profiles/ slicer-profiles/
 COPY server-entry.mjs ./
 COPY src/ src/
 COPY public/ public/
