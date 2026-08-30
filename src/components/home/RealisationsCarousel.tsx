@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 
 const REALISATIONS = [
-  { img: "/assets/real-1.png", label: "Maquette ÄKTA readyflux", desc: "Reproduction détaillée d'un système de chromatographie, vue d'ensemble." },
-  { img: "/assets/real-2.png", label: "ÄKTA readyflux — face avant", desc: "Panneau fluidique, vannes et tubulures fonctionnels à l'échelle." },
-  { img: "/assets/real-3.png", label: "ÄKTA readyflux — vue 3/4", desc: "Châssis, tubulures et raccords fonctionnels à l'échelle." },
+  { img: "/assets/real-1.png", label: "Maquette filtration systems", desc: "Reproduction détaillée d'un système de chromatographie, vue d'ensemble." },
+  { img: "/assets/real-2.png", label: "filtration systems — face avant", desc: "Panneau fluidique, vannes et tubulures fonctionnels à l'échelle." },
+  { img: "/assets/real-3.png", label: "filtration systems — vue 3/4", desc: "Châssis, tubulures et raccords fonctionnels à l'échelle." },
   { img: "/assets/real-4.jpg", label: "Trophée cerf", desc: "Découpe laser multi-couches en bois, montage mural." },
   { img: "/assets/real-5.jpg", label: "Caravanes Fendt miniatures", desc: "Série de modèles réduits imprimés et détaillés." },
   { img: "/assets/real-6.jpg", label: "Rondin gravé mariage", desc: "Gravure laser personnalisée sur tranche de bois." },
