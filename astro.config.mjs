@@ -28,7 +28,13 @@ export default defineConfig({
   // shells out to a real PrusaSlicer binary + writes real temp files,
   // which categorically rules out an edge/serverless target.
   output: 'server',
-  adapter: node({ mode: 'standalone' }),
+  // port: 3000 is a safety-net default — @astrojs/node's standalone
+  // adapter falls back to 8080 if it can't read PORT from process.env,
+  // silently mismatching docker-compose.yml's static 3000:3000 mapping and
+  // causing a 502 (upstream unreachable) with no application error at all.
+  // process.env.PORT (set via .env, see server-entry.mjs) still wins over
+  // this when present — this only guards the case where it's missing.
+  adapter: node({ mode: 'standalone', port: 3000 }),
   site: 'https://nasap3d.com',
   // Les URLs actuelles (Caddyfile) n'ont jamais de slash final (/services, pas
   // /services/) — évite un mismatch avec les liens internes existants pendant
