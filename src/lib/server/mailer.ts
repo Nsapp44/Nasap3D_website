@@ -50,6 +50,14 @@ function buildTransporter() {
     auth: { user, pass },
     debug: !!smtpDebugLogger,
     logger: smtpDebugLogger,
+    // Without pooling, every sendMail() (including the pair sent per contact
+    // submission: admin notification + customer confirmation) opens a brand
+    // new TCP+TLS+AUTH handshake from scratch — the main cost of "sending is
+    // slow". Pooling keeps a small set of authenticated connections open and
+    // reuses them across calls on this same long-lived process.
+    pool: true,
+    maxConnections: 3,
+    maxMessages: 100,
   });
 }
 let transporter: ReturnType<typeof buildTransporter> | null = null;
