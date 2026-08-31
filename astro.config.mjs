@@ -28,22 +28,28 @@ export default defineConfig({
   // shells out to a real PrusaSlicer binary + writes real temp files,
   // which categorically rules out an edge/serverless target.
   output: 'server',
-  // port: 3000 is a safety-net default — @astrojs/node's standalone
-  // adapter falls back to 8080 if it can't read PORT from process.env,
-  // silently mismatching docker-compose.yml's static 3000:3000 mapping and
-  // causing a 502 (upstream unreachable) with no application error at all.
-  // process.env.PORT (set via .env, see server-entry.mjs) still wins over
-  // this when present — this only guards the case where it's missing.
-  adapter: node({ mode: 'standalone', port: 3000 }),
-  // server.host defaults to false (Astro binds to localhost/::1 only) —
-  // the adapter reads this exact value to decide what to bind to. Inside a
-  // container that's fatal: nothing outside the container's own loopback
-  // (i.e. neither Docker's port publishing nor the reverse proxy on
-  // another container) can ever reach it, producing a 502 with zero
-  // application-level error — confirmed by exec'ing into a running
-  // container and finding the process listening on ::1:3000, not
-  // 0.0.0.0:3000/:::3000. host: true binds all interfaces instead.
-  server: { host: true },
+  adapter: node({ mode: 'standalone' }),
+  // The adapter's own `port`/`host` options (node({port, host})) are NOT
+  // what actually reaches the running server — @astrojs/node's build
+  // plugin overwrites them with _config.server.port/.host right after
+  // spreading userOptions (see node_modules/@astrojs/node/dist/index.js),
+  // baked into the build as a virtual module the standalone entrypoint
+  // imports at runtime. So these two values below ARE the real defaults,
+  // confirmed by testing both ways:
+  //  - host: Astro defaults server.host to false (localhost/::1 only) —
+  //    fatal in a container, since nothing outside the container's own
+  //    loopback (Docker's port publishing, the reverse proxy on another
+  //    container) can reach it: a 502 with zero application-level error.
+  //    Confirmed by exec'ing into a running container and finding the
+  //    process listening on ::1:3000, not 0.0.0.0:3000.
+  //  - port: Astro defaults server.port to 4321 (its usual dev port) —
+  //    confirmed in a real production log showing "listening on ...4321"
+  //    despite .env's PORT=3000, meaning process.env.PORT wasn't actually
+  //    read at that moment and it fell back to this baked-in default
+  //    instead of docker-compose.yml's expected 3000. Setting it here
+  //    explicitly removes the silent 4321 fallback entirely;
+  //    process.env.PORT (see server-entry.mjs) still wins over it when set.
+  server: { host: true, port: 3000 },
   site: 'https://nasap3d.com',
   // Les URLs actuelles (Caddyfile) n'ont jamais de slash final (/services, pas
   // /services/) — évite un mismatch avec les liens internes existants pendant
