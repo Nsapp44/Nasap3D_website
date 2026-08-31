@@ -50,6 +50,18 @@ export default defineConfig({
   //    explicitly removes the silent 4321 fallback entirely;
   //    process.env.PORT (see server-entry.mjs) still wins over it when set.
   server: { host: true, port: 3000 },
+  // Astro's built-in CSRF guard (security.checkOrigin, on by default)
+  // rejects any form-like POST (multipart/form-data, x-www-form-urlencoded)
+  // whose Origin header doesn't match the request's own computed origin —
+  // but @astrojs/node's standalone mode computes that origin from
+  // req.socket.encrypted alone (node_modules/astro/dist/core/app/node.js),
+  // never from X-Forwarded-Proto. Behind Caddy (TLS-terminating reverse
+  // proxy, plain HTTP to the container), that's always "http", while the
+  // browser's real Origin is "https://..." — every genuine same-origin
+  // multipart request gets rejected (confirmed: contact form attachment
+  // upload, instant quote file upload, both 403). Disabled here and
+  // replaced with a proxy-aware equivalent in src/middleware.ts.
+  security: { checkOrigin: false },
   site: 'https://nasap3d.com',
   // Les URLs actuelles (Caddyfile) n'ont jamais de slash final (/services, pas
   // /services/) — évite un mismatch avec les liens internes existants pendant

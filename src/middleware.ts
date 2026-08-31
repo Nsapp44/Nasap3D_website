@@ -66,11 +66,46 @@ function startBackgroundSweepsOnce() {
   setInterval(runTrackingSweep, TRACKING_SWEEP_INTERVAL_MS);
 }
 
+// Reimplements Astro's own security.checkOrigin (disabled in astro.config.mjs
+// — see its comment for why the built-in version is broken behind Caddy),
+// but computes the request's origin from X-Forwarded-Proto/-Host when
+// present instead of the raw socket, matching what the reverse proxy
+// actually terminates. Mirrors node_modules/astro/dist/core/app/origin-check.js.
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+const FORM_CONTENT_TYPES = ["application/x-www-form-urlencoded", "multipart/form-data", "text/plain"];
+
+function isFormLike(contentType: string | null): boolean {
+  if (!contentType) return false;
+  const lower = contentType.toLowerCase();
+  return FORM_CONTENT_TYPES.some((t) => lower.includes(t));
+}
+
+function isForbiddenCrossOrigin(context: { request: Request; url: URL }): boolean {
+  const { request, url } = context;
+  if (SAFE_METHODS.has(request.method)) return false;
+
+  const proto = request.headers.get("x-forwarded-proto") || url.protocol.replace(":", "");
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || url.host;
+  const effectiveOrigin = `${proto}://${host}`;
+  const isSameOrigin = request.headers.get("origin") === effectiveOrigin;
+
+  const contentType = request.headers.get("content-type");
+  if (contentType) return isFormLike(contentType) && !isSameOrigin;
+  return !isSameOrigin;
+}
+
 export const onRequest = defineMiddleware(async (context, next) => {
   startBackgroundSweepsOnce();
 
   if (!context.url.pathname.startsWith("/api/")) {
     return next();
+  }
+
+  if (isForbiddenCrossOrigin(context)) {
+    return new Response(`Cross-site ${context.request.method} form submissions are forbidden`, {
+      status: 403,
+      headers: { "Cache-Control": "private, no-store" },
+    });
   }
 
   try {
