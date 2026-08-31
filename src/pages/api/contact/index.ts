@@ -60,7 +60,7 @@ export const POST = apiHandler(async (context) => {
       // Front and API are the same origin since the SSR migration — FRONT_URL
       // already holds the site's own public URL, no need for a separate
       // API_BASE_URL anymore (removed).
-      const base = process.env.FRONT_URL || "http://localhost:4321";
+      const base = process.env.FRONT_URL || "http://localhost:3000";
       const attachmentLines = created.files
         .map((f) => `\n\nPièce jointe (${f.fileName}) : ${base}/api/admin/contact-messages/${created.id}/files/${f.id}`)
         .join("");

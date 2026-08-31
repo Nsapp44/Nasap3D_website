@@ -5,7 +5,7 @@ import { sendMail } from "./mailer";
 import { renderEmailHtml, orderPlacedContentHtml, orderAcceptedContentHtml, orderRejectedContentHtml } from "./emailTemplate";
 
 function frontUrl() {
-  return process.env.FRONT_URL || "http://localhost:4321";
+  return process.env.FRONT_URL || "http://localhost:3000";
 }
 
 function eur(cents: number) {

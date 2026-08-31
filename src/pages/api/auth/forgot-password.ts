@@ -30,7 +30,7 @@ export const POST = apiHandler(async ({ request, clientAddress }) => {
         expiresAt: new Date(Date.now() + 60 * 60 * 1000),
       },
     });
-    const resetUrl = `${process.env.FRONT_URL || "http://localhost:4321"}/compte?resetToken=${raw}`;
+    const resetUrl = `${process.env.FRONT_URL || "http://localhost:3000"}/compte?resetToken=${raw}`;
     await sendMail(
       user.email,
       "Réinitialisation de votre mot de passe Nasap3D",

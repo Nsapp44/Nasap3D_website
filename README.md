@@ -118,7 +118,7 @@ ne passent pas par le vrai parcours d'inscription).
 npm run dev
 ```
 
-Démarre Astro en local avec rechargement à chaud sur `http://localhost:4321` — front **et** API
+Démarre Astro en local avec rechargement à chaud sur `http://localhost:3000` — front **et** API
 (`/api/...`) servis par le même process, plus besoin d'un second serveur sur un autre port.
 
 ### Tester sans SMTP configuré
