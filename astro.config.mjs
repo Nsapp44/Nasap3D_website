@@ -35,6 +35,15 @@ export default defineConfig({
   // process.env.PORT (set via .env, see server-entry.mjs) still wins over
   // this when present — this only guards the case where it's missing.
   adapter: node({ mode: 'standalone', port: 3000 }),
+  // server.host defaults to false (Astro binds to localhost/::1 only) —
+  // the adapter reads this exact value to decide what to bind to. Inside a
+  // container that's fatal: nothing outside the container's own loopback
+  // (i.e. neither Docker's port publishing nor the reverse proxy on
+  // another container) can ever reach it, producing a 502 with zero
+  // application-level error — confirmed by exec'ing into a running
+  // container and finding the process listening on ::1:3000, not
+  // 0.0.0.0:3000/:::3000. host: true binds all interfaces instead.
+  server: { host: true },
   site: 'https://nasap3d.com',
   // Les URLs actuelles (Caddyfile) n'ont jamais de slash final (/services, pas
   // /services/) — évite un mismatch avec les liens internes existants pendant
