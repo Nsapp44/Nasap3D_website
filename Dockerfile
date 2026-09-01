@@ -59,8 +59,11 @@ ENV GIT_SHA=$GIT_SHA
 # by building and running this image end-to-end. xauth is xvfb-run's own
 # dependency (fails with "xauth command not found" without it). openssl is
 # for Prisma's engine detection at runtime — see the build stage above for
-# why it's needed in both places.
-RUN apt-get update && apt-get install -y --no-install-recommends xvfb xauth openssl && rm -rf /var/lib/apt/lists/*
+# why it's needed in both places. gosu lets the entrypoint start as root
+# (needed once, see below) and drop to the node user before running
+# anything else — safer than sudo (no shell, no setuid bit, tiny binary
+# purpose-built for exactly this).
+RUN apt-get update && apt-get install -y --no-install-recommends xvfb xauth openssl gosu && rm -rf /var/lib/apt/lists/*
 # /app itself needs to be node-owned so the local-disk storage fallback can
 # create ./uploads on demand (src/lib/server/storage.ts) — chowning it here,
 # while it's still empty, is metadata-only (nothing to duplicate).
@@ -97,10 +100,12 @@ RUN npx prisma generate
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
-# Run as the non-root `node` user the base image already ships (uid 1000) —
-# least privilege: a compromised process shouldn't have root inside its own
-# container.
-USER node
+# No USER directive here (was `USER node`): the entrypoint now needs to
+# start as root to chown the /app/uploads named volume (see
+# docker-entrypoint.sh), then drops to the non-root `node` user itself via
+# gosu before running anything else — same end state (nothing app-level
+# ever runs as root), just root for one chown instead of for the whole
+# process lifetime.
 
 EXPOSE 3000
 ENTRYPOINT ["./docker-entrypoint.sh"]

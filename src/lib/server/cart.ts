@@ -144,6 +144,18 @@ export async function getCartParcelRequirement(
 // (grouped by the guest session cookie) becomes theirs instead of vanishing.
 export async function mergeGuestCartIntoUser(sessionId: string, userId: string): Promise<void> {
   if (!sessionId) return;
+  // The underlying QuoteJob rows (the actual uploaded file + slice result
+  // each cart item points to) carry their own separate ownership, not
+  // inherited from the cart item — GET /quotes/:id/file checks
+  // quoteJob.userId/.sessionId directly. Without migrating these too, a
+  // guest's cart items reattach to their new account but the file preview
+  // (viewer3d.js) 404s right after login: the route now sees an
+  // authenticated user, so it stops honoring the old sessionId match, and
+  // userId is still null on a quote job that was never touched here.
+  await prisma.quoteJob.updateMany({
+    where: { sessionId, userId: null },
+    data: { userId, sessionId: null },
+  });
   await prisma.cartItem.updateMany({
     where: { sessionId, userId: null },
     data: { userId, sessionId: null },

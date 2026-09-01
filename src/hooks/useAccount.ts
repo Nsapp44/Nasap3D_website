@@ -168,10 +168,22 @@ export function useAccount() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // The cart's "Se connecter" button links here with ?next=panier (see
+  // CartPage.tsx) when a guest needs to log in specifically to place an
+  // order — sending them to the account dashboard afterward instead of
+  // back to the cart they came from would mean an extra manual step to
+  // get back to what they were actually doing.
+  function redirectBackToCartIfNeeded(): boolean {
+    if (new URLSearchParams(window.location.search).get("next") !== "panier") return false;
+    window.location.href = "/panier";
+    return true;
+  }
+
   function onLoginSuccess(user: { email: string; customerNo: string }) {
     setLoggedIn(true);
     setAuthEmail(user.email);
     setCustomerNo(user.customerNo);
+    if (redirectBackToCartIfNeeded()) return;
     setView("dashboard");
     loadOrdersAndInvoices();
   }
@@ -210,14 +222,15 @@ export function useAccount() {
         setLoggedIn(true);
         setAuthEmail(user.email);
         setCustomerNo(user.customerNo);
-        setView("dashboard");
         setPendingSignupId(null);
         setVerifyExpiresAt(null);
         setVerifyResendCount(0);
-        setPopupMessage("Compte créé avec succès.");
         setPopupConfirm(null);
         setVerifyPurpose(null);
         setVerifyCode("");
+        if (redirectBackToCartIfNeeded()) return;
+        setView("dashboard");
+        setPopupMessage("Compte créé avec succès.");
         return;
       }
       setVerifyMessage(verifyErrorMessage(res.data));

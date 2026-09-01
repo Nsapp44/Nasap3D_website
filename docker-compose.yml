@@ -51,6 +51,16 @@ services:
     # a quoted S3_REGION broke the AWS SDK with a doubly-quoted region string.
     volumes:
       - ./.env:/app/.env:ro
+      # Local-disk fallback storage (src/lib/server/storage.ts, used whenever
+      # S3 isn't configured) writes to ./uploads relative to the container's
+      # WORKDIR (/app) — quote STL/STEP files, contact attachments, generated
+      # invoice PDFs. Without a named volume here, that directory lives only
+      # in the container's own writable layer and is wiped on every
+      # redeploy (a new container replaces the old one) — confirmed in
+      # production: a quote file 404'd after a routine redeploy for an
+      # unrelated fix. This survives redeploys the same way nasap3d_db_data
+      # already does for Postgres; only `docker compose down -v` removes it.
+      - nasap3d_uploads_data:/app/uploads
     environment:
       DATABASE_URL: postgresql://nasap3d:${POSTGRES_PASSWORD:-nasap3d_dev_only}@db:5432/nasap3d
       # .env's PRUSASLICER_BIN is the Windows dev path (for `npm run dev`
@@ -94,3 +104,4 @@ networks:
 
 volumes:
   nasap3d_db_data:
+  nasap3d_uploads_data:

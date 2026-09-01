@@ -364,7 +364,7 @@ export default function CartPage() {
             {cart.smallOrderFeeCents > 0 && <div className="summary-note">En dessous de {eur(cart.minOrderCents)} €, des frais s'appliquent — ajoutez des pièces pour les éviter.</div>}
             <div className="summary-cta">
               {needsLogin && (
-                <a href="/compte" className="cta-primary">
+                <a href="/compte?next=panier" className="cta-primary">
                   Se connecter
                 </a>
               )}
