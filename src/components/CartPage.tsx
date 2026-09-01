@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../lib/api-client";
 import { useAuth } from "../hooks/useAuth";
 import { useCart, MAX_LINE_QTY, type CartLine } from "../hooks/useCart";
@@ -90,6 +90,19 @@ export default function CartPage() {
     if (!isLoggedIn || cart.lines.length === 0) return;
     setStep("checkout");
   }
+
+  // Landed here via useAccount.ts's redirectBackToCartIfNeeded() (the
+  // cart's "Se connecter" button, which sent the visitor to /compte with
+  // ?next=panier specifically to place an order) — go straight to the
+  // checkout step instead of stopping at the cart summary, so logging in
+  // doesn't cost an extra manual "Passer la commande" click.
+  useEffect(() => {
+    if (!isLoggedIn || !loaded || cart.lines.length === 0) return;
+    if (new URLSearchParams(window.location.search).get("autocheckout") !== "1") return;
+    window.history.replaceState({}, "", "/panier");
+    setStep("checkout");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn, loaded, cart.lines.length]);
   function backToCart() {
     setStep("cart");
   }

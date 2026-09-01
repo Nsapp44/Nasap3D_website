@@ -81,36 +81,35 @@ html.n3d-quote-paused .n3d-quote-gate {
 }
 .printer-loader-svg .line-lr {
   stroke-dasharray: 100;
+  /* Matches each animation's own 0% keyframe — without it, the very first
+     rendered frame (before the animation engine applies that keyframe)
+     uses the CSS-initial stroke-dashoffset:0, which for a path this much
+     shorter than the 100-unit dash briefly shows it fully drawn: a
+     "extra path flashes for a moment" glitch on mount, not a looping bug. */
+  stroke-dashoffset: 100;
   animation: plDrawLr 2.5s linear infinite;
 }
 .printer-loader-svg .arc-r {
   stroke-dasharray: 100;
+  stroke-dashoffset: 100;
   animation: plDrawArcR 2.5s linear infinite;
 }
 .printer-loader-svg .line-rl {
   stroke-dasharray: 100;
+  stroke-dashoffset: 100;
   animation: plDrawRl 2.5s linear infinite;
 }
 .printer-loader-svg .arc-l {
   stroke-dasharray: 100;
+  stroke-dashoffset: 100;
   animation: plDrawArcL 2.5s linear infinite;
 }
-/* The stack shifts down a whole 20px (2 layer-heights) over one cycle and
-   never animates back up — so the loop has to hard-cut from 20px back to
-   0px, and the 4 dash-offset "currently drawing" segments below similarly
-   snap from drawn back to undrawn. The shift itself is invisible on its
-   own (the zigzag repeats every 20px, so the reset lands on an identical-
-   looking frame) but the drawn-segment reset isn't — briefly fading to
-   transparent right across the wrap (100% and 0% both at opacity 0) masks
-   that snap instead of it reading as a visible jump. */
+/* The stack shifts down 20px (2 layer-heights) over one cycle — the zigzag
+   pattern repeats every 20px, so the hard reset from 20px back to 0px at
+   the loop boundary lands on an identical-looking frame and needs no fade
+   or other masking to read as continuous. */
 @keyframes plShiftDown {
-  0% {
-    transform: translateY(0px);
-    opacity: 0;
-  }
-  4% {
-    opacity: 1;
-  }
+  0%,
   38% {
     transform: translateY(0px);
   }
@@ -118,12 +117,8 @@ html.n3d-quote-paused .n3d-quote-gate {
   88% {
     transform: translateY(10px);
   }
-  96% {
-    opacity: 1;
-  }
   100% {
     transform: translateY(20px);
-    opacity: 0;
   }
 }
 @keyframes plNozzleMove {

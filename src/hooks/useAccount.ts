@@ -175,7 +175,11 @@ export function useAccount() {
   // get back to what they were actually doing.
   function redirectBackToCartIfNeeded(): boolean {
     if (new URLSearchParams(window.location.search).get("next") !== "panier") return false;
-    window.location.href = "/panier";
+    // autocheckout=1: CartPage.tsx picks this up and goes straight to the
+    // checkout step instead of landing back on the cart summary — the
+    // whole reason this login happened was to place an order, so getting
+    // back to the cart alone would still leave one more manual click.
+    window.location.href = "/panier?autocheckout=1";
     return true;
   }
 

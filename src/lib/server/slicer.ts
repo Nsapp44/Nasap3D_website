@@ -267,23 +267,49 @@ export async function sliceModel(filePath: string, opts: SliceOptions): Promise<
       `first_layer_temperature = ${temps.nozzle},${temps.nozzle},${temps.nozzle},${temps.nozzle},${temps.nozzle}`,
       `bed_temperature = ${temps.bed}`,
       `first_layer_bed_temperature = ${temps.bed}`,
-      "perimeters = 2",
-      "top_solid_layers = 4",
-      "bottom_solid_layers = 4",
+      // 3 parois + 3 couches pleines dessus/dessous, jamais plus (demande
+      // explicite) — était 2/4/4.
+      "perimeters = 3",
+      "top_solid_layers = 3",
+      "bottom_solid_layers = 3",
       // Supports étaient absents du profil jusqu'ici — un vrai manque : une
       // pièce avec surplombs se serait vue estimer un temps/poids (donc un
       // prix) sans le matériau/temps de support réellement nécessaire à
-      // l'impression. "classique auto" + "ajusté" (voir demande explicite) =
-      // support_material_auto (génération automatique selon le seuil de
-      // surplomb, pas seulement dans des zones "enforcer" peintes à la
-      // main) + support_material_style=snug (littéralement "Ajusté" dans
+      // l'impression. support_material_auto (génération automatique selon le
+      // seuil de surplomb, pas seulement dans des zones "enforcer" peintes à
+      // la main) + support_material_style=snug (littéralement "Ajusté" dans
       // l'UI FR de PrusaSlicer — grid/snug/organic sont les 3 styles
-      // possibles). support_material_threshold=0 = détection automatique du
-      // seuil, recommandé par PrusaSlicer lui-même plutôt qu'un angle fixe.
+      // possibles ; "organic" = les arbres, explicitement écarté, demande
+      // explicite).
+      //
+      // support_material_threshold=0 était utilisé comme sentinelle "auto"
+      // (délégué à l'heuristique interne de PrusaSlicer) — en pratique plus
+      // agressif que nécessaire : un 3DBenchy réel (modèle de torture connu,
+      // justement conçu pour s'imprimer sans support) se voyait quand même
+      // générer du vrai support en auto (+40 000 lignes de gcode vs sans
+      // support), gonflant le prix ET le temps de calcul pour rien.
+      // --help-fff est sans ambiguïté : la valeur représente "the most
+      // horizontal slope you can print without support material" — donc PLUS
+      // la valeur est basse, MOINS il y a de support (seul le très plat en a
+      // besoin), pas l'inverse. Vérifié empiriquement sur le vrai 3DBenchy à
+      // 0.25 CPU (conteneur throttlé pour simuler un serveur de prod modeste) :
+      // auto ≈ 40° ≈ 60° tournent tous autour de 700-1000 mentions de
+      // "support" dans le gcode et 70-90s ; 15° tombe à 181 mentions et 53s.
+      // 30° (demande explicite, arbitrage voulu entre les deux) reste un vrai
+      // seuil physique (pas 0/désactivé) : les surplombs plus verticaux que
+      // ça s'impriment sans support sur une machine bien réglée.
+      // support_material_buildplate_only=0 : le support peut aussi s'appuyer
+      // sur la pièce, pas seulement sur le plateau.
+      // support_material_contact_distance=0.2 et raft_first_layer_density=90%
+      // sont déjà les défauts PrusaSlicer, fixés ici explicitement pour ne
+      // plus en dépendre implicitement (demande explicite).
       "support_material = 1",
       "support_material_auto = 1",
       "support_material_style = snug",
-      "support_material_threshold = 0",
+      "support_material_threshold = 30",
+      "support_material_buildplate_only = 0",
+      "support_material_contact_distance = 0.2",
+      "raft_first_layer_density = 90%",
       // Vitesses/accélération réelles Bambu Lab (H2C, voir MATERIAL_TEMPS/
       // QUALITY_SPEEDS ci-dessus pour la source) — remplacent les vitesses
       // par défaut de PrusaSlicer, bien trop lentes pour ces machines.

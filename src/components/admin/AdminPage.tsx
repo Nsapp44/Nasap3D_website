@@ -15,6 +15,12 @@ export default function AdminPage() {
   const authStatus = useAdminAuth();
   const [tab, setTab] = useState<"orders" | "stock">("orders");
   const [settings, setSettings] = useState<Settings | null>(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  function selectTab(next: "orders" | "stock") {
+    setTab(next);
+    setMobileNavOpen(false);
+  }
 
   const loadSettings = useCallback(async () => {
     const res = await api.adminGetSettings();
@@ -45,22 +51,35 @@ export default function AdminPage() {
           <span className="admin-badge">ADMIN</span>
         </a>
         {authStatus === "ok" && (
-          <div className="admin-tabs">
-            <span onClick={() => setTab("orders")} className={`admin-tab${tab === "orders" ? " active" : ""}`}>
-              Commandes
-            </span>
-            <span onClick={() => setTab("stock")} className={`admin-tab${tab === "stock" ? " active" : ""}`}>
-              Stock filament
-            </span>
-          </div>
+          <>
+            <button
+              type="button"
+              className={`admin-burger${mobileNavOpen ? " is-open" : ""}`}
+              aria-label="Menu"
+              aria-expanded={mobileNavOpen}
+              onClick={() => setMobileNavOpen((o) => !o)}
+            >
+              <span />
+              <span />
+              <span />
+            </button>
+            <div className={`admin-nav${mobileNavOpen ? " is-open" : ""}`}>
+              <div className="admin-tabs">
+                <span onClick={() => selectTab("orders")} className={`admin-tab${tab === "orders" ? " active" : ""}`}>
+                  Commandes
+                </span>
+                <span onClick={() => selectTab("stock")} className={`admin-tab${tab === "stock" ? " active" : ""}`}>
+                  Stock filament
+                </span>
+              </div>
+              <div className="admin-account">
+                <span onClick={adminLogout} className="logout-link">
+                  Déconnexion
+                </span>
+              </div>
+            </div>
+          </>
         )}
-        <div className="admin-account">
-          {authStatus === "ok" && (
-            <span onClick={adminLogout} className="logout-link">
-              Déconnexion
-            </span>
-          )}
-        </div>
       </div>
 
       {authStatus === "checking" && <div className="auth-msg">Vérification des droits d'accès…</div>}
@@ -103,16 +122,44 @@ export default function AdminPage() {
 
       <style>{`
         .admin-page { background: #161514; min-height: 100vh; }
-        .admin-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 40px; border-bottom: 1px solid rgba(255,255,255,.08); }
+        .admin-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 40px; border-bottom: 1px solid rgba(255,255,255,.08); position: relative; }
         .logo-link { display: flex; align-items: center; gap: 10px; text-decoration: none; }
         .logo-img { height: 34px; width: auto; }
         .admin-badge { font: 700 9px 'Inter',sans-serif; color: #161514; background: #ff5a3c; border-radius: 4px; padding: 3px 7px; margin-left: 4px; }
+        .admin-nav { display: flex; align-items: center; gap: 32px; }
         .admin-tabs { display: flex; gap: 26px; font: 500 13px 'Inter',sans-serif; color: rgba(255,255,255,.62); }
         .admin-tab { cursor: pointer; padding-bottom: 4px; color: rgba(255,255,255,.5); font-weight: 500; border-bottom: 2px solid transparent; }
         .admin-tab.active { color: #f3f1ec; font-weight: 600; border-bottom: 2px solid #ff5a3c; }
         .admin-account { display: flex; align-items: center; gap: 18px; font: 500 12px 'Inter',sans-serif; color: rgba(255,255,255,.75); }
         .logout-link { cursor: pointer; color: rgba(255,255,255,.6); font: 500 12px 'Inter',sans-serif; transition: color .2s ease; }
         .logout-link:hover { color: #ff5a3c; }
+        .admin-burger { display: none; flex-direction: column; justify-content: center; align-items: center; gap: 5px; width: 36px; height: 36px; padding: 0; border: none; background: transparent; cursor: pointer; flex: none; }
+        .admin-burger span { display: block; width: 20px; height: 2px; background: #f3f1ec; border-radius: 1px; transition: transform .2s ease, opacity .2s ease; }
+        .admin-burger.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+        .admin-burger.is-open span:nth-child(2) { opacity: 0; }
+        .admin-burger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+        @media (max-width: 720px) {
+          .admin-header { padding: 14px 20px; }
+          .admin-burger { display: flex; }
+          .admin-nav {
+            display: none;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 20px;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #1a1917;
+            border-bottom: 1px solid rgba(255,255,255,.08);
+            padding: 20px;
+            z-index: 20;
+          }
+          .admin-nav.is-open { display: flex; }
+          .admin-tabs { flex-direction: column; gap: 16px; }
+          .admin-tab { padding-bottom: 0; border-bottom: none; border-left: 2px solid transparent; padding-left: 10px; }
+          .admin-tab.active { border-bottom: none; border-left: 2px solid #ff5a3c; }
+        }
         .auth-msg { max-width: 1000px; margin: 0 auto; padding: 60px 24px; text-align: center; font: 500 12px 'Inter',sans-serif; color: rgba(255,255,255,.4); }
         .auth-denied { max-width: 600px; margin: 60px auto; padding: 0 24px; text-align: center; }
         .auth-denied-title { font: 700 20px 'Space Grotesk',sans-serif; color: #f3f1ec; margin-bottom: 10px; }
