@@ -462,6 +462,15 @@ export function useQuoteWizard() {
     setStep(n);
     // Re-rendering into step 1's remounted previewRef node is handled by
     // the [file, step] effect above.
+    // Going back to step 2 (material/quality/infill/qty) invalidates the
+    // analysis done for the settings the visitor is about to change —
+    // without this, next() at line ~455 sees analysisReady still true from
+    // the previous run and skips submitQuote() entirely, showing stale
+    // price/weight for options that were never actually re-sliced.
+    if (n < 3 && analysisReady) {
+      setAnalysisReady(false);
+      setQuote(null);
+    }
   }
   function retryAnalysis() {
     setAnalysisError(null);
