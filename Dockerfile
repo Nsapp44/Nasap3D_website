@@ -24,26 +24,6 @@ COPY public/ public/
 RUN npx prisma generate
 RUN npm run build
 
-# --- PrusaSlicer CLI (real slicing happens here, server-side — never on the
-# customer's machine) — reproduced unchanged from the pre-migration
-# Dockerfile. PrusaSlicer stopped shipping an official AppImage/tarball for
-# Linux from 2.8.1 onward ("PrusaSlicer now depends on WebKit library, which
-# greatly complicates its distribution" — see prusa3d/PrusaSlicer release
-# notes and issue #13653), so there is no official prebuilt binary to just
-# download. probonopd/PrusaSlicer.AppImage is a community-maintained, fully
-# self-contained AppImage (bundles glibc/WebKit/GTK — explicitly documented
-# to need neither libfuse nor the target system's own libraries) that keeps
-# tracking the 2.9.x line. Bump the version/URL below if a newer one is
-# needed; check https://github.com/probonopd/PrusaSlicer.AppImage/releases.
-FROM node:22-bookworm-slim AS prusaslicer
-WORKDIR /opt/prusaslicer
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl && rm -rf /var/lib/apt/lists/*
-RUN curl -fL -o PrusaSlicer.AppImage \
-      https://github.com/probonopd/PrusaSlicer.AppImage/releases/download/2.9.1/PrusaSlicer-2.9.1-x86_64.AppImage \
-    && chmod +x PrusaSlicer.AppImage \
-    && ./PrusaSlicer.AppImage --appimage-extract \
-    && rm PrusaSlicer.AppImage
-
 FROM node:22-bookworm-slim
 WORKDIR /app
 ENV NODE_ENV=production
@@ -54,16 +34,28 @@ ENV NODE_ENV=production
 ARG GIT_SHA=dev
 ENV GIT_SHA=$GIT_SHA
 
-# PrusaSlicer's CLI mode (--info / --export-gcode, see src/lib/server/
-# slicer.ts) needs xvfb-run despite never opening a real window — confirmed
-# by building and running this image end-to-end. xauth is xvfb-run's own
-# dependency (fails with "xauth command not found" without it). openssl is
-# for Prisma's engine detection at runtime — see the build stage above for
-# why it's needed in both places. gosu lets the entrypoint start as root
-# (needed once, see below) and drop to the node user before running
+# PrusaSlicer via Debian's own package instead of the community AppImage
+# (probonopd/PrusaSlicer.AppImage) used until now. Switched after a real
+# perf investigation: the AppImage needed xvfb-run for every single --info/
+# --export-gcode call despite never opening a window (confirmed via
+# LD_DEBUG=libs — it initializes the full GL/EGL/GLX stack even for --help),
+# and separately, quote generation was measured 100x+ slower in production
+# than on any dev machine with the CPU otherwise sitting near-idle — not
+# explained by CPU throttling or xvfb overhead alone in side-by-side
+# testing. The apt package needs no xvfb at all (verified: --info/
+# --export-gcode both run directly, no display of any kind) and was ~16-30%
+# faster in every local comparison against the AppImage, throttled or not.
+# Trade-off: this is PrusaSlicer 2.5.0 (Debian bookworm's version), older
+# than the AppImage's 2.9.1 — support_material_style=snug (the only
+# non-default support option this project relies on, see
+# src/lib/server/slicer.ts) already exists in 2.5.0, confirmed via
+# --help-fff before switching.
+# openssl is for Prisma's engine detection at runtime — see the build stage
+# above for why it's needed in both places. gosu lets the entrypoint start
+# as root (needed once, see below) and drop to the node user before running
 # anything else — safer than sudo (no shell, no setuid bit, tiny binary
 # purpose-built for exactly this).
-RUN apt-get update && apt-get install -y --no-install-recommends xvfb xauth openssl gosu && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends prusa-slicer openssl gosu && rm -rf /var/lib/apt/lists/*
 # /app itself needs to be node-owned so the local-disk storage fallback can
 # create ./uploads on demand (src/lib/server/storage.ts) — chowning it here,
 # while it's still empty, is metadata-only (nothing to duplicate).
@@ -71,17 +63,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends xvfb xauth open
 # ever reads dist/prisma/node_modules at runtime, never writes to them, so
 # root ownership (world-readable by default) is enough.
 RUN chown node:node /app
-# --chown here (metadata baked directly into this layer's content) instead
-# of a later `RUN chown -R /opt/prusaslicer` — chowning *after* copying
-# ~987MB of already-written files doesn't modify them in place, the overlay
-# filesystem duplicates every touched file into a new layer, nearly doubling
-# the image for zero behavior change. xvfb-run still needs to write its own
-# lock/socket files next to where it runs from, which is the actual reason
-# this directory (unlike the ones above) needs to be node-owned at all.
-COPY --from=prusaslicer --chown=node:node /opt/prusaslicer/squashfs-root /opt/prusaslicer/squashfs-root
-RUN printf '#!/bin/sh\nexec xvfb-run --auto-servernum -- /opt/prusaslicer/squashfs-root/AppRun "$@"\n' > /usr/local/bin/prusa-slicer \
-    && chmod +x /usr/local/bin/prusa-slicer
-ENV PRUSASLICER_BIN=/usr/local/bin/prusa-slicer
+ENV PRUSASLICER_BIN=/usr/bin/prusa-slicer
 
 COPY package.json package-lock.json* ./
 RUN npm install --omit=dev

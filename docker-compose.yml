@@ -67,7 +67,7 @@ services:
       # outside Docker) — override it here so the container always uses the
       # Linux binary the Dockerfile actually installs, no matter what's in
       # the .env file used for local dev.
-      PRUSASLICER_BIN: /usr/local/bin/prusa-slicer
+      PRUSASLICER_BIN: /usr/bin/prusa-slicer
       # .env.example defaults to NODE_ENV=development (for `npm run dev`) —
       # env_file above would otherwise silently override the Dockerfile's
       # own `ENV NODE_ENV=production` with that dev value at container start
