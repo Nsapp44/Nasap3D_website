@@ -221,7 +221,18 @@ async function main() {
   console.log("Seeding accounts...");
 
   const adminEmail = process.env.SEED_ADMIN_EMAIL || "admin@nasap3d.com";
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD || "Ugz9Pb7VrVLjQEN538-8!";
+  // Fixed on purpose, not random — local Docker gets reinstalled/reseeded
+  // often, and a different password every time makes that a hassle. This
+  // is a NEW value, never previously committed (the old hardcoded default
+  // had already leaked into this public repo's git history — rotating it
+  // rather than reusing it, even though it's only ever meant as a local/
+  // dev fallback). Production should still set SEED_ADMIN_PASSWORD in its
+  // own .env (see .env.example) rather than rely on this default — the
+  // seed only ever sets a password on first creation of the row (see
+  // `if (!adminExisting)` below), so an already-seeded prod admin is
+  // unaffected either way, and changing the password from the admin UI
+  // after login is what actually matters there.
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD || "Nsap3D-Dev-Seed-2026!";
   const adminHash = await hashPassword(adminPassword);
   const adminExisting = await prisma.user.findUnique({ where: { email: adminEmail } });
   if (!adminExisting) {

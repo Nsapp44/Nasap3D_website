@@ -99,5 +99,18 @@ export default function BoxtalRelayMap({ searchParams, onPointSelected, onNotice
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runPendingSearch closes over refs only, not a real dependency
   }, [searchParams]);
 
-  return <div id="boxtal-relay-map" style={{ height: "380px", borderRadius: "10px", overflow: "hidden", border: "1px solid rgba(255,255,255,.1)", background: "#fff" }} />;
+  // touchAction: "pan-y" — a single finger scrolls the page over the map
+  // (the browser handles it as a native page scroll instead of routing it
+  // to the map widget), so a visitor scrolling past this on mobile doesn't
+  // get stuck panning the map by accident. Two-finger gestures (pinch-zoom,
+  // two-finger pan) aren't covered by pan-y and still reach the map
+  // normally. The vendored Boxtal widget has no gesture-handling option of
+  // its own to set this — this works at the browser's touch-dispatch level,
+  // above the widget, so it doesn't need one.
+  return (
+    <div
+      id="boxtal-relay-map"
+      style={{ height: "380px", borderRadius: "10px", overflow: "hidden", border: "1px solid rgba(255,255,255,.1)", background: "#fff", touchAction: "pan-y" }}
+    />
+  );
 }

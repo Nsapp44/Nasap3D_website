@@ -45,7 +45,7 @@ Modélise au minimum : `User` (email unique, `passwordHash`, `customerNo`, rôle
 - **Hash Argon2id** (lib `argon2`), paramètres raisonnables (mémoire ≥ 19 MiB, itérations ≥ 2, parallélisme adapté), **jamais** de mot de passe en clair ni en log. Sels gérés par la lib. Prévois une politique de rotation/upgrade des paramètres.
 - Validation mot de passe : ≥ 8 caractères, ≥ 1 majuscule, ≥ 1 caractère spécial (déjà appliquée côté front, à revalider côté serveur).
 - Rôle admin : la page `Admin.dc.html` doit être protégée par un vrai contrôle d'accès serveur (aujourd'hui c'est un e-mail/mot de passe en dur dans le front — à supprimer).
-- Compte de démo en dur (`client@nasap3d.com` / `Client2026!`) : à retirer, à remplacer par un vrai compte de test seedé.
+- Compte de démo en dur (identifiants codés dans le front) : à retirer, à remplacer par un vrai compte de test seedé.
 
 ### 3. reCAPTCHA Google
 - Remplace **tous les faux captchas « Je ne suis pas un robot »** (cases à cocher) par **Google reCAPTCHA** (v3 de préférence, ou v2 invisible) sur : **inscription**, **connexion**, et les **formulaires de contact** (`Contact.dc.html` et la section contact de `Home.dc.html`).

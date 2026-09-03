@@ -108,8 +108,8 @@ pas aux comptes déjà créés.
 
 | Rôle           | Email                                       | Mot de passe                                                                                       |
 | -------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Admin          | `admin@nasap3d.com` (ou `SEED_ADMIN_EMAIL`) | celui communiqué séparément (ou `SEED_ADMIN_PASSWORD`) — **à changer après la première connexion** |
-| Client de test | `client@nasap3d.com`                        | `Client2026!` (conservé tel quel à la demande, pour ne pas casser les tests manuels existants)     |
+| Admin          | `admin@nasap3d.com` (ou `SEED_ADMIN_EMAIL`) | voir `SEED_ADMIN_PASSWORD` dans `.env.example` — **à changer après la première connexion** |
+| Client de test | `client@nasap3d.com`                        | communiqué séparément                                                                      |
 
 Les deux mots de passe sont hashés en Argon2id avant stockage ; aucun n'est jamais écrit en
 clair en base ni dans les logs. Les deux comptes seedés sont marqués email-vérifié d'office (ils
