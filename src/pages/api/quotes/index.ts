@@ -6,12 +6,19 @@ import { getSessionUser } from "../../../lib/api/auth";
 import { getOrCreateGuestSessionId } from "../../../lib/api/cookies";
 import { prisma } from "../../../lib/server/prisma";
 import { newFileKey, saveFile } from "../../../lib/server/storage";
-import { getModelInfo, pickPrinter, sliceModel, exportTransformedStl } from "../../../lib/server/slicer";
+import {
+  getModelInfo,
+  pickPrinter,
+  sliceModel,
+  loadTrianglesFromFile,
+  exportTransformedStl,
+  validateClaimedSlice,
+} from "../../../lib/server/kiriSlicer";
 import { computePrice } from "../../../lib/server/pricing";
-import { parseStlTriangles, suggestOrientation } from "../../../lib/server/orientation";
+import { applyTransform, suggestOrientation } from "../../../lib/server/orientation";
 import { enforceRateLimit, checkRateLimit, clientIp } from "../../../lib/api/rateLimit";
 
-const ALLOWED_EXT = new Set([".stl", ".obj", ".step", ".stp"]);
+const ALLOWED_EXT = new Set([".stl", ".obj", ".3mf"]);
 const MAX_FILE_BYTES = 150 * 1024 * 1024;
 // Scale is a raw multiplication factor, not a percentage (client sends
 // unitMultiplier × pct/100 already combined). Bounds cover the realistic
@@ -60,9 +67,10 @@ function quotePublicView(
 }
 
 // Direct port of POST /quotes — the real quote engine: uploads a 3D model,
-// slices it with PrusaSlicer, computes the price. Sans limite, un script
-// qui boucle dessus peut faire tourner PrusaSlicer (le plus coûteux du
-// site en CPU) et remplir le stockage/la base à volonté.
+// trusts the client's own Kiri:Moto slice once validated (or falls back to
+// a real server-side slice, rare), computes the price. Sans limite, un
+// script qui boucle dessus peut déclencher le filet de secours serveur (le
+// plus coûteux du site en CPU) et remplir le stockage/la base à volonté.
 export const POST = apiHandler(async (context) => {
   enforceRateLimit(`quotes:post:${clientIp(context)}`, 15, 60_000);
   if (!checkRateLimit(`quotes:${clientIp(context)}`, 100, 60 * 60 * 1000)) {
@@ -92,6 +100,18 @@ export const POST = apiHandler(async (context) => {
   const scaleRaw = form.get("scale");
   const scale = scaleRaw !== null ? parseFloat(String(scaleRaw)) : 1;
 
+  // Optional real slice result from the visitor's own browser (Kiri:Moto,
+  // see public/kiri-slicer.js + useQuoteWizard.ts) — the primary path.
+  // Absent entirely (older client, WASM unavailable, weak device, timeout)
+  // or rejected by validateClaimedSlice() below both fall back to the rare
+  // server-side full slice (role 3, see kiriSlicer.ts).
+  const clientWeightRaw = form.get("clientWeightG");
+  const clientTimeRaw = form.get("clientEstimatedTimeMin");
+  const claimedSlice =
+    clientWeightRaw !== null && clientTimeRaw !== null
+      ? { weightG: parseFloat(String(clientWeightRaw)), estimatedTimeMin: parseFloat(String(clientTimeRaw)) }
+      : null;
+
   if (!materialKey || !colorId || !qualityKey || !Number.isFinite(infillPct)) {
     return jsonError(400, "invalid_body");
   }
@@ -115,17 +135,28 @@ export const POST = apiHandler(async (context) => {
   try {
     await writeFile(tmpPath, fileBuffer);
 
+    // Everything downstream (orientation, bbox/volume/manifold check,
+    // server-side slice fallback, final stored file) works off one common
+    // triangle list — STL/OBJ parsed directly, 3MF unzipped+parsed once
+    // here (threeMfParse.ts). No PrusaSlicer subprocess involved at any
+    // point anymore.
+    let rawTriangles;
+    try {
+      rawTriangles = await loadTrianglesFromFile(tmpPath, ext);
+    } catch (e) {
+      console.warn("loadTrianglesFromFile failed", e);
+      return jsonError(400, "unreadable_file");
+    }
+
     // Best-effort print-orientation suggestion — scored on the raw,
     // unscaled geometry (rotation is scale-independent) before anything
-    // else runs. Never fails the quote on its own: a parse hiccup or an
-    // unusual/degenerate mesh just falls back to no rotation (0, 0), same
-    // as before this feature existed.
+    // else runs. Never fails the quote on its own: an unusual/degenerate
+    // mesh just falls back to no rotation (0, 0), same as before this
+    // feature existed.
     let rotateXDeg = 0,
       rotateYDeg = 0;
     try {
-      const stlBuffer = ext === ".stl" ? fileBuffer : await exportTransformedStl(tmpPath, {});
-      const triangles = parseStlTriangles(stlBuffer);
-      const suggestion = suggestOrientation(triangles);
+      const suggestion = suggestOrientation(rawTriangles);
       if (suggestion) {
         rotateXDeg = suggestion.rotateXDeg;
         rotateYDeg = suggestion.rotateYDeg;
@@ -135,30 +166,40 @@ export const POST = apiHandler(async (context) => {
       console.warn("suggestOrientation failed, printing as-uploaded", e);
     }
     const transform = { scale, rotateXDeg, rotateYDeg };
+    const triangles = applyTransform(rawTriangles, transform);
 
-    const info = await getModelInfo(tmpPath, transform).catch((e) => {
-      console.warn("getModelInfo failed", e);
-      return null;
-    });
-    if (!info) return jsonError(400, "unreadable_file");
+    const info = await getModelInfo(triangles);
     if (!info.manifold) {
       return jsonError(400, "non_manifold_model");
     }
     const printer = pickPrinter(info);
     if (!printer) return jsonError(400, "part_too_large");
 
-    const sliced = await sliceModel(tmpPath, {
-      printer,
-      materialKey: material.key,
-      qualityKey: quality.key,
-      densityGCm3: material.densityGCm3,
-      layerHeightMm: quality.layerHeightMm,
-      infillPct,
-      ...transform,
-    }).catch((e) => {
-      console.warn("sliceModel failed", e);
-      return null;
-    });
+    // Trust the client's own real slice (role 1) only if it passes the
+    // cheap plausibility check (role 2, pure JS, no engine) — otherwise
+    // fall back to a real server-side Kiri:Moto slice (role 3, rare: no
+    // client result at all, or the client's numbers look fabricated).
+    let sliced: { weightG: number; estimatedTimeMin: number; volumeCm3: number } | null = null;
+    if (claimedSlice && validateClaimedSlice(info, { infillPct, densityGCm3: material.densityGCm3 }, claimedSlice)) {
+      sliced = {
+        weightG: claimedSlice.weightG,
+        estimatedTimeMin: claimedSlice.estimatedTimeMin,
+        volumeCm3: claimedSlice.weightG / material.densityGCm3,
+      };
+    } else {
+      if (claimedSlice) console.warn("client-submitted slice rejected by validateClaimedSlice, falling back", claimedSlice);
+      sliced = await sliceModel(triangles, {
+        printer,
+        materialKey: material.key,
+        qualityKey: quality.key,
+        layerHeightMm: quality.layerHeightMm,
+        densityGCm3: material.densityGCm3,
+        infillPct,
+      }).catch((e) => {
+        console.warn("sliceModel failed", e);
+        return null;
+      });
+    }
     if (!sliced) return jsonError(422, "slicing_failed");
 
     const tiers = await prisma.discountTier.findMany({ orderBy: { minQty: "asc" } });
@@ -177,11 +218,12 @@ export const POST = apiHandler(async (context) => {
     // admin) always has scale AND the suggested orientation actually baked
     // into its geometry, so it never again needs any client-side transform
     // to match what was priced/sliced. Always .stl output regardless of
-    // the original format (.obj/.step get normalized too — fileName keeps
+    // the original format (.obj/.3mf get normalized too — fileName keeps
     // its original extension for display purposes only, the stored bytes
-    // are the real, final mesh).
-    const needsExport = scale !== 1 || rotateXDeg !== 0 || rotateYDeg !== 0;
-    const storedBuffer = needsExport ? await exportTransformedStl(tmpPath, transform) : fileBuffer;
+    // are the real, final mesh). Cheap now (pure JS, no subprocess), unlike
+    // the old PrusaSlicer version, so no need to skip it when transform is
+    // a no-op.
+    const storedBuffer = exportTransformedStl(rawTriangles, transform);
 
     const fileKey = newFileKey(fileName);
     await saveFile(fileKey, storedBuffer);

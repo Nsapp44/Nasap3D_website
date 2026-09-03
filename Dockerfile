@@ -11,18 +11,44 @@ WORKDIR /app
 # actually checking, which may not match what's really on Debian Bookworm
 # (OpenSSL 3.x by default). Installing it here makes `prisma generate` bake
 # in the binary that actually matches the target OS instead of a guess.
-RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
+# curl is for the grid-apps tarball download below — ca-certificates has to
+# be listed explicitly alongside it: Debian's curl package doesn't hard-depend
+# on it, so `--no-install-recommends` silently drops it, and curl then fails
+# every HTTPS request with "SSL CA cert" errors (exit 77) — confirmed live,
+# this exact omission broke the grid-apps download below on the first try.
+RUN apt-get update && apt-get install -y --no-install-recommends openssl curl ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json* ./
 RUN npm install
 COPY astro.config.mjs tsconfig.json ./
 COPY prisma/ prisma/
 COPY bootstrap/ bootstrap/
-COPY slicer-profiles/ slicer-profiles/
 COPY server-entry.mjs ./
 COPY src/ src/
 COPY public/ public/
 RUN npx prisma generate
 RUN npm run build
+
+# Kiri:Moto (grid-apps) — the real slicing engine for the server-side rare
+# full-slice fallback (kiriSlicer.ts's sliceModel(); the primary path runs
+# client-side, served straight from the already-copied public/vendor/kiri/).
+# Needs its own real source tree (its Node CLI eval-loads files directly by
+# path, see src/kiri-run/cli.js) with real symlinks intact (src/ext/three.js
+# etc. are symlinks in the upstream repo) — a tarball download preserves
+# those correctly, confirmed by testing this exact approach in a real
+# node:22-bookworm-slim container; `git clone` also works but adds a
+# dependency on git at build time for no benefit. SimplyPrint/slicer is an
+# actively maintained fork of GridSpace/grid-apps (same MIT license), used
+# instead of the upstream repo directly per the plan's own investigation.
+# npm install's postinstall (bin/npm-post) fetches manifold.wasm/manifold.js
+# from static.grid.space — the only real reason npm install is needed here,
+# since the CLI's own eval-loader doesn't touch node_modules for anything
+# else, but running it in full (not hand-picking) matches exactly what was
+# tested working this session.
+RUN mkdir -p vendor && \
+    curl --fail --retry 5 --retry-all-errors -sL https://github.com/SimplyPrint/slicer/archive/refs/heads/master.tar.gz -o vendor/grid-apps.tar.gz && \
+    tar xzf vendor/grid-apps.tar.gz -C vendor && rm vendor/grid-apps.tar.gz && \
+    mv vendor/slicer-master vendor/grid-apps && \
+    cd vendor/grid-apps && npm install
 
 FROM node:22-bookworm-slim
 WORKDIR /app
@@ -34,28 +60,19 @@ ENV NODE_ENV=production
 ARG GIT_SHA=dev
 ENV GIT_SHA=$GIT_SHA
 
-# PrusaSlicer via Debian's own package instead of the community AppImage
-# (probonopd/PrusaSlicer.AppImage) used until now. Switched after a real
-# perf investigation: the AppImage needed xvfb-run for every single --info/
-# --export-gcode call despite never opening a window (confirmed via
-# LD_DEBUG=libs — it initializes the full GL/EGL/GLX stack even for --help),
-# and separately, quote generation was measured 100x+ slower in production
-# than on any dev machine with the CPU otherwise sitting near-idle — not
-# explained by CPU throttling or xvfb overhead alone in side-by-side
-# testing. The apt package needs no xvfb at all (verified: --info/
-# --export-gcode both run directly, no display of any kind) and was ~16-30%
-# faster in every local comparison against the AppImage, throttled or not.
-# Trade-off: this is PrusaSlicer 2.5.0 (Debian bookworm's version), older
-# than the AppImage's 2.9.1 — support_material_style=snug (the only
-# non-default support option this project relies on, see
-# src/lib/server/slicer.ts) already exists in 2.5.0, confirmed via
-# --help-fff before switching.
+# PrusaSlicer is gone entirely — replaced by Kiri:Moto, which needs no
+# native binary at all (client-side: static files already under
+# dist/client/vendor/kiri/, served like any other asset; server-side rare
+# fallback: `node vendor/grid-apps/src/kiri-run/cli.js`, see the build stage
+# above and kiriSlicer.ts). This also eliminates the whole xvfb/AVX2/Docker
+# perf rabbit hole from the PrusaSlicer era — no subprocess-through-a-
+# native-binary path left in the quote pipeline at all.
 # openssl is for Prisma's engine detection at runtime — see the build stage
 # above for why it's needed in both places. gosu lets the entrypoint start
 # as root (needed once, see below) and drop to the node user before running
 # anything else — safer than sudo (no shell, no setuid bit, tiny binary
 # purpose-built for exactly this).
-RUN apt-get update && apt-get install -y --no-install-recommends prusa-slicer openssl gosu && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends openssl gosu && rm -rf /var/lib/apt/lists/*
 # /app itself needs to be node-owned so the local-disk storage fallback can
 # create ./uploads on demand (src/lib/server/storage.ts) — chowning it here,
 # while it's still empty, is metadata-only (nothing to duplicate).
@@ -63,13 +80,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends prusa-slicer op
 # ever reads dist/prisma/node_modules at runtime, never writes to them, so
 # root ownership (world-readable by default) is enough.
 RUN chown node:node /app
-ENV PRUSASLICER_BIN=/usr/bin/prusa-slicer
 
 COPY package.json package-lock.json* ./
 RUN npm install --omit=dev
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
-COPY --from=build /app/slicer-profiles ./slicer-profiles
+COPY --from=build /app/vendor/grid-apps ./vendor/grid-apps
 COPY --from=build /app/bootstrap ./bootstrap
 COPY --from=build /app/server-entry.mjs ./
 # prisma/seed.ts imports straight from src/lib/server/ (tsx runs it

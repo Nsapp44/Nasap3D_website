@@ -6,9 +6,11 @@ complet, adossés à un vrai back-end (plus aucun état simulé en `localStorage
 
 ## Aperçu
 
-- **Devis instantané réel** : le client dépose son fichier STL / OBJ / STEP, l'aperçu 3D affiche
+- **Devis instantané réel** : le client dépose son fichier STL / OBJ / 3MF, l'aperçu 3D affiche
   la pièce réelle (pas un cube générique), et le prix est calculé à partir d'un vrai tranchage
-  PrusaSlicer côté serveur — jamais fait confiance à un prix envoyé par le navigateur.
+  Kiri:Moto — d'abord dans le navigateur du visiteur (pas de file d'attente serveur), vérifié
+  côté serveur par un calcul de volume indépendant avant d'être fait confiance (voir PRICING.md) ;
+  jamais fait confiance directement à un prix envoyé par le navigateur.
 - **Paiement réel** : Stripe Checkout, montant recalculé côté serveur au moment du paiement.
 - **Livraison réelle** : simulation de tarif et sélection d'un point relais via Boxtal.
 - **Comptes clients réels** : inscription/connexion avec vérification d'email par code à 6
@@ -32,7 +34,7 @@ plugins/hooks, reconstruite explicitement puisqu'Astro n'a pas d'équivalent).
 │   ├── components/          Composants Astro + îlots React (devis, panier, compte, admin, accueil)
 │   ├── hooks/                État/logique des îlots
 │   ├── lib/
-│   │   ├── server/            Logique métier (Prisma, session, devis/PrusaSlicer, Boxtal, Stripe,
+│   │   ├── server/            Logique métier (Prisma, session, devis/Kiri:Moto, Boxtal, Stripe,
 │   │   │                      mailer, stockage S3...) — indépendante du framework, appelée par
 │   │   │                      les routes API
 │   │   ├── api/                Plomberie propre à Astro : wrapper d'erreurs (apiHandler),
@@ -42,14 +44,13 @@ plugins/hooks, reconstruite explicitement puisqu'Astro n'a pas d'équivalent).
 │                              nettoyage périodiques (paniers abandonnés, devis expirés,
 │                              commandes rejetées, suivi Boxtal)
 ├── prisma/                  Schéma + migrations PostgreSQL, seed (catalogue, comptes admin/test)
-├── slicer-profiles/         Profils d'imprimante utilisés par PrusaSlicer (voir PRICING.md)
 ├── bootstrap/sanitizeEnv.mjs Nettoyage des guillemets parasites sur les variables d'env, exécuté
 │                              avant tout le reste (voir server-entry.mjs)
 ├── server-entry.mjs         Point d'entrée Docker/production : dotenv → sanitizeEnv → démarre
 │                              le build Astro SSR
 ├── public/                  Fichiers servis tels quels (assets, vendor JS non-bundlé, robots/sitemap)
 ├── astro.config.mjs
-├── Dockerfile               Multi-stage : build Astro SSR + PrusaSlicer CLI, une seule image
+├── Dockerfile               Multi-stage : build Astro SSR + moteur Kiri:Moto vendorisé, une seule image
 ├── docker-compose.yml       Toute la stack (db, api)
 ├── PRICING.md                Formule de calcul de prix (détaillée, avec exemples)
 ├── SHIPPING.md                Intégration Boxtal
@@ -60,9 +61,11 @@ plugins/hooks, reconstruite explicitement puisqu'Astro n'a pas d'équivalent).
 
 - Node.js 22+
 - Docker (pour PostgreSQL en local — ou un PostgreSQL 16 déjà installé)
-- PrusaSlicer (CLI) installé quelque part sur la machine, pour que le devis instantané fonctionne
-  réellement — voir `PRUSASLICER_BIN` plus bas. Sans lui, tout le reste du site fonctionne, seul
-  `POST /api/quotes` échouera.
+- Rien à installer pour le devis instantané lui-même : le tranchage tourne dans le navigateur
+  (fichiers statiques déjà dans `public/vendor/kiri/`). Le filet de secours serveur (rare — voir
+  PRICING.md) a besoin de `vendor/grid-apps/` (vendorisé automatiquement dans l'image Docker, voir
+  le `Dockerfile`) ; sans lui en dev natif hors Docker, ce cas de secours précis échoue seul, tout
+  le reste du site (et le devis instantané normal) fonctionne.
 
 ## Installation
 
@@ -84,7 +87,7 @@ correspondent au `docker-compose.yml` à la racine du projet.
 | Email (SMTP)                                  | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM`, `SMTP_DEBUG` | Chaque email (codes de vérification, reset mot de passe, notifications) s'affiche dans les logs au lieu de partir réellement. Rien n'est bloqué. `SMTP_DEBUG=true` journalise l'échange SMTP complet, utile en diagnostic.                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | Auth                                          | `ARGON2_MEMORY_COST`, `ARGON2_TIME_COST`, `ARGON2_PARALLELISM`         | Valeurs par défaut OWASP raisonnables — à ne durcir que si le matériel de prod le permet.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | Anti-robot (hCaptcha)                         | `HCAPTCHA_SECRET_KEY`                                                  | Sans elle, la vérification anti-robot est **désactivée automatiquement en dev** (`NODE_ENV != production`) et **bloque tout en prod** — voir `src/lib/server/captcha.ts`. La clé publique ("site key") n'est **pas** ici : codée en dur dans `src/lib/api-client.ts`.                                                                                                                                                                                                                                                                                                                                                                         |
-| Devis (PrusaSlicer)                           | `PRUSASLICER_BIN`                                                      | `POST /api/quotes` échoue avec `slicing_failed`. ⚠️ En déploiement Docker, la valeur de `.env` est **ignorée** (`docker-compose.yml` impose `/usr/bin/prusa-slicer` au service `api`).                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Devis (Kiri:Moto)                             | *(aucune)*                                                             | Aucune variable à configurer — remplace l'ancien `PRUSASLICER_BIN` (supprimé). Le tranchage tourne dans le navigateur (fichiers statiques) et le filet de secours serveur utilise le moteur vendorisé dans l'image Docker (`vendor/grid-apps/`, voir le `Dockerfile`) — pas de binaire externe à pointer. Voir PRICING.md.                                                                                                                                                                                                                                                                                                                    |
 | Livraison (Boxtal)                            | `BOXTAL_API_KEY_V1/_SECRET_V1`, `BOXTAL_SHIPPER_*`                     | `POST /api/shipping/rates` et `POST /api/checkout` échouent avec `shipping_not_configured`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | Livraison — widget carte (Boxtal)             | `BOXTAL_MAP_API_KEY`, `BOXTAL_MAP_API_SECRET`                          | Paire distincte des clés ci-dessus, pour un endpoint séparé : `GET /api/shipping/map-token` échoue aussi avec `shipping_not_configured` sans elles — le widget de sélection du point relais ne peut pas s'afficher. Voir `SHIPPING.md`.                                                                                                                                                                                                                                                                                                                                                                   |
 | Paiement (Stripe)                             | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`                           | `POST /api/checkout` échoue. Utilisez une clé `sk_test_...`, jamais `sk_live_...` en développement.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -251,21 +254,29 @@ Avant de passer en production, vérifier concrètement :
 - `BOXTAL_SHIPPER_*` (adresse **et** identité — un vrai achat d'étiquette a besoin d'un contact
   nommé, contrairement à la simple simulation de tarif) correspond à la vraie entreprise.
 - `S3_*` est configuré — le repli sur disque local ne survit pas à un redéploiement de conteneur.
-- **PrusaSlicer CLI dans l'image Docker** — testé et fonctionnel (voir la section ci-dessous).
+- **Kiri:Moto vendorisé dans l'image Docker** — testé et fonctionnel (voir la section ci-dessous).
 
-### PrusaSlicer dans l'image Docker
+### Kiri:Moto (tranchage) dans l'image Docker
 
-Le client n'a jamais PrusaSlicer sur sa machine — le devis instantané tranche réellement le
-fichier reçu **côté serveur**, jamais chez le client (voir `src/lib/server/slicer.ts`). Le
-`Dockerfile` installe PrusaSlicer via le paquet Debian (`apt-get install prusa-slicer`, version
-2.5.0 sur bookworm) — pas de build/téléchargement manuel, pas d'`xvfb` requis (contrairement à
-l'AppImage communautaire utilisée avant : elle initialise tout le stack GL/EGL/GLX même en CLI
-pur, confirmé via `LD_DEBUG=libs`, et s'est révélée nettement plus lente en conditions réelles).
-`support_material_style=snug` (la seule option non-défaut utilisée par ce projet) existe bien dans
-cette version — vérifié via `--help-fff` avant de basculer.
+Le devis instantané tranche le fichier **dans le navigateur du visiteur** en priorité (moteur
+Kiri:Moto vendorisé en fichiers statiques, `public/vendor/kiri/`, chargé paresseusement à
+l'analyse — jamais au chargement de la page) — pas de file d'attente sur le serveur, chaque
+visiteur utilise son propre appareil. Le serveur ne fait jamais confiance directement au résultat
+envoyé par le client : il recalcule un volume réel indépendant (pur JS, aucun moteur de tranchage,
+voir `src/lib/server/orientation.ts`/`kiriSlicer.ts`) et compare au poids/temps annoncés avant de
+les accepter (`validateClaimedSlice`) — voir PRICING.md pour le détail. Si le client n'a pas pu
+produire de résultat (WASM indisponible, appareil trop faible) ou si la vérification échoue, le
+serveur tranche lui-même, réellement, avec le même moteur Kiri:Moto — rare par construction, donc
+sa lenteur éventuelle sur une pièce très complexe reste acceptable.
 
-Si `--info`/`--export-gcode` échouent, regarder les logs du conteneur (`docker compose logs api`)
-— l'erreur précise dira quoi ajuster.
+Ce filet de secours serveur a besoin du vrai code source de Kiri:Moto (`vendor/grid-apps/`,
+vendorisé au moment du build Docker via un téléchargement d'archive — voir le `Dockerfile`, section
+juste avant `FROM node:22-bookworm-slim` du stage final) — plus aucun binaire natif (PrusaSlicer)
+dans l'image, ce qui élimine complètement l'ancienne piste xvfb/AVX2/contention Docker jamais
+totalement résolue à l'époque de PrusaSlicer.
+
+Si `POST /api/quotes` échoue avec `slicing_failed`, regarder les logs du conteneur
+(`docker compose logs api`) — l'erreur précise dira quoi ajuster.
 
 ## Documents associés
 

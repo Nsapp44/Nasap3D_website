@@ -139,9 +139,9 @@ export default function QuoteWizard() {
               </>
             ) : (
               <>
-                <input ref={w.fileInputRef} type="file" accept=".stl,.obj,.step,.stp" onChange={w.onFileInputChange} className="qw-file-input-hidden" />
+                <input ref={w.fileInputRef} type="file" accept=".stl,.obj,.3mf" onChange={w.onFileInputChange} className="qw-file-input-hidden" />
                 <div onClick={w.dropFile} onDragOver={w.onDragOver} onDragLeave={w.onDragLeave} onDrop={w.onDrop} className={`qw-dropzone${w.dragging ? " dragging" : ""}`}>
-                  <div className="qw-dropzone-title">Glissez votre fichier .STL / .OBJ / .STEP ici</div>
+                  <div className="qw-dropzone-title">Glissez votre fichier .STL / .OBJ / .3MF ici</div>
                   <div className="qw-dropzone-hint">ou cliquez pour parcourir — 150 Mo max</div>
                 </div>
                 {w.fileError && <div className="qw-file-error">{w.fileError}</div>}

@@ -134,6 +134,8 @@ export const api = {
     infillPct: number;
     quantity: number;
     scale?: number;
+    clientWeightG?: number;
+    clientEstimatedTimeMin?: number;
   }) {
     const form = new FormData();
     form.append("file", input.file, input.file.name);
@@ -144,9 +146,16 @@ export const api = {
     form.append("quantity", String(input.quantity));
     // Unit-mistake correction from the Unité/Échelle panel — a raw
     // multiplication factor, 1 = file as-is. Server re-derives the real
-    // price/weight/time via PrusaSlicer's own --scale, never trusted as a
-    // price input on its own (see server/src/routes/quotes.ts).
+    // bounding box/volume from the transformed mesh directly, never trusted
+    // as a price input on its own (see src/pages/api/quotes/index.ts).
     if (input.scale !== undefined) form.append("scale", String(input.scale));
+    // Real client-side Kiri:Moto slice result, if one was computed (see
+    // useQuoteWizard.ts's tryClientSlice) — the server independently
+    // sanity-checks these before ever trusting them for pricing
+    // (validateClaimedSlice in kiriSlicer.ts), so this is never a direct
+    // price input either.
+    if (input.clientWeightG !== undefined) form.append("clientWeightG", String(input.clientWeightG));
+    if (input.clientEstimatedTimeMin !== undefined) form.append("clientEstimatedTimeMin", String(input.clientEstimatedTimeMin));
     return requestForm("/quotes", form);
   },
   async getQuote(id: string) {

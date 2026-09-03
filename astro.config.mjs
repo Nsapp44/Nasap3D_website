@@ -24,9 +24,10 @@ export default defineConfig({
   // routes (src/pages/api/) instead of the separate server/ Fastify
   // process — see the migration plan. 'standalone' node mode produces a
   // self-contained dist/server/entry.mjs runnable with plain `node`, no
-  // extra HTTP server needed — required anyway since the quote engine
-  // shells out to a real PrusaSlicer binary + writes real temp files,
-  // which categorically rules out an edge/serverless target.
+  // extra HTTP server needed — required anyway since the quote engine's
+  // rare server-side fallback (kiriSlicer.ts) shells out to a real Node
+  // subprocess (Kiri:Moto's own CLI) and writes real temp files, which
+  // categorically rules out an edge/serverless target.
   output: 'server',
   adapter: node({ mode: 'standalone' }),
   // The adapter's own `port`/`host` options (node({port, host})) are NOT

@@ -1,9 +1,13 @@
 // Shared real-geometry 3D preview — renders the customer's actual uploaded
-// STL/OBJ/STEP file (not a placeholder cube) into a small WebGL canvas, in
+// STL/OBJ/3MF file (not a placeholder cube) into a small WebGL canvas, in
 // their chosen color. Used by Devis Instantane.dc.html, Home.dc.html (quote
 // analysis previews) and Cart.dc.html (cart line preview, static/no spin).
+// STEP stays renderable here too (occt-import-js) for the static H2C
+// marketing model shown elsewhere on the site — the instant-quote wizard
+// itself no longer accepts .step uploads (see useQuoteWizard.ts), but this
+// module's own capability is intentionally kept general-purpose.
 
-const RENDERABLE_EXT = new Set(['.stl', '.obj', '.step', '.stp']);
+const RENDERABLE_EXT = new Set(['.stl', '.obj', '.3mf', '.step', '.stp']);
 
 export function isRenderableExt(ext) {
   return RENDERABLE_EXT.has(ext.toLowerCase());
@@ -57,6 +61,11 @@ export async function renderModelPreview(container, { fileBuffer, ext, colorHex,
     object = new OBJLoader().parse(text);
     const mat = materialFor(THREE, colorHex);
     object.traverse((child) => { if (child.isMesh) child.material = mat; });
+  } else if (lowerExt === '.3mf') {
+    const { read3mfFile } = await import('./threeMfLoader.js');
+    const result = await read3mfFile(fileBuffer);
+    object = buildGroupFromMeshResult(THREE, result, materialFor(THREE, colorHex));
+    if (!object) return null;
   } else if (lowerExt === '.step' || lowerExt === '.stp') {
     object = await buildStepObject(THREE, fileBuffer, colorHex);
     if (!object) return null;
@@ -361,9 +370,16 @@ export async function renderModelPreview(container, { fileBuffer, ext, colorHex,
 async function buildStepObject(THREE, fileBuffer, colorHex) {
   const occt = await loadOcct();
   const result = occt.ReadStepFile(new Uint8Array(fileBuffer), null);
-  if (!result || !result.success || !result.meshes || !result.meshes.length) return null;
+  return buildGroupFromMeshResult(THREE, result, materialFor(THREE, colorHex));
+}
 
-  const material = materialFor(THREE, colorHex);
+// Shared by the STEP (occt-import-js) and 3MF (threeMfLoader.js) preview
+// paths — both produce the same {success, meshes:[{attributes:{position},
+// index}]} shape (threeMfLoader.js deliberately mirrors occt's own result
+// shape for exactly this reason), so one THREE.Group-building path covers
+// both instead of duplicating it.
+function buildGroupFromMeshResult(THREE, result, material) {
+  if (!result || !result.success || !result.meshes || !result.meshes.length) return null;
   const group = new THREE.Group();
   for (const resultMesh of result.meshes) {
     const geometry = new THREE.BufferGeometry();

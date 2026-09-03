@@ -1,10 +1,10 @@
 name: Build & publish API image
 
 # Builds Dockerfile (single Astro SSR app — API routes + the site + the
-# PrusaSlicer CLI, all one image; the separate server/ backend and Caddy
-# before it are both gone, see this workflow's own git history) and pushes
-# it to GitHub Container Registry so the OVH server can `docker compose
-# pull` instead of rebuilding on every deploy.
+# vendored Kiri:Moto slicing engine, all one image; the separate server/
+# backend and Caddy before it are both gone, see this workflow's own git
+# history) and pushes it to GitHub Container Registry so the OVH server can
+# `docker compose pull` instead of rebuilding on every deploy.
 on:
   push:
     branches: [master]
@@ -13,7 +13,6 @@ on:
       - "public/**"
       - "prisma/**"
       - "bootstrap/**"
-      - "slicer-profiles/**"
       - "server-entry.mjs"
       - "docker-entrypoint.sh"
       - "astro.config.mjs"

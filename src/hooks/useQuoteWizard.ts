@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, apiBase } from "../lib/api-client";
 import { dynamicImport } from "../lib/dynamic-import";
+import { buildKiriDevice, buildKiriProcess, filamentLengthToWeightG, CLIENT_QUALITY_LAYER_HEIGHT } from "../lib/kiriProfiles";
 
-const ALLOWED_EXT = [".stl", ".obj", ".step", ".stp"];
+const ALLOWED_EXT = [".stl", ".obj", ".3mf"];
 const UNIT_TO_MM: Record<string, number> = { mm: 1, cm: 10, in: 25.4, m: 1000 };
 
 export interface QuoteColor {
@@ -14,6 +15,7 @@ export interface QuoteColor {
 export interface QuoteMaterial {
   key: string;
   label: string;
+  densityGCm3: number;
   colors: QuoteColor[];
 }
 export interface DiscountTier {
@@ -173,11 +175,18 @@ export function useQuoteWizard() {
     return renderInto(analysisPreviewRef, analysisPreviewHandleRef);
   }
 
-  // Best-effort, approximate — only .stl (see original comment: .obj/.step
-  // aren't parsed client-side here). Casts a ray inward from a sample of
-  // triangle centers along their inverse normal, same idea a slicer uses
-  // for a wall-thickness check. Never blocks the quote, just flags a
-  // likely-thin area.
+  // Best-effort, approximate — only .stl (.obj/.3mf aren't parsed for this
+  // particular check). Casts a ray inward from every triangle's center
+  // along its inverse normal, same idea a slicer uses for a wall-thickness
+  // check. Never blocks the quote, just flags a likely-thin area.
+  //
+  // BVH-accelerated (three-mesh-bvh, vendored — see
+  // public/vendor/three-mesh-bvh/THIRD_PARTY_NOTICES.md): each raycast used
+  // to be a brute-force O(triangle count) scan, which is why this used to
+  // cap itself to a sparse sample (MAX_RAY_TRIANGLE_COST) instead of testing
+  // the whole mesh. With a real BVH each query is ~O(log n), so the sample
+  // cap is gone — every triangle gets tested now, the same accuracy
+  // improvement for free.
   async function checkThinWalls(targetFile: File) {
     if (!targetFile.name.toLowerCase().endsWith(".stl")) return;
     try {
@@ -185,11 +194,22 @@ export function useQuoteWizard() {
       if (fileRef.current !== targetFile) return; // superseded by a newer upload
       const THREE = await dynamicImport("/vendor/three/three.module.min.js");
       const { STLLoader } = await dynamicImport("/vendor/three/STLLoader.js");
+      const { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } = await dynamicImport(
+        "/vendor/three-mesh-bvh/index.module.js",
+      );
+      // Idempotent prototype patch — cheap to redo on every call, and
+      // avoids a module-load-order dependency on doing it exactly once
+      // somewhere else.
+      THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+      THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
+      THREE.Mesh.prototype.raycast = acceleratedRaycast;
+
       const geometry = new STLLoader().parse(buffer);
       const pos = geometry.attributes.position;
       const triCount = pos.count / 3;
       if (triCount === 0) return;
       geometry.computeVertexNormals();
+      geometry.computeBoundsTree();
       // DoubleSide required: a ray fired from just inside one wall toward
       // the opposite wall always approaches that wall from its back side on
       // a correctly-wound watertight mesh — three.js backface-culls that by
@@ -202,9 +222,7 @@ export function useQuoteWizard() {
       const scale = effectiveScale() || 1;
       const THRESHOLD_MM = REAL_THRESHOLD_MM / scale;
       const MIN_THIN_AREA_MM2 = 2;
-      const MAX_RAY_TRIANGLE_COST = 6000000;
-      const sampleBudget = Math.min(1500, Math.max(20, Math.floor(MAX_RAY_TRIANGLE_COST / triCount)));
-      const step = Math.max(1, Math.floor(triCount / sampleBudget));
+      const step = 1;
       const a = new THREE.Vector3(),
         b = new THREE.Vector3(),
         c = new THREE.Vector3(),
@@ -230,6 +248,7 @@ export function useQuoteWizard() {
           thinAreaMm2 += triArea * step * scale * scale;
           if (thinAreaMm2 >= MIN_THIN_AREA_MM2) {
             setThinWallWarning(true);
+            geometry.disposeBoundsTree();
             geometry.dispose();
             mesh.material.dispose();
             return;
@@ -240,6 +259,7 @@ export function useQuoteWizard() {
           chunkStart = performance.now();
         }
       }
+      geometry.disposeBoundsTree();
       geometry.dispose();
       mesh.material.dispose();
     } catch {
@@ -318,7 +338,7 @@ export function useQuoteWizard() {
   function setFile(f: File | null | undefined) {
     if (!f) return;
     if (!extOk(f.name)) {
-      setFileError("Format non supporté — utilisez .stl, .obj ou .step");
+      setFileError("Format non supporté — utilisez .stl, .obj ou .3mf");
       return;
     }
     if (f.size > 150 * 1024 * 1024) {
@@ -407,6 +427,66 @@ export function useQuoteWizard() {
     setTimeout(applyScalePreview, 0);
   }
 
+  // Real client-side slice via Kiri:Moto (public/kiri-slicer.js) — the
+  // primary path (see the Kiri:Moto plan): the visitor's own device
+  // computes the real weight/time instead of queuing behind everyone
+  // else's on the server. Runs a real manifold/watertightness check first
+  // (public/manifoldCheck.js, the Manifold geometry kernel — same one
+  // Kiri:Moto itself uses internally — not a hand-rolled heuristic) so a
+  // broken mesh is caught and shown to the visitor immediately, without
+  // ever uploading the file or spending a server-side slice on it. Both
+  // the manifold check and the actual slice are best-effort/silent on
+  // failure beyond that early exit (WASM unavailable, weak device, a parse
+  // error): the server always independently re-validates whatever's
+  // submitted (validateClaimedSlice in kiriSlicer.ts, and its own manifold
+  // check) and transparently falls back to its own rare full slice, so a
+  // failure here (other than a genuine non-manifold mesh) never blocks or
+  // breaks the quote — rejecting your own upload as non-manifold isn't a
+  // security-relevant decision either way, only the server's *acceptance*
+  // of a claimed weight/time has to be trustworthy.
+  async function tryClientSlice(
+    targetFile: File,
+  ): Promise<{ weightG: number; estimatedTimeMin: number } | { nonManifold: true } | null> {
+    try {
+      const ext = "." + targetFile.name.split(".").pop()!.toLowerCase();
+      const { isKiriSliceable, sliceWithKiri, loadTriangles } = await dynamicImport("/kiri-slicer.js");
+      if (!isKiriSliceable(ext)) return null;
+      const mat = materials.find((m) => m.key === material);
+      if (!mat) return null;
+      const buffer = await targetFile.arrayBuffer();
+      if (fileRef.current !== targetFile) return null; // superseded by a newer upload
+
+      let rawTriangles;
+      try {
+        rawTriangles = await loadTriangles(buffer, ext);
+        const { checkManifold } = await dynamicImport("/manifoldCheck.js");
+        const { manifold } = await checkManifold(rawTriangles);
+        if (!manifold) return { nonManifold: true };
+      } catch (e) {
+        console.warn("client-side manifold check failed, letting the server decide", e);
+        rawTriangles = undefined;
+      }
+      if (fileRef.current !== targetFile) return null;
+
+      const layerHeightMm = CLIENT_QUALITY_LAYER_HEIGHT[quality] ?? 0.2;
+      const stats = await sliceWithKiri({
+        fileBuffer: buffer,
+        ext,
+        rawTriangles,
+        deviceJson: buildKiriDevice(),
+        processJson: buildKiriProcess(quality, layerHeightMm, infill, material),
+      });
+      if (fileRef.current !== targetFile) return null;
+      return {
+        weightG: filamentLengthToWeightG(stats.filamentMm, mat.densityGCm3),
+        estimatedTimeMin: stats.estimatedTimeMin,
+      };
+    } catch (e) {
+      console.warn("client-side kiri slice failed, server will fall back", e);
+      return null;
+    }
+  }
+
   async function submitQuote() {
     if (!file || !colorId) {
       setAnalysisError("Options incomplètes — retournez à l'étape précédente.");
@@ -415,6 +495,15 @@ export function useQuoteWizard() {
     setAnalyzing(true);
     setAnalysisError(null);
     const thinWallPromise = checkThinWalls(file);
+    const clientSlice = await tryClientSlice(file);
+    if (clientSlice && "nonManifold" in clientSlice) {
+      // Caught client-side (real Manifold check, see tryClientSlice) — same
+      // message the server would give, but without ever uploading the file
+      // or spending a slice on it.
+      setAnalyzing(false);
+      setAnalysisError("Le modèle contient des erreurs de géométrie (maillage non étanche) — vérifiez le fichier dans votre logiciel de CAO.");
+      return;
+    }
     const res = await api.submitQuote({
       file,
       material,
@@ -423,13 +512,15 @@ export function useQuoteWizard() {
       infillPct: infill,
       quantity: qty,
       scale: effectiveScale(),
+      clientWeightG: clientSlice?.weightG,
+      clientEstimatedTimeMin: clientSlice?.estimatedTimeMin,
     });
     if (!res.ok) {
       const messages: Record<string, string> = {
         quote_disabled: "Le devis instantané est momentanément indisponible.",
         part_too_large: "Cette pièce dépasse le volume imprimable de toutes nos machines (max 330×320×325mm). Possibilité d'imprimer vos pièces en plusieurs morceaux, utilisez le formulaire de contact.",
         non_manifold_model: "Le modèle contient des erreurs de géométrie (maillage non étanche) — vérifiez le fichier dans votre logiciel de CAO.",
-        unreadable_file: "Fichier illisible — vérifiez qu'il s'agit bien d'un .stl, .obj ou .step valide.",
+        unreadable_file: "Fichier illisible — vérifiez qu'il s'agit bien d'un .stl, .obj ou .3mf valide.",
         slicing_failed: "L'analyse a échoué pour ce fichier. Contactez-nous si le problème persiste.",
         color_out_of_stock: "Cette couleur vient de passer en rupture de stock — choisissez-en une autre.",
         invalid_scale: "Échelle invalide — vérifiez l'unité et le pourcentage saisis à l'étape précédente.",

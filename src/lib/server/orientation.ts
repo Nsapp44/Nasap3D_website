@@ -82,6 +82,244 @@ function triangleArea(v: Triangle["v"]): number {
   return Math.sqrt(cx * cx + cy * cy + cz * cz) / 2;
 }
 
+// Real mesh volume, independent of any slicing engine — the signed sum of
+// tetrahedron volumes from the origin to each triangle (standard divergence-
+// theorem trick: for a closed, consistently-wound manifold mesh, this sum
+// is exactly the enclosed volume regardless of where the "origin" actually
+// is, since the contributions from triangles facing toward vs. away from it
+// cancel out everywhere except the real enclosed volume). Used to cheaply
+// sanity-check a client-reported weight (see quotes/index.ts) without
+// re-slicing: this runs in a few ms even on a 200k-triangle mesh, no
+// subprocess, no WASM engine — just the same triangle list already parsed
+// for suggestOrientation() above.
+export function computeMeshVolumeMm3(triangles: Triangle[]): number {
+  let volume6 = 0;
+  for (const t of triangles) {
+    const [a, b, c] = t.v;
+    volume6 += a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0]) + a[2] * (b[0] * c[1] - b[1] * c[0]);
+  }
+  return Math.abs(volume6) / 6;
+}
+
+// "v x y z" + "f i j k [l...]" — the subset of Wavefront OBJ this project's
+// uploads actually use (no normals/UVs/materials needed for geometry-only
+// checks). Faces are 1-indexed and may be negative (relative to the current
+// vertex count) per spec; n-gons beyond a triangle are fan-triangulated.
+export function parseObjTriangles(text: string): Triangle[] {
+  const vertices: [number, number, number][] = [];
+  const triangles: Triangle[] = [];
+  const lines = text.split("\n");
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith("v ")) {
+      const parts = trimmed.slice(2).trim().split(/\s+/).map(Number);
+      if (parts.length >= 3) vertices.push([parts[0], parts[1], parts[2]]);
+    } else if (trimmed.startsWith("f ")) {
+      const idx = trimmed
+        .slice(2)
+        .trim()
+        .split(/\s+/)
+        .map((tok) => {
+          const i = parseInt(tok.split("/")[0], 10);
+          return i < 0 ? vertices.length + i : i - 1;
+        });
+      for (let i = 1; i + 1 < idx.length; i++) {
+        const a = vertices[idx[0]],
+          b = vertices[idx[i]],
+          c = vertices[idx[i + 1]];
+        if (!a || !b || !c) continue;
+        triangles.push({ normal: [0, 0, 0], v: [a, b, c] });
+      }
+    }
+  }
+  return triangles;
+}
+
+export interface BoundingBox {
+  sizeXMm: number;
+  sizeYMm: number;
+  sizeZMm: number;
+}
+
+export function computeBoundingBox(triangles: Triangle[]): BoundingBox {
+  let minX = Infinity,
+    minY = Infinity,
+    minZ = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity,
+    maxZ = -Infinity;
+  for (const t of triangles) {
+    for (const p of t.v) {
+      if (p[0] < minX) minX = p[0];
+      if (p[0] > maxX) maxX = p[0];
+      if (p[1] < minY) minY = p[1];
+      if (p[1] > maxY) maxY = p[1];
+      if (p[2] < minZ) minZ = p[2];
+      if (p[2] > maxZ) maxZ = p[2];
+    }
+  }
+  return { sizeXMm: maxX - minX, sizeYMm: maxY - minY, sizeZMm: maxZ - minZ };
+}
+
+// Quantized coordinate key — merges vertices that coincide up to 1e-4mm, the
+// same tolerance floating-point STL/OBJ export round-tripping typically
+// introduces between two triangles that share a "real" edge.
+function vertexKey(p: readonly [number, number, number]): string {
+  return `${Math.round(p[0] * 1e4)},${Math.round(p[1] * 1e4)},${Math.round(p[2] * 1e4)}`;
+}
+
+export interface ManifoldCheck {
+  manifold: boolean;
+  parts: number;
+}
+
+// Below this area (mm²), a triangle is numerical noise, not real geometry —
+// same idea as PrusaSlicer's own "degenerate_facets" removal, confirmed by
+// comparing against a real PrusaSlicer --info run on the same file (a real
+// 3DBenchy STL): it reports "manifold = yes" but also "degenerate_facets =
+// 552, facets_removed = 552" — it silently strips near-zero-area facets
+// *before* judging manifold-ness, not after. Skipping this step was
+// confirmed live to cause a false "non_manifold_model" rejection on that
+// exact, genuinely printable file (576 zero-area slivers, mostly around the
+// chimney/rings, turned into ~500 over-counted edges).
+const DEGENERATE_AREA_MM2 = 1e-6;
+
+// Real-world STL/OBJ exports (even from PrusaSlicer's own accepted files)
+// virtually always carry a handful of boundary/non-manifold edges from
+// floating-point precision or minor CAD-tessellation seams — confirmed live
+// on the same reference Benchy file: 60 boundary edges out of 337,725
+// (0.018%) after degenerate-facet removal, on a file PrusaSlicer itself
+// calls manifold. A strict "zero bad edges" rule would reject files real
+// slicers accept fine; this tolerates that same kind of noise while still
+// catching genuinely broken meshes (a real hole/missing wall pushes this
+// fraction far higher, easily into the tens of percent).
+const MAX_BAD_EDGE_FRACTION = 0.01;
+
+// Replaces PrusaSlicer's `--info` manifold/number_of_parts fields: a closed
+// 2-manifold mesh has every edge shared by exactly 2 triangles (one on each
+// side) — a boundary edge (count 1, a hole) or a non-manifold edge (count
+// >2) both fail printability, judged as a tolerance (see
+// MAX_BAD_EDGE_FRACTION) rather than an absolute rule. "parts" = connected
+// components over the shared-edge adjacency graph, via union-find.
+export function checkManifoldAndParts(triangles: Triangle[]): ManifoldCheck {
+  const clean = triangles.filter((t) => triangleArea(t.v) > DEGENERATE_AREA_MM2);
+  if (clean.length === 0) return { manifold: false, parts: 0 };
+
+  const vertexId = new Map<string, number>();
+  const parent: number[] = [];
+  function idOf(p: readonly [number, number, number]): number {
+    const key = vertexKey(p);
+    let id = vertexId.get(key);
+    if (id === undefined) {
+      id = parent.length;
+      vertexId.set(key, id);
+      parent.push(id);
+    }
+    return id;
+  }
+  function find(x: number): number {
+    while (parent[x] !== x) {
+      parent[x] = parent[parent[x]];
+      x = parent[x];
+    }
+    return x;
+  }
+  function union(a: number, b: number) {
+    const ra = find(a),
+      rb = find(b);
+    if (ra !== rb) parent[ra] = rb;
+  }
+
+  const edgeCount = new Map<string, number>();
+  for (const t of clean) {
+    const ids = t.v.map(idOf);
+    for (let i = 0; i < 3; i++) {
+      const a = ids[i],
+        b = ids[(i + 1) % 3];
+      union(a, b);
+      const key = a < b ? `${a}_${b}` : `${b}_${a}`;
+      edgeCount.set(key, (edgeCount.get(key) ?? 0) + 1);
+    }
+  }
+
+  let badEdges = 0;
+  for (const count of edgeCount.values()) {
+    if (count !== 2) badEdges++;
+  }
+  const manifold = badEdges / edgeCount.size <= MAX_BAD_EDGE_FRACTION;
+
+  const roots = new Set<number>();
+  for (let i = 0; i < parent.length; i++) roots.add(find(i));
+
+  return { manifold, parts: roots.size };
+}
+
+export interface MeshTransform {
+  scale?: number;
+  rotateXDeg?: number;
+  rotateYDeg?: number;
+}
+
+// Replaces PrusaSlicer's --rotate-x/--rotate-y/--scale flags — bakes the
+// same transform directly into the triangle list, in the same order
+// (rotate then scale; order doesn't affect the result since scale is
+// uniform and rotations are axis-aligned multiples of 90°, see rotatePoint
+// above). Used both for the pre-slice bounding-box/volume check (so it
+// matches what the customer will actually receive) and for producing the
+// final stored STL with the transform baked in.
+export function applyTransform(triangles: Triangle[], t: MeshTransform): Triangle[] {
+  const rx = t.rotateXDeg ?? 0,
+    ry = t.rotateYDeg ?? 0,
+    s = t.scale ?? 1;
+  if (rx === 0 && ry === 0 && s === 1) return triangles;
+  return triangles.map((tri) => ({
+    normal: tri.normal,
+    v: tri.v.map((p) => {
+      const [x, y, z] = rotatePoint(p, rx, ry);
+      return [x * s, y * s, z * s] as [number, number, number];
+    }) as Triangle["v"],
+  }));
+}
+
+// Binary STL: 80-byte header + uint32 count, then 50 bytes/triangle (12
+// normal + 36 vertex + 2 attribute byte count, all little-endian) — the
+// mirror of parseBinaryStl above. Normals are re-derived from the triangle's
+// own winding rather than trusted from the input, since occt-import-js
+// (STEP) and hand-rotated triangles don't reliably carry one.
+export function serializeBinaryStl(triangles: Triangle[]): Buffer {
+  const buffer = Buffer.alloc(84 + triangles.length * 50);
+  buffer.writeUInt32LE(triangles.length, 80);
+  let offset = 84;
+  for (const t of triangles) {
+    const [a, b, c] = t.v;
+    const ux = b[0] - a[0],
+      uy = b[1] - a[1],
+      uz = b[2] - a[2];
+    const vx = c[0] - a[0],
+      vy = c[1] - a[1],
+      vz = c[2] - a[2];
+    const nx = uy * vz - uz * vy,
+      ny = uz * vx - ux * vz,
+      nz = ux * vy - uy * vx;
+    const len = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
+    buffer.writeFloatLE(nx / len, offset);
+    buffer.writeFloatLE(ny / len, offset + 4);
+    buffer.writeFloatLE(nz / len, offset + 8);
+    buffer.writeFloatLE(a[0], offset + 12);
+    buffer.writeFloatLE(a[1], offset + 16);
+    buffer.writeFloatLE(a[2], offset + 20);
+    buffer.writeFloatLE(b[0], offset + 24);
+    buffer.writeFloatLE(b[1], offset + 28);
+    buffer.writeFloatLE(b[2], offset + 32);
+    buffer.writeFloatLE(c[0], offset + 36);
+    buffer.writeFloatLE(c[1], offset + 40);
+    buffer.writeFloatLE(c[2], offset + 44);
+    buffer.writeUInt16LE(0, offset + 48);
+    offset += 50;
+  }
+  return buffer;
+}
+
 // Only the 6 axis-aligned "rest on a face" orientations — every
 // PrusaSlicer --rotate-x/--rotate-y pair needed to reach them.
 const CANDIDATES: { rotateXDeg: number; rotateYDeg: number }[] = [
@@ -93,7 +331,7 @@ const CANDIDATES: { rotateXDeg: number; rotateYDeg: number }[] = [
   { rotateXDeg: 0, rotateYDeg: -90 },
 ];
 
-function rotatePoint(p: [number, number, number], xDeg: number, yDeg: number): [number, number, number] {
+export function rotatePoint(p: [number, number, number], xDeg: number, yDeg: number): [number, number, number] {
   const xr = (xDeg * Math.PI) / 180,
     yr = (yDeg * Math.PI) / 180;
   let [x, y, z] = p;

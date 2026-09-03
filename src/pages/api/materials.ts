@@ -14,6 +14,11 @@ export const GET = apiHandler(async () => {
       key: m.key,
       label: m.label,
       pricePerKgCents: m.pricePerKgCents,
+      // Needed client-side to turn Kiri:Moto's filament-length output into a
+      // weight (src/lib/kiriProfiles.ts) — the server does the same
+      // conversion independently for its own cheap sanity check, see
+      // src/pages/api/quotes/index.ts.
+      densityGCm3: m.densityGCm3,
       colors: m.colors.map((c) => ({ id: c.id, colorName: c.colorName, colorHex: c.colorHex, inStock: c.inStock })),
     })),
   });

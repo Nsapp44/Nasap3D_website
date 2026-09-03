@@ -1,10 +1,10 @@
 # Comment le prix du devis instantané est calculé
 
-Ce document explique la formule utilisée par `POST /quotes` (voir
-`src/lib/pricing.ts` pour le code, `src/lib/slicer.ts` pour l'analyse du
-fichier). Les exemples chiffrés ci-dessous sont **réellement exécutés**, pas
-des calculs à la main — ce sont de vraies réponses de l'API contre une vraie
-base de données, obtenues pendant le développement.
+Ce document explique la formule utilisée par `POST /api/quotes` (voir
+`src/lib/server/pricing.ts` pour le code, `src/lib/server/kiriSlicer.ts` pour
+l'analyse du fichier). Les exemples chiffrés ci-dessous sont **réellement
+exécutés**, pas des calculs à la main — ce sont de vraies réponses de l'API
+contre une vraie base de données, obtenues pendant le développement.
 
 ## Le principe : jamais confiance au navigateur
 
@@ -18,20 +18,37 @@ client et ne calcule jamais qu'à partir de ce qu'elle a elle-même mesuré.
 
 ## Étape 1 — Analyser le fichier
 
-Le fichier uploadé (STL/OBJ/STEP) est passé à **PrusaSlicer**, en ligne de
-commande, avec le profil de la H2C (`slicer-profiles/h2c.ini` — seule
-machine réellement utilisée pour le devis instantané, voir `PRINTERS` dans
-`lib/slicer.ts`, simplifié à une seule entrée pour ne pas maintenir une vraie
-logique multi-flotte) :
+Le fichier uploadé (STL/OBJ/3MF) est tranché par **Kiri:Moto** (open source,
+MIT), en priorité **dans le navigateur du visiteur** — jamais un seul et même
+serveur qui trancherait pour tout le monde à la fois, ce qui ne tiendrait pas
+la charge à beaucoup de devis simultanés. Trois rôles, un seul moteur (voir
+`src/lib/server/kiriSlicer.ts`, `public/kiri-slicer.js`,
+`src/lib/kiriProfiles.ts`) :
 
-1. `--info` donne l'encombrement (bounding box) — sert à rejeter
-   immédiatement une pièce trop grande pour le plateau de la H2C
-   (330×320×325mm), avant même de trancher.
-2. `--export-gcode` tranche réellement le modèle avec les réglages du devis
-   (matériau, qualité/hauteur de couche, taux de remplissage) et produit un
-   G-code dont l'en-tête contient le **temps d'impression estimé** et le
-   **poids de filament utilisé** — les mêmes informations que vous verriez
-   dans votre propre logiciel de tranchage.
+1. **Client (rôle principal)** — le navigateur du visiteur tranche réellement
+   le fichier (poids + temps réels, pas une estimation) via le moteur
+   Kiri:Moto vendorisé en fichiers statiques (`public/vendor/kiri/`), chargé
+   uniquement au moment de l'analyse.
+2. **Serveur — vérification bon marché** — le serveur calcule indépendamment
+   le volume réel du maillage (algorithme pur JS, aucun moteur de tranchage,
+   quelques millisecondes même sur un maillage à 200k triangles — voir
+   `computeMeshVolumeMm3`/`checkManifoldAndParts` dans
+   `src/lib/server/orientation.ts`) et compare le poids/temps annoncés par le
+   client à ce que ce volume rend plausible (`validateClaimedSlice`). Sert
+   aussi de rejet immédiat pour une pièce trop grande pour le plateau de la
+   H2C (330×320×325mm) ou dont le maillage n'est pas imprimable, avant même
+   de faire confiance à quoi que ce soit venant du client.
+3. **Serveur — filet de secours complet** — si le client n'a pas pu produire
+   de résultat (WASM indisponible, appareil très faible, timeout) ou si la
+   vérification du rôle 2 échoue, le serveur tranche lui-même réellement,
+   avec le même moteur Kiri:Moto (vendorisé dans l'image Docker,
+   `vendor/grid-apps/` — voir le `Dockerfile`) — rare par construction, donc
+   sa lenteur éventuelle sur une pièce très complexe reste acceptable (cas
+   rare, pas la charge normale).
+
+Dans tous les cas, le résultat final (poids, temps d'impression estimé)
+provient d'un vrai tranchage complet — jamais d'une formule au poids/volume
+approximative.
 
 ### Échelle, orientation d'impression et supports (nouveau)
 
@@ -41,20 +58,21 @@ visuel côté client :
 - **Échelle** (panneau Unité/Échelle du configurateur, étape 1) — le client
   choisit une unité (mm/cm/pouce/m, pour corriger un fichier mal exporté) et
   un pourcentage ; le facteur combiné est envoyé au serveur (`scale` dans
-  `POST /quotes`, jamais un fichier déjà redimensionné côté client) et
-  appliqué via `--scale` de PrusaSlicer, aussi bien sur `--info` que sur
-  `--export-gcode` — confirmé pour de vrai sur un cube de 10mm connu
-  (`--scale 1.5` → `size_x = 15.000000`). Borné côté serveur à
-  [0,001 ; 2000] (`MIN_SCALE`/`MAX_SCALE` dans `routes/quotes.ts`).
-- **Orientation d'impression** (`lib/orientation.ts`) — le fichier envoyé est
-  parsé (triangles STL, ou normalisé en STL via PrusaSlicer d'abord pour
-  .obj/.step) et les 6 orientations orthogonales de la pièce sont notées
-  selon une heuristique (surface de surplomb, hauteur, surface de contact
-  avec le plateau — surplomb largement prioritaire dans le score). La
-  meilleure est appliquée avant analyse/tranchage via `--rotate-x`/
-  `--rotate-y`, donc le prix reflète la vraie orientation d'impression, pas
-  celle du fichier tel qu'exporté. Best-effort : un échec de parsing
-  n'annule jamais le devis, juste aucune rotation appliquée (0°, 0°).
+  `POST /api/quotes`, jamais un fichier déjà redimensionné côté client) et
+  appliqué directement sur les sommets du maillage côté serveur
+  (`applyTransform` dans `orientation.ts`) avant le calcul de volume/bbox et
+  avant le tranchage — que ce soit le résultat client fait confiance ou le
+  filet de secours serveur. Borné côté serveur à [0,001 ; 2000]
+  (`MIN_SCALE`/`MAX_SCALE` dans `pages/api/quotes/index.ts`).
+- **Orientation d'impression** (`lib/server/orientation.ts`) — le fichier
+  envoyé est parsé en triangles (STL/OBJ directement, 3MF dézippé+parsé) et
+  les 6 orientations orthogonales de la pièce sont notées selon une
+  heuristique (surface de surplomb, hauteur, surface de contact avec le
+  plateau — surplomb largement prioritaire dans le score). La meilleure est
+  appliquée avant analyse/tranchage, donc le prix reflète la vraie
+  orientation d'impression, pas celle du fichier tel qu'exporté. Best-effort
+  : un échec de parsing n'annule jamais le devis, juste aucune rotation
+  appliquée (0°, 0°).
   **Bug corrigé** : la face en contact avec le plateau est par construction
   toujours orientée vers le bas, donc elle validait aussi le test de
   surplomb — chaque orientation candidate voyait sa propre face de contact
@@ -65,22 +83,18 @@ visuel côté client :
   la tranche (hauteur 40mm) au lieu de reposer à plat (hauteur 8mm,
   l'orientation évidemment correcte). Les deux tests sont maintenant
   mutuellement exclusifs dans `suggestOrientation()`.
-- **Supports activés** (`support_material = 1`,
-  `support_material_auto = 1`, `support_material_style = snug` dans
-  `lib/slicer.ts`) — absents du profil jusqu'à cette session : une pièce
-  avec surplombs se voyait donc estimer un temps/poids **sans** le
-  matériau/temps de support réellement nécessaire. Vérifié pour de vrai
-  sur une pièce-test avec surplomb évident : orientation + supports
-  ensemble donnent un résultat cohérent (moins de matière/temps dans la
-  bonne orientation que dans l'orientation d'origine).
+- **Supports activés** (`sliceSupportEnable`, `sliceSupportAngle=30` dans
+  `src/lib/kiriProfiles.ts`) — une pièce avec surplombs voit donc son
+  temps/poids inclure réellement le matériau/temps de support nécessaire,
+  que ce soit le résultat client ou le filet de secours serveur.
 
 Le fichier gardé en stockage (téléchargé plus tard pour la production, et
 réutilisé pour tous les aperçus 3D ultérieurs — panier, "Analyse terminée")
 a l'échelle **et** l'orientation retenues directement intégrées dans le
-maillage (`exportTransformedStl` dans `lib/slicer.ts`) — jamais le fichier
-brut tel qu'uploadé dès que l'un des deux s'écarte de la valeur neutre. Ça
-évite tout risque de désaccord entre ce qui a été chiffré et ce qui est
-effectivement imprimé.
+maillage, toujours ré-exporté en STL (`exportTransformedStl` dans
+`kiriSlicer.ts`) — jamais le fichier brut tel qu'uploadé. Ça évite tout
+risque de désaccord entre ce qui a été chiffré et ce qui est effectivement
+imprimé.
 
 ## Étape 2 — La formule de prix
 
@@ -181,18 +195,14 @@ ou baisser tous les prix d'un coup).
 
 ## Limites connues
 
-- **Vitesses d'impression : données officielles Bambu Lab, mais génériques.**
-  Les vitesses/accélérations viennent directement des profils BambuStudio
-  publiés par Bambu Lab eux-mêmes (dépôt public `bambulab/BambuStudio`,
-  profils H2C — pris comme référence pour les 3 machines) : ce ne sont donc
-  pas des estimations inventées, mais les vraies valeurs d'usine. Elles
-  restent génériques (pas _vos_ réglages personnels calibrés dans
-  BambuStudio).
-- **Rapide et Standard utilisent actuellement les mêmes vitesses**
-  (`src/lib/slicer.ts`, `QUALITY_SPEEDS`) — seule la hauteur de couche
-  diffère entre les deux. Un vrai profil « Rapide » plus rapide que
-  « Standard » reste à définir si vous voulez une distinction de vitesse
-  entre ces deux paliers, pas seulement de finesse de couche.
+- **Vitesse d'impression : une seule valeur par palier de qualité, pas par
+  type de trajectoire.** Contrairement à un profil PrusaSlicer classique
+  (vitesse séparée parois/remplissage/déplacements), le process Kiri:Moto
+  n'expose qu'un seul `outputFeedrate` (voir `buildKiriProcess` dans
+  `src/lib/kiriProfiles.ts`) — 150mm/s pour Rapide/Standard, 60mm/s pour
+  Fine. Rapide et Standard utilisent donc toujours la même vitesse
+  aujourd'hui, comme avant ; le manque de granularité par trajectoire est
+  nouveau (limite du moteur, pas un choix).
 - **PP sans profil officiel.** Bambu Lab ne publie pas de profil pour le PP —
   ses températures restent une estimation raisonnable, pas une donnée
   constructeur.

@@ -19,6 +19,16 @@ uploads/
 # Dumps produced by scripts/backup-db.sh — never committed, see
 # README.md "Sauvegardes"
 backups/
-# Local-only PrusaSlicer install used for dev/testing (see README.md) — not
-# part of the app, never committed; production installs it via Docker.
+# Kiri:Moto's real source tree, repo-root /vendor/grid-apps — fetched fresh
+# at Docker build time (see Dockerfile), never committed. Only present
+# locally if manually vendored for testing the rare server-side fallback
+# outside Docker (e.g. WSL, which supports the real symlinks it needs — see
+# kiriSlicer.ts). Leading slash matters: a bare "vendor/" would also match
+# (and silently hide from git) public/vendor/{kiri,occt,three}/, which ARE
+# committed static assets — confirmed live, this exact mistake made
+# public/vendor/kiri/ vanish from `git status` entirely on the first try.
+/vendor/
+# Local-only PrusaSlicer install, no longer used by the app (replaced by
+# Kiri:Moto) but still physically present on disk for whoever had it
+# installed — not part of the app, never committed.
 .tools/

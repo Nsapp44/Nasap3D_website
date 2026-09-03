@@ -17,10 +17,6 @@ dist
 server/dist
 .astro
 
-# Windows-only PrusaSlicer install used for local `npm run dev` outside
-# Docker (server/Dockerfile fetches its own Linux build) — large, irrelevant
-# to the image, and slow to send to the Docker daemon on every build.
-server/.tools
 
 # Real customer-uploaded files — never bake these into an image layer.
 uploads
