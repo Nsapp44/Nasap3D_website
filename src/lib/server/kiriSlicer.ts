@@ -32,7 +32,6 @@ import {
   type MeshTransform,
 } from "./orientation";
 import { parse3mfTriangles } from "./threeMfParse";
-import { checkManifold } from "./manifoldCheck";
 import { buildKiriDevice, buildKiriProcess, parseKiriGcodeStats, filamentLengthToWeightG } from "../kiriProfiles";
 
 const execFileAsync = promisify(execFile);
@@ -83,20 +82,19 @@ export async function loadTrianglesFromFile(filePath: string, ext: string): Prom
 
 // Replaces PrusaSlicer's `--info` — no subprocess, no slicing engine, just
 // geometry math on the already-parsed triangle list (transformed to match
-// what will actually be printed/priced). manifold-ness comes from the real
-// Manifold geometry kernel (manifoldCheck.ts — the same library Kiri:Moto
-// itself uses internally for CSG), not the hand-rolled edge-pairing
-// heuristic checkManifoldAndParts() used to rely on for both fields —
-// swapped out for something more solid, per direct request; "parts" (a
-// connected-components count, not gated on anywhere today, just informational)
-// still comes from that same heuristic, since Manifold's JS API doesn't
-// expose a components count directly and re-deriving one from it wasn't
-// worth the extra complexity for a field nothing currently rejects on.
+// what will actually be printed/priced). manifold-ness comes from the
+// hand-rolled bad-edge-fraction heuristic (checkManifoldAndParts, a
+// tolerance-based measure — real hole/missing wall = tens of percent bad
+// edges, real-world export noise = well under 1%). An earlier version of
+// this used the Manifold library (elalish/manifold, a real CSG-grade
+// geometry kernel, via manifold-3d) instead — dropped after confirming live
+// it rejects two real, genuinely printable customer files outright
+// (NotManifold, no tolerance at all) while this heuristic's 1% tolerance
+// correctly accepts both (0.007% and 0.26% bad edges respectively).
 export async function getModelInfo(triangles: Triangle[]): Promise<ModelInfo> {
   const bbox = computeBoundingBox(triangles);
   const volumeMm3 = computeMeshVolumeMm3(triangles);
-  const { manifold } = await checkManifold(triangles);
-  const { parts } = checkManifoldAndParts(triangles);
+  const { manifold, parts } = checkManifoldAndParts(triangles);
   return { ...bbox, volumeMm3, manifold, parts };
 }
 

@@ -48,6 +48,15 @@ interface PreviewHandle {
   zoomOut?(): void;
 }
 
+interface Triangle {
+  v: [number, number, number][];
+}
+interface OrientedModel {
+  triangles: Triangle[];
+  positions: Float32Array;
+  manifold: boolean;
+}
+
 function extOk(name: string) {
   const lower = name.toLowerCase();
   return ALLOWED_EXT.some((ext) => lower.endsWith(ext));
@@ -69,6 +78,7 @@ export function useQuoteWizard() {
   const [scalePct, setScalePct] = useState<string | number>(100);
   const [sizeMm, setSizeMm] = useState<{ x: number; y: number; z: number } | null>(null);
   const [thinWallWarning, setThinWallWarning] = useState(false);
+  const [manifoldWarning, setManifoldWarning] = useState(false);
   const [infillDropdownOpen, setInfillDropdownOpen] = useState(false);
   const [materialDropdownOpen, setMaterialDropdownOpen] = useState(false);
   const [qualityDropdownOpen, setQualityDropdownOpen] = useState(false);
@@ -104,6 +114,15 @@ export function useQuoteWizard() {
   quoteRef.current = quote;
   const fileRef = useRef<File | null>(null);
   fileRef.current = file;
+  // The best-of-6-rotations orientation suggestion (see orientationSuggest.js),
+  // computed exactly once per upload — right away, not deferred to the
+  // analysis step — so every consumer (preview, thin-wall check, manifold
+  // check, slice) agrees on the same oriented geometry the server will
+  // eventually bake into the stored/produced file. Previously each of those
+  // ran its own independent orient-from-scratch, and neither preview ever
+  // did it at all — the viewer always showed the raw as-uploaded rotation,
+  // never what actually got sliced/priced/printed.
+  const orientedModelPromiseRef = useRef<Promise<OrientedModel | null> | null>(null);
 
   const effectiveScale = useCallback(() => {
     const pct = typeof scalePct === "string" ? parseFloat(scalePct) : scalePct;
@@ -118,25 +137,111 @@ export function useQuoteWizard() {
     return dims[0] <= bed[0] && dims[1] <= bed[1] && dims[2] <= 325;
   }, [sizeMm, effectiveScale]);
 
+  // Parses + orients a freshly-uploaded file exactly once, caching the
+  // in-flight/resolved promise in orientedModelPromiseRef so every consumer
+  // (preview, thin-wall check, slice) awaits the same result instead of
+  // redoing the work. Also runs the manifold/watertightness check here (at
+  // upload, not deferred to the analysis step, on request — separates the
+  // two steps' loading time: upload gets orientation+manifold, "Analyse
+  // auto" gets slice+thin-wall). manifoldWarning below is a real, hard
+  // block on step 1 (see `next()`) — the file has to actually be fixed
+  // before continuing, not just a heads-up.
+  // Returns null for anything that isn't STL/OBJ/3MF (shouldn't happen
+  // given ALLOWED_EXT, defensive) or on a genuine parse failure — callers
+  // fall back to the raw as-uploaded file/skip the check silently, same
+  // best-effort spirit as the rest of this client-side path (the server
+  // always independently re-validates and falls back on its own full slice
+  // regardless).
+  function prepareOrientedModel(targetFile: File): Promise<OrientedModel | null> {
+    const promise = (async (): Promise<OrientedModel | null> => {
+      try {
+        const ext = "." + targetFile.name.split(".").pop()!.toLowerCase();
+        const { isKiriSliceable, loadTriangles, orientTriangles, trianglesToPositions } = await dynamicImport("/kiri-slicer.js");
+        if (!isKiriSliceable(ext)) return null;
+        const buffer = await targetFile.arrayBuffer();
+        if (fileRef.current !== targetFile) return null;
+        const rawTriangles = await loadTriangles(buffer, ext);
+        if (fileRef.current !== targetFile) return null;
+        const triangles = await orientTriangles(rawTriangles);
+        if (fileRef.current !== targetFile) return null;
+        // Real geometry, not an encoded file format — the preview (see
+        // renderInto below) renders this directly, no STL round-trip.
+        const positions = trianglesToPositions(triangles);
+        // Bad-edge-fraction heuristic (orientationSuggest.js's
+        // checkManifoldAndParts, ported from orientation.ts's server-side
+        // version) — NOT the strict Manifold-library check
+        // (manifoldCheck.js): confirmed live that library rejects two real,
+        // genuinely printable customer files outright (NotManifold, no
+        // tolerance), while this heuristic's existing 1%-bad-edge tolerance
+        // correctly accepts both (0.007% and 0.26% bad edges respectively)
+        // and still flags real breakage (a genuine hole pushes this into
+        // the tens of percent). This one actually BLOCKS — real, upfront
+        // rejection right at upload, not just a warning — so a flood of
+        // genuinely broken files never even reaches a slice attempt,
+        // client or server.
+        let manifold = true;
+        try {
+          const { checkManifoldAndParts } = await dynamicImport("/orientationSuggest.js");
+          manifold = checkManifoldAndParts(triangles).manifold;
+        } catch (e) {
+          console.warn("client-side manifold check failed, assuming ok", e);
+        }
+        return { triangles, positions, manifold };
+      } catch (e) {
+        console.warn("prepareOrientedModel failed, falling back to as-uploaded", e);
+        return null;
+      }
+    })();
+    orientedModelPromiseRef.current = promise;
+    promise.then((result) => {
+      if (fileRef.current === targetFile) setManifoldWarning(result ? !result.manifold : false);
+    });
+    return promise;
+  }
+  useEffect(() => {
+    if (file) prepareOrientedModel(file);
+    else {
+      orientedModelPromiseRef.current = null;
+      setManifoldWarning(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [file]);
+
   async function renderInto(ref: React.RefObject<HTMLDivElement | null>, handleRef: React.RefObject<PreviewHandle | null>, extraOpts?: Record<string, unknown>) {
     if (handleRef.current) {
       handleRef.current.dispose();
       handleRef.current = null;
     }
     if (!file || !ref.current) return null;
-    const ext = "." + file.name.split(".").pop()!.toLowerCase();
-    const { isRenderableExt, renderModelPreview } = await dynamicImport("/viewer3d.js");
-    if (!isRenderableExt(ext)) {
-      setPreviewUnavailable(true);
-      return null;
-    }
-    setPreviewUnavailable(false);
     const targetFile = file;
-    const buffer = await targetFile.arrayBuffer();
-    if (fileRef.current !== targetFile || !ref.current) return null; // stale by the time the read finished
+    const { isRenderableExt, renderModelPreview } = await dynamicImport("/viewer3d.js");
+
+    // Wait for the oriented model (if this file qualifies for one) so the
+    // preview always shows the same rotation that gets sliced/priced/
+    // produced — never the raw as-uploaded orientation. Rendered from real,
+    // already-parsed geometry directly (no STL encode/re-parse round trip,
+    // see viewer3d.js's `positions` option). Falls back to parsing the raw
+    // file (previous behavior) when orientation isn't available for this
+    // file (STEP, or a genuine parse failure).
+    const oriented = orientedModelPromiseRef.current ? await orientedModelPromiseRef.current : null;
+    if (fileRef.current !== targetFile || !ref.current) return null; // stale by the time this resolved
     const mat = materials.find((m) => m.key === material);
     const color = mat ? mat.colors.find((c) => c.id === colorId)?.colorHex : null;
-    const handle = await renderModelPreview(ref.current, { fileBuffer: buffer, ext, colorHex: color, ...extraOpts });
+    let handle;
+    if (oriented) {
+      setPreviewUnavailable(false);
+      handle = await renderModelPreview(ref.current, { positions: oriented.positions, colorHex: color, ...extraOpts });
+    } else {
+      const ext = "." + targetFile.name.split(".").pop()!.toLowerCase();
+      const buffer = await targetFile.arrayBuffer();
+      if (fileRef.current !== targetFile || !ref.current) return null;
+      if (!isRenderableExt(ext)) {
+        setPreviewUnavailable(true);
+        return null;
+      }
+      setPreviewUnavailable(false);
+      handle = await renderModelPreview(ref.current, { fileBuffer: buffer, ext, colorHex: color, ...extraOpts });
+    }
     handleRef.current = handle;
     return handle;
   }
@@ -175,10 +280,15 @@ export function useQuoteWizard() {
     return renderInto(analysisPreviewRef, analysisPreviewHandleRef);
   }
 
-  // Best-effort, approximate — only .stl (.obj/.3mf aren't parsed for this
-  // particular check). Casts a ray inward from every triangle's center
-  // along its inverse normal, same idea a slicer uses for a wall-thickness
-  // check. Never blocks the quote, just flags a likely-thin area.
+  // Best-effort, approximate. Casts a ray inward from every triangle's
+  // center along its inverse normal, same idea a slicer uses for a
+  // wall-thickness check. Never blocks the quote, just flags a likely-thin
+  // area. Runs on the already-oriented triangle list (see
+  // prepareOrientedModel) — same geometry that gets sliced/priced/produced,
+  // and no longer STL-only (that restriction was only ever about the old
+  // STLLoader-based parsing this function used to do itself; now that
+  // orientation already normalized every accepted format into a flat
+  // triangle list upstream, OBJ/3MF get checked too, for free).
   //
   // BVH-accelerated (three-mesh-bvh, vendored — see
   // public/vendor/three-mesh-bvh/THIRD_PARTY_NOTICES.md): each raycast used
@@ -187,13 +297,10 @@ export function useQuoteWizard() {
   // the whole mesh. With a real BVH each query is ~O(log n), so the sample
   // cap is gone — every triangle gets tested now, the same accuracy
   // improvement for free.
-  async function checkThinWalls(targetFile: File) {
-    if (!targetFile.name.toLowerCase().endsWith(".stl")) return;
+  async function checkThinWalls(targetFile: File, triangles: Triangle[] | null) {
+    if (!triangles || triangles.length === 0) return;
     try {
-      const buffer = await targetFile.arrayBuffer();
-      if (fileRef.current !== targetFile) return; // superseded by a newer upload
       const THREE = await dynamicImport("/vendor/three/three.module.min.js");
-      const { STLLoader } = await dynamicImport("/vendor/three/STLLoader.js");
       const { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } = await dynamicImport(
         "/vendor/three-mesh-bvh/index.module.js",
       );
@@ -204,10 +311,20 @@ export function useQuoteWizard() {
       THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
       THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
-      const geometry = new STLLoader().parse(buffer);
-      const pos = geometry.attributes.position;
-      const triCount = pos.count / 3;
+      const triCount = triangles.length;
       if (triCount === 0) return;
+      const positions = new Float32Array(triCount * 9);
+      let pi = 0;
+      for (const t of triangles) {
+        for (const p of t.v) {
+          positions[pi++] = p[0];
+          positions[pi++] = p[1];
+          positions[pi++] = p[2];
+        }
+      }
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      const pos = geometry.attributes.position;
       geometry.computeVertexNormals();
       geometry.computeBoundsTree();
       // DoubleSide required: a ray fired from just inside one wall toward
@@ -221,7 +338,24 @@ export function useQuoteWizard() {
       const REAL_THRESHOLD_MM = 0.4;
       const scale = effectiveScale() || 1;
       const THRESHOLD_MM = REAL_THRESHOLD_MM / scale;
-      const MIN_THIN_AREA_MM2 = 2;
+      // 4mm² minimum thin area, not 2mm² — a textured/detailed mesh
+      // (embossed logo, engraved text, surface texture) has plenty of
+      // individual facets whose nearest ray hit is some other
+      // nearby-but-unrelated bump, not the true opposite wall; each one only
+      // contributes its own tiny triangle area, so a low threshold flagged
+      // perfectly printable parts as "thin" just from texture noise. The
+      // main defense against that is MIN_HIT_NORMAL_ALIGNMENT below (reject
+      // hits that aren't a genuine opposite wall); this area floor only
+      // needs to catch the rare single/handful of aligned but still-
+      // spurious hits slipping past that filter, not do the heavy lifting
+      // itself — a real thin-wall problem still shows up well past 4mm².
+      const MIN_THIN_AREA_MM2 = 4;
+      // A genuine thin wall's opposite face points roughly the same way the
+      // ray travels (two near-parallel surfaces facing away from each
+      // other) — texture noise on a detailed mesh tends to hit facets at
+      // much more oblique angles, which this filters out. cos(60°) = 0.5:
+      // hits more than 60° off the ray direction don't count.
+      const MIN_HIT_NORMAL_ALIGNMENT = 0.5;
       const step = 1;
       const a = new THREE.Vector3(),
         b = new THREE.Vector3(),
@@ -243,7 +377,9 @@ export function useQuoteWizard() {
         raycaster.near = 0;
         raycaster.far = THRESHOLD_MM;
         const hits = raycaster.intersectObject(mesh, false);
-        if (hits.length && hits[0].distance < THRESHOLD_MM) {
+        const hit = hits[0];
+        const aligned = hit?.face && hit.face.normal.dot(raycaster.ray.direction) >= MIN_HIT_NORMAL_ALIGNMENT;
+        if (hit && hit.distance < THRESHOLD_MM && aligned) {
           const triArea = b.clone().sub(a).cross(c.clone().sub(a)).length() / 2;
           thinAreaMm2 += triArea * step * scale * scale;
           if (thinAreaMm2 >= MIN_THIN_AREA_MM2) {
@@ -390,6 +526,7 @@ export function useQuoteWizard() {
     setFileError(null);
     setSizeMm(null);
     setThinWallWarning(false);
+    setManifoldWarning(false);
     setPreviewUnavailable(false);
     setAnalysisReady(false);
     setAnalysisError(null);
@@ -430,49 +567,26 @@ export function useQuoteWizard() {
   // Real client-side slice via Kiri:Moto (public/kiri-slicer.js) — the
   // primary path (see the Kiri:Moto plan): the visitor's own device
   // computes the real weight/time instead of queuing behind everyone
-  // else's on the server. Runs a real manifold/watertightness check first
-  // (public/manifoldCheck.js, the Manifold geometry kernel — same one
-  // Kiri:Moto itself uses internally — not a hand-rolled heuristic) so a
-  // broken mesh is caught and shown to the visitor immediately, without
-  // ever uploading the file or spending a server-side slice on it. Both
-  // the manifold check and the actual slice are best-effort/silent on
-  // failure beyond that early exit (WASM unavailable, weak device, a parse
-  // error): the server always independently re-validates whatever's
-  // submitted (validateClaimedSlice in kiriSlicer.ts, and its own manifold
-  // check) and transparently falls back to its own rare full slice, so a
-  // failure here (other than a genuine non-manifold mesh) never blocks or
-  // breaks the quote — rejecting your own upload as non-manifold isn't a
-  // security-relevant decision either way, only the server's *acceptance*
-  // of a claimed weight/time has to be trustworthy.
+  // else's on the server. No manifold pre-check here — that already ran
+  // and blocked at upload (see prepareOrientedModel), so anything reaching
+  // this function has already passed it.
+  // `triangles`: the already-oriented list from prepareOrientedModel — null
+  // means orientation itself failed/unavailable for this file, in which
+  // case this returns null immediately and the server's own full slice
+  // fallback handles everything (same best-effort spirit as before).
   async function tryClientSlice(
     targetFile: File,
-  ): Promise<{ weightG: number; estimatedTimeMin: number } | { nonManifold: true } | null> {
+    triangles: Triangle[] | null,
+  ): Promise<{ weightG: number; estimatedTimeMin: number } | null> {
+    if (!triangles) return null;
     try {
-      const ext = "." + targetFile.name.split(".").pop()!.toLowerCase();
-      const { isKiriSliceable, sliceWithKiri, loadTriangles } = await dynamicImport("/kiri-slicer.js");
-      if (!isKiriSliceable(ext)) return null;
       const mat = materials.find((m) => m.key === material);
       if (!mat) return null;
-      const buffer = await targetFile.arrayBuffer();
-      if (fileRef.current !== targetFile) return null; // superseded by a newer upload
 
-      let rawTriangles;
-      try {
-        rawTriangles = await loadTriangles(buffer, ext);
-        const { checkManifold } = await dynamicImport("/manifoldCheck.js");
-        const { manifold } = await checkManifold(rawTriangles);
-        if (!manifold) return { nonManifold: true };
-      } catch (e) {
-        console.warn("client-side manifold check failed, letting the server decide", e);
-        rawTriangles = undefined;
-      }
-      if (fileRef.current !== targetFile) return null;
-
+      const { sliceWithKiri } = await dynamicImport("/kiri-slicer.js");
       const layerHeightMm = CLIENT_QUALITY_LAYER_HEIGHT[quality] ?? 0.2;
       const stats = await sliceWithKiri({
-        fileBuffer: buffer,
-        ext,
-        rawTriangles,
+        orientedTriangles: triangles,
         deviceJson: buildKiriDevice(),
         processJson: buildKiriProcess(quality, layerHeightMm, infill, material),
       });
@@ -494,16 +608,12 @@ export function useQuoteWizard() {
     }
     setAnalyzing(true);
     setAnalysisError(null);
-    const thinWallPromise = checkThinWalls(file);
-    const clientSlice = await tryClientSlice(file);
-    if (clientSlice && "nonManifold" in clientSlice) {
-      // Caught client-side (real Manifold check, see tryClientSlice) — same
-      // message the server would give, but without ever uploading the file
-      // or spending a slice on it.
-      setAnalyzing(false);
-      setAnalysisError("Le modèle contient des erreurs de géométrie (maillage non étanche) — vérifiez le fichier dans votre logiciel de CAO.");
-      return;
-    }
+    const targetFile = file;
+    const oriented = orientedModelPromiseRef.current ? await orientedModelPromiseRef.current : null;
+    if (fileRef.current !== targetFile) return; // superseded while awaiting orientation
+    const triangles = oriented ? oriented.triangles : null;
+    const thinWallPromise = checkThinWalls(targetFile, triangles);
+    const clientSlice = await tryClientSlice(targetFile, triangles);
     const res = await api.submitQuote({
       file,
       material,
@@ -540,7 +650,7 @@ export function useQuoteWizard() {
   }
 
   function next() {
-    if (step === 1 && !scaleFitsPrinter()) return;
+    if (step === 1 && (!scaleFitsPrinter() || manifoldWarning)) return;
     const nextStep = Math.min(4, step + 1);
     setStep(nextStep);
     if (nextStep === 3 && !analysisReady && !analyzing) submitQuote();
@@ -593,6 +703,7 @@ export function useQuoteWizard() {
     scalePct,
     sizeMm,
     thinWallWarning,
+    manifoldWarning,
     infillDropdownOpen,
     setInfillDropdownOpen,
     materialDropdownOpen,

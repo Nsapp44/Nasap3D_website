@@ -84,7 +84,15 @@ export async function loadTriangles(fileBuffer, ext) {
   throw new Error('unsupported extension for kiri: ' + ext);
 }
 
-function trianglesToBinaryStl(triangles, geometryToBinaryStl) {
+// Flat, non-indexed position array (3 floats × 3 verts per triangle) — the
+// shape three.js's BufferGeometry wants directly. Exported so
+// useQuoteWizard.ts can hand the oriented preview straight to viewer3d.js
+// as real geometry (see renderModelPreview's `positions` option) instead of
+// round-tripping through binary STL bytes just to have STLLoader parse them
+// straight back out again — that encode/decode step is real, avoidable
+// work, only actually needed where a real STL buffer is the required input
+// (Kiri:Moto's own engine.parse(), see sliceWithKiri below).
+export function trianglesToPositions(triangles) {
   const positions = new Float32Array(triangles.length * 9);
   let i = 0;
   for (const t of triangles) {
@@ -94,7 +102,28 @@ function trianglesToBinaryStl(triangles, geometryToBinaryStl) {
       positions[i++] = p[2];
     }
   }
-  return geometryToBinaryStl(positions, null);
+  return positions;
+}
+
+function trianglesToBinaryStl(triangles, geometryToBinaryStl) {
+  return geometryToBinaryStl(trianglesToPositions(triangles), null);
+}
+
+// Best-effort print-orientation suggestion applied to a raw triangle list —
+// factored out of sliceWithKiri so useQuoteWizard.ts can run this exactly
+// once per upload (right away, so the preview shows it) instead of once per
+// slice/thin-wall-check/manifold-check, each silently re-deriving the same
+// answer from scratch. A parse hiccup or unusual mesh just means no
+// rotation applied (same fallback as always), never blocks anything.
+export async function orientTriangles(rawTriangles) {
+  const { suggestOrientation, applyRotation } = await import('/orientationSuggest.js');
+  try {
+    const suggestion = suggestOrientation(rawTriangles);
+    if (suggestion) return applyRotation(rawTriangles, suggestion.rotateXDeg, suggestion.rotateYDeg);
+  } catch (e) {
+    console.warn('suggestOrientation failed, using as-uploaded', e);
+  }
+  return rawTriangles;
 }
 
 // Real print time in the exported gcode's own trailer comment is the
@@ -115,28 +144,22 @@ function parseKiriGcodeStats(gcode) {
 // deviceJson/processJson: plain objects built by src/lib/kiriProfiles.ts —
 // kept as parameters here (not hardcoded) so this file stays a thin,
 // framework-agnostic wrapper around the engine, same division of
-// responsibility as viewer3d.js vs. its callers. `rawTriangles`: optional —
-// pass the already-parsed triangle list when the caller already has one
-// (useQuoteWizard.ts's manifold pre-check parses the file first) to avoid
-// parsing the same file twice; omitted, this parses fileBuffer itself.
-export async function sliceWithKiri({ fileBuffer, ext, deviceJson, processJson, rawTriangles: preParsed }) {
+// responsibility as viewer3d.js vs. its callers.
+// `rawTriangles`: optional — pass an already-parsed triangle list (still
+// UNORIENTED — this still runs orientTriangles() on it) when the caller has
+// one, to avoid parsing the same file twice.
+// `orientedTriangles`: optional — pass an ALREADY-ORIENTED triangle list
+// (from a prior orientTriangles() call, e.g. the one useQuoteWizard.ts runs
+// once at upload time for the preview) to skip both parsing and
+// reorientation entirely. Takes priority over `rawTriangles` when given.
+// Matching the server's own choice matters here — the stored file (and any
+// server-side fallback slice) gets this exact same suggestion applied, so
+// the client's trusted weight/time has to agree with what actually ends up
+// printed, not some other orientation.
+export async function sliceWithKiri({ fileBuffer, ext, deviceJson, processJson, rawTriangles: preParsed, orientedTriangles }) {
   const { geometryToBinaryStl } = await import('/stlExport.js');
-  const { suggestOrientation, applyRotation } = await import('/orientationSuggest.js');
 
-  const rawTriangles = preParsed || (await loadTriangles(fileBuffer, ext));
-  // Best-effort, same as the server (src/pages/api/quotes/index.ts): a
-  // parse hiccup or unusual mesh just means no rotation applied, never
-  // blocks the slice. Matching the server's own choice matters here — the
-  // stored file (and any server-side fallback slice) gets this exact same
-  // suggestion applied, so the client's trusted weight/time has to agree
-  // with what actually ends up printed, not some other orientation.
-  let triangles = rawTriangles;
-  try {
-    const suggestion = suggestOrientation(rawTriangles);
-    if (suggestion) triangles = applyRotation(rawTriangles, suggestion.rotateXDeg, suggestion.rotateYDeg);
-  } catch (e) {
-    console.warn('suggestOrientation failed, slicing as-uploaded', e);
-  }
+  const triangles = orientedTriangles || (await orientTriangles(preParsed || (await loadTriangles(fileBuffer, ext))));
   const stlBuffer = trianglesToBinaryStl(triangles, geometryToBinaryStl);
 
   const { newEngine } = await loadKiri();

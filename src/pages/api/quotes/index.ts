@@ -169,9 +169,18 @@ export const POST = apiHandler(async (context) => {
     const triangles = applyTransform(rawTriangles, transform);
 
     const info = await getModelInfo(triangles);
-    if (!info.manifold) {
-      return jsonError(400, "non_manifold_model");
-    }
+    // Blocks right away, at upload — matches the client's own identical
+    // check (orientationSuggest.js's checkManifoldAndParts) so a genuinely
+    // broken file never even reaches a slice attempt, client or server, and
+    // a flood of them never costs the server a real sliceModel() subprocess.
+    // Bad-edge-fraction heuristic with a 1% tolerance — confirmed live that
+    // the stricter Manifold-library check (elalish/manifold, a real CSG-
+    // grade geometry kernel — tried first, then dropped for this gate)
+    // rejects two real, genuinely printable customer files outright
+    // (NotManifold, no tolerance) while this heuristic correctly accepts
+    // both (0.007% and 0.26% bad edges, both well under 1%) and still flags
+    // real breakage (a genuine hole pushes this into the tens of percent).
+    if (!info.manifold) return jsonError(400, "non_manifold_model");
     const printer = pickPrinter(info);
     if (!printer) return jsonError(400, "part_too_large");
 

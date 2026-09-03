@@ -45,32 +45,56 @@ function loadOcct() {
 // panel — see Devis Instantane.dc.html/Home.dc.html) — the returned
 // handle's getSizeMm()/setScale() let that panel show live dimensions and
 // preview a scale factor without reloading/re-parsing the file.
-export async function renderModelPreview(container, { fileBuffer, ext, colorHex, animate = true, showGrid = false }) {
+// `positions`: an optional flat Float32Array (non-indexed triangle-soup,
+// mm) — pass this instead of fileBuffer/ext when the caller already has
+// real, parsed (and possibly already-oriented) geometry in hand
+// (useQuoteWizard.ts's oriented preview, see kiri-slicer.js's
+// trianglesToPositions), so this renders it directly instead of
+// re-encoding to a file format just to immediately re-parse it back out.
+export async function renderModelPreview(container, { fileBuffer, ext, positions, colorHex, animate = true, showGrid = false }) {
   const THREE = await import('./vendor/three/three.module.min.js');
-  const lowerExt = ext.toLowerCase();
 
   let object;
-  if (lowerExt === '.stl') {
-    const { STLLoader } = await import('./vendor/three/STLLoader.js');
-    const geometry = new STLLoader().parse(fileBuffer);
+  if (positions) {
+    // Copy, not a direct wrap — geometry.translate()/.rotateX() below mutate
+    // the position buffer IN PLACE, and `positions` here is the caller's
+    // own cached array (useQuoteWizard.ts's orientedModelPromiseRef, reused
+    // across every re-render of the same file: step 1, step 3's "Analyse
+    // terminée", and step 1 again after navigating back). Without this
+    // copy, each render call rotated that shared array another -90° on top
+    // of the last — confirmed live: navigating step1 -> step3 -> back to
+    // step1 visibly spun the same real part a further -90° each time,
+    // reported as "orientation not retained when going back". A fresh
+    // Float32Array here means every render starts from the same untouched
+    // source data, however many times it's shown.
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
     geometry.computeVertexNormals();
     object = new THREE.Mesh(geometry, materialFor(THREE, colorHex));
-  } else if (lowerExt === '.obj') {
-    const { OBJLoader } = await import('./vendor/three/OBJLoader.js');
-    const text = new TextDecoder().decode(fileBuffer);
-    object = new OBJLoader().parse(text);
-    const mat = materialFor(THREE, colorHex);
-    object.traverse((child) => { if (child.isMesh) child.material = mat; });
-  } else if (lowerExt === '.3mf') {
-    const { read3mfFile } = await import('./threeMfLoader.js');
-    const result = await read3mfFile(fileBuffer);
-    object = buildGroupFromMeshResult(THREE, result, materialFor(THREE, colorHex));
-    if (!object) return null;
-  } else if (lowerExt === '.step' || lowerExt === '.stp') {
-    object = await buildStepObject(THREE, fileBuffer, colorHex);
-    if (!object) return null;
   } else {
-    return null;
+    const lowerExt = ext.toLowerCase();
+    if (lowerExt === '.stl') {
+      const { STLLoader } = await import('./vendor/three/STLLoader.js');
+      const geometry = new STLLoader().parse(fileBuffer);
+      geometry.computeVertexNormals();
+      object = new THREE.Mesh(geometry, materialFor(THREE, colorHex));
+    } else if (lowerExt === '.obj') {
+      const { OBJLoader } = await import('./vendor/three/OBJLoader.js');
+      const text = new TextDecoder().decode(fileBuffer);
+      object = new OBJLoader().parse(text);
+      const mat = materialFor(THREE, colorHex);
+      object.traverse((child) => { if (child.isMesh) child.material = mat; });
+    } else if (lowerExt === '.3mf') {
+      const { read3mfFile } = await import('./threeMfLoader.js');
+      const result = await read3mfFile(fileBuffer);
+      object = buildGroupFromMeshResult(THREE, result, materialFor(THREE, colorHex));
+      if (!object) return null;
+    } else if (lowerExt === '.step' || lowerExt === '.stp') {
+      object = await buildStepObject(THREE, fileBuffer, colorHex);
+      if (!object) return null;
+    } else {
+      return null;
+    }
   }
 
   // Recenter the underlying GEOMETRY (not just the object's position) on
