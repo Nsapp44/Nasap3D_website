@@ -4,7 +4,7 @@ import { prisma } from "../../../lib/server/prisma";
 import { stripe } from "../../../lib/server/stripeClient";
 import { nextCounter } from "../../../lib/server/counter";
 import { saveFile } from "../../../lib/server/storage";
-import { notifyAdminOrderPaid } from "../../../lib/server/orderEmails";
+import { notifyAdminOrderPaid, sendOrderPaidEmail } from "../../../lib/server/orderEmails";
 
 // Direct port of POST /webhooks/stripe. In Fastify this needed its own
 // encapsulated plugin scope registering a raw-buffer content-type parser,
@@ -39,7 +39,7 @@ export const POST = apiHandler(async (context) => {
       return json({ ok: true });
     }
 
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    const order = await prisma.order.findUnique({ where: { id: orderId }, include: { user: true } });
     if (!order) {
       console.error(`checkout.session.completed for missing order ${orderId}`);
       return json({ ok: true });
@@ -54,8 +54,9 @@ export const POST = apiHandler(async (context) => {
       data: { status: "PENDING", stripePaymentIntentId: String(session.payment_intent) },
     });
 
-    await createInvoiceFromStripeSession(session, orderId, order.userId, order.totalCents);
+    await createInvoiceFromStripeSession(session, orderId, order.user, order.totalCents);
     await notifyAdminOrderPaid(order.ref, session.customer_email, order.totalCents);
+    await sendOrderPaidEmail(order.user.email, order.ref, order.totalCents);
   }
 
   return json({ ok: true });
@@ -64,7 +65,7 @@ export const POST = apiHandler(async (context) => {
 async function createInvoiceFromStripeSession(
   session: Stripe.Checkout.Session,
   orderId: string,
-  userId: string,
+  user: { id: string; customerNo: string },
   amountCents: number,
 ) {
   if (!session.invoice) return;
@@ -74,7 +75,6 @@ async function createInvoiceFromStripeSession(
   const res = await fetch(invoice.invoice_pdf);
   const pdfBuffer = Buffer.from(await res.arrayBuffer());
 
-  const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
   const now = new Date();
   const dateKey = now.toISOString().slice(0, 10); // YYYY-MM-DD
   const dailySeq = await nextCounter("invoice:" + dateKey);
@@ -90,7 +90,7 @@ async function createInvoiceFromStripeSession(
     data: {
       ref,
       orderId,
-      userId,
+      userId: user.id,
       amountCents,
       pdfKey,
       dailySeq,

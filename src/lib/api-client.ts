@@ -202,6 +202,9 @@ export const api = {
   adminOrderLabelDownloadUrl(orderId: string) {
     return apiBase() + "/admin/orders/" + orderId + "/shipping-label/download";
   },
+  adminOrderInvoiceDownloadUrl(orderId: string) {
+    return apiBase() + "/admin/orders/" + orderId + "/invoice/download";
+  },
   async adminDeleteOrderFile(orderId: string, itemId: string) {
     return request("DELETE", "/admin/orders/" + orderId + "/items/" + itemId + "/file");
   },

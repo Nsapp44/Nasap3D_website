@@ -161,6 +161,14 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
         )}
       </div>
 
+      {order.hasInvoice && (
+        <div className="order-section">
+          <a href={api.adminOrderInvoiceDownloadUrl(order.id)} target="_blank" rel="noreferrer" className="btn-label">
+            Télécharger la facture
+          </a>
+        </div>
+      )}
+
       {hasFiles && (
         <div className="order-section">
           {order.items

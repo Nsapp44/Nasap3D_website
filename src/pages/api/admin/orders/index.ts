@@ -37,6 +37,7 @@ export const GET = apiHandler(async (context) => {
       include: {
         items: { include: { quoteJob: { select: { fileName: true, fileDeletedAt: true } } } },
         user: { select: { email: true, customerNo: true } },
+        invoice: { select: { id: true } },
       },
     }),
     prisma.order.groupBy({ by: ["status"], _count: true }),
@@ -54,6 +55,7 @@ export const GET = apiHandler(async (context) => {
       status: o.status,
       totalCents: o.totalCents,
       createdAt: o.createdAt,
+      hasInvoice: !!o.invoice,
       shippingMode: o.shippingMode,
       shippingLabel: o.shippingLabel,
       shippingOversized: o.shippingOversized,

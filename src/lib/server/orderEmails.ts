@@ -2,7 +2,13 @@
 // or EXPERTISE -> REJECTED). Kept separate from the checkout/admin routes
 // (both need these) rather than duplicated in either.
 import { sendMail } from "./mailer";
-import { renderEmailHtml, orderPlacedContentHtml, orderAcceptedContentHtml, orderRejectedContentHtml } from "./emailTemplate";
+import {
+  renderEmailHtml,
+  orderPlacedContentHtml,
+  orderAcceptedContentHtml,
+  orderPaidContentHtml,
+  orderRejectedContentHtml,
+} from "./emailTemplate";
 
 function frontUrl() {
   return process.env.FRONT_URL || "http://localhost:3000";
@@ -42,6 +48,24 @@ export async function sendOrderAcceptedEmail(to: string, ref: string, totalCents
     );
   } catch (err) {
     console.error("[orderEmails] order-accepted email failed", err);
+  }
+}
+
+// Sent to the customer right after Stripe confirms payment (webhook) — the
+// only customer-facing signal that the charge actually went through and
+// production is starting; before this, the customer's only feedback was
+// the browser redirect back to /compte, nothing durable like an email.
+export async function sendOrderPaidEmail(to: string, ref: string, totalCents: number) {
+  try {
+    const accountUrl = `${frontUrl()}/compte`;
+    await sendMail(
+      to,
+      `Commande ${ref} — paiement confirmé`,
+      `Votre paiement pour la commande ${ref} (${eur(totalCents)}) a bien été reçu — la production va démarrer.\n\nVotre facture est disponible dans votre compte : ${accountUrl}`,
+      renderEmailHtml(`Commande ${ref} — paiement confirmé`, orderPaidContentHtml(ref, eur(totalCents), accountUrl)),
+    );
+  } catch (err) {
+    console.error("[orderEmails] order-paid email failed", err);
   }
 }
 

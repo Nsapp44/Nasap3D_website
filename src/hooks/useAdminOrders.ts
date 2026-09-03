@@ -18,6 +18,7 @@ export interface AdminOrder {
   createdAt: string;
   totalCents: number;
   status: string;
+  hasInvoice: boolean;
   items: AdminOrderItem[];
   canBuyLabel: boolean;
   shippingLabelUrl: string | null;

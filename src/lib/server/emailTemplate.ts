@@ -154,6 +154,27 @@ export function orderAcceptedContentHtml(ref: string, totalLabel: string, accoun
   ].join("\n");
 }
 
+export function orderPaidContentHtml(ref: string, totalLabel: string, accountUrl: string): string {
+  return [
+    h1("Paiement confirmé"),
+    p("Votre paiement a bien été reçu — la production de votre commande va démarrer."),
+    orderInfoTable([
+      ["Référence :", ref],
+      ["Statut :", "Payée — en préparation", "#ff5a3c"],
+      ["Montant réglé :", totalLabel],
+    ]),
+    `<table border="0" cellpadding="0" cellspacing="0" style="margin:0 0 20px 0;">
+<tr><td align="center" style="background-color:#ff5a3c;border-radius:4px;">
+<a href="${escapeHtml(accountUrl)}" target="_blank" style="display:inline-block;padding:14px 28px;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:15px;font-weight:600;color:#161514;text-decoration:none;min-height:20px;line-height:20px;">Voir ma commande</a>
+</td></tr>
+</table>`,
+    p(
+      "Votre facture est disponible dès maintenant dans votre compte, dans la section Factures.",
+      { small: true, margin: "0" },
+    ),
+  ].join("\n");
+}
+
 export function orderRejectedContentHtml(ref: string, contactUrl: string): string {
   return [
     h1("Problème de faisabilité"),
