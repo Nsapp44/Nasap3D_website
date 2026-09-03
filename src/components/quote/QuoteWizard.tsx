@@ -131,7 +131,9 @@ export default function QuoteWizard() {
                   {scaleTooLarge && (
                     <div className="qw-scale-warning">⚠ À cette échelle, la pièce dépasse le format imprimable de nos machines (330×320×325mm max). Réduisez le pourcentage ou changez l'unité pour continuer.</div>
                   )}
-                  {w.manifoldWarning ? (
+                  {w.orientationLoading ? (
+                    <div className="qw-file-success">Vérification du fichier (orientation, géométrie)…</div>
+                  ) : w.manifoldWarning ? (
                     <div className="qw-scale-warning">
                       ⚠ Ce fichier contient des erreurs de géométrie importantes (maillage non étanche) — impossible de continuer avec ce fichier tel quel.{" "}
                       <a href="/contact">Contactez-nous</a> ou réparez le maillage dans votre logiciel de CAO puis réessayez.
@@ -141,7 +143,9 @@ export default function QuoteWizard() {
                   )}
                 </div>
                 <div className="qw-next-row">
-                  <div onClick={w.next} className={`qw-next-btn${scaleTooLarge || w.manifoldWarning ? " disabled" : ""}`}>Suivant →</div>
+                  <div onClick={w.next} className={`qw-next-btn${scaleTooLarge || w.manifoldWarning || w.orientationLoading ? " disabled" : ""}`}>
+                    {w.orientationLoading ? "Vérification…" : "Suivant →"}
+                  </div>
                 </div>
               </>
             ) : (

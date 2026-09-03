@@ -79,6 +79,13 @@ export function useQuoteWizard() {
   const [sizeMm, setSizeMm] = useState<{ x: number; y: number; z: number } | null>(null);
   const [thinWallWarning, setThinWallWarning] = useState(false);
   const [manifoldWarning, setManifoldWarning] = useState(false);
+  // True while prepareOrientedModel (orientation + manifold check) is
+  // in-flight for the currently-uploaded file — real user report: without
+  // this, "Suivant" only checked manifoldWarning, which still holds its
+  // default `false` until that async check actually resolves, so clicking
+  // fast enough (or on a big/slow file) skipped straight past a check that
+  // hadn't run yet, manifold and all. See next() below.
+  const [orientationLoading, setOrientationLoading] = useState(false);
   const [infillDropdownOpen, setInfillDropdownOpen] = useState(false);
   const [materialDropdownOpen, setMaterialDropdownOpen] = useState(false);
   const [qualityDropdownOpen, setQualityDropdownOpen] = useState(false);
@@ -194,15 +201,20 @@ export function useQuoteWizard() {
     })();
     orientedModelPromiseRef.current = promise;
     promise.then((result) => {
-      if (fileRef.current === targetFile) setManifoldWarning(result ? !result.manifold : false);
+      if (fileRef.current !== targetFile) return;
+      setManifoldWarning(result ? !result.manifold : false);
+      setOrientationLoading(false);
     });
     return promise;
   }
   useEffect(() => {
-    if (file) prepareOrientedModel(file);
-    else {
+    if (file) {
+      setOrientationLoading(true);
+      prepareOrientedModel(file);
+    } else {
       orientedModelPromiseRef.current = null;
       setManifoldWarning(false);
+      setOrientationLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [file]);
@@ -650,7 +662,7 @@ export function useQuoteWizard() {
   }
 
   function next() {
-    if (step === 1 && (!scaleFitsPrinter() || manifoldWarning)) return;
+    if (step === 1 && (!scaleFitsPrinter() || manifoldWarning || orientationLoading)) return;
     const nextStep = Math.min(4, step + 1);
     setStep(nextStep);
     if (nextStep === 3 && !analysisReady && !analyzing) submitQuote();
@@ -704,6 +716,7 @@ export function useQuoteWizard() {
     sizeMm,
     thinWallWarning,
     manifoldWarning,
+    orientationLoading,
     infillDropdownOpen,
     setInfillDropdownOpen,
     materialDropdownOpen,

@@ -104,16 +104,20 @@ npm run seed                # matériaux/couleurs, qualités, remises, comptes a
 `npm run seed` est idempotent (basé sur `upsert`) : le relancer ne duplique rien et ne touche
 pas aux comptes déjà créés.
 
-### Comptes créés par le seed
+### Compte créé par le seed
 
-| Rôle           | Email                                       | Mot de passe                                                                                       |
-| -------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Admin          | `admin@nasap3d.com` (ou `SEED_ADMIN_EMAIL`) | voir `SEED_ADMIN_PASSWORD` dans `.env.example` — **à changer après la première connexion** |
-| Client de test | `client@nasap3d.com`                        | communiqué séparément                                                                      |
+Le seed ne crée plus de compte admin (retiré — le compte admin réel existe déjà en base ; un
+nouveau déploiement partant d'une base vide doit créer son premier admin directement en base :
+inscription normale sur le site, puis passage du champ `role` à `ADMIN` via Prisma Studio ou
+une requête SQL).
 
-Les deux mots de passe sont hashés en Argon2id avant stockage ; aucun n'est jamais écrit en
-clair en base ni dans les logs. Les deux comptes seedés sont marqués email-vérifié d'office (ils
-ne passent pas par le vrai parcours d'inscription).
+| Rôle           | Email                | Mot de passe           |
+| -------------- | --------------------- | ----------------------- |
+| Client de test | `client@nasap3d.com` | communiqué séparément  |
+
+Son mot de passe est hashé en Argon2id avant stockage ; jamais écrit en clair en base ni dans
+les logs. Le compte seedé est marqué email-vérifié d'office (il ne passe pas par le vrai
+parcours d'inscription).
 
 ## Développement
 

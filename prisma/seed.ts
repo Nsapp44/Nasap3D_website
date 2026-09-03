@@ -220,37 +220,15 @@ async function main() {
 
   console.log("Seeding accounts...");
 
-  const adminEmail = process.env.SEED_ADMIN_EMAIL || "admin@nasap3d.com";
-  // Fixed on purpose, not random — local Docker gets reinstalled/reseeded
-  // often, and a different password every time makes that a hassle. This
-  // is a NEW value, never previously committed (the old hardcoded default
-  // had already leaked into this public repo's git history — rotating it
-  // rather than reusing it, even though it's only ever meant as a local/
-  // dev fallback). Production should still set SEED_ADMIN_PASSWORD in its
-  // own .env (see .env.example) rather than rely on this default — the
-  // seed only ever sets a password on first creation of the row (see
-  // `if (!adminExisting)` below), so an already-seeded prod admin is
-  // unaffected either way, and changing the password from the admin UI
-  // after login is what actually matters there.
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD || "Nsap3D-Dev-Seed-2026!";
-  const adminHash = await hashPassword(adminPassword);
-  const adminExisting = await prisma.user.findUnique({ where: { email: adminEmail } });
-  if (!adminExisting) {
-    await prisma.user.create({
-      data: {
-        email: adminEmail,
-        passwordHash: adminHash,
-        customerNo: await nextCustomerNo(),
-        role: "ADMIN",
-        // Seeded, not signed up through the real flow — no verification
-        // email was ever sent, so there's nothing to confirm.
-        emailVerifiedAt: new Date(),
-      },
-    });
-    console.log(`  created admin account: ${adminEmail}`);
-  } else {
-    console.log(`  admin account already exists: ${adminEmail} (left untouched)`);
-  }
+  // No more admin-account bootstrapping here — removed on request: the real
+  // admin account already exists (this only ever ran once, on first
+  // creation, then left it untouched forever after), so this block had
+  // become dead weight that only served to keep a password default (real
+  // or fallback) sitting in this public repo's source for no ongoing
+  // reason. A brand-new deployment's first admin now has to be created
+  // directly against the database (sign up a normal account through the
+  // site, then flip its `role` to ADMIN — via Prisma Studio or a direct
+  // SQL UPDATE) instead of through this file.
 
   // Kept as-is at the user's request: same credentials as the original demo
   // account, now backed by a real seeded row.
