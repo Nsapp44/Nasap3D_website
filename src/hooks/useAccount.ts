@@ -25,7 +25,12 @@ export interface AccountInvoice {
 }
 
 type View = "dashboard" | "settings";
-export type VerifyPurpose = "signup" | "email" | "password";
+// "password" removed — changing a password only ever requires proving you
+// already know the current one (see requestPasswordChange below), which is
+// itself already proof of ownership; an email round-trip on top of that is
+// friction, not real security. Kept for email (proving you own an inbox you
+// don't yet control) and signup (proving the address is real at all).
+export type VerifyPurpose = "signup" | "email";
 
 const MAX_CODE_RESENDS = 3;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -48,6 +53,7 @@ function errorMessage(data: unknown): string {
     weak_password: "Le mot de passe doit contenir au moins 8 caractères, 1 majuscule et 1 caractère spécial.",
     invalid_email: "Format d'email invalide.",
     wrong_password: "Le mot de passe actuel est incorrect.",
+    same_password: "Le nouveau mot de passe doit être différent de l'actuel.",
     captcha_failed: "Vérification anti-robot échouée, merci de cocher la case et réessayer.",
     invalid_or_expired_token: "Ce lien de réinitialisation est invalide ou a expiré.",
     network_error: "Impossible de contacter le serveur, réessayez dans un instant.",
@@ -261,28 +267,11 @@ export function useAccount() {
       setVerifyMessageOk(false);
       return;
     }
-
-    if (verifyPurpose === "password") {
-      const res = await api.confirmPasswordChange(verifyCode.trim());
-      setVerifyBusy(false);
-      if (res.ok && res.data && (res.data as { ok?: boolean }).ok) {
-        stopVerifyCountdown();
-        setVerifyExpiresAt(null);
-        setVerifyResendCount(0);
-        setPopupMessage("Votre mot de passe a été modifié avec succès.");
-        setPopupConfirm(null);
-        setVerifyPurpose(null);
-        setVerifyCode("");
-        return;
-      }
-      setVerifyMessage(verifyErrorMessage(res.data));
-      setVerifyMessageOk(false);
-    }
   }
 
   // Shared by AuthPanel's signup resend (pendingId, no local fields needed)
-  // and the email/password-change resend below (re-submits newEmail/curPwd/
-  // newPwd, kept in this same hook — see the comment on those fields above).
+  // and the email-change resend below (re-submits newEmail/emailCurPwd, kept
+  // in this same hook — see the comment on those fields above).
   async function resendCode() {
     if (verifyExpiresAt && Date.now() < verifyExpiresAt) return;
     // 3 renvois consécutifs et on arrête de mailer — probablement une
@@ -302,7 +291,6 @@ export function useAccount() {
     setVerifyMessage(null);
     let res;
     if (verifyPurpose === "email") res = await api.requestEmailChange(newEmail, emailCurPwd);
-    else if (verifyPurpose === "password") res = await api.requestPasswordChange(curPwd, newPwd);
     else res = await api.resendSignupCode(pendingSignupId!);
     if (res.ok) {
       const data = res.data as { expiresAt: string };
@@ -393,22 +381,25 @@ export function useAccount() {
       setPopupMessage("Les deux mots de passe ne correspondent pas.");
       return;
     }
+    if (newPwd === curPwd) {
+      setPopupMessage("Le nouveau mot de passe doit être différent de l'actuel.");
+      return;
+    }
     setSettingsBusy(true);
-    const res = await api.requestPasswordChange(curPwd, newPwd);
+    // Single call, no email confirmation round-trip — the current password
+    // above already proves account ownership (see api-client.ts's
+    // changePassword and its server route for the reasoning).
+    const res = await api.changePassword(curPwd, newPwd);
     setSettingsBusy(false);
     if (!res.ok) {
       setPopupMessage(errorMessage(res.data));
       return;
     }
-    const data = res.data as { expiresAt: string };
-    setPopupMessage(`Un code à 6 chiffres a été envoyé à ${authEmail}. Saisissez-le pour confirmer ce changement.`);
-    setPopupConfirm("verify-code");
-    setVerifyPurpose("password");
-    setVerifyCode("");
-    setVerifyMessage(null);
-    setVerifyExpiresAt(parseExpiresAt(data.expiresAt));
-    setVerifyResendCount(0);
-    startVerifyCountdown();
+    setCurPwd("");
+    setNewPwd("");
+    setConfirmPwd("");
+    setPopupMessage("Votre mot de passe a été modifié avec succès.");
+    setPopupConfirm(null);
   }
 
   function requestDelete() {

@@ -185,22 +185,34 @@ export interface ManifoldCheck {
 const DEGENERATE_AREA_MM2 = 1e-6;
 
 // Real-world STL/OBJ exports (even from PrusaSlicer's own accepted files)
-// virtually always carry a handful of boundary/non-manifold edges from
-// floating-point precision or minor CAD-tessellation seams — confirmed live
-// on the same reference Benchy file: 60 boundary edges out of 337,725
-// (0.018%) after degenerate-facet removal, on a file PrusaSlicer itself
-// calls manifold. A strict "zero bad edges" rule would reject files real
-// slicers accept fine; this tolerates that same kind of noise while still
-// catching genuinely broken meshes (a real hole/missing wall pushes this
-// fraction far higher, easily into the tens of percent).
+// virtually always carry a handful of boundary edges from floating-point
+// precision or minor CAD-tessellation seams — confirmed live on the same
+// reference Benchy file: 60 boundary edges out of 337,725 (0.018%) after
+// degenerate-facet removal, on a file PrusaSlicer itself calls manifold. A
+// strict "zero bad edges" rule would reject files real slicers accept fine;
+// this tolerates that same kind of noise while still catching genuinely
+// broken meshes (a real hole/missing wall pushes this fraction far higher,
+// easily into the tens of percent).
 const MAX_BAD_EDGE_FRACTION = 0.01;
 
 // Replaces PrusaSlicer's `--info` manifold/number_of_parts fields: a closed
 // 2-manifold mesh has every edge shared by exactly 2 triangles (one on each
-// side) — a boundary edge (count 1, a hole) or a non-manifold edge (count
-// >2) both fail printability, judged as a tolerance (see
-// MAX_BAD_EDGE_FRACTION) rather than an absolute rule. "parts" = connected
-// components over the shared-edge adjacency graph, via union-find.
+// side). "parts" = connected components over the shared-edge adjacency
+// graph, via union-find.
+//
+// Only an ODD edge count counts as bad, not just "count !== 2" — a real
+// customer file (a bowl, exported with its shell duplicated, a common CAD
+// export artifact — e.g. a revolved surface written out twice) had 21.6% of
+// its edges at count 4 or 8, tripping the old "!= 2" rule outright despite
+// being genuinely fine to print (confirmed on that same file: no actual
+// gaps; real slicers treat duplicate overlapping surfaces as reinforcing
+// the same wall, not a defect). Verified with a direct test before this
+// change: a closed cube's edges are all count=2; removing one triangle (a
+// real hole) leaves that hole's boundary at count=1 — ODD; duplicating a
+// whole closed sub-shell leaves its edges at count=4, 6, 8... — always
+// EVEN, never a genuine gap. A single missing triangle always drops its 3
+// edges from 2 to 1 (odd) — a real opening can never leave a clean even
+// count behind, so this distinction doesn't trade away real-hole detection.
 export function checkManifoldAndParts(triangles: Triangle[]): ManifoldCheck {
   const clean = triangles.filter((t) => triangleArea(t.v) > DEGENERATE_AREA_MM2);
   if (clean.length === 0) return { manifold: false, parts: 0 };
@@ -244,7 +256,7 @@ export function checkManifoldAndParts(triangles: Triangle[]): ManifoldCheck {
 
   let badEdges = 0;
   for (const count of edgeCount.values()) {
-    if (count !== 2) badEdges++;
+    if (count % 2 !== 0) badEdges++;
   }
   const manifold = badEdges / edgeCount.size <= MAX_BAD_EDGE_FRACTION;
 

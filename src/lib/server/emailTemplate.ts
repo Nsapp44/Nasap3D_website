@@ -98,7 +98,7 @@ export function passwordResetContentHtml(resetUrl: string): string {
 </td></tr>
 </table>`,
     p(
-      "Ce lien expire dans 60 minutes. Si vous n'avez pas demandé cette réinitialisation, aucune action n'est requise.",
+      "Ce lien expire dans 3 minutes. Si vous n'avez pas demandé cette réinitialisation, aucune action n'est requise.",
       { small: true, margin: "0" },
     ),
   ].join("\n");

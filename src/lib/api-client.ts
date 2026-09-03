@@ -99,11 +99,12 @@ export const api = {
   async confirmEmailChange(code: string) {
     return request("POST", "/account/email/confirm-change", { code });
   },
-  async requestPasswordChange(currentPassword: string, newPassword: string) {
-    return request("POST", "/account/password/request-change", { currentPassword, newPassword });
-  },
-  async confirmPasswordChange(code: string) {
-    return request("POST", "/account/password/confirm-change", { code });
+  // No email confirmation step — the current password already proves
+  // account ownership, unlike an email change (which proves ownership of an
+  // inbox not yet linked to the account). See the server route's own
+  // comment for the full reasoning.
+  async changePassword(currentPassword: string, newPassword: string) {
+    return request("POST", "/account/password/change", { currentPassword, newPassword });
   },
   async deleteAccount(currentPassword: string) {
     return request("DELETE", "/account", { currentPassword });

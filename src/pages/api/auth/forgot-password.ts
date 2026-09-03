@@ -27,14 +27,14 @@ export const POST = apiHandler(async ({ request, clientAddress }) => {
       data: {
         userId: user.id,
         tokenHash: hashToken(raw),
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        expiresAt: new Date(Date.now() + 3 * 60 * 1000),
       },
     });
     const resetUrl = `${process.env.FRONT_URL || "http://localhost:3000"}/compte?resetToken=${raw}`;
     await sendMail(
       user.email,
       "Réinitialisation de votre mot de passe Nasap3D",
-      `Cliquez sur ce lien pour choisir un nouveau mot de passe (valable 1h) : ${resetUrl}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez cet email.`,
+      `Cliquez sur ce lien pour choisir un nouveau mot de passe (valable 3 minutes) : ${resetUrl}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez cet email.`,
       renderEmailHtml("Réinitialisation de votre mot de passe Nasap3D", passwordResetContentHtml(resetUrl)),
     );
   }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../../lib/api-client";
 import { useAdminAuth } from "../../hooks/useAdminAuth";
+import NavAuthIcon from "../NavAuthIcon";
 import OrdersTab from "./OrdersTab";
 import StockTab from "./StockTab";
 
@@ -46,12 +47,19 @@ export default function AdminPage() {
   return (
     <div className="admin-page">
       <div className="admin-header">
-        <a href="/" className="logo-link">
+        <a href="/admin" className="logo-link">
           <img src="/assets/logo-blanc-full.png" alt="Nasap3D" className="logo-img" />
           <span className="admin-badge">ADMIN</span>
         </a>
         {authStatus === "ok" && (
-          <>
+          <div className="admin-header-right">
+            {/* Toujours visible, jamais dans le burger — même logique que
+                .header-account sur le site public (Header.astro) : l'accès
+                au compte ne doit pas dépendre d'un menu déroulant replié. */}
+            <div className="admin-quick-account">
+              <a href="/compte" className="nav-hover-scale">Compte</a>
+              <NavAuthIcon />
+            </div>
             <button
               type="button"
               className={`admin-burger${mobileNavOpen ? " is-open" : ""}`}
@@ -78,7 +86,7 @@ export default function AdminPage() {
                 </span>
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
 
@@ -126,6 +134,11 @@ export default function AdminPage() {
         .logo-link { display: flex; align-items: center; gap: 10px; text-decoration: none; }
         .logo-img { height: 34px; width: auto; }
         .admin-badge { font: 700 9px 'Inter',sans-serif; color: #161514; background: #ff5a3c; border-radius: 4px; padding: 3px 7px; margin-left: 4px; }
+        .admin-header-right { display: flex; align-items: center; gap: 28px; }
+        .admin-quick-account { display: flex; align-items: center; gap: 18px; font: 500 12px 'Inter',sans-serif; color: rgba(255,255,255,.75); }
+        .admin-quick-account a { text-decoration: none; color: inherit; display: inline-flex; align-items: center; }
+        .nav-hover-scale { transition: transform .2s ease, color .2s ease; }
+        .nav-hover-scale:hover { transform: scale(1.08); color: #ff5a3c; }
         .admin-nav { display: flex; align-items: center; gap: 32px; }
         .admin-tabs { display: flex; gap: 26px; font: 500 13px 'Inter',sans-serif; color: rgba(255,255,255,.62); }
         .admin-tab { cursor: pointer; padding-bottom: 4px; color: rgba(255,255,255,.5); font-weight: 500; border-bottom: 2px solid transparent; }
@@ -140,6 +153,8 @@ export default function AdminPage() {
         .admin-burger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
         @media (max-width: 720px) {
           .admin-header { padding: 14px 20px; }
+          .admin-header-right { gap: 14px; }
+          .admin-quick-account { gap: 10px; }
           .admin-burger { display: flex; }
           .admin-nav {
             display: none;
@@ -159,6 +174,14 @@ export default function AdminPage() {
           .admin-tabs { flex-direction: column; gap: 16px; }
           .admin-tab { padding-bottom: 0; border-bottom: none; border-left: 2px solid transparent; padding-left: 10px; }
           .admin-tab.active { border-bottom: none; border-left: 2px solid #ff5a3c; }
+        }
+        @media (max-width: 360px) {
+          .logo-link { gap: 6px; }
+          .logo-img { height: 26px; }
+          .admin-badge { margin-left: 0; padding: 3px 6px; }
+          .admin-header-right { gap: 10px; }
+          .admin-quick-account { gap: 8px; }
+          .admin-quick-account a:first-child { font-size: 11px; }
         }
         .auth-msg { max-width: 1000px; margin: 0 auto; padding: 60px 24px; text-align: center; font: 500 12px 'Inter',sans-serif; color: rgba(255,255,255,.4); }
         .auth-denied { max-width: 600px; margin: 60px auto; padding: 0 24px; text-align: center; }
