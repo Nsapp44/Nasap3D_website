@@ -153,13 +153,31 @@ export function useQuoteWizard() {
     const worker = getGeometryWorker();
     const id = ++geometryRequestIdRef.current;
     return new Promise((resolve, reject) => {
+      function cleanup() {
+        worker.removeEventListener("message", onMessage);
+        worker.removeEventListener("error", onError);
+      }
       function onMessage(event: MessageEvent) {
         if (event.data.id !== id) return; // a different, still-in-flight request
-        worker.removeEventListener("message", onMessage);
+        cleanup();
         if (event.data.error) reject(new Error(event.data.error));
         else resolve({ positions: event.data.positions, manifold: event.data.manifold });
       }
+      // Without this, a worker that fails to even load (a 404 on the
+      // script, a syntax error, a browser refusing module workers) never
+      // sends a 'message' at all — onMessage above would then never fire,
+      // and this promise would hang forever instead of rejecting. That
+      // only ever hangs the one visitor's own upload (this Promise lives
+      // in their browser tab, not the server), but it's still a real gap:
+      // prepareOrientedModel's caller would wait on it indefinitely instead
+      // of falling back to the as-uploaded file the way every other failure
+      // path here already does.
+      function onError(event: ErrorEvent) {
+        cleanup();
+        reject(new Error(event.message || "geometry worker failed to load"));
+      }
       worker.addEventListener("message", onMessage);
+      worker.addEventListener("error", onError);
       worker.postMessage({ id, fileBuffer, ext }, [fileBuffer]);
     });
   }
