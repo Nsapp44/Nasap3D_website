@@ -48,11 +48,7 @@ interface PreviewHandle {
   zoomOut?(): void;
 }
 
-interface Triangle {
-  v: [number, number, number][];
-}
 interface OrientedModel {
-  triangles: Triangle[];
   positions: Float32Array;
   manifold: boolean;
 }
@@ -130,6 +126,43 @@ export function useQuoteWizard() {
   // did it at all — the viewer always showed the raw as-uploaded rotation,
   // never what actually got sliced/priced/printed.
   const orientedModelPromiseRef = useRef<Promise<OrientedModel | null> | null>(null);
+  // One persistent geometryWorker.js instance, created lazily on first
+  // upload and reused for every file afterward (a fresh Worker per upload
+  // would mean re-fetching/re-parsing its module graph each time) — see
+  // getGeometryWorker below. Real report: the upload-time parse+orient+
+  // manifold-check pipeline used to run inline on the main thread, so a big
+  // file froze the page (no scrolling, no other clicks registering) for as
+  // long as it took — moving it here doesn't make any single step faster,
+  // but it stops blocking everything else while it runs.
+  const geometryWorkerRef = useRef<Worker | null>(null);
+  const geometryRequestIdRef = useRef(0);
+
+  function getGeometryWorker(): Worker {
+    if (!geometryWorkerRef.current) {
+      geometryWorkerRef.current = new Worker(new URL("/geometryWorker.js", window.location.origin), { type: "module" });
+    }
+    return geometryWorkerRef.current;
+  }
+
+  // Wraps one request/response round-trip with the worker in a Promise,
+  // keyed by an incrementing id so overlapping requests (a second file
+  // dropped before the first one's worker response arrives) never get
+  // crossed — matches a plain HTTP request/response pattern, just over
+  // postMessage instead of fetch.
+  function runInGeometryWorker(fileBuffer: ArrayBuffer, ext: string): Promise<{ positions: Float32Array; manifold: boolean }> {
+    const worker = getGeometryWorker();
+    const id = ++geometryRequestIdRef.current;
+    return new Promise((resolve, reject) => {
+      function onMessage(event: MessageEvent) {
+        if (event.data.id !== id) return; // a different, still-in-flight request
+        worker.removeEventListener("message", onMessage);
+        if (event.data.error) reject(new Error(event.data.error));
+        else resolve({ positions: event.data.positions, manifold: event.data.manifold });
+      }
+      worker.addEventListener("message", onMessage);
+      worker.postMessage({ id, fileBuffer, ext }, [fileBuffer]);
+    });
+  }
 
   const effectiveScale = useCallback(() => {
     const pct = typeof scalePct === "string" ? parseFloat(scalePct) : scalePct;
@@ -159,21 +192,23 @@ export function useQuoteWizard() {
   // best-effort spirit as the rest of this client-side path (the server
   // always independently re-validates and falls back on its own full slice
   // regardless).
+  //
+  // The actual parse+orient+manifold-check work happens in geometryWorker.js
+  // (see runInGeometryWorker above), not inline here — real report: on a
+  // large file this used to block the main thread for the whole duration
+  // (confirmed live: up to ~5s on a 1M-triangle 3MF before threeMfLoader.js
+  // was also sped up — see its own comment), freezing the page (no
+  // scrolling, no other clicks) for as long as it took. Moving it off-thread
+  // doesn't make the work itself faster, just stops it from blocking
+  // everything else meanwhile.
   function prepareOrientedModel(targetFile: File): Promise<OrientedModel | null> {
     const promise = (async (): Promise<OrientedModel | null> => {
       try {
         const ext = "." + targetFile.name.split(".").pop()!.toLowerCase();
-        const { isKiriSliceable, loadTriangles, orientTriangles, trianglesToPositions } = await dynamicImport("/kiri-slicer.js");
+        const { isKiriSliceable } = await dynamicImport("/kiri-slicer.js");
         if (!isKiriSliceable(ext)) return null;
         const buffer = await targetFile.arrayBuffer();
         if (fileRef.current !== targetFile) return null;
-        const rawTriangles = await loadTriangles(buffer, ext);
-        if (fileRef.current !== targetFile) return null;
-        const triangles = await orientTriangles(rawTriangles);
-        if (fileRef.current !== targetFile) return null;
-        // Real geometry, not an encoded file format — the preview (see
-        // renderInto below) renders this directly, no STL round-trip.
-        const positions = trianglesToPositions(triangles);
         // Bad-edge-fraction heuristic (orientationSuggest.js's
         // checkManifoldAndParts, ported from orientation.ts's server-side
         // version) — NOT the strict Manifold-library check
@@ -186,14 +221,9 @@ export function useQuoteWizard() {
         // rejection right at upload, not just a warning — so a flood of
         // genuinely broken files never even reaches a slice attempt,
         // client or server.
-        let manifold = true;
-        try {
-          const { checkManifoldAndParts } = await dynamicImport("/orientationSuggest.js");
-          manifold = checkManifoldAndParts(triangles).manifold;
-        } catch (e) {
-          console.warn("client-side manifold check failed, assuming ok", e);
-        }
-        return { triangles, positions, manifold };
+        const { positions, manifold } = await runInGeometryWorker(buffer, ext);
+        if (fileRef.current !== targetFile) return null;
+        return { positions, manifold };
       } catch (e) {
         console.warn("prepareOrientedModel failed, falling back to as-uploaded", e);
         return null;
@@ -295,12 +325,13 @@ export function useQuoteWizard() {
   // Best-effort, approximate. Casts a ray inward from every triangle's
   // center along its inverse normal, same idea a slicer uses for a
   // wall-thickness check. Never blocks the quote, just flags a likely-thin
-  // area. Runs on the already-oriented triangle list (see
-  // prepareOrientedModel) — same geometry that gets sliced/priced/produced,
-  // and no longer STL-only (that restriction was only ever about the old
-  // STLLoader-based parsing this function used to do itself; now that
-  // orientation already normalized every accepted format into a flat
-  // triangle list upstream, OBJ/3MF get checked too, for free).
+  // area. Runs on the already-oriented flat positions array (see
+  // prepareOrientedModel/geometryWorker.js) — same geometry that gets
+  // sliced/priced/produced, and no longer STL-only (that restriction was
+  // only ever about the old STLLoader-based parsing this function used to
+  // do itself; now that orientation already normalized every accepted
+  // format into this same flat shape upstream, OBJ/3MF get checked too, for
+  // free).
   //
   // BVH-accelerated (three-mesh-bvh, vendored — see
   // public/vendor/three-mesh-bvh/THIRD_PARTY_NOTICES.md): each raycast used
@@ -309,8 +340,8 @@ export function useQuoteWizard() {
   // the whole mesh. With a real BVH each query is ~O(log n), so the sample
   // cap is gone — every triangle gets tested now, the same accuracy
   // improvement for free.
-  async function checkThinWalls(targetFile: File, triangles: Triangle[] | null) {
-    if (!triangles || triangles.length === 0) return;
+  async function checkThinWalls(targetFile: File, positions: Float32Array | null) {
+    if (!positions || positions.length === 0) return;
     try {
       const THREE = await dynamicImport("/vendor/three/three.module.min.js");
       const { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } = await dynamicImport(
@@ -323,17 +354,8 @@ export function useQuoteWizard() {
       THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
       THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
-      const triCount = triangles.length;
+      const triCount = positions.length / 9;
       if (triCount === 0) return;
-      const positions = new Float32Array(triCount * 9);
-      let pi = 0;
-      for (const t of triangles) {
-        for (const p of t.v) {
-          positions[pi++] = p[0];
-          positions[pi++] = p[1];
-          positions[pi++] = p[2];
-        }
-      }
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
       const pos = geometry.attributes.position;
@@ -457,6 +479,10 @@ export function useQuoteWizard() {
       clearTimeout(toastTimerRef.current || undefined);
       if (previewHandleRef.current) previewHandleRef.current.dispose();
       if (analysisPreviewHandleRef.current) analysisPreviewHandleRef.current.dispose();
+      if (geometryWorkerRef.current) {
+        geometryWorkerRef.current.terminate();
+        geometryWorkerRef.current = null;
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -582,15 +608,16 @@ export function useQuoteWizard() {
   // else's on the server. No manifold pre-check here — that already ran
   // and blocked at upload (see prepareOrientedModel), so anything reaching
   // this function has already passed it.
-  // `triangles`: the already-oriented list from prepareOrientedModel — null
-  // means orientation itself failed/unavailable for this file, in which
-  // case this returns null immediately and the server's own full slice
-  // fallback handles everything (same best-effort spirit as before).
+  // `positions`: the already-oriented flat array from prepareOrientedModel
+  // (geometryWorker.js) — null means orientation itself failed/unavailable
+  // for this file, in which case this returns null immediately and the
+  // server's own full slice fallback handles everything (same best-effort
+  // spirit as before).
   async function tryClientSlice(
     targetFile: File,
-    triangles: Triangle[] | null,
+    positions: Float32Array | null,
   ): Promise<{ weightG: number; estimatedTimeMin: number } | null> {
-    if (!triangles) return null;
+    if (!positions) return null;
     try {
       const mat = materials.find((m) => m.key === material);
       if (!mat) return null;
@@ -598,7 +625,7 @@ export function useQuoteWizard() {
       const { sliceWithKiri } = await dynamicImport("/kiri-slicer.js");
       const layerHeightMm = CLIENT_QUALITY_LAYER_HEIGHT[quality] ?? 0.2;
       const stats = await sliceWithKiri({
-        orientedTriangles: triangles,
+        orientedPositions: positions,
         deviceJson: buildKiriDevice(),
         processJson: buildKiriProcess(quality, layerHeightMm, infill, material),
       });
@@ -623,9 +650,9 @@ export function useQuoteWizard() {
     const targetFile = file;
     const oriented = orientedModelPromiseRef.current ? await orientedModelPromiseRef.current : null;
     if (fileRef.current !== targetFile) return; // superseded while awaiting orientation
-    const triangles = oriented ? oriented.triangles : null;
-    const thinWallPromise = checkThinWalls(targetFile, triangles);
-    const clientSlice = await tryClientSlice(targetFile, triangles);
+    const positions = oriented ? oriented.positions : null;
+    const thinWallPromise = checkThinWalls(targetFile, positions);
+    const clientSlice = await tryClientSlice(targetFile, positions);
     const res = await api.submitQuote({
       file,
       material,

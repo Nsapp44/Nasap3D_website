@@ -149,18 +149,28 @@ function parseKiriGcodeStats(gcode) {
 // UNORIENTED — this still runs orientTriangles() on it) when the caller has
 // one, to avoid parsing the same file twice.
 // `orientedTriangles`: optional — pass an ALREADY-ORIENTED triangle list
-// (from a prior orientTriangles() call, e.g. the one useQuoteWizard.ts runs
-// once at upload time for the preview) to skip both parsing and
+// (from a prior orientTriangles() call) to skip both parsing and
 // reorientation entirely. Takes priority over `rawTriangles` when given.
+// `orientedPositions`: optional, and takes priority over both of the above
+// — the flat position array useQuoteWizard.ts's geometryWorker.js already
+// produces (see that file's own comment for why it hands back this flat
+// shape and not Triangle[]). Skips trianglesToBinaryStl's own
+// triangles→positions conversion entirely since this is already that exact
+// shape.
 // Matching the server's own choice matters here — the stored file (and any
 // server-side fallback slice) gets this exact same suggestion applied, so
 // the client's trusted weight/time has to agree with what actually ends up
 // printed, not some other orientation.
-export async function sliceWithKiri({ fileBuffer, ext, deviceJson, processJson, rawTriangles: preParsed, orientedTriangles }) {
+export async function sliceWithKiri({ fileBuffer, ext, deviceJson, processJson, rawTriangles: preParsed, orientedTriangles, orientedPositions }) {
   const { geometryToBinaryStl } = await import('/stlExport.js');
 
-  const triangles = orientedTriangles || (await orientTriangles(preParsed || (await loadTriangles(fileBuffer, ext))));
-  const stlBuffer = trianglesToBinaryStl(triangles, geometryToBinaryStl);
+  let stlBuffer;
+  if (orientedPositions) {
+    stlBuffer = geometryToBinaryStl(orientedPositions, null);
+  } else {
+    const triangles = orientedTriangles || (await orientTriangles(preParsed || (await loadTriangles(fileBuffer, ext))));
+    stlBuffer = trianglesToBinaryStl(triangles, geometryToBinaryStl);
+  }
 
   const { newEngine } = await loadKiri();
   // workURL: engine.js's own default worker script path is a hardcoded

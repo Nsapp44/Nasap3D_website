@@ -13,8 +13,15 @@ import { XMLParser } from "fast-xml-parser";
 import type { Triangle } from "./orientation";
 
 const EOCD_SIGNATURE = 0x06054b50;
+const ZIP64_EOCD_LOCATOR_SIGNATURE = 0x07064b50;
+const ZIP64_EOCD_SIGNATURE = 0x06064b50;
+const ZIP64_EXTRA_TAG = 0x0001;
 const CENTRAL_DIR_SIGNATURE = 0x02014b50;
 const LOCAL_FILE_SIGNATURE = 0x04034b50;
+// The classic 32-bit ZIP fields (offsets, sizes, entry counts) use this
+// value as a sentinel meaning "see the ZIP64 extra field instead" — never a
+// real value on its own (it'd mean a 4GB+ field).
+const ZIP64_SENTINEL_32 = 0xffffffff;
 
 function findEndOfCentralDirectory(buffer: Buffer): number {
   // EOCD is a fixed 22-byte record optionally followed by a comment (up to
@@ -27,22 +34,107 @@ function findEndOfCentralDirectory(buffer: Buffer): number {
   throw new Error("not a valid zip file (no end-of-central-directory record)");
 }
 
+// Real customer file: a 3MF only ~120KB, well under any size that actually
+// needs ZIP64, but written with ZIP64 extensions throughout regardless (the
+// writer's own default, not size-driven) — every central/local directory
+// field this reader cares about (entry count, CD offset, compressed size,
+// local header offset) was set to ZIP64_SENTINEL_32, with the real 64-bit
+// values sitting in a ZIP64 "extra field" instead. Without this, the
+// sentinel was read as a literal (4294967295), and any subsequent access at
+// that bogus offset failed outright — this file wouldn't load at all.
+// Values are read as the low 32 bits of each 8-byte little-endian field
+// (i.e. ignoring the always-zero high 4 bytes) — safe for anything under
+// 4GB / 4 billion entries, comfortably true for anything this project's
+// upload limit allows.
+function readZip64EndOfCentralDirectory(buffer: Buffer, classicEocdOffset: number): { entryCount: number; cdOffset: number } {
+  // The locator is a fixed 20-byte record that must immediately precede
+  // the classic EOCD record, per spec — not found by scanning (nothing to
+  // search for reliably; this fixed position is the actual guarantee).
+  const locatorOffset = classicEocdOffset - 20;
+  if (locatorOffset < 0 || buffer.readUInt32LE(locatorOffset) !== ZIP64_EOCD_LOCATOR_SIGNATURE) {
+    throw new Error("zip64 sentinel present but no zip64 end-of-central-directory locator found");
+  }
+  const eocd64Offset = buffer.readUInt32LE(locatorOffset + 8);
+  if (buffer.readUInt32LE(eocd64Offset) !== ZIP64_EOCD_SIGNATURE) {
+    throw new Error("malformed zip64 end-of-central-directory record");
+  }
+  return {
+    entryCount: buffer.readUInt32LE(eocd64Offset + 32),
+    cdOffset: buffer.readUInt32LE(eocd64Offset + 48),
+  };
+}
+
+// The ZIP64 extra field (tag 0x0001) only includes the fields that are
+// actually flagged 0xFFFFFFFF in the MAIN record, in this fixed order:
+// uncompressed size, compressed size, local header offset, disk number —
+// each present only if its own main-record field was flagged, independent
+// of whether the caller here actually wants that value. So `hasUncompSize`
+// has to reflect the main record's own uncompressed-size field, not
+// whether this function's caller cares about it — otherwise the wrong
+// number of bytes gets skipped and every later field is misread.
+function readZip64Extra(
+  buffer: Buffer,
+  extraStart: number,
+  extraLen: number,
+  hasUncompSize: boolean,
+  needCompSize: boolean,
+  needLocalOffset: boolean,
+): { compSize?: number; localOffset?: number } | null {
+  let pos = extraStart;
+  const end = extraStart + extraLen;
+  while (pos + 4 <= end) {
+    const tag = buffer.readUInt16LE(pos);
+    const size = buffer.readUInt16LE(pos + 2);
+    if (tag === ZIP64_EXTRA_TAG) {
+      let p = pos + 4;
+      let compSize: number | undefined, localOffset: number | undefined;
+      if (hasUncompSize) p += 8;
+      if (needCompSize) {
+        compSize = buffer.readUInt32LE(p);
+        p += 8;
+      }
+      if (needLocalOffset) {
+        localOffset = buffer.readUInt32LE(p);
+        p += 8;
+      }
+      return { compSize, localOffset };
+    }
+    pos += 4 + size;
+  }
+  return null;
+}
+
 function extractZipEntry(buffer: Buffer, entryName: string): Buffer {
   const eocdOffset = findEndOfCentralDirectory(buffer);
-  const entryCount = buffer.readUInt16LE(eocdOffset + 10);
+  let entryCount = buffer.readUInt16LE(eocdOffset + 10);
   let cdOffset = buffer.readUInt32LE(eocdOffset + 16);
+  if (entryCount === 0xffff || cdOffset === ZIP64_SENTINEL_32) {
+    const real = readZip64EndOfCentralDirectory(buffer, eocdOffset);
+    entryCount = real.entryCount;
+    cdOffset = real.cdOffset;
+  }
 
   for (let i = 0; i < entryCount; i++) {
     if (buffer.readUInt32LE(cdOffset) !== CENTRAL_DIR_SIGNATURE) {
       throw new Error("malformed zip central directory");
     }
     const method = buffer.readUInt16LE(cdOffset + 10);
-    const compressedSize = buffer.readUInt32LE(cdOffset + 20);
+    const uncompSizeRaw = buffer.readUInt32LE(cdOffset + 24);
+    let compressedSize = buffer.readUInt32LE(cdOffset + 20);
     const nameLen = buffer.readUInt16LE(cdOffset + 28);
     const extraLen = buffer.readUInt16LE(cdOffset + 30);
     const commentLen = buffer.readUInt16LE(cdOffset + 32);
-    const localHeaderOffset = buffer.readUInt32LE(cdOffset + 42);
+    let localHeaderOffset = buffer.readUInt32LE(cdOffset + 42);
     const name = buffer.toString("utf8", cdOffset + 46, cdOffset + 46 + nameLen);
+
+    const needCompSize = compressedSize === ZIP64_SENTINEL_32;
+    const needLocalOffset = localHeaderOffset === ZIP64_SENTINEL_32;
+    if (needCompSize || needLocalOffset) {
+      const real = readZip64Extra(buffer, cdOffset + 46 + nameLen, extraLen, uncompSizeRaw === ZIP64_SENTINEL_32, needCompSize, needLocalOffset);
+      if (!real) throw new Error(`zip64 sentinel present but no zip64 extra field found for ${name}`);
+      if (needCompSize) compressedSize = real.compSize!;
+      if (needLocalOffset) localHeaderOffset = real.localOffset!;
+    }
 
     if (name === entryName) {
       const lh = localHeaderOffset;
