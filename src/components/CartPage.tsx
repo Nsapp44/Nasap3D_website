@@ -317,7 +317,7 @@ export default function CartPage() {
             {cart.lines.map((item: CartLine) => (
               <div key={item.id} className="line-card">
                 <div className="line-thumb-slot">
-                  <CartLineThumbnail quoteJobId={item.quoteJobId} fileName={item.fileName} colorHex={item.colorHex || "#ff5a3c"} />
+                  <CartLineThumbnail quoteJobId={item.quoteJobId} colorHex={item.colorHex || "#ff5a3c"} />
                 </div>
                 <div>
                   <div className="line-filename">{item.fileName}</div>
@@ -402,7 +402,7 @@ export default function CartPage() {
               {cart.lines.map((item: CartLine) => (
                 <div key={item.id} className="mini-line-card">
                   <div className="mini-thumb-slot">
-                    <CartLineThumbnail quoteJobId={item.quoteJobId} fileName={item.fileName} colorHex={item.colorHex || "#ff5a3c"} />
+                    <CartLineThumbnail quoteJobId={item.quoteJobId} colorHex={item.colorHex || "#ff5a3c"} />
                   </div>
                   <div>
                     <div className="mini-filename">{item.fileName}</div>
