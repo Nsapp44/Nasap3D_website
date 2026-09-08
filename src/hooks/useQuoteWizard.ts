@@ -71,7 +71,18 @@ export function useQuoteWizard() {
   const [previewUnavailable, setPreviewUnavailable] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [unit, setUnit] = useState("mm");
+  // scalePct: the raw, live text of the input — updates on every keystroke,
+  // needed for the field to behave like a normal controlled input while
+  // typing. committedScalePct: what's actually used for the 3D preview, the
+  // real-size display, and the printer-fit check — only updates once the
+  // visitor finishes (blur or Enter), not on every digit. Real report:
+  // typing "200" used to run the scale through 2%, then 20%, then 200% in
+  // succession, each one re-scaling the preview and re-evaluating the
+  // too-large warning — a real, visible jump each keystroke, not just a
+  // cosmetic flicker (the "Suivant" block in next() reads scaleFitsPrinter,
+  // which read the live value too).
   const [scalePct, setScalePct] = useState<string | number>(100);
+  const [committedScalePct, setCommittedScalePct] = useState<number>(100);
   const [sizeMm, setSizeMm] = useState<{ x: number; y: number; z: number } | null>(null);
   const [thinWallWarning, setThinWallWarning] = useState(false);
   const [manifoldWarning, setManifoldWarning] = useState(false);
@@ -183,9 +194,8 @@ export function useQuoteWizard() {
   }
 
   const effectiveScale = useCallback(() => {
-    const pct = typeof scalePct === "string" ? parseFloat(scalePct) : scalePct;
-    return (UNIT_TO_MM[unit] || 1) * ((Number.isFinite(pct) ? pct : 100) / 100);
-  }, [unit, scalePct]);
+    return (UNIT_TO_MM[unit] || 1) * (committedScalePct / 100);
+  }, [unit, committedScalePct]);
 
   const scaleFitsPrinter = useCallback(() => {
     if (!sizeMm) return true;
@@ -533,10 +543,15 @@ export function useQuoteWizard() {
       setFileError("Format non supporté — utilisez .stl, .obj ou .3mf");
       return;
     }
-    if (f.size > 150 * 1024 * 1024) {
-      setFileError("Fichier trop volumineux (150 Mo max)");
+    if (f.size > 500 * 1024 * 1024) {
+      setFileError("Fichier trop volumineux (500 Mo max)");
       return;
     }
+    // Real report: dropping a new file kept whatever scale was left over
+    // from the previous one — meaningless (and easy to miss) for an
+    // unrelated part, so a fresh upload always starts from 100% again.
+    setScalePct(100);
+    setCommittedScalePct(100);
     setFileState(f);
     setFileError(null);
   }
@@ -605,18 +620,39 @@ export function useQuoteWizard() {
     setFile(e.dataTransfer.files && e.dataTransfer.files[0]);
   }
 
+  // Shared by blur/Enter (committing whatever's currently typed) and the
+  // unit dropdown (switching units mid-edit implicitly commits the scale
+  // too — there's no reason to leave a half-typed value stranded uncommitted
+  // once the visitor's moved on to something else). Invalid/empty input
+  // commits as 100%, same fallback effectiveScale() always had, and resets
+  // the visible text back to a clean value instead of leaving garbage in
+  // the field after blur.
+  function commitScalePct() {
+    const pct = typeof scalePct === "string" ? parseFloat(scalePct) : scalePct;
+    const clean = Number.isFinite(pct) && pct > 0 ? Math.round(pct * 100) / 100 : 100;
+    setScalePct(clean);
+    setCommittedScalePct(clean);
+    setTimeout(applyScalePreview, 0);
+  }
   function onUnitChange(e: React.ChangeEvent<HTMLSelectElement>) {
     setUnit(e.target.value);
-    setTimeout(applyScalePreview, 0);
+    commitScalePct();
   }
   function onScalePctChange(e: React.ChangeEvent<HTMLInputElement>) {
     setScalePct(e.target.value);
-    setTimeout(applyScalePreview, 0);
+  }
+  function onScalePctBlur() {
+    commitScalePct();
+  }
+  function onScalePctKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") e.currentTarget.blur(); // triggers onScalePctBlur
   }
   function bumpScalePct(delta: number) {
     const cur = typeof scalePct === "string" ? parseFloat(scalePct) : scalePct;
     const next = Math.max(0.01, (Number.isFinite(cur) ? cur : 100) + delta);
-    setScalePct(Math.round(next * 100) / 100);
+    const clean = Math.round(next * 100) / 100;
+    setScalePct(clean);
+    setCommittedScalePct(clean);
     setTimeout(applyScalePreview, 0);
   }
 
@@ -689,6 +725,7 @@ export function useQuoteWizard() {
         non_manifold_model: "Le modèle contient des erreurs de géométrie (maillage non étanche) — vérifiez le fichier dans votre logiciel de CAO.",
         unreadable_file: "Fichier illisible — vérifiez qu'il s'agit bien d'un .stl, .obj ou .3mf valide.",
         slicing_failed: "L'analyse a échoué pour ce fichier. Contactez-nous si le problème persiste.",
+        timeout: "L'analyse prend trop de temps pour ce fichier. Réessayez, ou contactez-nous directement si le problème persiste.",
         color_out_of_stock: "Cette couleur vient de passer en rupture de stock — choisissez-en une autre.",
         invalid_scale: "Échelle invalide — vérifiez l'unité et le pourcentage saisis à l'étape précédente.",
       };
@@ -801,6 +838,8 @@ export function useQuoteWizard() {
     onDrop,
     onUnitChange,
     onScalePctChange,
+    onScalePctBlur,
+    onScalePctKeyDown,
     bumpScalePct,
     next,
     goStep,

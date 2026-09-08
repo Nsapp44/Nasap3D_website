@@ -19,7 +19,7 @@ import { applyTransform, suggestOrientation } from "../../../lib/server/orientat
 import { enforceRateLimit, checkRateLimit, clientIp } from "../../../lib/api/rateLimit";
 
 const ALLOWED_EXT = new Set([".stl", ".obj", ".3mf"]);
-const MAX_FILE_BYTES = 150 * 1024 * 1024;
+const MAX_FILE_BYTES = 500 * 1024 * 1024;
 // Scale is a raw multiplication factor, not a percentage (client sends
 // unitMultiplier × pct/100 already combined). Bounds cover the realistic
 // unit-mistake range (mm↔inch ≈25.4×, mm↔m ≈1000×) with margin either way,

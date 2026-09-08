@@ -3,11 +3,18 @@ import { apiHandler, json, jsonError } from "../../../lib/api/handler";
 import { newFileKey, saveFile } from "../../../lib/server/storage";
 import { enforceRateLimit, checkRateLimit, clientIp } from "../../../lib/api/rateLimit";
 
-const MAX_CONTACT_FILE_BYTES = 50 * 1024 * 1024;
-// Matches what the contact form's UI advertises accepting (".stl .step .pdf
-// .jpg .png") — the front-end input didn't actually enforce it either, so
-// this was previously wide open to any file type.
-const ALLOWED_CONTACT_EXT = new Set([".stl", ".step", ".stp", ".pdf", ".jpg", ".jpeg", ".png"]);
+// Matches the front-end's total budget across every attachment combined
+// (see ContactForm.tsx's MAX_TOTAL_BYTES) — this endpoint only ever sees one
+// file per request, so it can't itself enforce "across every attachment",
+// only "no single one blows the whole budget on its own".
+const MAX_CONTACT_FILE_BYTES = 100 * 1024 * 1024;
+// Matches what the contact form's UI advertises accepting (".stl .3mf .step
+// .pdf .jpg .png") — the front-end input didn't actually enforce it either,
+// so this was previously wide open to any file type. .3mf added: the quote
+// wizard itself already accepts it (see useQuoteWizard.ts's ALLOWED_EXT) —
+// this endpoint rejecting it outright was a real gap, not an intentional
+// restriction.
+const ALLOWED_CONTACT_EXT = new Set([".stl", ".3mf", ".step", ".stp", ".pdf", ".jpg", ".jpeg", ".png"]);
 
 // Direct port of POST /contact/upload — real upload for the contact form's
 // attachment. The file is stored (not emailed: most mailboxes reject/strip

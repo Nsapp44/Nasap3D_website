@@ -139,7 +139,22 @@ export function validateClaimedSlice(
   const solidWeightG = (info.volumeMm3 / 1000) * opts.densityGCm3;
   const fillFraction = Math.min(1, opts.infillPct / 100 + 0.15);
   const expectedWeightG = solidWeightG * fillFraction;
-  const minPlausibleWeightG = expectedWeightG * 0.35;
+  // 0.35 rejected a real, correctly-computed client result live: a fidget
+  // toy (articulated, intentionally hollow/sparse by design) claimed
+  // 113g against an expectedWeightG of 642g — 17.6%, under the old floor —
+  // and got bounced to the server-side fallback slice for nothing, which
+  // then crashed it outright (a real, reproduced "JavaScript heap out of
+  // memory" in the vendored Kiri:Moto CLI subprocess — see sliceModel's own
+  // comment). volumeMm3 is the mesh's own bounding/shell volume; "volume ×
+  // fill fraction" only approximates real weight well for a roughly solid
+  // blob shape — an intricate, thin-walled, or deliberately hollow design
+  // (fidgets, jewelry, lattice/lightweight structures) can legitimately
+  // extrude far less material than that per its own bounding volume. Lower
+  // floor gives real margin below the confirmed 17.6% case rather than
+  // barely clearing it, while still catching an actually-fabricated
+  // lowball claim (this remains a fraud guard, not a precision match — see
+  // this function's own comment above).
+  const minPlausibleWeightG = expectedWeightG * 0.1;
   const maxPlausibleWeightG = solidWeightG * 1.15;
   if (claimed.weightG < minPlausibleWeightG || claimed.weightG > maxPlausibleWeightG) return false;
 
@@ -210,9 +225,28 @@ export async function sliceModel(triangles: Triangle[], opts: SliceOptions): Pro
       writeFile(processPath, JSON.stringify(process_)),
     ]);
 
+    // Real report + reproduced live (docker compose logs api): a genuinely
+    // complex file (a detailed fidget toy 3MF, only 3.6MB but geometrically
+    // intricate) crashed this subprocess with a real, specific error —
+    // "FATAL ERROR: Ineffective mark-compacts near heap limit ... JavaScript
+    // heap out of memory" — around 2GB, node's own default old-space
+    // ceiling, well before the timeout below was ever reached (confirmed:
+    // it died at ~75s against a 300s timeout). Not a timing issue at all —
+    // --max-old-space-size raises that ceiling for this one subprocess
+    // specifically (doesn't touch the main server process's own memory
+    // budget). 4096 is a deliberately moderate bump (2x default), not a
+    // blank check — this box has no docker-compose memory limit of its own
+    // (checked), so the real ceiling is whatever RAM the host actually has;
+    // raise this further only if the host is confirmed to have room for it.
+    //
+    // The 300s timeout (up from 120s) stays regardless — the memory crash
+    // above only explains this ONE reproduced case; a different complex
+    // file could still legitimately just be slow rather than memory-heavy,
+    // and that's what the timeout instead of the memory bump would help.
     await execFileAsync(
       "node",
       [
+        "--max-old-space-size=4096",
         KIRI_CLI_PATH,
         `--dir=${GRID_APPS_DIR}`,
         `--model=${modelPath}`,
@@ -220,7 +254,7 @@ export async function sliceModel(triangles: Triangle[], opts: SliceOptions): Pro
         `--process=${processPath}`,
         `--output=${outputPath}`,
       ],
-      { timeout: 120_000, cwd: GRID_APPS_DIR, maxBuffer: 10 * 1024 * 1024 },
+      { timeout: 300_000, cwd: GRID_APPS_DIR, maxBuffer: 10 * 1024 * 1024 },
     );
 
     // Ground truth is the output file, not the subprocess's stdout/log

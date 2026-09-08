@@ -47,12 +47,25 @@ async function request<T = unknown>(method: string, path: string, body?: unknown
   return { ok: res.ok, status: res.status, data };
 }
 
-async function requestForm<T = unknown>(path: string, form: FormData): Promise<ApiResult<T>> {
+// timeoutMs: optional — without it, a request just waits as long as fetch
+// itself is willing to (effectively forever if the connection stays open).
+// Real gap this closes: the quote analysis step could sit on "Analyse en
+// cours..." indefinitely if the server's own slice took a very long time or
+// genuinely hung, with no feedback and no way out short of reloading the
+// page. On abort, `data` carries a distinguishable {error:"timeout"} (not
+// just the generic network-error null) so the caller can show a specific,
+// actionable message instead of the generic "check your connection" one.
+async function requestForm<T = unknown>(path: string, form: FormData, timeoutMs?: number): Promise<ApiResult<T>> {
+  const controller = timeoutMs ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
   let res: Response;
   try {
-    res = await fetch(apiBase() + path, { method: "POST", credentials: "include", body: form });
+    res = await fetch(apiBase() + path, { method: "POST", credentials: "include", body: form, signal: controller?.signal });
   } catch {
+    if (controller?.signal.aborted) return { ok: false, status: 0, data: { error: "timeout" } as T };
     return { ok: false, status: 0, data: null };
+  } finally {
+    if (timer) clearTimeout(timer);
   }
   let data: T | null = null;
   try {
@@ -157,7 +170,13 @@ export const api = {
     // price input either.
     if (input.clientWeightG !== undefined) form.append("clientWeightG", String(input.clientWeightG));
     if (input.clientEstimatedTimeMin !== undefined) form.append("clientEstimatedTimeMin", String(input.clientEstimatedTimeMin));
-    return requestForm("/quotes", form);
+    // 6min: comfortably past the server's own subprocess ceiling for the
+    // rare full-slice fallback (300s, see kiriSlicer.ts's sliceModel), with
+    // margin left over for the upload itself and the cheap checks around
+    // it — long enough to never cut off a request the server would have
+    // answered on its own, short enough that a visitor still gets a real
+    // answer instead of an indefinite "Analyse en cours...".
+    return requestForm("/quotes", form, 6 * 60_000);
   },
   async getQuote(id: string) {
     return request("GET", "/quotes/" + id);

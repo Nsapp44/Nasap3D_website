@@ -114,7 +114,15 @@ export default function QuoteWizard() {
                           <div className="qw-scale-row">
                             <div onClick={() => w.bumpScalePct(-5)} className="qw-scale-btn">−</div>
                             <div className="qw-scale-input-wrap">
-                              <input value={w.scalePct} onChange={w.onScalePctChange} type="text" inputMode="decimal" className="qw-scale-input" />
+                              <input
+                                value={w.scalePct}
+                                onChange={w.onScalePctChange}
+                                onBlur={w.onScalePctBlur}
+                                onKeyDown={w.onScalePctKeyDown}
+                                type="text"
+                                inputMode="decimal"
+                                className="qw-scale-input"
+                              />
                               <span className="qw-scale-pct">%</span>
                             </div>
                             <div onClick={() => w.bumpScalePct(5)} className="qw-scale-btn">+</div>

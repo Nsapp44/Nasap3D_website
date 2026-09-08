@@ -6,13 +6,21 @@ import Loader from "./Loader";
 interface AttachedFile {
   id: string;
   name: string;
+  size: number;
   status: "uploading" | "ready" | "error";
   fileKey: string | null;
   error: string | null;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MAX_FILE_BYTES = 50 * 1024 * 1024;
+// A budget shared across every attachment combined, not a per-file cap — 5
+// files at 50MB each (the old per-file rule) could reach 250MB total, way
+// past anything reasonable for an email-adjacent workflow. Matches the
+// server's own MAX_CONTACT_FILE_BYTES (see contact/upload.ts): that one
+// only ever sees one file per request, so it can't enforce "across every
+// attachment" itself, only "no single one blows the whole budget on its
+// own" — this is the one place that actually tracks the running total.
+const MAX_TOTAL_BYTES = 100 * 1024 * 1024;
 const MAX_FILES = 5;
 
 // Ported from Contact.dc.html's Component class — same fields, same
@@ -53,13 +61,8 @@ export default function ContactForm() {
     setFiles((cur) => cur.filter((f) => f.id !== id));
   }
 
-  async function uploadOne(file: File) {
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    if (file.size > MAX_FILE_BYTES) {
-      setFiles((cur) => [...cur, { id, name: file.name, status: "error", fileKey: null, error: "Fichier trop volumineux (50 Mo max)." }]);
-      return;
-    }
-    setFiles((cur) => [...cur, { id, name: file.name, status: "uploading", fileKey: null, error: null }]);
+  async function uploadOne(id: string, file: File) {
+    setFiles((cur) => [...cur, { id, name: file.name, size: file.size, status: "uploading", fileKey: null, error: null }]);
     const res = await api.uploadContactFile(file);
     setFiles((cur) =>
       cur.map((f) =>
@@ -72,12 +75,30 @@ export default function ContactForm() {
     );
   }
 
+  // Checked against the running total of this batch, not just each file on
+  // its own — a single drop of several files that individually fit but
+  // together blow the shared budget (see MAX_TOTAL_BYTES) has to be caught
+  // here, in one pass over the whole incoming list, since the files already
+  // queued earlier in the same drop haven't landed in `files` state yet
+  // (state updates don't apply mid-loop) to be counted by re-reading it.
   function addFiles(list: FileList | null) {
     if (!list) return;
     const room = MAX_FILES - files.length;
+    let runningTotal = files.reduce((sum, f) => sum + f.size, 0);
     Array.from(list)
       .slice(0, Math.max(0, room))
-      .forEach(uploadOne);
+      .forEach((file) => {
+        const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        if (runningTotal + file.size > MAX_TOTAL_BYTES) {
+          setFiles((cur) => [
+            ...cur,
+            { id, name: file.name, size: 0, status: "error", fileKey: null, error: "Dépasse le total autorisé (100 Mo pour tous les fichiers)." },
+          ]);
+          return;
+        }
+        runningTotal += file.size;
+        uploadOne(id, file);
+      });
   }
 
   function onFileInputChange(e: ChangeEvent<HTMLInputElement>) {
@@ -220,7 +241,7 @@ export default function ContactForm() {
           </div>
         )}
         <div className="file-hint">
-          .stl .step .pdf .jpg .png — 50 Mo max par fichier, {MAX_FILES} fichiers max
+          .stl .3mf .step .pdf .jpg .png — 100 Mo max au total, {MAX_FILES} fichiers max
         </div>
       </div>
 

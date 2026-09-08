@@ -23,12 +23,19 @@ export async function deleteQuoteJobFileIfOrphaned(quoteJobId: string): Promise<
   await prisma.quoteJob.update({ where: { id: quoteJobId }, data: { fileDeletedAt: new Date() } });
 }
 
-// Mirrors cartCleanup.ts's TTLs — a quote never added to any cart is
-// abandoned on the same timeline a cart line would be (1h for a guest, 48h
-// for a logged-in customer). There's no cart line to anchor "inactive
-// since" on for a never-carted quote, so this uses the QuoteJob's own
-// createdAt instead.
-const GUEST_QUOTE_TTL_MS = 60 * 60 * 1000; // 1h
+// Deliberately shorter than cartCleanup.ts's own guest TTL (1h) — a
+// never-carted quote's file is written to storage the moment "Analyse auto"
+// prices it, before the visitor has committed to anything; on request, this
+// treats it as abandoned much sooner (10 minutes, roughly how long an
+// active visit takes) since leaving the page resets the wizard's own
+// client-side state anyway, so nothing is lost by wiping the server copy
+// that fast. A quote that DOES get added to a cart is untouched by this —
+// deleteQuoteJobFileIfOrphaned's stillInCart check below skips it
+// regardless of its own age, and it then follows cartCleanup.ts's longer
+// timeline instead (1h guest / 48h account) once that cart line itself
+// expires. There's no cart line to anchor "inactive since" on for a
+// never-carted quote, so this uses the QuoteJob's own createdAt instead.
+const GUEST_QUOTE_TTL_MS = 10 * 60 * 1000; // 10min
 const ACCOUNT_QUOTE_TTL_MS = 48 * 60 * 60 * 1000; // 48h
 
 // Periodic sweep (wired in src/middleware.ts) — the backstop for quotes
