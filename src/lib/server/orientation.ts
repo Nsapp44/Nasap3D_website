@@ -35,10 +35,10 @@ export interface Triangle {
 // Triangle object, so this is the one format where the guard can sit
 // before the expensive work instead of after it. See
 // src/pages/api/quotes/index.ts's MAX_QUOTE_TRIANGLES for the full
-// reasoning behind the 500k threshold and its own (necessarily later, and
+// reasoning behind the threshold value and its own (necessarily later, and
 // for this format now redundant, but still the only guard OBJ/3MF get)
 // post-parse check.
-const MAX_STL_TRIANGLES = 500_000;
+const MAX_STL_TRIANGLES = 600_000;
 
 export function parseStlTriangles(buffer: Buffer): Triangle[] {
   if (buffer.length >= 84) {

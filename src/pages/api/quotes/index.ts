@@ -37,12 +37,33 @@ const MAX_FILE_BYTES = 500 * 1024 * 1024;
 // by triangle count (exact, format-agnostic, known right after parsing)
 // here, before any of that downstream work runs, protects the one thing
 // that matters most: the shared container survives even when this specific
-// visitor's part can't be quoted through this pipeline. Same 500k
-// deliberately-conservative midpoint as kiriSlicer.ts's own guard (225k
-// confirmed safe, ~1.1M confirmed fatal) — see that file's comment for the
-// full reasoning; kept in sync rather than imported so each guard stays
-// obviously self-contained at its own call site.
-const MAX_QUOTE_TRIANGLES = 500_000;
+// visitor's part can't be quoted through this pipeline.
+//
+// 500k (this constant's first value) was wrong — a guess extrapolated from
+// two points nowhere near each other (225k confirmed safe, ~1.1M confirmed
+// fatal) without ever testing anything in between. A real customer file
+// (a genuine, reproduced prod 502 — same `container oom` -> `die` sequence
+// via `docker events`, this time from a normal, unremarkable STL, not an
+// intentional stress test) exposed the gap: 354,534 triangles (a 17.7MB
+// STL) ALSO crashed a 512MB container, comfortably under the old 500k
+// limit.
+//
+// This value assumes the prod host has been moved to ~1.5GB RAM (up from
+// the ~512MB it had when the above was reproduced) — confirmed by the same
+// docker-events method, capping this local container at exactly 1.5GB:
+// 354,534 triangles (the file that killed the 512MB container) now
+// succeeds cleanly; a ~1.1M-triangle STL (the original stress-test file)
+// still reproduces a genuine OOM even at 1.5GB. 600k sits with real margin
+// on both sides of those two points. If the host's actual RAM ever
+// changes, these numbers need re-deriving the same way — they are NOT a
+// generic "safe" constant, they are tied to a specific measured ceiling.
+// Our own Triangle[] shape (nested arrays/objects, not flat typed arrays)
+// is the real reason the memory cost per triangle is this high — raising
+// this constant to track more RAM is the immediate lever available, not a
+// durable fix; the actual fix is switching this parse/transform/analyze
+// pipeline to flat Float32Arrays, which would let this ceiling move up
+// substantially for the same RAM budget.
+const MAX_QUOTE_TRIANGLES = 600_000;
 // Scale is a raw multiplication factor, not a percentage (client sends
 // unitMultiplier × pct/100 already combined). Bounds cover the realistic
 // unit-mistake range (mm↔inch ≈25.4×, mm↔m ≈1000×) with margin either way,

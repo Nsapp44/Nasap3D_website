@@ -207,15 +207,14 @@ export interface SliceResult {
 // timeout never gets a chance to fire (the kernel SIGKILLs the whole
 // container first), and no JS-level try/catch can intercept a SIGKILL.
 // The only real fix at this layer is not attempting a full engine slice on
-// a model too complex for the host to survive. 225k triangles (a Benchy)
-// is confirmed fine (~10s, see below); ~1.1M is confirmed fatal. 500k is a
-// deliberately conservative midpoint given only two real data points on
-// either side — revisit with a bisected number if this ever rejects a
-// legitimate part that should have been safe. This only gates the RARE
-// fallback path — normal quotes trust the client's own real slice (see
-// this file's own header comment, role 1) and never reach this function at
-// all in the common case.
-const MAX_FALLBACK_SLICE_TRIANGLES = 500_000;
+// a model too complex for the host to survive. In practice this function is
+// gated by quotes/index.ts's own, earlier MAX_QUOTE_TRIANGLES check first —
+// see that constant's comment for the real bisection data (100,943
+// triangles confirmed safe, 354,534 confirmed fatal, both from real files,
+// not synthetic ones) behind this same threshold. Kept in sync rather than
+// imported so this function stays safe even if ever called from somewhere
+// that skips the earlier gate.
+const MAX_FALLBACK_SLICE_TRIANGLES = 600_000;
 
 // The rare full-slice fallback (role 3) — real Kiri:Moto, via the vendored
 // grid-apps CLI script run as a subprocess (its own --device/--process/
