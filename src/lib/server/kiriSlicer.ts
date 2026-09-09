@@ -207,7 +207,13 @@ export interface SliceResult {
 // a freshly-measured ceiling. In practice this function is also gated by
 // quotes/index.ts's own, earlier MAX_QUOTE_TRIANGLES check first. See that
 // constant's own comment for the fuller history of this number.
-const MAX_FALLBACK_SLICE_TRIANGLES = 600_000;
+// Exported so quotes/index.ts can check this *before* acquiring the strict,
+// capacity-1 fallback-slice lock (concurrencyGuard.ts) — a file already
+// known to be over this ceiling is guaranteed to hit the throw below, so
+// checking first avoids needlessly occupying that scarce, shared lock (and
+// its queue) for a request that can't succeed anyway, which would otherwise
+// crowd out a smaller file that could.
+export const MAX_FALLBACK_SLICE_TRIANGLES = 600_000;
 
 // The rare full-slice fallback (role 3) — real Kiri:Moto, via the vendored
 // grid-apps CLI script run as a subprocess (its own --device/--process/

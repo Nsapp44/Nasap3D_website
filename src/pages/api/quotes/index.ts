@@ -13,10 +13,12 @@ import {
   loadTrianglesFromFile,
   exportTransformedStl,
   validateClaimedSlice,
+  MAX_FALLBACK_SLICE_TRIANGLES,
 } from "../../../lib/server/kiriSlicer";
 import { computePrice } from "../../../lib/server/pricing";
 import { applyTransform, suggestOrientation } from "../../../lib/server/orientation";
 import { enforceRateLimit, checkRateLimit, clientIp } from "../../../lib/api/rateLimit";
+import { acquireUploadSlot, acquireFallbackSliceSlot, estimateUploadWeightMB } from "../../../lib/server/concurrencyGuard";
 
 const ALLOWED_EXT = new Set([".stl", ".obj", ".3mf"]);
 // 150MB, not the 500MB this was briefly raised to — reconsidered once
@@ -74,6 +76,19 @@ const MAX_QUOTE_TRIANGLES = 1_500_000;
 // while still rejecting garbage input outright.
 const MIN_SCALE = 0.001;
 const MAX_SCALE = 2000;
+// Last-resort release for the concurrency-guard slot below, independent of
+// this handler's own try/finally. Deliberately set just ABOVE
+// server-entry.mjs's own `server.server.requestTimeout = 480_000` (Node's
+// hard kill on the whole request, headers+body, confirmed live to destroy
+// the raw socket with zero application-level log output when it fires) —
+// so this timer can only ever fire *after* Node has already guaranteed the
+// underlying connection (and its memory) is gone. Without this, a request
+// killed that way — if its own promise chain never settles, which the
+// requestTimeout comment in server-entry.mjs flags as the observed
+// behavior — would leak its slot forever instead of just until the next
+// deploy. The gate's release closure is idempotent, so this racing the
+// handler's own normal finally is safe either way.
+const UPLOAD_GATE_HOLD_CEILING_MS = 500_000;
 
 function quotePublicView(
   q: {
@@ -130,211 +145,249 @@ export const POST = apiHandler(async (context) => {
     return jsonError(403, "quote_disabled");
   }
 
-  const form = await context.request.formData().catch(() => null);
-  if (!form) return jsonError(400, "invalid_body");
-  const file = form.get("file");
-  if (!(file instanceof File)) return jsonError(400, "missing_file");
-  if (file.size > MAX_FILE_BYTES) return jsonError(413, "file_too_large");
+  // Acquired *before* reading the body on purpose: Node/undici only buffers
+  // the incoming request into memory once something reads the stream (i.e.
+  // formData() just below), so a request queued on this gate before that
+  // point costs almost nothing while it waits — see concurrencyGuard.ts for
+  // the full reasoning and the plan doc for the measurements behind the
+  // numbers. Weighed off the raw Content-Length header, the only file-size
+  // signal available this early (the parsed File's own .size isn't known
+  // until after formData() has already buffered everything).
+  const contentLengthHeader = context.request.headers.get("content-length");
+  const weightMB = estimateUploadWeightMB(contentLengthHeader ? Number(contentLengthHeader) : null);
+  const releaseUploadSlot = await acquireUploadSlot(weightMB);
+  const uploadSlotSafetyTimer = setTimeout(releaseUploadSlot, UPLOAD_GATE_HOLD_CEILING_MS);
 
-  const fileName = file.name;
-  const ext = path.extname(fileName).toLowerCase();
-  if (!ALLOWED_EXT.has(ext)) return jsonError(400, "unsupported_file_type");
-
-  const materialKey = String(form.get("material") ?? "");
-  const colorId = String(form.get("colorId") ?? "");
-  const qualityKey = String(form.get("quality") ?? "");
-  const infillPct = parseInt(String(form.get("infillPct") ?? ""), 10);
-  const quantity = Math.min(2000, Math.max(1, parseInt(String(form.get("quantity") ?? ""), 10) || 1));
-  const scaleRaw = form.get("scale");
-  const scale = scaleRaw !== null ? parseFloat(String(scaleRaw)) : 1;
-
-  // Optional real slice result from the visitor's own browser (Kiri:Moto,
-  // see public/kiri-slicer.js + useQuoteWizard.ts) — the primary path.
-  // Absent entirely (older client, WASM unavailable, weak device, timeout)
-  // or rejected by validateClaimedSlice() below both fall back to the rare
-  // server-side full slice (role 3, see kiriSlicer.ts).
-  const clientWeightRaw = form.get("clientWeightG");
-  const clientTimeRaw = form.get("clientEstimatedTimeMin");
-  const claimedSlice =
-    clientWeightRaw !== null && clientTimeRaw !== null
-      ? { weightG: parseFloat(String(clientWeightRaw)), estimatedTimeMin: parseFloat(String(clientTimeRaw)) }
-      : null;
-
-  if (!materialKey || !colorId || !qualityKey || !Number.isFinite(infillPct)) {
-    return jsonError(400, "invalid_body");
-  }
-  if (!Number.isFinite(scale) || scale < MIN_SCALE || scale > MAX_SCALE) {
-    return jsonError(400, "invalid_scale");
-  }
-
-  const [material, quality] = await Promise.all([
-    prisma.material.findUnique({ where: { key: materialKey }, include: { colors: true } }),
-    prisma.qualityProfile.findUnique({ where: { key: qualityKey } }),
-  ]);
-  if (!material || !material.active) return jsonError(400, "unknown_material");
-  if (!quality || !quality.active) return jsonError(400, "unknown_quality");
-  const color = material.colors.find((c) => c.id === colorId);
-  if (!color) return jsonError(400, "unknown_color");
-  if (!color.inStock) return jsonError(409, "color_out_of_stock");
-
-  const fileBuffer = Buffer.from(await file.arrayBuffer());
-  const dir = await mkdtemp(path.join(tmpdir(), "nasap3d-upload-"));
-  const tmpPath = path.join(dir, fileName);
   try {
-    await writeFile(tmpPath, fileBuffer);
+    const form = await context.request.formData().catch(() => null);
+    if (!form) return jsonError(400, "invalid_body");
+    const file = form.get("file");
+    if (!(file instanceof File)) return jsonError(400, "missing_file");
+    if (file.size > MAX_FILE_BYTES) return jsonError(413, "file_too_large");
 
-    // Everything downstream (orientation, bbox/volume/manifold check,
-    // server-side slice fallback, final stored file) works off one common
-    // triangle list — STL/OBJ parsed directly, 3MF unzipped+parsed once
-    // here (threeMfParse.ts). No PrusaSlicer subprocess involved at any
-    // point anymore.
-    let rawTriangles;
+    const fileName = file.name;
+    const ext = path.extname(fileName).toLowerCase();
+    if (!ALLOWED_EXT.has(ext)) return jsonError(400, "unsupported_file_type");
+
+    const materialKey = String(form.get("material") ?? "");
+    const colorId = String(form.get("colorId") ?? "");
+    const qualityKey = String(form.get("quality") ?? "");
+    const infillPct = parseInt(String(form.get("infillPct") ?? ""), 10);
+    const quantity = Math.min(2000, Math.max(1, parseInt(String(form.get("quantity") ?? ""), 10) || 1));
+    const scaleRaw = form.get("scale");
+    const scale = scaleRaw !== null ? parseFloat(String(scaleRaw)) : 1;
+
+    // Optional real slice result from the visitor's own browser (Kiri:Moto,
+    // see public/kiri-slicer.js + useQuoteWizard.ts) — the primary path.
+    // Absent entirely (older client, WASM unavailable, weak device, timeout)
+    // or rejected by validateClaimedSlice() below both fall back to the rare
+    // server-side full slice (role 3, see kiriSlicer.ts).
+    const clientWeightRaw = form.get("clientWeightG");
+    const clientTimeRaw = form.get("clientEstimatedTimeMin");
+    const claimedSlice =
+      clientWeightRaw !== null && clientTimeRaw !== null
+        ? { weightG: parseFloat(String(clientWeightRaw)), estimatedTimeMin: parseFloat(String(clientTimeRaw)) }
+        : null;
+
+    if (!materialKey || !colorId || !qualityKey || !Number.isFinite(infillPct)) {
+      return jsonError(400, "invalid_body");
+    }
+    if (!Number.isFinite(scale) || scale < MIN_SCALE || scale > MAX_SCALE) {
+      return jsonError(400, "invalid_scale");
+    }
+
+    const [material, quality] = await Promise.all([
+      prisma.material.findUnique({ where: { key: materialKey }, include: { colors: true } }),
+      prisma.qualityProfile.findUnique({ where: { key: qualityKey } }),
+    ]);
+    if (!material || !material.active) return jsonError(400, "unknown_material");
+    if (!quality || !quality.active) return jsonError(400, "unknown_quality");
+    const color = material.colors.find((c) => c.id === colorId);
+    if (!color) return jsonError(400, "unknown_color");
+    if (!color.inStock) return jsonError(409, "color_out_of_stock");
+
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
+    const dir = await mkdtemp(path.join(tmpdir(), "nasap3d-upload-"));
+    const tmpPath = path.join(dir, fileName);
     try {
-      rawTriangles = await loadTrianglesFromFile(tmpPath, ext);
-    } catch (e) {
-      // Binary STL's own pre-parse guard (orientation.ts's
-      // parseStlTriangles, MAX_STL_TRIANGLES) throws with this prefix
-      // *before* building the triangle array — the only format where the
-      // header hands us the count for free ahead of the expensive work.
-      // Everything else still only gets the coarser post-parse check right
-      // below, since OBJ/3MF have no equivalent cheap up-front count.
-      if (e instanceof Error && e.message.startsWith("part_too_complex")) {
+      await writeFile(tmpPath, fileBuffer);
+
+      // Everything downstream (orientation, bbox/volume/manifold check,
+      // server-side slice fallback, final stored file) works off one common
+      // triangle list — STL/OBJ parsed directly, 3MF unzipped+parsed once
+      // here (threeMfParse.ts). No PrusaSlicer subprocess involved at any
+      // point anymore.
+      let rawTriangles;
+      try {
+        rawTriangles = await loadTrianglesFromFile(tmpPath, ext);
+      } catch (e) {
+        // Binary STL's own pre-parse guard (orientation.ts's
+        // parseStlTriangles, MAX_STL_TRIANGLES) throws with this prefix
+        // *before* building the triangle array — the only format where the
+        // header hands us the count for free ahead of the expensive work.
+        // Everything else still only gets the coarser post-parse check right
+        // below, since OBJ/3MF have no equivalent cheap up-front count.
+        if (e instanceof Error && e.message.startsWith("part_too_complex")) {
+          return jsonError(422, "part_too_complex");
+        }
+        console.warn("loadTrianglesFromFile failed", e);
+        return jsonError(400, "unreadable_file");
+      }
+      // See MAX_QUOTE_TRIANGLES's own comment — before any of the expensive
+      // transform/analysis work below runs, not after. The only safety net
+      // left for OBJ/3MF (text/XML formats with no cheap up-front triangle
+      // count) and ASCII STL — binary STL never reaches here with an
+      // oversized count, it's already rejected inside loadTrianglesFromFile.
+      // rawTriangles is a flat Positions array (9 numbers/triangle, see
+      // orientation.ts) — .length alone is the float count, not the triangle
+      // count.
+      if (rawTriangles.length / 9 > MAX_QUOTE_TRIANGLES) {
         return jsonError(422, "part_too_complex");
       }
-      console.warn("loadTrianglesFromFile failed", e);
-      return jsonError(400, "unreadable_file");
-    }
-    // See MAX_QUOTE_TRIANGLES's own comment — before any of the expensive
-    // transform/analysis work below runs, not after. The only safety net
-    // left for OBJ/3MF (text/XML formats with no cheap up-front triangle
-    // count) and ASCII STL — binary STL never reaches here with an
-    // oversized count, it's already rejected inside loadTrianglesFromFile.
-    // rawTriangles is a flat Positions array (9 numbers/triangle, see
-    // orientation.ts) — .length alone is the float count, not the triangle
-    // count.
-    if (rawTriangles.length / 9 > MAX_QUOTE_TRIANGLES) {
-      return jsonError(422, "part_too_complex");
-    }
 
-    // Best-effort print-orientation suggestion — scored on the raw,
-    // unscaled geometry (rotation is scale-independent) before anything
-    // else runs. Never fails the quote on its own: an unusual/degenerate
-    // mesh just falls back to no rotation (0, 0), same as before this
-    // feature existed.
-    let rotateXDeg = 0,
-      rotateYDeg = 0;
-    try {
-      const suggestion = suggestOrientation(rawTriangles);
-      if (suggestion) {
-        rotateXDeg = suggestion.rotateXDeg;
-        rotateYDeg = suggestion.rotateYDeg;
-        console.info("suggestOrientation", suggestion);
+      // Best-effort print-orientation suggestion — scored on the raw,
+      // unscaled geometry (rotation is scale-independent) before anything
+      // else runs. Never fails the quote on its own: an unusual/degenerate
+      // mesh just falls back to no rotation (0, 0), same as before this
+      // feature existed.
+      let rotateXDeg = 0,
+        rotateYDeg = 0;
+      try {
+        const suggestion = suggestOrientation(rawTriangles);
+        if (suggestion) {
+          rotateXDeg = suggestion.rotateXDeg;
+          rotateYDeg = suggestion.rotateYDeg;
+          console.info("suggestOrientation", suggestion);
+        }
+      } catch (e) {
+        console.warn("suggestOrientation failed, printing as-uploaded", e);
       }
-    } catch (e) {
-      console.warn("suggestOrientation failed, printing as-uploaded", e);
-    }
-    const transform = { scale, rotateXDeg, rotateYDeg };
-    const triangles = applyTransform(rawTriangles, transform);
+      const transform = { scale, rotateXDeg, rotateYDeg };
+      const triangles = applyTransform(rawTriangles, transform);
 
-    const info = await getModelInfo(triangles);
-    // Blocks right away, at upload — matches the client's own identical
-    // check (orientationSuggest.js's checkManifoldAndParts) so a genuinely
-    // broken file never even reaches a slice attempt, client or server, and
-    // a flood of them never costs the server a real sliceModel() subprocess.
-    // Bad-edge-fraction heuristic with a 1% tolerance — confirmed live that
-    // the stricter Manifold-library check (elalish/manifold, a real CSG-
-    // grade geometry kernel — tried first, then dropped for this gate)
-    // rejects two real, genuinely printable customer files outright
-    // (NotManifold, no tolerance) while this heuristic correctly accepts
-    // both (0.007% and 0.26% bad edges, both well under 1%) and still flags
-    // real breakage (a genuine hole pushes this into the tens of percent).
-    if (!info.manifold) return jsonError(400, "non_manifold_model");
-    const printer = pickPrinter(info);
-    if (!printer) return jsonError(400, "part_too_large");
+      const info = await getModelInfo(triangles);
+      // Blocks right away, at upload — matches the client's own identical
+      // check (orientationSuggest.js's checkManifoldAndParts) so a genuinely
+      // broken file never even reaches a slice attempt, client or server, and
+      // a flood of them never costs the server a real sliceModel() subprocess.
+      // Bad-edge-fraction heuristic with a 1% tolerance — confirmed live that
+      // the stricter Manifold-library check (elalish/manifold, a real CSG-
+      // grade geometry kernel — tried first, then dropped for this gate)
+      // rejects two real, genuinely printable customer files outright
+      // (NotManifold, no tolerance) while this heuristic correctly accepts
+      // both (0.007% and 0.26% bad edges, both well under 1%) and still flags
+      // real breakage (a genuine hole pushes this into the tens of percent).
+      if (!info.manifold) return jsonError(400, "non_manifold_model");
+      const printer = pickPrinter(info);
+      if (!printer) return jsonError(400, "part_too_large");
 
-    // Trust the client's own real slice (role 1) only if it passes the
-    // cheap plausibility check (role 2, pure JS, no engine) — otherwise
-    // fall back to a real server-side Kiri:Moto slice (role 3, rare: no
-    // client result at all, or the client's numbers look fabricated).
-    let sliced: { weightG: number; estimatedTimeMin: number; volumeCm3: number } | null = null;
-    if (claimedSlice && validateClaimedSlice(info, { infillPct, densityGCm3: material.densityGCm3 }, claimedSlice)) {
-      sliced = {
-        weightG: claimedSlice.weightG,
-        estimatedTimeMin: claimedSlice.estimatedTimeMin,
-        volumeCm3: claimedSlice.weightG / material.densityGCm3,
-      };
-    } else {
-      if (claimedSlice) console.warn("client-submitted slice rejected by validateClaimedSlice, falling back", claimedSlice);
-      sliced = await sliceModel(triangles, {
-        printer,
-        materialKey: material.key,
-        qualityKey: quality.key,
-        layerHeightMm: quality.layerHeightMm,
-        densityGCm3: material.densityGCm3,
-        infillPct,
-      }).catch((e) => {
-        console.warn("sliceModel failed", e);
-        return null;
-      });
-    }
-    if (!sliced) return jsonError(422, "slicing_failed");
+      // Trust the client's own real slice (role 1) only if it passes the
+      // cheap plausibility check (role 2, pure JS, no engine) — otherwise
+      // fall back to a real server-side Kiri:Moto slice (role 3, rare: no
+      // client result at all, or the client's numbers look fabricated).
+      let sliced: { weightG: number; estimatedTimeMin: number; volumeCm3: number } | null = null;
+      if (claimedSlice && validateClaimedSlice(info, { infillPct, densityGCm3: material.densityGCm3 }, claimedSlice)) {
+        sliced = {
+          weightG: claimedSlice.weightG,
+          estimatedTimeMin: claimedSlice.estimatedTimeMin,
+          volumeCm3: claimedSlice.weightG / material.densityGCm3,
+        };
+      } else if (triangles.length / 9 > MAX_FALLBACK_SLICE_TRIANGLES) {
+        // Known in advance to be over sliceModel()'s own ceiling — skip the
+        // scarce fallback-slice lock entirely rather than occupying it (and
+        // its short queue) for a request that's guaranteed to fail anyway,
+        // which would otherwise crowd out a smaller file that could
+        // actually use that slot. Same outcome (slicing_failed below) as
+        // letting sliceModel() throw its own kiri_fallback_too_complex.
+        if (claimedSlice) console.warn("client-submitted slice rejected by validateClaimedSlice, too complex for fallback", claimedSlice);
+        sliced = null;
+      } else {
+        if (claimedSlice) console.warn("client-submitted slice rejected by validateClaimedSlice, falling back", claimedSlice);
+        // Separate, stricter, near-exclusive lock (capacity 1, container-
+        // wide) around this specific real child-process slice — the
+        // highest, least-bounded memory risk on this whole route (see
+        // kiriSlicer.ts's own comment on a real, reproduced OOM from this
+        // exact subprocess), and rare (only reached when the visitor's own
+        // browser slice is missing or fails validateClaimedSlice above).
+        const releaseFallbackSlot = await acquireFallbackSliceSlot();
+        try {
+          sliced = await sliceModel(triangles, {
+            printer,
+            materialKey: material.key,
+            qualityKey: quality.key,
+            layerHeightMm: quality.layerHeightMm,
+            densityGCm3: material.densityGCm3,
+            infillPct,
+          }).catch((e) => {
+            console.warn("sliceModel failed", e);
+            return null;
+          });
+        } finally {
+          releaseFallbackSlot();
+        }
+      }
+      if (!sliced) return jsonError(422, "slicing_failed");
 
-    const tiers = await prisma.discountTier.findMany({ orderBy: { minQty: "asc" } });
-    const price = computePrice({
-      weightG: sliced.weightG,
-      estimatedTimeMin: sliced.estimatedTimeMin,
-      pricePerKgCents: material.pricePerKgCents,
-      hourlyRateCents: settings.hourlyRateCents,
-      minUnitPriceCents: settings.minUnitPriceCents,
-      quantity,
-      discountTiers: tiers,
-    });
-
-    // The file kept in storage (re-downloaded later for real production,
-    // and re-used for every later preview — cart, "Analyse terminée",
-    // admin) always has scale AND the suggested orientation actually baked
-    // into its geometry, so it never again needs any client-side transform
-    // to match what was priced/sliced. Always .stl output regardless of
-    // the original format (.obj/.3mf get normalized too — fileName keeps
-    // its original extension for display purposes only, the stored bytes
-    // are the real, final mesh). Cheap now (pure JS, no subprocess), unlike
-    // the old PrusaSlicer version, so no need to skip it when transform is
-    // a no-op.
-    const storedBuffer = exportTransformedStl(rawTriangles, transform);
-
-    const fileKey = newFileKey(fileName);
-    await saveFile(fileKey, storedBuffer);
-
-    const user = await getSessionUser(context);
-    const sessionId = user ? null : getOrCreateGuestSessionId(context.cookies);
-
-    const quoteJob = await prisma.quoteJob.create({
-      data: {
-        userId: user?.id,
-        sessionId: sessionId ?? undefined,
-        fileKey,
-        fileName,
-        fileSizeBytes: storedBuffer.length,
-        materialId: material.id,
-        colorId: color.id,
-        qualityId: quality.id,
-        infillPct,
-        quantity,
-        volumeCm3: sliced.volumeCm3,
-        bboxXMm: info.sizeXMm,
-        bboxYMm: info.sizeYMm,
-        bboxZMm: info.sizeZMm,
+      const tiers = await prisma.discountTier.findMany({ orderBy: { minQty: "asc" } });
+      const price = computePrice({
         weightG: sliced.weightG,
         estimatedTimeMin: sliced.estimatedTimeMin,
-        unitPriceCents: price.unitPriceCents,
-        totalPriceCents: price.totalCents,
-        status: "ANALYZED",
-      },
-      include: { material: true, color: true, quality: true },
-    });
+        pricePerKgCents: material.pricePerKgCents,
+        hourlyRateCents: settings.hourlyRateCents,
+        minUnitPriceCents: settings.minUnitPriceCents,
+        quantity,
+        discountTiers: tiers,
+      });
 
-    return json({ quote: quotePublicView(quoteJob, price.discountPct) }, { status: 201 });
+      // The file kept in storage (re-downloaded later for real production,
+      // and re-used for every later preview — cart, "Analyse terminée",
+      // admin) always has scale AND the suggested orientation actually baked
+      // into its geometry, so it never again needs any client-side transform
+      // to match what was priced/sliced. Always .stl output regardless of
+      // the original format (.obj/.3mf get normalized too — fileName keeps
+      // its original extension for display purposes only, the stored bytes
+      // are the real, final mesh). Cheap now (pure JS, no subprocess), unlike
+      // the old PrusaSlicer version, so no need to skip it when transform is
+      // a no-op.
+      const storedBuffer = exportTransformedStl(rawTriangles, transform);
+
+      const fileKey = newFileKey(fileName);
+      await saveFile(fileKey, storedBuffer);
+
+      const user = await getSessionUser(context);
+      const sessionId = user ? null : getOrCreateGuestSessionId(context.cookies);
+
+      const quoteJob = await prisma.quoteJob.create({
+        data: {
+          userId: user?.id,
+          sessionId: sessionId ?? undefined,
+          fileKey,
+          fileName,
+          fileSizeBytes: storedBuffer.length,
+          materialId: material.id,
+          colorId: color.id,
+          qualityId: quality.id,
+          infillPct,
+          quantity,
+          volumeCm3: sliced.volumeCm3,
+          bboxXMm: info.sizeXMm,
+          bboxYMm: info.sizeYMm,
+          bboxZMm: info.sizeZMm,
+          weightG: sliced.weightG,
+          estimatedTimeMin: sliced.estimatedTimeMin,
+          unitPriceCents: price.unitPriceCents,
+          totalPriceCents: price.totalCents,
+          status: "ANALYZED",
+        },
+        include: { material: true, color: true, quality: true },
+      });
+
+      return json({ quote: quotePublicView(quoteJob, price.discountPct) }, { status: 201 });
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   } finally {
-    await rm(dir, { recursive: true, force: true });
+    clearTimeout(uploadSlotSafetyTimer);
+    releaseUploadSlot();
   }
 });

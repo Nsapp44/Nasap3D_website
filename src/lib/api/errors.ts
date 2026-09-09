@@ -32,6 +32,16 @@ export class RateLimitError extends HttpError {
   }
 }
 
+// Thrown by concurrencyGuard.ts when a memory-heavy request (see
+// src/pages/api/quotes/index.ts) can't get a slot within its wait budget —
+// distinct from RateLimitError: this isn't about one IP's request rate, it's
+// about the server's own total in-flight load across every visitor at once.
+export class ServerBusyError extends HttpError {
+  constructor() {
+    super(503, "server_busy");
+  }
+}
+
 // Ports of the verification-code exceptions from server/src/lib/verification.ts
 // (unchanged behavior: thrown deep inside lib code, caught by the specific
 // route that knows what each one means for its own response).
