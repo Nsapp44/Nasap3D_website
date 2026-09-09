@@ -19,7 +19,15 @@ import { applyTransform, suggestOrientation } from "../../../lib/server/orientat
 import { enforceRateLimit, checkRateLimit, clientIp } from "../../../lib/api/rateLimit";
 
 const ALLOWED_EXT = new Set([".stl", ".obj", ".3mf"]);
-const MAX_FILE_BYTES = 500 * 1024 * 1024;
+// 150MB, not the 500MB this was briefly raised to — reconsidered once
+// MAX_QUOTE_TRIANGLES (below) became the real, tested protection: at that
+// guard's 1.5M-triangle ceiling, a binary STL (50 bytes/triangle) tops out
+// around 75MB anyway, so anything between 150MB and 500MB was already
+// guaranteed to get rejected downstream regardless of this check. This
+// still earns its place as a cheap FIRST line of defense, though — it
+// runs on the raw upload size before any parsing/buffering happens at
+// all, unlike the triangle-count guard which necessarily runs after.
+const MAX_FILE_BYTES = 150 * 1024 * 1024;
 // Real, reproduced OOM crash (this session, `docker events`: a genuine
 // `container oom` -> `die (exitCode=137)` on prod's actual ~512MB RAM) from
 // a ~1.1M-triangle STL (57MB) — and NOT only through kiriSlicer.ts's own
@@ -32,9 +40,10 @@ const MAX_FILE_BYTES = 500 * 1024 * 1024;
 // claims — see validateClaimedSlice below) — for a mesh this large, that
 // alone is apparently enough to exhaust a 512MB container, well before
 // sliceModel() ever gets a chance to run or reject anything. MAX_FILE_BYTES
-// above (500MB) is nowhere near tight enough to catch this on its own — a
-// 57MB file that crashes the container is only 11% of that cap. Rejecting
-// by triangle count (exact, format-agnostic, known right after parsing)
+// above wasn't tight enough to catch this on its own even before this
+// comment's own reconsideration — a 57MB file that crashes the container
+// was already only 11-38% of either cap. Rejecting by triangle count
+// (exact, format-agnostic, known right after parsing)
 // here, before any of that downstream work runs, protects the one thing
 // that matters most: the shared container survives even when this specific
 // visitor's part can't be quoted through this pipeline.

@@ -543,8 +543,8 @@ export function useQuoteWizard() {
       setFileError("Format non supporté — utilisez .stl, .obj ou .3mf");
       return;
     }
-    if (f.size > 500 * 1024 * 1024) {
-      setFileError("Fichier trop volumineux (500 Mo max)");
+    if (f.size > 150 * 1024 * 1024) {
+      setFileError("Fichier trop volumineux (150 Mo max)");
       return;
     }
     // Real report: dropping a new file kept whatever scale was left over
