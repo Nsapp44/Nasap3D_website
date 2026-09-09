@@ -20,6 +20,29 @@ import { enforceRateLimit, checkRateLimit, clientIp } from "../../../lib/api/rat
 
 const ALLOWED_EXT = new Set([".stl", ".obj", ".3mf"]);
 const MAX_FILE_BYTES = 500 * 1024 * 1024;
+// Real, reproduced OOM crash (this session, `docker events`: a genuine
+// `container oom` -> `die (exitCode=137)` on prod's actual ~512MB RAM) from
+// a ~1.1M-triangle STL (57MB) — and NOT only through kiriSlicer.ts's own
+// full-slice fallback (which already has its own, later, narrower guard):
+// the SAME crash reproduced on the ordinary path too, client-side slice
+// succeeding normally, no fallback ever attempted. The parse-into-our-own
+// Triangle[]-then-applyTransform-then-getModelInfo pipeline just below runs
+// unconditionally for every submission (it's how the server independently
+// re-derives bbox/volume/manifold to sanity-check whatever the client
+// claims — see validateClaimedSlice below) — for a mesh this large, that
+// alone is apparently enough to exhaust a 512MB container, well before
+// sliceModel() ever gets a chance to run or reject anything. MAX_FILE_BYTES
+// above (500MB) is nowhere near tight enough to catch this on its own — a
+// 57MB file that crashes the container is only 11% of that cap. Rejecting
+// by triangle count (exact, format-agnostic, known right after parsing)
+// here, before any of that downstream work runs, protects the one thing
+// that matters most: the shared container survives even when this specific
+// visitor's part can't be quoted through this pipeline. Same 500k
+// deliberately-conservative midpoint as kiriSlicer.ts's own guard (225k
+// confirmed safe, ~1.1M confirmed fatal) — see that file's comment for the
+// full reasoning; kept in sync rather than imported so each guard stays
+// obviously self-contained at its own call site.
+const MAX_QUOTE_TRIANGLES = 500_000;
 // Scale is a raw multiplication factor, not a percentage (client sends
 // unitMultiplier × pct/100 already combined). Bounds cover the realistic
 // unit-mistake range (mm↔inch ≈25.4×, mm↔m ≈1000×) with margin either way,
@@ -144,8 +167,25 @@ export const POST = apiHandler(async (context) => {
     try {
       rawTriangles = await loadTrianglesFromFile(tmpPath, ext);
     } catch (e) {
+      // Binary STL's own pre-parse guard (orientation.ts's
+      // parseStlTriangles, MAX_STL_TRIANGLES) throws with this prefix
+      // *before* building the triangle array — the only format where the
+      // header hands us the count for free ahead of the expensive work.
+      // Everything else still only gets the coarser post-parse check right
+      // below, since OBJ/3MF have no equivalent cheap up-front count.
+      if (e instanceof Error && e.message.startsWith("part_too_complex")) {
+        return jsonError(422, "part_too_complex");
+      }
       console.warn("loadTrianglesFromFile failed", e);
       return jsonError(400, "unreadable_file");
+    }
+    // See MAX_QUOTE_TRIANGLES's own comment — before any of the expensive
+    // transform/analysis work below runs, not after. The only safety net
+    // left for OBJ/3MF (text/XML formats with no cheap up-front triangle
+    // count) and ASCII STL — binary STL never reaches here with an
+    // oversized count, it's already rejected inside loadTrianglesFromFile.
+    if (rawTriangles.length > MAX_QUOTE_TRIANGLES) {
+      return jsonError(422, "part_too_complex");
     }
 
     // Best-effort print-orientation suggestion — scored on the raw,

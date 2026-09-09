@@ -196,6 +196,27 @@ export interface SliceResult {
   volumeCm3: number;
 }
 
+// Real, reproduced live (docker events, this session): a full server-side
+// slice of a ~1.1M-triangle model (a detailed car body STL) OOM-killed the
+// ENTIRE container under prod's real ~512MB RAM — confirmed via `docker
+// events` showing a genuine `container oom` -> `die (exitCode=137)` ->
+// auto-restart sequence, not just a slow subprocess. That's a much bigger
+// blast radius than one failed request: every other visitor's in-flight
+// connection gets dropped too when the shared container dies. Neither of
+// this function's own safety nets helps here — the 300s execFileAsync
+// timeout never gets a chance to fire (the kernel SIGKILLs the whole
+// container first), and no JS-level try/catch can intercept a SIGKILL.
+// The only real fix at this layer is not attempting a full engine slice on
+// a model too complex for the host to survive. 225k triangles (a Benchy)
+// is confirmed fine (~10s, see below); ~1.1M is confirmed fatal. 500k is a
+// deliberately conservative midpoint given only two real data points on
+// either side — revisit with a bisected number if this ever rejects a
+// legitimate part that should have been safe. This only gates the RARE
+// fallback path — normal quotes trust the client's own real slice (see
+// this file's own header comment, role 1) and never reach this function at
+// all in the common case.
+const MAX_FALLBACK_SLICE_TRIANGLES = 500_000;
+
 // The rare full-slice fallback (role 3) — real Kiri:Moto, via the vendored
 // grid-apps CLI script run as a subprocess (its own --device/--process/
 // --model/--output flags, no custom wrapper script needed). Confirmed
@@ -204,6 +225,11 @@ export interface SliceResult {
 export async function sliceModel(triangles: Triangle[], opts: SliceOptions): Promise<SliceResult> {
   if (!(await checkGridAppsAvailable())) {
     throw new Error("kiri_fallback_unavailable: vendor/grid-apps not found (Linux/Docker only, see Dockerfile)");
+  }
+  if (triangles.length > MAX_FALLBACK_SLICE_TRIANGLES) {
+    throw new Error(
+      `kiri_fallback_too_complex: ${triangles.length} triangles exceeds the ${MAX_FALLBACK_SLICE_TRIANGLES} server-fallback ceiling (risk of OOM-killing the whole container, see this function's own comment)`,
+    );
   }
 
   const device = buildKiriDevice();
@@ -231,22 +257,31 @@ export async function sliceModel(triangles: Triangle[], opts: SliceOptions): Pro
     // "FATAL ERROR: Ineffective mark-compacts near heap limit ... JavaScript
     // heap out of memory" — around 2GB, node's own default old-space
     // ceiling, well before the timeout below was ever reached (confirmed:
-    // it died at ~75s against a 300s timeout). Not a timing issue at all —
-    // --max-old-space-size raises that ceiling for this one subprocess
-    // specifically (doesn't touch the main server process's own memory
-    // budget). 4096 is a deliberately moderate bump (2x default), not a
-    // blank check — this box has no docker-compose memory limit of its own
-    // (checked), so the real ceiling is whatever RAM the host actually has;
-    // raise this further only if the host is confirmed to have room for it.
+    // it died at ~75s against a 300s timeout). That crash was clean and
+    // catchable (a real JS exception, caught below and surfaced as the
+    // ordinary "slicing_failed" error), which is exactly what we want from
+    // a rare fallback path.
     //
-    // The 300s timeout (up from 120s) stays regardless — the memory crash
-    // above only explains this ONE reproduced case; a different complex
-    // file could still legitimately just be slow rather than memory-heavy,
-    // and that's what the timeout instead of the memory bump would help.
+    // A `--max-old-space-size=4096` bump was tried here to raise that
+    // ceiling — reverted after it caused a real, reproduced regression: the
+    // actual prod host has only ~512MB RAM (confirmed by the site owner,
+    // not something visible from inside this container). Telling V8 it can
+    // grow this subprocess's heap toward 4GB on a 512MB box doesn't buy
+    // headroom, it just delays the crash past the point where physical+swap
+    // memory actually runs out — so instead of V8's own clean, catchable
+    // "heap out of memory" exception, the OS/Docker OOM-killer hard-kills
+    // the process (or the whole container) first, which surfaces upstream
+    // as a bare 502 with no app-level error to show the visitor. Node's own
+    // default old-space ceiling (no flag) already produced a clean,
+    // catchable failure for the one case reproduced so far — leave it
+    // unflagged rather than push it past what the host can actually back.
+    //
+    // The 300s timeout (up from 120s) stays regardless — a different
+    // complex file could still legitimately just be slow rather than
+    // memory-heavy, and that's what the timeout guards against.
     await execFileAsync(
       "node",
       [
-        "--max-old-space-size=4096",
         KIRI_CLI_PATH,
         `--dir=${GRID_APPS_DIR}`,
         `--model=${modelPath}`,

@@ -24,10 +24,31 @@ export interface Triangle {
 // header's triangle count actually accounts for the rest of the file's
 // length — more reliable than sniffing for a leading "solid" string, since
 // some binary STL exporters put "solid ..." in the 80-byte header too.
+// Real, reproduced OOM crash (docker events: genuine `container oom` ->
+// `die (exitCode=137)` on a real ~512MB-capped container): a ~1.1M-triangle
+// binary STL crashed the WHOLE container during parsing itself — not
+// during slicing, not during the transform/analysis steps after, DURING
+// this loop building the Triangle[] array (confirmed: a triangle-count
+// check placed AFTER this function returns, in the API route, still didn't
+// help — the process died before ever getting there). Binary STL's header
+// hands us the exact triangle count for free, before allocating a single
+// Triangle object, so this is the one format where the guard can sit
+// before the expensive work instead of after it. See
+// src/pages/api/quotes/index.ts's MAX_QUOTE_TRIANGLES for the full
+// reasoning behind the 500k threshold and its own (necessarily later, and
+// for this format now redundant, but still the only guard OBJ/3MF get)
+// post-parse check.
+const MAX_STL_TRIANGLES = 500_000;
+
 export function parseStlTriangles(buffer: Buffer): Triangle[] {
   if (buffer.length >= 84) {
     const count = buffer.readUInt32LE(80);
-    if (84 + count * 50 === buffer.length) return parseBinaryStl(buffer, count);
+    if (84 + count * 50 === buffer.length) {
+      if (count > MAX_STL_TRIANGLES) {
+        throw new Error(`part_too_complex: binary STL has ${count} triangles, exceeds ${MAX_STL_TRIANGLES}`);
+      }
+      return parseBinaryStl(buffer, count);
+    }
   }
   return parseAsciiStl(buffer.toString("utf8"));
 }

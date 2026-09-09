@@ -25,6 +25,7 @@ COPY bootstrap/ bootstrap/
 COPY server-entry.mjs ./
 COPY src/ src/
 COPY public/ public/
+COPY worker-assets/ worker-assets/
 RUN npx prisma generate
 RUN npm run build
 
@@ -86,6 +87,7 @@ RUN npm install --omit=dev
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/vendor/grid-apps ./vendor/grid-apps
+COPY --from=build /app/worker-assets ./worker-assets
 COPY --from=build /app/bootstrap ./bootstrap
 COPY --from=build /app/server-entry.mjs ./
 # prisma/seed.ts imports straight from src/lib/server/ (tsx runs it

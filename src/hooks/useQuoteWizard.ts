@@ -656,6 +656,34 @@ export function useQuoteWizard() {
     setTimeout(applyScalePreview, 0);
   }
 
+  // Never lets a slow device (typically a weaker phone on a complex model —
+  // real report: "impossible de slicer des pièces complexes" on mobile)
+  // leave the visitor stuck indefinitely: past this deadline, treat it the
+  // same as a failed/unavailable client slice (return null) and let
+  // submitQuote() move on and submit without a claim, which is exactly what
+  // makes the server do its own fallback slice instead (see
+  // validateClaimedSlice/sliceModel in kiriSlicer.ts). The slow slice itself
+  // isn't cancelled — Kiri:Moto's engine has no clean mid-slice abort this
+  // project's wrapper exposes — it just keeps running in the background
+  // with nobody left awaiting it; harmless, not a leak (the browser tab's
+  // own resources, freed on navigation same as any other in-flight work).
+  const CLIENT_SLICE_DEADLINE_MS = 3 * 60_000;
+  function withDeadline<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => resolve(null), ms);
+      promise.then(
+        (v) => {
+          clearTimeout(timer);
+          resolve(v);
+        },
+        () => {
+          clearTimeout(timer);
+          resolve(null);
+        },
+      );
+    });
+  }
+
   // Real client-side slice via Kiri:Moto (public/kiri-slicer.js) — the
   // primary path (see the Kiri:Moto plan): the visitor's own device
   // computes the real weight/time instead of queuing behind everyone
@@ -678,11 +706,15 @@ export function useQuoteWizard() {
 
       const { sliceWithKiri } = await dynamicImport("/kiri-slicer.js");
       const layerHeightMm = CLIENT_QUALITY_LAYER_HEIGHT[quality] ?? 0.2;
-      const stats = await sliceWithKiri({
-        orientedPositions: positions,
-        deviceJson: buildKiriDevice(),
-        processJson: buildKiriProcess(quality, layerHeightMm, infill, material),
-      });
+      const stats = await withDeadline<{ filamentMm: number; estimatedTimeMin: number }>(
+        sliceWithKiri({
+          orientedPositions: positions,
+          deviceJson: buildKiriDevice(),
+          processJson: buildKiriProcess(quality, layerHeightMm, infill, material),
+        }),
+        CLIENT_SLICE_DEADLINE_MS,
+      );
+      if (!stats) return null; // timed out, or the slice itself failed/rejected
       if (fileRef.current !== targetFile) return null;
       return {
         weightG: filamentLengthToWeightG(stats.filamentMm, mat.densityGCm3),
@@ -723,6 +755,7 @@ export function useQuoteWizard() {
         quote_disabled: "Le devis instantané est momentanément indisponible.",
         part_too_large: "Cette pièce dépasse le volume imprimable de toutes nos machines (max 330×320×325mm). Possibilité d'imprimer vos pièces en plusieurs morceaux, utilisez le formulaire de contact.",
         non_manifold_model: "Le modèle contient des erreurs de géométrie (maillage non étanche) — vérifiez le fichier dans votre logiciel de CAO.",
+        part_too_complex: "Cette pièce est trop complexe (trop de triangles) pour être analysée par nos serveurs. Essayez de simplifier le maillage, ou contactez-nous directement avec votre fichier.",
         unreadable_file: "Fichier illisible — vérifiez qu'il s'agit bien d'un .stl, .obj ou .3mf valide.",
         slicing_failed: "L'analyse a échoué pour ce fichier. Contactez-nous si le problème persiste.",
         timeout: "L'analyse prend trop de temps pour ce fichier. Réessayez, ou contactez-nous directement si le problème persiste.",

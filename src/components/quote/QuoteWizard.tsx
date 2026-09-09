@@ -161,7 +161,7 @@ export default function QuoteWizard() {
                 <input ref={w.fileInputRef} type="file" accept=".stl,.obj,.3mf" onChange={w.onFileInputChange} className="qw-file-input-hidden" />
                 <div onClick={w.dropFile} onDragOver={w.onDragOver} onDragLeave={w.onDragLeave} onDrop={w.onDrop} className={`qw-dropzone${w.dragging ? " dragging" : ""}`}>
                   <div className="qw-dropzone-title">Glissez votre fichier .STL / .OBJ / .3MF ici</div>
-                  <div className="qw-dropzone-hint">ou cliquez pour parcourir — 150 Mo max</div>
+                  <div className="qw-dropzone-hint">ou cliquez pour parcourir — 500 Mo max</div>
                 </div>
                 {w.fileError && <div className="qw-file-error">{w.fileError}</div>}
               </>
@@ -300,6 +300,9 @@ export default function QuoteWizard() {
                   <PrinterLoaderIcon maskId="d2" />
                 </div>
                 <div className="qw-analyzing-text">Analyse de votre besoin en cours…</div>
+                <div className="qw-analyzing-hint">
+                  Cela peut prendre 1 à 6 minutes selon la complexité de votre pièce — ce délai permet d'obtenir le prix le plus juste pour votre pièce.
+                </div>
               </div>
             )}
             {!!w.analysisError && (
@@ -433,6 +436,7 @@ export default function QuoteWizard() {
         .qw-analysis-preview { height: 150px; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at center, rgba(255,90,60,.08), transparent 70%); border-radius: 6px; overflow: hidden; }
         .qw-analyzing { border: 1.5px dashed rgba(255,255,255,.25); border-radius: 8px; padding: 34px; text-align: center; }
         .qw-analyzing-text { font: 600 12px 'Inter',sans-serif; color: #f3f1ec; }
+        .qw-analyzing-hint { font: 500 11.5px/1.5 'Inter',sans-serif; color: #f3f1ec; max-width: 420px; margin: 10px auto 0; }
         .qw-loader-icon { margin: 0 auto 16px; color: #ff5a3c; }
         .qw-loader-icon--small { width: 40px; height: 40px; margin-bottom: 8px; --pl-nozzle-fill: #161514; }
         .qw-loader-icon--large { width: 64px; height: 64px; --pl-nozzle-fill: #1a1917; }

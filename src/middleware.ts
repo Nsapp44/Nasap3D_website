@@ -94,6 +94,30 @@ function isForbiddenCrossOrigin(context: { request: Request; url: URL }): boolea
   return !isSameOrigin;
 }
 
+// Cross-origin isolation (COOP/COEP — Cross-Origin-Opener-Policy/-Embedder-
+// Policy) was tried on /devis-instantane and removed again — measured, not
+// assumed. It unlocks SharedArrayBuffer, which would only matter if Kiri:
+// Moto/Manifold's WASM actually used shared-memory threading; it doesn't —
+// confirmed by reading the real grid-apps source (a `set_threaded()...
+// deprecated` trace is the only remnant of that approach) and by 4 live
+// timed trials on the same file, same machine, isolation on vs. off:
+// 11.2s/14.7s vs 12.8s/13.9s — fully overlapping, no real difference. What
+// actually made client-side slicing fast (the minion sub-worker pool,
+// sized to navigator.hardwareConcurrency) is plain postMessage-based
+// parallelism, which needs no isolation at all. Enabling it also isn't
+// free: it broke geometryWorker.js outright the first time (`new Worker`
+// enforces Cross-Origin-Resource-Policy on same-origin module workers
+// under COEP:require-corp, unlike ordinary same-origin subresources) and
+// carries permanent risk for every future third-party script added to this
+// page (Stripe Elements, hCaptcha, or similar — both load cross-origin
+// iframes elsewhere on the site — would silently break under COEP if ever
+// added here too). No measured upside, real downside: not worth it. Left
+// the underlying serveWorkerScript.ts infrastructure and the real Astro
+// routes it's used from in place, though — those exist for an unrelated,
+// confirmed-real win (Cache-Control, see that file's own comment), not for
+// COOP/COEP, and the Cross-Origin-Resource-Policy header they set is inert
+// without COEP enabling it, harmless to leave on.
+
 export const onRequest = defineMiddleware(async (context, next) => {
   startBackgroundSweepsOnce();
 
