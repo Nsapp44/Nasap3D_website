@@ -205,6 +205,24 @@ export function useQuoteWizard() {
     return dims[0] <= bed[0] && dims[1] <= bed[1] && dims[2] <= 325;
   }, [sizeMm, effectiveScale]);
 
+  // Real, reproduced bug: a genuinely flat/near-2D upload (bounding box
+  // exactly 0mm on one axis) passes every other check fine but hangs/errors
+  // deep inside the real slicing engine (this same check is duplicated
+  // server-side in quotes/index.ts, checked there against the FINAL
+  // rotated/scaled bbox — this client-side one exists only to catch the
+  // problem before ever starting the client-side slice, avoiding the
+  // "stuck on Analyse auto forever" symptom). Uses the raw upload's own
+  // axes (sizeMm, pre-orientation) since that's all that's known this
+  // early — 0.1mm is well under any real FDM nozzle's minimum line width
+  // (~0.4mm), so this only catches degenerate geometry, never a
+  // legitimately thin but printable wall.
+  const MIN_DIMENSION_MM = 0.1;
+  const scalePartTooThin = useCallback(() => {
+    if (!sizeMm) return false;
+    const f = effectiveScale();
+    return Math.min(sizeMm.x * f, sizeMm.y * f, sizeMm.z * f) < MIN_DIMENSION_MM;
+  }, [sizeMm, effectiveScale]);
+
   // Parses + orients a freshly-uploaded file exactly once, caching the
   // in-flight/resolved promise in orientedModelPromiseRef so every consumer
   // (preview, thin-wall check, slice) awaits the same result instead of
@@ -755,9 +773,11 @@ export function useQuoteWizard() {
         quote_disabled: "Le devis instantané est momentanément indisponible.",
         part_too_large: "Cette pièce dépasse le volume imprimable de toutes nos machines (max 330×320×325mm). Possibilité d'imprimer vos pièces en plusieurs morceaux, utilisez le formulaire de contact.",
         non_manifold_model: "Le modèle contient des erreurs de géométrie (maillage non étanche) — vérifiez le fichier dans votre logiciel de CAO.",
+        part_too_thin: "Cette pièce est trop fine sur un axe (quasi plate) pour être imprimée telle quelle — vérifiez l'échelle ou le fichier.",
         part_too_complex: "Cette pièce est trop complexe (trop de triangles) pour être analysée par nos serveurs. Essayez de simplifier le maillage, ou contactez-nous directement avec votre fichier.",
         unreadable_file: "Fichier illisible — vérifiez qu'il s'agit bien d'un .stl, .obj ou .3mf valide.",
         slicing_failed: "L'analyse a échoué pour ce fichier. Contactez-nous si le problème persiste.",
+        server_busy: "Nos serveurs sont momentanément très sollicités (beaucoup de devis en même temps). Réessayez dans quelques instants.",
         timeout: "L'analyse prend trop de temps pour ce fichier. Réessayez, ou contactez-nous directement si le problème persiste.",
         color_out_of_stock: "Cette couleur vient de passer en rupture de stock — choisissez-en une autre.",
         invalid_scale: "Échelle invalide — vérifiez l'unité et le pourcentage saisis à l'étape précédente.",
@@ -777,7 +797,7 @@ export function useQuoteWizard() {
   }
 
   function next() {
-    if (step === 1 && (!scaleFitsPrinter() || manifoldWarning || orientationLoading)) return;
+    if (step === 1 && (!scaleFitsPrinter() || scalePartTooThin() || manifoldWarning || orientationLoading)) return;
     const nextStep = Math.min(4, step + 1);
     setStep(nextStep);
     if (nextStep === 3 && !analysisReady && !analyzing) submitQuote();
@@ -861,6 +881,7 @@ export function useQuoteWizard() {
     analysisPreviewRef,
     effectiveScale,
     scaleFitsPrinter,
+    scalePartTooThin,
     selectMaterial,
     discountFor,
     dropFile,

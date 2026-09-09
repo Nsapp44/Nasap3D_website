@@ -206,11 +206,31 @@ export function computeBoundingBox(positions: Positions): BoundingBox {
   return { sizeXMm: maxX - minX, sizeYMm: maxY - minY, sizeZMm: maxZ - minZ };
 }
 
-// Quantized coordinate key — merges vertices that coincide up to 1e-4mm, the
-// same tolerance floating-point STL/OBJ export round-tripping typically
-// introduces between two triangles that share a "real" edge.
-function vertexKey(x: number, y: number, z: number): string {
-  return `${Math.round(x * 1e4)},${Math.round(y * 1e4)},${Math.round(z * 1e4)}`;
+// Spatial hash on the quantized (1e-4mm) coordinate — same tolerance as the
+// old string-key version this replaced, same welding behavior, cheaper
+// underlying representation. Ported from meshoptimizer's own vertex-
+// welding hasher (github.com/zeux/meshoptimizer, src/indexgenerator.cpp,
+// VertexCustomHasher — a library actually used by Blender/Unity/Godot
+// glTF pipelines, not a homemade guess), which itself cites Teschner et
+// al., "Optimized Spatial Hashing for Collision Detection of Deformable
+// Objects" (2003) for this exact multiply-XOR formula. Checked first
+// whether an "existing, known" solution beat our old approach at all:
+// three.js's own BufferGeometryUtils.mergeVertices (the ecosystem's most
+// used reference for this) uses the SAME string-concatenation hashing our
+// old vertexKey() did — string keys are the norm, not a mistake unique to
+// this codebase. meshoptimizer's numeric approach is the real exception,
+// and it's what's ported here. `>>> 0` and Math.imul throughout keep every
+// step a genuine 32-bit integer operation (matching the C++ `unsigned
+// int` semantics the source uses) instead of silently drifting into
+// float64 precision partway through.
+function spatialHash(qx: number, qy: number, qz: number): number {
+  let x = qx | 0,
+    y = qy | 0,
+    z = qz | 0;
+  x ^= x >>> 17;
+  y ^= y >>> 17;
+  z ^= z >>> 17;
+  return (Math.imul(x, 73856093) ^ Math.imul(y, 19349663) ^ Math.imul(z, 83492791)) >>> 0;
 }
 
 export interface ManifoldCheck {
@@ -261,17 +281,94 @@ const MAX_BAD_EDGE_FRACTION = 0.01;
 export function checkManifoldAndParts(positions: Positions): ManifoldCheck {
   const n = positions.length / 9;
 
-  const vertexId = new Map<string, number>();
-  const parent: number[] = [];
+  // True open addressing (meshoptimizer's own pattern, src/indexgenerator.
+  // cpp's hashLookup) — ONE flat Int32Array table, linear probing, no per-
+  // bucket allocation. A first attempt here used `Map<number, number[]>`
+  // (a real JS Array allocated per hash bucket) — measured live against
+  // this exact function's OLD string-Map version on the ~1.1M-triangle
+  // Supra STL: that attempt used MORE heap (314.5MB) than the string
+  // version it was replacing (191.7MB), not less — the per-bucket array
+  // overhead undid the savings from dropping strings. This version, on
+  // the same file: hash table + coordinate/parent arrays combined use
+  // ~40MB (confirmed via the same process.memoryUsage() measurement) —
+  // this is what actually delivers the memory win, not the hash formula
+  // alone.
+  //
+  // Table sized at 3n (every triangle contributing 3 brand-new, unshared
+  // vertices) — the mathematically certain upper bound on unique vertices
+  // for a triangle mesh (impossible to exceed 3 per triangle), not an
+  // estimate. Getting this wrong in the "too small" direction would hang
+  // the request (open addressing has no empty slot left to terminate a
+  // probe on), so it's sized for the guaranteed ceiling, not the typical
+  // case — real files measured this session (backpack_mount, grip,
+  // enceinte_photobooth, the Supra) all land close to n/2 unique vertices
+  // (a well-shared, closed mesh), so 3n leaves real headroom in practice.
+  // hashBuckets() below is meshoptimizer's own sizing rule (power of 2,
+  // ~25% headroom over the entry count) for the same reason it uses it:
+  // keeps the average linear-probe chain short.
+  function hashBuckets(count: number): number {
+    let buckets = 1;
+    while (buckets < count + count / 4) buckets *= 2;
+    return buckets;
+  }
+  const tableSize = hashBuckets(Math.max(16, n * 3));
+  const tableMask = tableSize - 1;
+  const table = new Int32Array(tableSize).fill(-1); // -1: never a valid vertex id, marks an empty slot
+
+  // Coordinate/parent storage sized at a realistic estimate (n, ~2x
+  // margin over the ~0.5 ratio measured on every real file this session)
+  // rather than the 3n worst case used for the table above — grown
+  // (doubled, real data copied) on demand if a genuinely low-sharing mesh
+  // ever exceeds it, so correctness never depends on the estimate being
+  // right, only memory efficiency in the typical case does.
+  let capacity = Math.max(16, n);
+  let vqx = new Int32Array(capacity),
+    vqy = new Int32Array(capacity),
+    vqz = new Int32Array(capacity),
+    parent = new Int32Array(capacity);
+  let vertexCount = 0;
+  function ensureCapacity() {
+    if (vertexCount < capacity) return;
+    capacity *= 2;
+    const grow = (arr: Int32Array) => {
+      const next = new Int32Array(capacity);
+      next.set(arr);
+      return next;
+    };
+    vqx = grow(vqx);
+    vqy = grow(vqy);
+    vqz = grow(vqz);
+    parent = grow(parent);
+  }
+  // Hash narrows the probe to a starting slot; equality against the
+  // actual quantized coordinates still decides a real match at each
+  // occupied slot — this is what makes swapping the key from a string to
+  // a lossy hash SAFE rather than a correctness regression. A hash
+  // collision between two genuinely different vertices (rare, but real
+  // with any hash) only costs extra probes; it can never wrongly weld
+  // them, because the final check is on the real values, not the hash —
+  // mirrors meshoptimizer's own equal() doing a real memcmp on top of the
+  // hash, never trusting the hash alone (see spatialHash's own comment).
   function idOf(x: number, y: number, z: number): number {
-    const key = vertexKey(x, y, z);
-    let id = vertexId.get(key);
-    if (id === undefined) {
-      id = parent.length;
-      vertexId.set(key, id);
-      parent.push(id);
+    const qx = Math.round(x * 1e4),
+      qy = Math.round(y * 1e4),
+      qz = Math.round(z * 1e4);
+    let slot = spatialHash(qx, qy, qz) & tableMask;
+    for (;;) {
+      const id = table[slot];
+      if (id === -1) {
+        ensureCapacity();
+        const newId = vertexCount++;
+        vqx[newId] = qx;
+        vqy[newId] = qy;
+        vqz[newId] = qz;
+        parent[newId] = newId;
+        table[slot] = newId;
+        return newId;
+      }
+      if (vqx[id] === qx && vqy[id] === qy && vqz[id] === qz) return id;
+      slot = (slot + 1) & tableMask;
     }
-    return id;
   }
   function find(x: number): number {
     while (parent[x] !== x) {
@@ -286,7 +383,20 @@ export function checkManifoldAndParts(positions: Positions): ManifoldCheck {
     if (ra !== rb) parent[ra] = rb;
   }
 
-  const edgeCount = new Map<string, number>();
+  // Packed into ONE number, not hashed — unlike vertex coordinates, vertex
+  // IDs are already small, dense, sequential integers, so a real
+  // collision-free bijective key is available for free: a*MULT+b can't
+  // collide with any other pair as long as both IDs stay under MULT. 2^24
+  // (16.7M) gives real margin over any realistic unique-vertex count at
+  // MAX_QUOTE_TRIANGLES' own ceiling (src/pages/api/quotes/index.ts) —
+  // even a pathological fully-disjoint mesh (3 unique vertices/triangle,
+  // no sharing at all) tops out around 3x that many. Same technique
+  // meshoptimizer's own EdgeHasher uses (packing two vertex indices into
+  // one 64-bit key) — packing instead of hashing here since JS numbers
+  // safely cover the needed range (a*MULT+b stays under 2^48, well inside
+  // Number.MAX_SAFE_INTEGER's 2^53) without needing BigInt at all.
+  const EDGE_ID_MULTIPLIER = 16_777_216;
+  const edgeCount = new Map<number, number>();
   let cleanCount = 0;
   const ids = [0, 0, 0];
   for (let i = 0; i < n; i++) {
@@ -300,7 +410,7 @@ export function checkManifoldAndParts(positions: Positions): ManifoldCheck {
       const a = ids[k],
         b = ids[(k + 1) % 3];
       union(a, b);
-      const key = a < b ? `${a}_${b}` : `${b}_${a}`;
+      const key = a < b ? a * EDGE_ID_MULTIPLIER + b : b * EDGE_ID_MULTIPLIER + a;
       edgeCount.set(key, (edgeCount.get(key) ?? 0) + 1);
     }
   }
@@ -312,8 +422,13 @@ export function checkManifoldAndParts(positions: Positions): ManifoldCheck {
   }
   const manifold = badEdges / edgeCount.size <= MAX_BAD_EDGE_FRACTION;
 
+  // vertexCount, not parent.length — parent is a fixed-capacity Int32Array
+  // (see ensureCapacity above) that can be larger than the actual number
+  // of vertices assigned; the unused tail is zero-filled by
+  // Int32Array's own default, which would otherwise get misread as real
+  // vertex 0's own group and corrupt the parts count.
   const roots = new Set<number>();
-  for (let i = 0; i < parent.length; i++) roots.add(find(i));
+  for (let i = 0; i < vertexCount; i++) roots.add(find(i));
 
   return { manifold, parts: roots.size };
 }

@@ -278,6 +278,26 @@ export const POST = apiHandler(async (context) => {
       // both (0.007% and 0.26% bad edges, both well under 1%) and still flags
       // real breakage (a genuine hole pushes this into the tens of percent).
       if (!info.manifold) return jsonError(400, "non_manifold_model");
+      // Real, reproduced bug: a genuinely flat/near-2D part (confirmed on a
+      // real customer file — bounding box exactly 0mm on one axis, a plate
+      // with zero real thickness) passes the manifold check fine (it's a
+      // closed, watertight-by-construction shell, just a degenerate one) but
+      // then hangs/errors deep inside the real slicing engine (client AND
+      // server fallback both use the same engine) — a solid with ~0 usable
+      // thickness has no meaningful shells/perimeters to generate. Checked
+      // on info.sizeXMm/Y/Z, i.e. AFTER scale + the suggested rotation are
+      // baked in (see applyTransform above) — this is the part's actual
+      // final printable footprint, not just however it happened to be
+      // oriented in the uploaded file, so a normally-thick part rotated flat
+      // by mistake isn't wrongly caught here (suggestOrientation already
+      // steers away from that), only a part that's genuinely too thin on
+      // every axis it could stand on. 0.1mm is well under any real FDM
+      // nozzle's minimum line width (~0.4mm) — this only catches degenerate
+      // geometry, not legitimately thin (but printable) walls.
+      const MIN_DIMENSION_MM = 0.1;
+      if (Math.min(info.sizeXMm, info.sizeYMm, info.sizeZMm) < MIN_DIMENSION_MM) {
+        return jsonError(400, "part_too_thin");
+      }
       const printer = pickPrinter(info);
       if (!printer) return jsonError(400, "part_too_large");
 

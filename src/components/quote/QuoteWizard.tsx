@@ -36,6 +36,7 @@ export default function QuoteWizard() {
   const pct = q ? q.discountPct : w.discountFor(qty);
   const finalTotal = q ? q.totalPriceCents / 100 : 0;
   const scaleTooLarge = !!w.sizeMm && !w.scaleFitsPrinter();
+  const scaleTooThin = !!w.sizeMm && w.scalePartTooThin();
   const sizeLabel = w.sizeMm
     ? (() => {
         const f = w.effectiveScale();
@@ -131,13 +132,16 @@ export default function QuoteWizard() {
                         <div className="qw-real-size">
                           Taille réelle
                           <br />
-                          <span className={`qw-real-size-value${scaleTooLarge ? " too-large" : ""}`}>{sizeLabel}</span>
+                          <span className={`qw-real-size-value${scaleTooLarge || scaleTooThin ? " too-large" : ""}`}>{sizeLabel}</span>
                         </div>
                       </div>
                     )}
                   </div>
                   {scaleTooLarge && (
                     <div className="qw-scale-warning">⚠ À cette échelle, la pièce dépasse le format imprimable de nos machines (330×320×325mm max). Réduisez le pourcentage ou changez l'unité pour continuer.</div>
+                  )}
+                  {scaleTooThin && (
+                    <div className="qw-scale-warning">⚠ À cette échelle, la pièce est trop fine sur un axe (quasi plate, moins de 0,1mm) pour être imprimée. Augmentez le pourcentage ou vérifiez le fichier.</div>
                   )}
                   {w.orientationLoading ? (
                     <div className="qw-file-success">Vérification du fichier (orientation, géométrie)…</div>
@@ -151,7 +155,7 @@ export default function QuoteWizard() {
                   )}
                 </div>
                 <div className="qw-next-row">
-                  <div onClick={w.next} className={`qw-next-btn${scaleTooLarge || w.manifoldWarning || w.orientationLoading ? " disabled" : ""}`}>
+                  <div onClick={w.next} className={`qw-next-btn${scaleTooLarge || scaleTooThin || w.manifoldWarning || w.orientationLoading ? " disabled" : ""}`}>
                     {w.orientationLoading ? "Vérification…" : "Suivant →"}
                   </div>
                 </div>
