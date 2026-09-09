@@ -39,31 +39,26 @@ const MAX_FILE_BYTES = 500 * 1024 * 1024;
 // that matters most: the shared container survives even when this specific
 // visitor's part can't be quoted through this pipeline.
 //
-// 500k (this constant's first value) was wrong — a guess extrapolated from
-// two points nowhere near each other (225k confirmed safe, ~1.1M confirmed
-// fatal) without ever testing anything in between. A real customer file
-// (a genuine, reproduced prod 502 — same `container oom` -> `die` sequence
-// via `docker events`, this time from a normal, unremarkable STL, not an
-// intentional stress test) exposed the gap: 354,534 triangles (a 17.7MB
-// STL) ALSO crashed a 512MB container, comfortably under the old 500k
-// limit.
+// History: 500k (then 600k) was reached by guessing/bisecting around the
+// OLD nested-object Triangle[] representation, which cost ~400+ bytes per
+// triangle in V8 (a real object plus 4 nested arrays per triangle, on top
+// of the 9 actual numbers) — confirmed via docker events (`container oom`
+// -> `die (exitCode=137)`) at both 512MB (100,943 triangles safe, 354,534
+// fatal) and 1.5GB (354,534 safe, ~1.1M still fatal) hosts. That
+// representation has since been replaced (see orientation.ts's own header
+// comment) with a flat Float32Array — 36 bytes/triangle, no per-triangle
+// allocation at all, roughly a 10x reduction, which is what makes a value
+// this much higher than the old one reasonable at all.
 //
-// This value assumes the prod host has been moved to ~1.5GB RAM (up from
-// the ~512MB it had when the above was reproduced) — confirmed by the same
-// docker-events method, capping this local container at exactly 1.5GB:
-// 354,534 triangles (the file that killed the 512MB container) now
-// succeeds cleanly; a ~1.1M-triangle STL (the original stress-test file)
-// still reproduces a genuine OOM even at 1.5GB. 600k sits with real margin
-// on both sides of those two points. If the host's actual RAM ever
-// changes, these numbers need re-deriving the same way — they are NOT a
-// generic "safe" constant, they are tied to a specific measured ceiling.
-// Our own Triangle[] shape (nested arrays/objects, not flat typed arrays)
-// is the real reason the memory cost per triangle is this high — raising
-// this constant to track more RAM is the immediate lever available, not a
-// durable fix; the actual fix is switching this parse/transform/analyze
-// pipeline to flat Float32Arrays, which would let this ceiling move up
-// substantially for the same RAM budget.
-const MAX_QUOTE_TRIANGLES = 600_000;
+// 1.5M (deliberately below the 3M the bytes/triangle math alone would
+// suggest) is a real, tested value at 1.5GB — comfortable margin above the
+// ~1.1M-triangle file that motivated this rewrite in the first place (the
+// same file the visitor's own browser already sliced successfully client-
+// side in ~40s, but that never priced *at all* server-side before this
+// fix, since even the cheap verification step crashed the container).
+// Re-verify under a real memory cap (see this session's own docker-events
+// method) before raising this further, or if the host's actual RAM changes.
+const MAX_QUOTE_TRIANGLES = 1_500_000;
 // Scale is a raw multiplication factor, not a percentage (client sends
 // unitMultiplier × pct/100 already combined). Bounds cover the realistic
 // unit-mistake range (mm↔inch ≈25.4×, mm↔m ≈1000×) with margin either way,
@@ -205,7 +200,10 @@ export const POST = apiHandler(async (context) => {
     // left for OBJ/3MF (text/XML formats with no cheap up-front triangle
     // count) and ASCII STL — binary STL never reaches here with an
     // oversized count, it's already rejected inside loadTrianglesFromFile.
-    if (rawTriangles.length > MAX_QUOTE_TRIANGLES) {
+    // rawTriangles is a flat Positions array (9 numbers/triangle, see
+    // orientation.ts) — .length alone is the float count, not the triangle
+    // count.
+    if (rawTriangles.length / 9 > MAX_QUOTE_TRIANGLES) {
       return jsonError(422, "part_too_complex");
     }
 

@@ -12,10 +12,28 @@
 // waiting on (see routes/quotes.ts), so it has to stay fast — testing 6
 // orientations against a parsed triangle list is cheap (no subprocess
 // calls, pure JS math), unlike calling PrusaSlicer 6 times.
-export interface Triangle {
-  normal: [number, number, number];
-  v: [[number, number, number], [number, number, number], [number, number, number]];
-}
+//
+// Positions: a flat Float32Array, 9 numbers per triangle (v0.xyz, v1.xyz,
+// v2.xyz), no per-triangle objects/nested arrays. Replaces an earlier
+// `Triangle[]` shape (`{normal: [x,y,z], v: [[x,y,z],[x,y,z],[x,y,z]]}`) —
+// real, reproduced OOM crash (docker events: genuine `container oom` ->
+// `die (exitCode=137)` on the real prod container): that nested-object
+// representation cost roughly 400+ bytes/triangle in V8 (object + 4 nested
+// arrays' own overhead, on top of the 9 actual numbers), enough that a
+// ~1.1M-triangle STL alone could exhaust the container during parsing,
+// well before any transform/analysis/slicing ever ran. A flat typed array
+// costs exactly 36 bytes/triangle (9 × 4-byte float32) with zero per-
+// triangle allocation — roughly a 10x reduction, which is the real fix;
+// src/pages/api/quotes/index.ts's MAX_QUOTE_TRIANGLES guard is what's left
+// of the old, much more conservative threshold this made unnecessary at
+// its old value (kept, lowered, as a last-resort ceiling — see that
+// constant's own comment). Normals are never stored: nothing downstream
+// actually needs the file's own normal data — serializeBinaryStl always
+// re-derives them from winding order (occt-import-js/STEP and hand-rotated
+// triangles don't reliably carry a trustworthy one anyway), and
+// suggestOrientation computes its own per-candidate normal component from
+// the vertices directly.
+export type Positions = Float32Array;
 
 // Binary STL: 80-byte header + uint32 triangle count, then 50 bytes/tri
 // (12 bytes normal + 36 bytes vertices + 2-byte attribute, all little
@@ -24,23 +42,18 @@ export interface Triangle {
 // header's triangle count actually accounts for the rest of the file's
 // length — more reliable than sniffing for a leading "solid" string, since
 // some binary STL exporters put "solid ..." in the 80-byte header too.
-// Real, reproduced OOM crash (docker events: genuine `container oom` ->
-// `die (exitCode=137)` on a real ~512MB-capped container): a ~1.1M-triangle
-// binary STL crashed the WHOLE container during parsing itself — not
-// during slicing, not during the transform/analysis steps after, DURING
-// this loop building the Triangle[] array (confirmed: a triangle-count
-// check placed AFTER this function returns, in the API route, still didn't
-// help — the process died before ever getting there). Binary STL's header
-// hands us the exact triangle count for free, before allocating a single
-// Triangle object, so this is the one format where the guard can sit
-// before the expensive work instead of after it. See
-// src/pages/api/quotes/index.ts's MAX_QUOTE_TRIANGLES for the full
-// reasoning behind the threshold value and its own (necessarily later, and
-// for this format now redundant, but still the only guard OBJ/3MF get)
-// post-parse check.
-const MAX_STL_TRIANGLES = 600_000;
+//
+// This is a last-resort ceiling now, not the primary defense — see this
+// file's own header comment on Positions for why the real fix was the flat-
+// array rewrite, not this number. Matches src/pages/api/quotes/index.ts's
+// own MAX_QUOTE_TRIANGLES (see that constant's comment for the full
+// history/reasoning) so binary STL's cheap pre-parse rejection and every
+// other format's necessarily-later post-parse rejection agree on the same
+// ceiling — kept in sync rather than imported so each guard stays
+// obviously self-contained at its own call site.
+const MAX_STL_TRIANGLES = 1_500_000;
 
-export function parseStlTriangles(buffer: Buffer): Triangle[] {
+export function parseStlTriangles(buffer: Buffer): Positions {
   if (buffer.length >= 84) {
     const count = buffer.readUInt32LE(80);
     if (84 + count * 50 === buffer.length) {
@@ -53,54 +66,57 @@ export function parseStlTriangles(buffer: Buffer): Triangle[] {
   return parseAsciiStl(buffer.toString("utf8"));
 }
 
-function parseBinaryStl(buffer: Buffer, count: number): Triangle[] {
-  const triangles: Triangle[] = [];
+function parseBinaryStl(buffer: Buffer, count: number): Positions {
+  const positions = new Float32Array(count * 9);
   let offset = 84;
+  let p = 0;
   for (let i = 0; i < count; i++) {
-    const normal: [number, number, number] = [
-      buffer.readFloatLE(offset),
-      buffer.readFloatLE(offset + 4),
-      buffer.readFloatLE(offset + 8),
-    ];
-    const v: Triangle["v"] = [
-      [buffer.readFloatLE(offset + 12), buffer.readFloatLE(offset + 16), buffer.readFloatLE(offset + 20)],
-      [buffer.readFloatLE(offset + 24), buffer.readFloatLE(offset + 28), buffer.readFloatLE(offset + 32)],
-      [buffer.readFloatLE(offset + 36), buffer.readFloatLE(offset + 40), buffer.readFloatLE(offset + 44)],
-    ];
-    triangles.push({ normal, v });
+    // Skip the stored normal (12 bytes) — never trusted, see this file's
+    // header comment.
+    positions[p++] = buffer.readFloatLE(offset + 12);
+    positions[p++] = buffer.readFloatLE(offset + 16);
+    positions[p++] = buffer.readFloatLE(offset + 20);
+    positions[p++] = buffer.readFloatLE(offset + 24);
+    positions[p++] = buffer.readFloatLE(offset + 28);
+    positions[p++] = buffer.readFloatLE(offset + 32);
+    positions[p++] = buffer.readFloatLE(offset + 36);
+    positions[p++] = buffer.readFloatLE(offset + 40);
+    positions[p++] = buffer.readFloatLE(offset + 44);
     offset += 50;
   }
-  return triangles;
+  return positions;
 }
 
-function parseAsciiStl(text: string): Triangle[] {
-  const triangles: Triangle[] = [];
+// ASCII STL is already rare among real uploads (verbose text, most CAD/
+// slicer tools default to binary) and self-limits its own triangle count
+// via file size long before MAX_STL_TRIANGLES matters — a growable plain
+// array here, flattened once at the end, is simple and fine.
+function parseAsciiStl(text: string): Positions {
+  const flat: number[] = [];
   const vertexRe = /vertex\s+([-\d.eE+]+)\s+([-\d.eE+]+)\s+([-\d.eE+]+)/g;
   const facetRe = /facet normal\s+([-\d.eE+]+)\s+([-\d.eE+]+)\s+([-\d.eE+]+)([\s\S]*?)endfacet/g;
   let m: RegExpExecArray | null;
   while ((m = facetRe.exec(text))) {
-    const normal: [number, number, number] = [parseFloat(m[1]), parseFloat(m[2]), parseFloat(m[3])];
-    const verts: [number, number, number][] = [];
+    const verts: number[] = [];
     let vm: RegExpExecArray | null;
     vertexRe.lastIndex = 0;
-    while ((vm = vertexRe.exec(m[4]))) verts.push([parseFloat(vm[1]), parseFloat(vm[2]), parseFloat(vm[3])]);
-    if (verts.length === 3) triangles.push({ normal, v: [verts[0], verts[1], verts[2]] });
+    while ((vm = vertexRe.exec(m[4]))) verts.push(parseFloat(vm[1]), parseFloat(vm[2]), parseFloat(vm[3]));
+    if (verts.length === 9) for (const n of verts) flat.push(n);
   }
-  return triangles;
+  return Float32Array.from(flat);
 }
 
-function triangleArea(v: Triangle["v"]): number {
-  const [a, b, c] = v;
-  const ux = b[0] - a[0],
-    uy = b[1] - a[1],
-    uz = b[2] - a[2];
-  const vx = c[0] - a[0],
-    vy = c[1] - a[1],
-    vz = c[2] - a[2];
-  const cx = uy * vz - uz * vy,
-    cy = uz * vx - ux * vz,
-    cz = ux * vy - uy * vx;
-  return Math.sqrt(cx * cx + cy * cy + cz * cz) / 2;
+function triangleArea(positions: Positions, i: number): number {
+  const o = i * 9;
+  const ax = positions[o], ay = positions[o + 1], az = positions[o + 2];
+  const bx = positions[o + 3], by = positions[o + 4], bz = positions[o + 5];
+  const cx = positions[o + 6], cy = positions[o + 7], cz = positions[o + 8];
+  const ux = bx - ax, uy = by - ay, uz = bz - az;
+  const vx = cx - ax, vy = cy - ay, vz = cz - az;
+  const nx = uy * vz - uz * vy,
+    ny = uz * vx - ux * vz,
+    nz = ux * vy - uy * vx;
+  return Math.sqrt(nx * nx + ny * ny + nz * nz) / 2;
 }
 
 // Real mesh volume, independent of any slicing engine — the signed sum of
@@ -113,11 +129,15 @@ function triangleArea(v: Triangle["v"]): number {
 // re-slicing: this runs in a few ms even on a 200k-triangle mesh, no
 // subprocess, no WASM engine — just the same triangle list already parsed
 // for suggestOrientation() above.
-export function computeMeshVolumeMm3(triangles: Triangle[]): number {
+export function computeMeshVolumeMm3(positions: Positions): number {
   let volume6 = 0;
-  for (const t of triangles) {
-    const [a, b, c] = t.v;
-    volume6 += a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0]) + a[2] * (b[0] * c[1] - b[1] * c[0]);
+  const n = positions.length / 9;
+  for (let i = 0; i < n; i++) {
+    const o = i * 9;
+    const ax = positions[o], ay = positions[o + 1], az = positions[o + 2];
+    const bx = positions[o + 3], by = positions[o + 4], bz = positions[o + 5];
+    const cx = positions[o + 6], cy = positions[o + 7], cz = positions[o + 8];
+    volume6 += ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx);
   }
   return Math.abs(volume6) / 6;
 }
@@ -126,34 +146,39 @@ export function computeMeshVolumeMm3(triangles: Triangle[]): number {
 // uploads actually use (no normals/UVs/materials needed for geometry-only
 // checks). Faces are 1-indexed and may be negative (relative to the current
 // vertex count) per spec; n-gons beyond a triangle are fan-triangulated.
-export function parseObjTriangles(text: string): Triangle[] {
-  const vertices: [number, number, number][] = [];
-  const triangles: Triangle[] = [];
+export function parseObjTriangles(text: string): Positions {
+  const vertices: number[] = []; // flat x,y,z triples
+  const flat: number[] = [];
   const lines = text.split("\n");
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed.startsWith("v ")) {
       const parts = trimmed.slice(2).trim().split(/\s+/).map(Number);
-      if (parts.length >= 3) vertices.push([parts[0], parts[1], parts[2]]);
+      if (parts.length >= 3) vertices.push(parts[0], parts[1], parts[2]);
     } else if (trimmed.startsWith("f ")) {
+      const vertexCount = vertices.length / 3;
       const idx = trimmed
         .slice(2)
         .trim()
         .split(/\s+/)
         .map((tok) => {
           const i = parseInt(tok.split("/")[0], 10);
-          return i < 0 ? vertices.length + i : i - 1;
+          return i < 0 ? vertexCount + i : i - 1;
         });
       for (let i = 1; i + 1 < idx.length; i++) {
-        const a = vertices[idx[0]],
-          b = vertices[idx[i]],
-          c = vertices[idx[i + 1]];
-        if (!a || !b || !c) continue;
-        triangles.push({ normal: [0, 0, 0], v: [a, b, c] });
+        const ai = idx[0] * 3,
+          bi = idx[i] * 3,
+          ci = idx[i + 1] * 3;
+        if (vertices[ai] === undefined || vertices[bi] === undefined || vertices[ci] === undefined) continue;
+        flat.push(
+          vertices[ai], vertices[ai + 1], vertices[ai + 2],
+          vertices[bi], vertices[bi + 1], vertices[bi + 2],
+          vertices[ci], vertices[ci + 1], vertices[ci + 2],
+        );
       }
     }
   }
-  return triangles;
+  return Float32Array.from(flat);
 }
 
 export interface BoundingBox {
@@ -162,22 +187,21 @@ export interface BoundingBox {
   sizeZMm: number;
 }
 
-export function computeBoundingBox(triangles: Triangle[]): BoundingBox {
+export function computeBoundingBox(positions: Positions): BoundingBox {
   let minX = Infinity,
     minY = Infinity,
     minZ = Infinity,
     maxX = -Infinity,
     maxY = -Infinity,
     maxZ = -Infinity;
-  for (const t of triangles) {
-    for (const p of t.v) {
-      if (p[0] < minX) minX = p[0];
-      if (p[0] > maxX) maxX = p[0];
-      if (p[1] < minY) minY = p[1];
-      if (p[1] > maxY) maxY = p[1];
-      if (p[2] < minZ) minZ = p[2];
-      if (p[2] > maxZ) maxZ = p[2];
-    }
+  for (let i = 0; i < positions.length; i += 3) {
+    const x = positions[i], y = positions[i + 1], z = positions[i + 2];
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
+    if (z < minZ) minZ = z;
+    if (z > maxZ) maxZ = z;
   }
   return { sizeXMm: maxX - minX, sizeYMm: maxY - minY, sizeZMm: maxZ - minZ };
 }
@@ -185,8 +209,8 @@ export function computeBoundingBox(triangles: Triangle[]): BoundingBox {
 // Quantized coordinate key — merges vertices that coincide up to 1e-4mm, the
 // same tolerance floating-point STL/OBJ export round-tripping typically
 // introduces between two triangles that share a "real" edge.
-function vertexKey(p: readonly [number, number, number]): string {
-  return `${Math.round(p[0] * 1e4)},${Math.round(p[1] * 1e4)},${Math.round(p[2] * 1e4)}`;
+function vertexKey(x: number, y: number, z: number): string {
+  return `${Math.round(x * 1e4)},${Math.round(y * 1e4)},${Math.round(z * 1e4)}`;
 }
 
 export interface ManifoldCheck {
@@ -234,14 +258,13 @@ const MAX_BAD_EDGE_FRACTION = 0.01;
 // EVEN, never a genuine gap. A single missing triangle always drops its 3
 // edges from 2 to 1 (odd) — a real opening can never leave a clean even
 // count behind, so this distinction doesn't trade away real-hole detection.
-export function checkManifoldAndParts(triangles: Triangle[]): ManifoldCheck {
-  const clean = triangles.filter((t) => triangleArea(t.v) > DEGENERATE_AREA_MM2);
-  if (clean.length === 0) return { manifold: false, parts: 0 };
+export function checkManifoldAndParts(positions: Positions): ManifoldCheck {
+  const n = positions.length / 9;
 
   const vertexId = new Map<string, number>();
   const parent: number[] = [];
-  function idOf(p: readonly [number, number, number]): number {
-    const key = vertexKey(p);
+  function idOf(x: number, y: number, z: number): number {
+    const key = vertexKey(x, y, z);
     let id = vertexId.get(key);
     if (id === undefined) {
       id = parent.length;
@@ -264,16 +287,24 @@ export function checkManifoldAndParts(triangles: Triangle[]): ManifoldCheck {
   }
 
   const edgeCount = new Map<string, number>();
-  for (const t of clean) {
-    const ids = t.v.map(idOf);
-    for (let i = 0; i < 3; i++) {
-      const a = ids[i],
-        b = ids[(i + 1) % 3];
+  let cleanCount = 0;
+  const ids = [0, 0, 0];
+  for (let i = 0; i < n; i++) {
+    if (triangleArea(positions, i) <= DEGENERATE_AREA_MM2) continue;
+    cleanCount++;
+    const o = i * 9;
+    ids[0] = idOf(positions[o], positions[o + 1], positions[o + 2]);
+    ids[1] = idOf(positions[o + 3], positions[o + 4], positions[o + 5]);
+    ids[2] = idOf(positions[o + 6], positions[o + 7], positions[o + 8]);
+    for (let k = 0; k < 3; k++) {
+      const a = ids[k],
+        b = ids[(k + 1) % 3];
       union(a, b);
       const key = a < b ? `${a}_${b}` : `${b}_${a}`;
       edgeCount.set(key, (edgeCount.get(key) ?? 0) + 1);
     }
   }
+  if (cleanCount === 0) return { manifold: false, parts: 0 };
 
   let badEdges = 0;
   for (const count of edgeCount.values()) {
@@ -294,24 +325,39 @@ export interface MeshTransform {
 }
 
 // Replaces PrusaSlicer's --rotate-x/--rotate-y/--scale flags — bakes the
-// same transform directly into the triangle list, in the same order
+// same transform directly into the position array, in the same order
 // (rotate then scale; order doesn't affect the result since scale is
 // uniform and rotations are axis-aligned multiples of 90°, see rotatePoint
 // above). Used both for the pre-slice bounding-box/volume check (so it
 // matches what the customer will actually receive) and for producing the
-// final stored STL with the transform baked in.
-export function applyTransform(triangles: Triangle[], t: MeshTransform): Triangle[] {
+// final stored STL with the transform baked in. Always returns a fresh
+// array (even for the identity transform) so callers can rely on getting
+// their own copy — cheap relative to the parse itself, and avoids aliasing
+// bugs between "the uploaded mesh" and "the transformed mesh" sharing a
+// buffer.
+export function applyTransform(positions: Positions, t: MeshTransform): Positions {
   const rx = t.rotateXDeg ?? 0,
     ry = t.rotateYDeg ?? 0,
     s = t.scale ?? 1;
-  if (rx === 0 && ry === 0 && s === 1) return triangles;
-  return triangles.map((tri) => ({
-    normal: tri.normal,
-    v: tri.v.map((p) => {
-      const [x, y, z] = rotatePoint(p, rx, ry);
-      return [x * s, y * s, z * s] as [number, number, number];
-    }) as Triangle["v"],
-  }));
+  const out = new Float32Array(positions.length);
+  if (rx === 0 && ry === 0 && s === 1) {
+    out.set(positions);
+    return out;
+  }
+  const xr = (rx * Math.PI) / 180,
+    yr = (ry * Math.PI) / 180;
+  const cosX = Math.cos(xr), sinX = Math.sin(xr), cosY = Math.cos(yr), sinY = Math.sin(yr);
+  for (let i = 0; i < positions.length; i += 3) {
+    const x = positions[i], y = positions[i + 1], z = positions[i + 2];
+    const y2 = y * cosX - z * sinX;
+    const z2 = y * sinX + z * cosX;
+    const x3 = x * cosY + z2 * sinY;
+    const z3 = -x * sinY + z2 * cosY;
+    out[i] = x3 * s;
+    out[i + 1] = y2 * s;
+    out[i + 2] = z3 * s;
+  }
+  return out;
 }
 
 // Binary STL: 80-byte header + uint32 count, then 50 bytes/triangle (12
@@ -319,18 +365,18 @@ export function applyTransform(triangles: Triangle[], t: MeshTransform): Triangl
 // mirror of parseBinaryStl above. Normals are re-derived from the triangle's
 // own winding rather than trusted from the input, since occt-import-js
 // (STEP) and hand-rotated triangles don't reliably carry one.
-export function serializeBinaryStl(triangles: Triangle[]): Buffer {
-  const buffer = Buffer.alloc(84 + triangles.length * 50);
-  buffer.writeUInt32LE(triangles.length, 80);
+export function serializeBinaryStl(positions: Positions): Buffer {
+  const n = positions.length / 9;
+  const buffer = Buffer.alloc(84 + n * 50);
+  buffer.writeUInt32LE(n, 80);
   let offset = 84;
-  for (const t of triangles) {
-    const [a, b, c] = t.v;
-    const ux = b[0] - a[0],
-      uy = b[1] - a[1],
-      uz = b[2] - a[2];
-    const vx = c[0] - a[0],
-      vy = c[1] - a[1],
-      vz = c[2] - a[2];
+  for (let i = 0; i < n; i++) {
+    const o = i * 9;
+    const ax = positions[o], ay = positions[o + 1], az = positions[o + 2];
+    const bx = positions[o + 3], by = positions[o + 4], bz = positions[o + 5];
+    const cx = positions[o + 6], cy = positions[o + 7], cz = positions[o + 8];
+    const ux = bx - ax, uy = by - ay, uz = bz - az;
+    const vx = cx - ax, vy = cy - ay, vz = cz - az;
     const nx = uy * vz - uz * vy,
       ny = uz * vx - ux * vz,
       nz = ux * vy - uy * vx;
@@ -338,15 +384,15 @@ export function serializeBinaryStl(triangles: Triangle[]): Buffer {
     buffer.writeFloatLE(nx / len, offset);
     buffer.writeFloatLE(ny / len, offset + 4);
     buffer.writeFloatLE(nz / len, offset + 8);
-    buffer.writeFloatLE(a[0], offset + 12);
-    buffer.writeFloatLE(a[1], offset + 16);
-    buffer.writeFloatLE(a[2], offset + 20);
-    buffer.writeFloatLE(b[0], offset + 24);
-    buffer.writeFloatLE(b[1], offset + 28);
-    buffer.writeFloatLE(b[2], offset + 32);
-    buffer.writeFloatLE(c[0], offset + 36);
-    buffer.writeFloatLE(c[1], offset + 40);
-    buffer.writeFloatLE(c[2], offset + 44);
+    buffer.writeFloatLE(ax, offset + 12);
+    buffer.writeFloatLE(ay, offset + 16);
+    buffer.writeFloatLE(az, offset + 20);
+    buffer.writeFloatLE(bx, offset + 24);
+    buffer.writeFloatLE(by, offset + 28);
+    buffer.writeFloatLE(bz, offset + 32);
+    buffer.writeFloatLE(cx, offset + 36);
+    buffer.writeFloatLE(cy, offset + 40);
+    buffer.writeFloatLE(cz, offset + 44);
     buffer.writeUInt16LE(0, offset + 48);
     offset += 50;
   }
@@ -483,50 +529,62 @@ const CANDIDATE_Z_PICKS: Array<(x: number, y: number, z: number) => number> = [
 //     rigid rotation doesn't change a triangle's area at all, and (per
 //     CANDIDATE_Z_PICKS above) its rotated normal-Z is just a component
 //     pick, not a new cross product — so both are computed exactly ONCE per
-//     triangle below, not re-derived per candidate. Tried alone first:
-//     measured 575ms — real, but far short of what the reduced FLOP count
-//     alone predicts, because allocating a precomputed {a,b,c,nx,ny,nz,area}
-//     object for all 1.15M triangles has its own real JS engine cost.
+//     triangle below, not re-derived per candidate.
 //  2. Deterministic subsampling on top (MAX_SAMPLE_TRIANGLES, evenly
 //     strided — not Math.random(): client and server must land on the exact
 //     same sample, or they could disagree on which of the 6 candidates wins
 //     for the same file, see orientationSuggest.js's identical port) shrinks
-//     that allocation too, not just the math — both together measured ~40ms
-//     warm (~64ms on a cold/first call, still JIT-warming up) on the same
-//     file. Overhang/height/contact-area are statistical properties of the
-//     mesh, not exact ones, so a representative sample is enough — a real
-//     hole doesn't hide from a 50,000-triangle sample.
+//     that allocation too, not just the math. Overhang/height/contact-area
+//     are statistical properties of the mesh, not exact ones, so a
+//     representative sample is enough — a real hole doesn't hide from a
+//     50,000-triangle sample.
+// Precomputed values are now stored in flat parallel Float32Arrays (one
+// slot per sampled triangle), not an array of small objects — the same
+// per-triangle-object cost this whole file's rewrite was about avoiding
+// applies just as much to a temporary "precomputed" array as to the
+// primary mesh representation.
 const MAX_SAMPLE_TRIANGLES = 50000;
 
-export function suggestOrientation(triangles: Triangle[]): OrientationSuggestion | null {
-  if (triangles.length === 0) return null;
+export function suggestOrientation(positions: Positions): OrientationSuggestion | null {
+  const total = positions.length / 9;
+  if (total === 0) return null;
 
-  const stride = triangles.length > MAX_SAMPLE_TRIANGLES ? Math.ceil(triangles.length / MAX_SAMPLE_TRIANGLES) : 1;
-  const sample = stride === 1 ? triangles : triangles.filter((_, i) => i % stride === 0);
+  const stride = total > MAX_SAMPLE_TRIANGLES ? Math.ceil(total / MAX_SAMPLE_TRIANGLES) : 1;
+  const sampleCount = Math.ceil(total / stride);
 
-  const precomputed = sample.map((t) => {
-    const [a, b, c] = t.v;
-    const ux = b[0] - a[0],
-      uy = b[1] - a[1],
-      uz = b[2] - a[2];
-    const vx = c[0] - a[0],
-      vy = c[1] - a[1],
-      vz = c[2] - a[2];
-    const nx = uy * vz - uz * vy,
-      ny = uz * vx - ux * vz,
-      nz = ux * vy - uy * vx;
-    const len = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
-    return { a, b, c, nx: nx / len, ny: ny / len, nz: nz / len, area: len / 2 };
-  });
+  const ax = new Float32Array(sampleCount), ay = new Float32Array(sampleCount), az = new Float32Array(sampleCount);
+  const bx = new Float32Array(sampleCount), by = new Float32Array(sampleCount), bz = new Float32Array(sampleCount);
+  const cx = new Float32Array(sampleCount), cy = new Float32Array(sampleCount), cz = new Float32Array(sampleCount);
+  const nx = new Float32Array(sampleCount), ny = new Float32Array(sampleCount), nz = new Float32Array(sampleCount);
+  const area = new Float32Array(sampleCount);
+
+  let s = 0;
+  for (let i = 0; i < total; i += stride, s++) {
+    const o = i * 9;
+    const ax_ = positions[o], ay_ = positions[o + 1], az_ = positions[o + 2];
+    const bx_ = positions[o + 3], by_ = positions[o + 4], bz_ = positions[o + 5];
+    const cx_ = positions[o + 6], cy_ = positions[o + 7], cz_ = positions[o + 8];
+    const ux = bx_ - ax_, uy = by_ - ay_, uz = bz_ - az_;
+    const vx = cx_ - ax_, vy = cy_ - ay_, vz = cz_ - az_;
+    const nx_ = uy * vz - uz * vy,
+      ny_ = uz * vx - ux * vz,
+      nz_ = ux * vy - uy * vx;
+    const len = Math.sqrt(nx_ * nx_ + ny_ * ny_ + nz_ * nz_) || 1;
+    ax[s] = ax_; ay[s] = ay_; az[s] = az_;
+    bx[s] = bx_; by[s] = by_; bz[s] = bz_;
+    cx[s] = cx_; cy[s] = cy_; cz[s] = cz_;
+    nx[s] = nx_ / len; ny[s] = ny_ / len; nz[s] = nz_ / len;
+    area[s] = len / 2;
+  }
 
   const candidates: OrientationCandidate[] = CANDIDATES.map(({ rotateXDeg, rotateYDeg }, idx) => {
     const zOf = CANDIDATE_Z_PICKS[idx];
     let minZ = Infinity,
       maxZ = -Infinity;
-    for (const { a, b, c } of precomputed) {
-      const za = zOf(a[0], a[1], a[2]),
-        zb = zOf(b[0], b[1], b[2]),
-        zc = zOf(c[0], c[1], c[2]);
+    for (let i = 0; i < sampleCount; i++) {
+      const za = zOf(ax[i], ay[i], az[i]),
+        zb = zOf(bx[i], by[i], bz[i]),
+        zc = zOf(cx[i], cy[i], cz[i]);
       if (za < minZ) minZ = za;
       if (za > maxZ) maxZ = za;
       if (zb < minZ) minZ = zb;
@@ -537,11 +595,11 @@ export function suggestOrientation(triangles: Triangle[]): OrientationSuggestion
 
     let overhangVolumeMm3 = 0;
     let contactAreaMm2 = 0;
-    for (const { a, b, c, nx, ny, nz, area } of precomputed) {
-      const za = zOf(a[0], a[1], a[2]),
-        zb = zOf(b[0], b[1], b[2]),
-        zc = zOf(c[0], c[1], c[2]);
-      const normalZ = zOf(nx, ny, nz);
+    for (let i = 0; i < sampleCount; i++) {
+      const za = zOf(ax[i], ay[i], az[i]),
+        zb = zOf(bx[i], by[i], bz[i]),
+        zc = zOf(cx[i], cy[i], cz[i]);
+      const normalZ = zOf(nx[i], ny[i], nz[i]);
       // A triangle resting on the bed is ALWAYS downward-facing by
       // definition (normalZ close to -1), so it always also satisfied the
       // overhang test below — these two checks must be mutually exclusive,
@@ -556,13 +614,13 @@ export function suggestOrientation(triangles: Triangle[]): OrientationSuggestion
       // resting on the bed (a bridge/ledge mid-air needing support).
       const isBedContact = za - minZ < BED_CONTACT_EPSILON_MM && zb - minZ < BED_CONTACT_EPSILON_MM && zc - minZ < BED_CONTACT_EPSILON_MM;
       if (isBedContact) {
-        contactAreaMm2 += area;
+        contactAreaMm2 += area[i];
       } else if (normalZ < OVERHANG_NORMAL_Z) {
         // See the W_OVERHANG comment above — weighted by height above the
         // bed, not just area, as a cheap proxy for the real pillar-material
         // cost a support structure would actually need here.
         const heightAboveBedMm = (za + zb + zc) / 3 - minZ;
-        overhangVolumeMm3 += area * (heightAboveBedMm + BASE_GAP_MM);
+        overhangVolumeMm3 += area[i] * (heightAboveBedMm + BASE_GAP_MM);
       }
     }
 

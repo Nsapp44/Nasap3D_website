@@ -95,31 +95,44 @@ function isForbiddenCrossOrigin(context: { request: Request; url: URL }): boolea
 }
 
 // Cross-origin isolation (COOP/COEP — Cross-Origin-Opener-Policy/-Embedder-
-// Policy) was tried on /devis-instantane and removed again — measured, not
-// assumed. It unlocks SharedArrayBuffer, which would only matter if Kiri:
-// Moto/Manifold's WASM actually used shared-memory threading; it doesn't —
-// confirmed by reading the real grid-apps source (a `set_threaded()...
-// deprecated` trace is the only remnant of that approach) and by 4 live
-// timed trials on the same file, same machine, isolation on vs. off:
-// 11.2s/14.7s vs 12.8s/13.9s — fully overlapping, no real difference. What
-// actually made client-side slicing fast (the minion sub-worker pool,
-// sized to navigator.hardwareConcurrency) is plain postMessage-based
-// parallelism, which needs no isolation at all. Enabling it also isn't
-// free: it broke geometryWorker.js outright the first time (`new Worker`
-// enforces Cross-Origin-Resource-Policy on same-origin module workers
-// under COEP:require-corp, unlike ordinary same-origin subresources) and
-// carries permanent risk for every future third-party script added to this
-// page (Stripe Elements, hCaptcha, or similar — both load cross-origin
-// iframes elsewhere on the site — would silently break under COEP if ever
-// added here too). No measured upside, real downside: not worth it. Left
-// the underlying serveWorkerScript.ts infrastructure and the real Astro
-// routes it's used from in place, though — those exist for an unrelated,
-// confirmed-real win (Cache-Control, see that file's own comment), not for
-// COOP/COEP, and the Cross-Origin-Resource-Policy header they set is inert
-// without COEP enabling it, harmless to leave on.
+// Policy). Re-enabled after a more careful live comparison against grid.
+// space's own official Kiri:Moto app (the upstream project this engine is
+// vendored from) — confirmed they run with COOP/COEP too (curl -I grid.
+// space/kiri: both headers present), and `page.workers()` (which sees
+// nested workers a plain `window.Worker` proxy patch cannot, since each
+// Worker has its own isolated global scope) shows their own minion pool
+// count matches ours exactly (9 minions + 1 main worker, both machines
+// reporting navigator.hardwareConcurrency=12) — so the earlier "no
+// measured difference" conclusion wasn't about isolation being pointless,
+// it was measured on too small/fast a file (grip.stl, ~100k triangles,
+// same-order wall time either way) to expose what isolation actually
+// changes: SharedArrayBuffer lets the worker pool share WASM linear memory
+// directly instead of round-tripping geometry through postMessage's
+// structured-clone copy on every handoff — a cost that scales with model
+// size/complexity, invisible on a small file. geometryWorker.js and the
+// vendored kiri worker/minion/engine/manifold.wasm files already moved out
+// of public/ into worker-assets/ + real Astro routes specifically so they
+// can carry the Cross-Origin-Resource-Policy header `new Worker(url,
+// {type: "module"})` requires under COEP:require-corp even for same-origin
+// scripts (see src/lib/server/serveWorkerScript.ts) — that fix stays in
+// place regardless. Scoped to /devis-instantane only (not sitewide, not
+// even /api/*): COEP:require-corp blocks any OTHER cross-origin subresource
+// that doesn't explicitly opt in via CORP/CORS — a real risk on pages this
+// project can't afford to break silently (Stripe Elements/Checkout, real
+// payments; hCaptcha, account auth — both load cross-origin iframes
+// elsewhere on the site). Scoping means nothing outside this one route
+// ever sees these headers.
+const CROSS_ORIGIN_ISOLATED_PATHS = new Set<string>([]); // TEMP AB test
 
 export const onRequest = defineMiddleware(async (context, next) => {
   startBackgroundSweepsOnce();
+
+  if (CROSS_ORIGIN_ISOLATED_PATHS.has(context.url.pathname)) {
+    const response = await next();
+    response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
+    response.headers.set("Cross-Origin-Embedder-Policy", "require-corp");
+    return response;
+  }
 
   if (!context.url.pathname.startsWith("/api/")) {
     return next();

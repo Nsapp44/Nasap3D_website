@@ -10,7 +10,7 @@
 // reimplementing.
 import { inflateRawSync } from "node:zlib";
 import { XMLParser } from "fast-xml-parser";
-import type { Triangle } from "./orientation";
+import type { Positions } from "./orientation";
 
 const EOCD_SIGNATURE = 0x06054b50;
 const ZIP64_EOCD_LOCATOR_SIGNATURE = 0x07064b50;
@@ -177,24 +177,37 @@ function applyThreeMfTransform(p: [number, number, number], transform?: string):
 // any, then the <build><item> placement transform) — chaining two point
 // transforms sequentially is equivalent to composing them into one matrix
 // first, so no real matrix multiplication is needed here.
-function meshTriangles(mesh: Record<string, unknown>, transforms: (string | undefined)[]): Triangle[] {
+//
+// Returns a flat number[] (9 per triangle: v0.xyz, v1.xyz, v2.xyz), pushed
+// via `out.push(...)` rather than building per-triangle/per-vertex objects
+// — see orientation.ts's own header comment on why the flat shape matters
+// for large meshes; 3MF's typical scale doesn't force this the way a huge
+// STL does, but there's no reason to allocate the more expensive shape here
+// just because this particular format's files tend to be smaller.
+function meshTriangles(mesh: Record<string, unknown>, transforms: (string | undefined)[], out: number[]): void {
   const vertexList = (mesh?.vertices as Record<string, unknown> | undefined)?.vertex as Record<string, string>[] | undefined;
   const triangleList = (mesh?.triangles as Record<string, unknown> | undefined)?.triangle as Record<string, string>[] | undefined;
-  if (!vertexList || !triangleList) return [];
-  const vertices: [number, number, number][] = vertexList.map((v) => {
+  if (!vertexList || !triangleList) return;
+  const flatVerts = new Float32Array(vertexList.length * 3);
+  for (let i = 0; i < vertexList.length; i++) {
+    const v = vertexList[i];
     let p: [number, number, number] = [parseFloat(v["@_x"]), parseFloat(v["@_y"]), parseFloat(v["@_z"])];
     for (const t of transforms) p = applyThreeMfTransform(p, t);
-    return p;
-  });
-  const triangles: Triangle[] = [];
-  for (const t of triangleList) {
-    const a = vertices[parseInt(t["@_v1"], 10)];
-    const b = vertices[parseInt(t["@_v2"], 10)];
-    const c = vertices[parseInt(t["@_v3"], 10)];
-    if (!a || !b || !c) continue;
-    triangles.push({ normal: [0, 0, 0], v: [a, b, c] });
+    flatVerts[i * 3] = p[0];
+    flatVerts[i * 3 + 1] = p[1];
+    flatVerts[i * 3 + 2] = p[2];
   }
-  return triangles;
+  for (const t of triangleList) {
+    const ai = parseInt(t["@_v1"], 10) * 3,
+      bi = parseInt(t["@_v2"], 10) * 3,
+      ci = parseInt(t["@_v3"], 10) * 3;
+    if (flatVerts[ai] === undefined || flatVerts[bi] === undefined || flatVerts[ci] === undefined) continue;
+    out.push(
+      flatVerts[ai], flatVerts[ai + 1], flatVerts[ai + 2],
+      flatVerts[bi], flatVerts[bi + 1], flatVerts[bi + 2],
+      flatVerts[ci], flatVerts[ci + 1], flatVerts[ci + 2],
+    );
+  }
 }
 
 // Collects every mesh actually placed on the build plate, driven by
@@ -214,7 +227,7 @@ function meshTriangles(mesh: Record<string, unknown>, transforms: (string | unde
 // objects' vertices land on top of each other and get wrongly merged by the
 // vertex-quantization in checkManifoldAndParts (539 bogus "parts" on a real
 // 13-object test file, instead of 13).
-export function parse3mfTriangles(buffer: Buffer): Triangle[] {
+export function parse3mfTriangles(buffer: Buffer): Positions {
   const modelXml = extractZipEntry(buffer, "3D/3dmodel.model").toString("utf8");
   const doc = xmlParser.parse(modelXml);
   const objects = doc?.model?.resources?.object;
@@ -237,18 +250,12 @@ export function parse3mfTriangles(buffer: Buffer): Triangle[] {
     return Array.isArray(list) ? list : [];
   }
 
-  // Appended in a plain loop, not `push(...bigArray)` — spread blows the
-  // call stack on a real multi-hundred-thousand-triangle mesh (confirmed
-  // live against a real customer-style export).
-  const triangles: Triangle[] = [];
-  function appendAll(more: Triangle[]) {
-    for (const t of more) triangles.push(t);
-  }
+  const flat: number[] = [];
 
   function processObject(obj: Record<string, unknown> | undefined, itemTransform?: string) {
     if (!obj) return;
     if (obj.mesh) {
-      appendAll(meshTriangles(obj.mesh as Record<string, unknown>, [itemTransform]));
+      meshTriangles(obj.mesh as Record<string, unknown>, [itemTransform], flat);
       return;
     }
     const components = (obj.components as Record<string, unknown> | undefined)?.component;
@@ -259,7 +266,7 @@ export function parse3mfTriangles(buffer: Buffer): Triangle[] {
         if (!zipPath || !objectId) continue;
         const externalObjects = loadExternalObjects(zipPath);
         const target = externalObjects.find((o) => (o as Record<string, string>)["@_id"] === objectId);
-        if (target?.mesh) appendAll(meshTriangles(target.mesh as Record<string, unknown>, [comp["@_transform"], itemTransform]));
+        if (target?.mesh) meshTriangles(target.mesh as Record<string, unknown>, [comp["@_transform"], itemTransform], flat);
       }
     }
   }
@@ -275,6 +282,6 @@ export function parse3mfTriangles(buffer: Buffer): Triangle[] {
     for (const obj of objects) processObject(obj as Record<string, unknown>);
   }
 
-  if (triangles.length === 0) throw new Error("3mf file produced no triangles");
-  return triangles;
+  if (flat.length === 0) throw new Error("3mf file produced no triangles");
+  return Float32Array.from(flat);
 }

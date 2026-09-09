@@ -8,14 +8,24 @@
 // middleware ever sees the request, with no hook for custom headers on a
 // plain public/ file; only a real Astro route gets a chance to set one:
 //
-// 1. Cross-Origin-Resource-Policy — `new Worker(url, {type: "module"})`
-//    enforces CORP on its own top-level script fetch under COEP:require-
-//    corp even for same-origin scripts (same-origin resources are normally
-//    CORP-exempt; module worker scripts go through a stricter fetch
-//    algorithm that isn't) — confirmed live as `net::ERR_BLOCKED_BY_
-//    RESPONSE` on geometryWorker.js before this existed. Only matters for
-//    the 3 files actually passed to `new Worker()` (geometryWorker.js,
-//    kiri/worker.js, kiri/minion.js) — see middleware.ts's COOP/COEP block.
+// 1. Cross-Origin-Resource-Policy AND Cross-Origin-Embedder-Policy — a
+//    dedicated Worker is treated as a "frame resource" under COEP, which
+//    turns out to mean TWO separate, independent requirements, not one:
+//    (a) `new Worker(url, {type: "module"})` enforces CORP on its own
+//    top-level script fetch under COEP:require-corp even for same-origin
+//    scripts (ordinary same-origin subresources are CORP-exempt; module
+//    worker scripts go through a stricter fetch algorithm that isn't); (b)
+//    separately, the worker script's OWN response must carry its own
+//    Cross-Origin-Embedder-Policy header — confirmed via CDP's
+//    Network.loadingFailed event (`blockedReason: "coep-frame-resource-
+//    needs-coep-header"`), a distinct, more specific reason than the CORP
+//    block this route was originally built to fix. Adding only (a) fixed a
+//    first, real failure (`net::ERR_BLOCKED_BY_RESPONSE`) here; it silently
+//    reintroduced the same net::ERR_BLOCKED_BY_RESPONSE error later purely
+//    because (b) was still missing — CDP's blockedReason field is what
+//    finally distinguished the two. Both headers only matter for the 3
+//    files actually passed to `new Worker()` (geometryWorker.js, kiri/
+//    worker.js, kiri/minion.js) — see middleware.ts's COOP/COEP block.
 //
 // 2. Cache-Control — confirmed live (curl -I, both localhost and prod):
 //    public/ static files serve with `max-age=0` (send()'s own default,
@@ -50,6 +60,7 @@ export function workerScriptResponse(body: Buffer, contentType: string = "text/j
     headers: {
       "Content-Type": contentType,
       "Cross-Origin-Resource-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "require-corp",
       // Static, versioned only by redeploy — same long-cache convention
       // serve-static.js already applies to Astro's own hashed assetsDir.
       "Cache-Control": "public, max-age=31536000, immutable",

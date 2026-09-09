@@ -28,7 +28,7 @@ import {
   checkManifoldAndParts,
   applyTransform,
   serializeBinaryStl,
-  type Triangle,
+  type Positions,
   type MeshTransform,
 } from "./orientation";
 import { parse3mfTriangles } from "./threeMfParse";
@@ -73,7 +73,7 @@ export function pickPrinter(info: ModelInfo): PrinterProfile | null {
 
 export type ModelTransform = MeshTransform;
 
-export async function loadTrianglesFromFile(filePath: string, ext: string): Promise<Triangle[]> {
+export async function loadTrianglesFromFile(filePath: string, ext: string): Promise<Positions> {
   const buffer = await readFile(filePath);
   if (ext === ".3mf") return parse3mfTriangles(buffer);
   if (ext === ".obj") return parseObjTriangles(buffer.toString("utf8"));
@@ -91,18 +91,18 @@ export async function loadTrianglesFromFile(filePath: string, ext: string): Prom
 // it rejects two real, genuinely printable customer files outright
 // (NotManifold, no tolerance at all) while this heuristic's 1% tolerance
 // correctly accepts both (0.007% and 0.26% bad edges respectively).
-export async function getModelInfo(triangles: Triangle[]): Promise<ModelInfo> {
-  const bbox = computeBoundingBox(triangles);
-  const volumeMm3 = computeMeshVolumeMm3(triangles);
-  const { manifold, parts } = checkManifoldAndParts(triangles);
+export async function getModelInfo(positions: Positions): Promise<ModelInfo> {
+  const bbox = computeBoundingBox(positions);
+  const volumeMm3 = computeMeshVolumeMm3(positions);
+  const { manifold, parts } = checkManifoldAndParts(positions);
   return { ...bbox, volumeMm3, manifold, parts };
 }
 
 // Bakes scale/rotation into the mesh and re-serializes as STL — replaces
 // PrusaSlicer's `--export-stl`. Always STL out regardless of input format,
 // same as before (production printing needs a normalized mesh either way).
-export function exportTransformedStl(triangles: Triangle[], transform: ModelTransform): Buffer {
-  return serializeBinaryStl(applyTransform(triangles, transform));
+export function exportTransformedStl(positions: Positions, transform: ModelTransform): Buffer {
+  return serializeBinaryStl(applyTransform(positions, transform));
 }
 
 export interface ClaimedSliceResult {
@@ -196,24 +196,17 @@ export interface SliceResult {
   volumeCm3: number;
 }
 
-// Real, reproduced live (docker events, this session): a full server-side
-// slice of a ~1.1M-triangle model (a detailed car body STL) OOM-killed the
-// ENTIRE container under prod's real ~512MB RAM — confirmed via `docker
-// events` showing a genuine `container oom` -> `die (exitCode=137)` ->
-// auto-restart sequence, not just a slow subprocess. That's a much bigger
-// blast radius than one failed request: every other visitor's in-flight
-// connection gets dropped too when the shared container dies. Neither of
-// this function's own safety nets helps here — the 300s execFileAsync
-// timeout never gets a chance to fire (the kernel SIGKILLs the whole
-// container first), and no JS-level try/catch can intercept a SIGKILL.
-// The only real fix at this layer is not attempting a full engine slice on
-// a model too complex for the host to survive. In practice this function is
-// gated by quotes/index.ts's own, earlier MAX_QUOTE_TRIANGLES check first —
-// see that constant's comment for the real bisection data (100,943
-// triangles confirmed safe, 354,534 confirmed fatal, both from real files,
-// not synthetic ones) behind this same threshold. Kept in sync rather than
-// imported so this function stays safe even if ever called from somewhere
-// that skips the earlier gate.
+// This ceiling protects the SUBPROCESS specifically (the real Kiri:Moto
+// CLI, doing a full slice — support generation, per-layer polygon work —
+// not just a parse), which is genuinely heavier per triangle than this
+// file's own cheap getModelInfo() path, regardless of the flat-array
+// rewrite that fixed the parse-time cost (see orientation.ts's own header
+// comment). Not yet re-bisected against the new, much cheaper parse
+// pipeline — kept at the same value that was already safe under the OLD,
+// far more expensive representation, so this is a conservative floor, not
+// a freshly-measured ceiling. In practice this function is also gated by
+// quotes/index.ts's own, earlier MAX_QUOTE_TRIANGLES check first. See that
+// constant's own comment for the fuller history of this number.
 const MAX_FALLBACK_SLICE_TRIANGLES = 600_000;
 
 // The rare full-slice fallback (role 3) — real Kiri:Moto, via the vendored
@@ -221,13 +214,14 @@ const MAX_FALLBACK_SLICE_TRIANGLES = 600_000;
 // --model/--output flags, no custom wrapper script needed). Confirmed
 // working end-to-end this session against a 225k-triangle Benchy with these
 // exact custom device/process values (~10s with support enabled).
-export async function sliceModel(triangles: Triangle[], opts: SliceOptions): Promise<SliceResult> {
+export async function sliceModel(positions: Positions, opts: SliceOptions): Promise<SliceResult> {
   if (!(await checkGridAppsAvailable())) {
     throw new Error("kiri_fallback_unavailable: vendor/grid-apps not found (Linux/Docker only, see Dockerfile)");
   }
-  if (triangles.length > MAX_FALLBACK_SLICE_TRIANGLES) {
+  const triangleCount = positions.length / 9;
+  if (triangleCount > MAX_FALLBACK_SLICE_TRIANGLES) {
     throw new Error(
-      `kiri_fallback_too_complex: ${triangles.length} triangles exceeds the ${MAX_FALLBACK_SLICE_TRIANGLES} server-fallback ceiling (risk of OOM-killing the whole container, see this function's own comment)`,
+      `kiri_fallback_too_complex: ${triangleCount} triangles exceeds the ${MAX_FALLBACK_SLICE_TRIANGLES} server-fallback ceiling (risk of OOM-killing the whole container, see this function's own comment)`,
     );
   }
 
@@ -245,7 +239,7 @@ export async function sliceModel(triangles: Triangle[], opts: SliceOptions): Pro
     const outputPath = path.join(dir, "out.gcode");
 
     await Promise.all([
-      writeFile(modelPath, serializeBinaryStl(triangles)),
+      writeFile(modelPath, serializeBinaryStl(positions)),
       writeFile(devicePath, JSON.stringify(device)),
       writeFile(processPath, JSON.stringify(process_)),
     ]);
