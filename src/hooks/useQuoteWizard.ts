@@ -213,10 +213,10 @@ export function useQuoteWizard() {
   // problem before ever starting the client-side slice, avoiding the
   // "stuck on Analyse auto forever" symptom). Uses the raw upload's own
   // axes (sizeMm, pre-orientation) since that's all that's known this
-  // early — 0.1mm is well under any real FDM nozzle's minimum line width
-  // (~0.4mm), so this only catches degenerate geometry, never a
-  // legitimately thin but printable wall.
-  const MIN_DIMENSION_MM = 0.1;
+  // early — 0.4mm is a real physical floor (a typical FDM nozzle's own
+  // minimum line width), not just a degenerate-geometry catch: nothing
+  // thinner than that on ANY axis has a wall a real nozzle could extrude.
+  const MIN_DIMENSION_MM = 0.4;
   const scalePartTooThin = useCallback(() => {
     if (!sizeMm) return false;
     const f = effectiveScale();

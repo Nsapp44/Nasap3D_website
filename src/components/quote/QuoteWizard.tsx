@@ -141,7 +141,7 @@ export default function QuoteWizard() {
                     <div className="qw-scale-warning">⚠ À cette échelle, la pièce dépasse le format imprimable de nos machines (330×320×325mm max). Réduisez le pourcentage ou changez l'unité pour continuer.</div>
                   )}
                   {scaleTooThin && (
-                    <div className="qw-scale-warning">⚠ À cette échelle, la pièce est trop fine sur un axe (quasi plate, moins de 0,1mm) pour être imprimée. Augmentez le pourcentage ou vérifiez le fichier.</div>
+                    <div className="qw-scale-warning">⚠ À cette échelle, la pièce est trop fine sur un axe (moins de 0,4mm — la largeur mini d'une buse) pour être imprimée. Augmentez le pourcentage ou vérifiez le fichier.</div>
                   )}
                   {w.orientationLoading ? (
                     <div className="qw-file-success">Vérification du fichier (orientation, géométrie)…</div>

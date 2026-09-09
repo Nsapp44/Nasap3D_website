@@ -291,10 +291,12 @@ export const POST = apiHandler(async (context) => {
       // oriented in the uploaded file, so a normally-thick part rotated flat
       // by mistake isn't wrongly caught here (suggestOrientation already
       // steers away from that), only a part that's genuinely too thin on
-      // every axis it could stand on. 0.1mm is well under any real FDM
-      // nozzle's minimum line width (~0.4mm) — this only catches degenerate
-      // geometry, not legitimately thin (but printable) walls.
-      const MIN_DIMENSION_MM = 0.1;
+      // every axis it could stand on. 0.4mm is a real physical floor, not
+      // just a degenerate-geometry catch: it's a typical FDM nozzle's own
+      // minimum line width, so anything thinner than that on ANY axis has
+      // no wall a real nozzle could even extrude, regardless of whether the
+      // slicing engine itself would hang on it.
+      const MIN_DIMENSION_MM = 0.4;
       if (Math.min(info.sizeXMm, info.sizeYMm, info.sizeZMm) < MIN_DIMENSION_MM) {
         return jsonError(400, "part_too_thin");
       }
