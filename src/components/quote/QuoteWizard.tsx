@@ -153,14 +153,19 @@ export default function QuoteWizard() {
                   ) : w.windingWarning ? (
                     <div className="qw-scale-warning">
                       ⚠ Ce fichier a des normales incohérentes (des faces retournées) — impossible de calculer un devis fiable tel quel.{" "}
-                      <a href="/contact">Contactez-nous</a> ou réparez le fichier dans votre logiciel de CAO ("recalculer les normales") puis réessayez.
+                      <a href="/contact">Contactez-nous</a>.
+                    </div>
+                  ) : w.tooComplexWarning ? (
+                    <div className="qw-scale-warning">
+                      ⚠ Cette pièce est trop complexe (trop de triangles) pour être analysée par nos serveurs. Essayez de simplifier le maillage, ou{" "}
+                      <a href="/contact">contactez-nous</a> directement avec votre fichier.
                     </div>
                   ) : (
                     <div className="qw-file-success">Fichier chargé avec succès</div>
                   )}
                 </div>
                 <div className="qw-next-row">
-                  <div onClick={w.next} className={`qw-next-btn${scaleTooLarge || scaleTooThin || w.manifoldWarning || w.windingWarning || w.orientationLoading ? " disabled" : ""}`}>
+                  <div onClick={w.next} className={`qw-next-btn${scaleTooLarge || scaleTooThin || w.manifoldWarning || w.windingWarning || w.tooComplexWarning || w.orientationLoading ? " disabled" : ""}`}>
                     {w.orientationLoading ? "Vérification…" : "Suivant →"}
                   </div>
                 </div>

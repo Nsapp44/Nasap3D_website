@@ -8,6 +8,23 @@
 // position/index geometry instead, matching what the browser's own
 // STL/OBJ/3MF loaders already produce.
 
+// Real, reproduced bug: this file had NO triangle-count guard at all before
+// attempting a full parse — for a 2.5M-triangle STL (a real customer file),
+// parseBinaryStl below builds one JS object + 4 nested arrays PER TRIANGLE
+// (the same expensive shape src/lib/server/orientation.ts moved away from
+// server-side this session for exactly this reason — see that file's own
+// header comment), which is slow/memory-heavy enough on a weaker machine to
+// hang or crash the tab before ever reaching the clean, fast rejection the
+// server already gives (its own MAX_STL_TRIANGLES header check, run BEFORE
+// allocating anything). Mirrors that same header-peek check here — matches
+// quotes/index.ts's MAX_QUOTE_TRIANGLES (see that constant's own comment for
+// the history) — so every visitor gets the same fast, clear "too complex"
+// message regardless of their machine, instead of some getting it cleanly
+// (their browser survived long enough to upload and let the server reject
+// it) and others getting a generic, unhelpful failure (their browser choked
+// on the parse first).
+const MAX_STL_TRIANGLES = 1_500_000;
+
 // Binary STL: 80-byte header + uint32 triangle count, then 50 bytes/tri (12
 // bytes normal + 36 bytes vertices + 2-byte attribute). ASCII STL: text
 // "facet normal / outer loop / vertex ×3 / endloop / endfacet" blocks.
@@ -18,7 +35,12 @@ export function parseStlTriangles(buffer) {
   if (buffer.byteLength >= 84) {
     const view = new DataView(buffer);
     const count = view.getUint32(80, true);
-    if (84 + count * 50 === buffer.byteLength) return parseBinaryStl(view, count);
+    if (84 + count * 50 === buffer.byteLength) {
+      if (count > MAX_STL_TRIANGLES) {
+        throw new Error(`part_too_complex: binary STL has ${count} triangles, exceeds ${MAX_STL_TRIANGLES}`);
+      }
+      return parseBinaryStl(view, count);
+    }
   }
   return parseAsciiStl(new TextDecoder().decode(buffer));
 }

@@ -94,6 +94,14 @@ export function useQuoteWizard() {
   // slicing engine would get confused by it too. Same hard-block treatment
   // as manifoldWarning, not just a heads-up (see next() below).
   const [windingWarning, setWindingWarning] = useState(false);
+  // See parseStlTriangles's own comment (orientationSuggest.js) — set only
+  // when the client's OWN pre-parse triangle-count check rejects the file
+  // before attempting the (potentially machine-crashing) full parse; the
+  // server's own identical, authoritative check still runs regardless (see
+  // quotes/index.ts) as the fallback for anything that somehow gets past
+  // this one (OBJ/3MF have no equivalent cheap up-front count, same
+  // limitation as the server side).
+  const [tooComplexWarning, setTooComplexWarning] = useState(false);
   // True while prepareOrientedModel (orientation + manifold check) is
   // in-flight for the currently-uploaded file — real user report: without
   // this, "Suivant" only checked manifoldWarning, which still holds its
@@ -259,6 +267,7 @@ export function useQuoteWizard() {
   // doesn't make the work itself faster, just stops it from blocking
   // everything else meanwhile.
   function prepareOrientedModel(targetFile: File): Promise<OrientedModel | null> {
+    setTooComplexWarning(false); // fresh per file — not derived from `result` below like the other warnings, since a null result also happens for unrelated reasons
     const promise = (async (): Promise<OrientedModel | null> => {
       try {
         const ext = "." + targetFile.name.split(".").pop()!.toLowerCase();
@@ -282,6 +291,23 @@ export function useQuoteWizard() {
         if (fileRef.current !== targetFile) return null;
         return { positions, manifold, consistentWinding };
       } catch (e) {
+        // Real, reproduced bug: a 2.5M-triangle STL (way over
+        // MAX_STL_TRIANGLES) has no chance of surviving the full parse on a
+        // weaker machine (see orientationSuggest.js's own comment) — before
+        // its own pre-check existed, this landed here as an opaque JS error
+        // (OOM-ish, or just very slow), silently swallowed into "fall back
+        // to as-uploaded" like any other unexpected failure, so the visitor
+        // either waited a long time for nothing or saw the generic fallback
+        // error instead of the specific, fast, clear "too complex" message
+        // — while a faster machine survived long enough to upload and let
+        // the server's own identical check reject it cleanly, a confusing
+        // inconsistency. Caught specifically here (by the same prefix the
+        // thrown error and quotes/index.ts's own rejection both use) so
+        // every visitor gets the same message, fast, regardless of machine.
+        if (e instanceof Error && e.message.startsWith("part_too_complex")) {
+          setTooComplexWarning(true);
+          return null;
+        }
         console.warn("prepareOrientedModel failed, falling back to as-uploaded", e);
         return null;
       }
@@ -303,6 +329,7 @@ export function useQuoteWizard() {
       orientedModelPromiseRef.current = null;
       setManifoldWarning(false);
       setWindingWarning(false);
+      setTooComplexWarning(false);
       setOrientationLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -643,6 +670,7 @@ export function useQuoteWizard() {
     setThinWallWarning(false);
     setManifoldWarning(false);
     setWindingWarning(false);
+    setTooComplexWarning(false);
     setPreviewUnavailable(false);
     setAnalysisReady(false);
     setAnalysisError(null);
@@ -825,7 +853,7 @@ export function useQuoteWizard() {
   }
 
   function next() {
-    if (step === 1 && (!scaleFitsPrinter() || scalePartTooThin() || manifoldWarning || windingWarning || orientationLoading)) return;
+    if (step === 1 && (!scaleFitsPrinter() || scalePartTooThin() || manifoldWarning || windingWarning || tooComplexWarning || orientationLoading)) return;
     const nextStep = Math.min(4, step + 1);
     setStep(nextStep);
     if (nextStep === 3 && !analysisReady && !analyzing) submitQuote();
@@ -880,6 +908,7 @@ export function useQuoteWizard() {
     thinWallWarning,
     manifoldWarning,
     windingWarning,
+    tooComplexWarning,
     orientationLoading,
     infillDropdownOpen,
     setInfillDropdownOpen,
