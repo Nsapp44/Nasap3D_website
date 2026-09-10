@@ -39,6 +39,25 @@ export const POST = apiHandler(async (context) => {
     return jsonError(400, "invalid_signature");
   }
 
+  // Standard Stripe Checkout (card, synchronous) never fires a dedicated
+  // "declined" event mid-session — a declined card just shows an error on
+  // Stripe's own page and the customer retries without leaving the session.
+  // The only real "never paid" signal for that flow is the session simply
+  // expiring (default 24h) after the customer gave up or kept failing.
+  // Logged only, no status change: the order correctly stays
+  // AWAITING_PAYMENT (the customer can still click "Payer" again — pay.ts
+  // creates a brand new Checkout Session on every call, nothing here
+  // depends on the expired one surviving) — this exists purely so a real
+  // failed-payment attempt is visible in the logs instead of invisible,
+  // e.g. to correlate with a support message like "I tried to pay but
+  // nothing happened".
+  if (event.type === "checkout.session.expired") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const orderId = session.metadata?.orderId;
+    console.warn(`checkout.session.expired for order ${orderId ?? "(no orderId in metadata)"} — customer never completed payment on this session`);
+    return json({ ok: true });
+  }
+
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const orderId = session.metadata?.orderId;
