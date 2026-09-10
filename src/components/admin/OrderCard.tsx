@@ -9,6 +9,31 @@ const STATUS_DEFS = [
   { key: "DELIVERED", label: "Livré" },
 ];
 
+// Real incident: the Stripe webhook can fail to record a real payment (see
+// webhooks/stripe.ts), leaving an order stuck in AWAITING_PAYMENT with no
+// normal way to advance it — statusOptions below doesn't even show chips
+// for that status at all. Scoped to ONLY that one transition on purpose
+// (not PENDING/PRINTING/READY too) — those already have working, visible
+// status chips with no known bug, so an extra "force" button next to them
+// would just be redundant clutter, not a real safety net for anything.
+const EMERGENCY_NEXT: Record<string, string> = {
+  AWAITING_PAYMENT: "PENDING",
+};
+
+// Requested: picking the right one out of 4 status chips (which let you
+// jump to ANY of them, including skipping steps — nothing actually stops
+// clicking straight from "Payée" to "Livré") wasn't a clear, guided
+// workflow. A dedicated "Suivant" button computing the actual next step and
+// going through the exact same setOrderStatus() as the chips (so it still
+// respects tracking_number_required etc. — unlike EMERGENCY_NEXT above,
+// this is not a bypass) sits alongside them rather than replacing them, so
+// the chips remain available for the rare case of jumping/correcting.
+const NORMAL_NEXT: Record<string, string> = {
+  PENDING: "PRINTING",
+  PRINTING: "READY",
+  READY: "DELIVERED",
+};
+
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
 }
@@ -21,6 +46,7 @@ function fmtDate(iso: string) {
 export default function OrderCard({ order, onChanged }: { order: AdminOrder; onChanged: () => void }) {
   const [labelBusy, setLabelBusy] = useState(false);
   const [trackingBusy, setTrackingBusy] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const [trackingDraft, setTrackingDraft] = useState(order.trackingNumber || "");
 
   const needsAcceptance = order.status === "EXPERTISE";
@@ -49,6 +75,29 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
   const noTrackingNumber = order.status === "PRINTING" && !order.trackingNumber;
   const canCheckTracking = !!order.boxtalOrderRef;
   const statusOptions = ["PENDING", "PRINTING", "READY", "DELIVERED"].includes(order.status) ? STATUS_DEFS : [];
+  // One button, not two: same slot, same computed "next" step either way —
+  // just the AWAITING_PAYMENT case needs the force+confirm treatment
+  // (EMERGENCY_NEXT), everything else advances normally through the exact
+  // same setOrderStatus() the chips use (NORMAL_NEXT), guards and all.
+  const emergencyNextStatus = EMERGENCY_NEXT[order.status];
+  const nextStatus = emergencyNextStatus ?? NORMAL_NEXT[order.status];
+  const nextLabel = nextStatus ? (STATUS_DEFS.find((d) => d.key === nextStatus)?.label ?? nextStatus) : "";
+
+  async function advanceStatus() {
+    if (!nextStatus) return;
+    if (emergencyNextStatus) {
+      if (
+        !window.confirm(
+          `Forcer cette commande à l'étape "${nextLabel}" sans passer par les vérifications normales (paiement confirmé, numéro de suivi) ?\n\nÀ utiliser uniquement en cas de bug confirmé (ex: le webhook Stripe n'a pas marché malgré un paiement réel) — vérifiez d'abord vous-même que c'est bien le cas.`,
+        )
+      )
+        return;
+      await api.adminUpdateOrderStatus(order.id, nextStatus, true);
+      onChanged();
+      return;
+    }
+    await setOrderStatus(nextStatus);
+  }
 
   async function setOrderStatus(status: string) {
     const res = await api.adminUpdateOrderStatus(order.id, status);
@@ -123,6 +172,22 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
     if (res.ok) onChanged();
     else window.alert("Échec de l'enregistrement du numéro de suivi.");
   }
+  async function deleteOrder() {
+    if (deleteBusy) return;
+    if (
+      !window.confirm(
+        `Supprimer définitivement la commande ${order.ref} ? Action irréversible.${
+          order.hasInvoice ? "\n\nUne facture existe pour cette commande — seul l'enregistrement sera supprimé, pas le PDF déjà généré." : ""
+        }`,
+      )
+    )
+      return;
+    setDeleteBusy(true);
+    const res = await api.adminDeleteOrder(order.id);
+    setDeleteBusy(false);
+    if (res.ok) onChanged();
+    else window.alert("Échec de la suppression de la commande.");
+  }
 
   return (
     <div className="order-card">
@@ -136,7 +201,15 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
           </div>
           <div className="order-customer-no">{order.customerNo}</div>
         </div>
-        <span className="order-price">{(order.totalCents / 100).toFixed(2)} €</span>
+        <div className="order-head-right">
+          <span className="order-price">{(order.totalCents / 100).toFixed(2)} €</span>
+          <span onClick={deleteOrder} className="btn-close" title="Supprimer cette commande">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </span>
+        </div>
       </div>
 
       <div className="order-status-row">
@@ -168,6 +241,11 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
               Refuser
             </span>
           </div>
+        )}
+        {!needsAcceptance && nextStatus && (
+          <span onClick={advanceStatus} className={emergencyNextStatus ? "btn-emergency" : "btn-next"}>
+            {emergencyNextStatus ? "🚨 Forcer" : "Suivant"} → {nextLabel}
+          </span>
         )}
       </div>
 

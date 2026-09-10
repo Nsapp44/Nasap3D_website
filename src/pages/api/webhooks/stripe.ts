@@ -16,7 +16,15 @@ import { notifyAdminOrderPaid, sendOrderPaidEmail } from "../../../lib/server/or
 export const POST = apiHandler(async (context) => {
   const signature = context.request.headers.get("stripe-signature");
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!secret || !signature) return jsonError(400, "webhook_not_configured");
+  if (!secret || !signature) {
+    // Real, reproduced production bug: this returned 400 with NO server-side
+    // log at all — if STRIPE_WEBHOOK_SECRET is unset/misconfigured in prod,
+    // or Stripe's request somehow arrives without its signature header,
+    // every delivery just silently 400s forever with zero trace in `docker
+    // logs`, making this exact failure mode undiagnosable after the fact.
+    console.error(`stripe webhook rejected: secret configured=${!!secret} signature present=${!!signature}`);
+    return jsonError(400, "webhook_not_configured");
+  }
 
   // Must be the exact raw bytes Stripe signed — .text() on the untouched
   // Request body gives that; re-serializing a parsed object would break
@@ -45,7 +53,14 @@ export const POST = apiHandler(async (context) => {
       return json({ ok: true });
     }
     // Idempotency: Stripe can retry webhook delivery for the same event.
+    // Logged (this used to be silent): a genuinely stuck order that reaches
+    // this branch on every retry, always skipping instead of ever applying,
+    // would otherwise leave zero trace of why it never moved past
+    // AWAITING_PAYMENT — this is exactly the shape a real bug elsewhere
+    // (the order landing in some other status before payment, a duplicate
+    // session, a race) would take, and this log line is what would prove it.
     if (order.status !== "AWAITING_PAYMENT") {
+      console.warn(`checkout.session.completed for order ${orderId}, but status is already "${order.status}" (not AWAITING_PAYMENT) — skipping, already applied or the order took a different path`);
       return json({ ok: true });
     }
 
@@ -53,10 +68,24 @@ export const POST = apiHandler(async (context) => {
       where: { id: orderId },
       data: { status: "PENDING", stripePaymentIntentId: String(session.payment_intent) },
     });
+    console.log(`order ${order.ref} marked PENDING from Stripe webhook`);
 
-    await createInvoiceFromStripeSession(session, orderId, order.user, order.totalCents);
-    await notifyAdminOrderPaid(order.ref, session.customer_email, order.totalCents);
-    await sendOrderPaidEmail(order.user.email, order.ref, order.totalCents);
+    // Invoice PDF + notification emails are follow-up side effects, not the
+    // critical path — the order is already correctly marked paid above
+    // regardless of what happens here. Isolated in its own try/catch so a
+    // failure in any of these (a flaky PDF fetch, SMTP down) can't turn into
+    // a 500 response to Stripe, which would otherwise trigger a webhook
+    // retry that re-does none of this useful work anyway (the idempotency
+    // check above would just skip it) while making the Stripe dashboard
+    // show a false "delivery failed" for an event that actually succeeded
+    // at the one thing that actually matters: recording the payment.
+    try {
+      await createInvoiceFromStripeSession(session, orderId, order.user, order.totalCents);
+      await notifyAdminOrderPaid(order.ref, session.customer_email, order.totalCents);
+      await sendOrderPaidEmail(order.user.email, order.ref, order.totalCents);
+    } catch (err) {
+      console.error(`order ${order.ref} marked paid, but invoice/email follow-up failed`, err);
+    }
   }
 
   return json({ ok: true });

@@ -57,11 +57,14 @@ export default function OrdersTab() {
         .empty-orders { border: 1px dashed rgba(255,255,255,.15); border-radius: 10px; padding: 34px; text-align: center; font: 500 12px 'Inter',sans-serif; color: rgba(255,255,255,.4); }
 
         .order-card { border: 1px solid rgba(255,255,255,.1); border-radius: 10px; background: #1a1917; padding: 18px 20px; }
-        .order-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .btn-close { flex: none; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(255,255,255,.15); color: rgba(255,255,255,.45); cursor: pointer; }
+        .btn-close:hover { border-color: rgba(255,90,60,.5); color: #ff8a70; background: rgba(255,90,60,.08); }
+        .order-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+        .order-head-right { flex: none; display: flex; align-items: center; gap: 10px; }
         .order-title { font: 600 13px 'Space Grotesk',sans-serif; color: #f3f1ec; margin-bottom: 3px; }
         .order-desc { font: 400 10.5px 'Inter',sans-serif; color: rgba(255,255,255,.45); }
         .order-customer-no { font: 400 9.5px ui-monospace,monospace; color: rgba(255,255,255,.3); margin-top: 2px; }
-        .order-price { font: 700 14px 'Space Grotesk',sans-serif; color: #ff5a3c; }
+        .order-price { flex: none; font: 700 14px 'Space Grotesk',sans-serif; color: #ff5a3c; white-space: nowrap; }
         .order-status-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
         .status-chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
         .status-chip { font: 600 10px 'Inter',sans-serif; padding: 5px 10px; border-radius: 5px; cursor: pointer; background: transparent; color: rgba(255,255,255,.5); border: 1px solid rgba(255,255,255,.15); }
@@ -88,9 +91,20 @@ export default function OrdersTab() {
         .btn-label { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,90,60,.35); font: 600 10.5px 'Inter',sans-serif; padding: 6px 12px; border-radius: 5px; }
         .tracking-number { font: 600 10.5px ui-monospace,monospace; color: #e8e6e1; }
         .tracking-input { width: 180px; box-sizing: border-box; height: 28px; border: 1px solid rgba(255,255,255,.15); border-radius: 5px; background: #161514; padding: 0 8px; font: 10.5px ui-monospace,monospace; color: #e8e6e1; outline: none; }
+        .btn-emergency { border: 1px dashed rgba(255,90,60,.5); color: #ff8a70; background: transparent; font: 500 10px 'Inter',sans-serif; padding: 5px 10px; border-radius: 5px; cursor: pointer; white-space: nowrap; }
+        .btn-emergency:hover { background: rgba(255,90,60,.08); }
+        .btn-next { border: 1px solid #ff5a3c; color: #ff5a3c; background: transparent; font: 600 10px 'Inter',sans-serif; padding: 5px 10px; border-radius: 5px; cursor: pointer; white-space: nowrap; }
+        .btn-next:hover { background: rgba(255,90,60,.08); }
 
         @media (max-width: 480px) {
+          .order-head { flex-direction: column; align-items: flex-start; gap: 8px; }
+          .order-head-right { align-self: flex-end; }
           .order-status-row { flex-direction: column; align-items: stretch; }
+          .status-chips { gap: 5px; }
+          .status-chip { flex: 1 1 auto; text-align: center; }
+          .section-text { word-break: break-word; }
+          .file-row { flex-wrap: wrap; }
+          .tracking-input { width: 100%; }
         }
       `}</style>
     </div>

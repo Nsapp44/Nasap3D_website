@@ -207,8 +207,11 @@ export const api = {
     const qs = params.toString();
     return request("GET", "/admin/orders" + (qs ? "?" + qs : ""));
   },
-  async adminUpdateOrderStatus(orderId: string, status: string) {
-    return request("PATCH", "/admin/orders/" + orderId, { status });
+  async adminUpdateOrderStatus(orderId: string, status: string, force?: boolean) {
+    return request("PATCH", "/admin/orders/" + orderId, force ? { status, force: true } : { status });
+  },
+  async adminDeleteOrder(orderId: string) {
+    return request("DELETE", "/admin/orders/" + orderId);
   },
   async adminAcceptOrder(orderId: string) {
     return request("POST", "/admin/orders/" + orderId + "/accept");
