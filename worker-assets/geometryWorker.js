@@ -15,7 +15,7 @@
 // flat array once here and transferring it (Transferable, no copy, close to
 // free even for a large buffer).
 import { loadTriangles, orientTriangles, trianglesToPositions } from "/kiri-slicer.js";
-import { checkManifoldAndParts } from "/orientationSuggest.js";
+import { checkManifoldAndParts, checkWindingConsistent } from "/orientationSuggest.js";
 
 self.onmessage = async (event) => {
   const { id, fileBuffer, ext } = event.data;
@@ -23,8 +23,9 @@ self.onmessage = async (event) => {
     const rawTriangles = await loadTriangles(fileBuffer, ext);
     const triangles = await orientTriangles(rawTriangles);
     const { manifold } = checkManifoldAndParts(triangles);
+    const consistentWinding = checkWindingConsistent(triangles);
     const positions = trianglesToPositions(triangles);
-    self.postMessage({ id, positions, manifold }, [positions.buffer]);
+    self.postMessage({ id, positions, manifold, consistentWinding }, [positions.buffer]);
   } catch (e) {
     self.postMessage({ id, error: e && e.message ? e.message : String(e) });
   }

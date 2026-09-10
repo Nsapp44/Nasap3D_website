@@ -278,6 +278,17 @@ export const POST = apiHandler(async (context) => {
       // both (0.007% and 0.26% bad edges, both well under 1%) and still flags
       // real breakage (a genuine hole pushes this into the tens of percent).
       if (!info.manifold) return jsonError(400, "non_manifold_model");
+      // Real, reproduced bug: a customer file (a cylinder) was topologically
+      // closed/manifold (passes the check above fine) but had roughly half
+      // its triangles wound the wrong way — computeMeshVolumeMm3's volume
+      // sum needs consistent winding to mean anything, so it silently came
+      // out ~0 for an obviously real, non-empty part, and the same broken
+      // mesh would go on to confuse the real slicing engine too (it also
+      // needs consistent outward normals to tell solid from void). See
+      // checkWindingConsistent's own comment (orientation.ts) for the exact
+      // threshold and how it was calibrated against every real test file
+      // available this session, not just this one repro.
+      if (!info.consistentWinding) return jsonError(400, "inconsistent_normals");
       // Real, reproduced bug: a genuinely flat/near-2D part (confirmed on a
       // real customer file — bounding box exactly 0mm on one axis, a plate
       // with zero real thickness) passes the manifold check fine (it's a

@@ -51,6 +51,7 @@ interface PreviewHandle {
 interface OrientedModel {
   positions: Float32Array;
   manifold: boolean;
+  consistentWinding: boolean;
 }
 
 function extOk(name: string) {
@@ -86,6 +87,13 @@ export function useQuoteWizard() {
   const [sizeMm, setSizeMm] = useState<{ x: number; y: number; z: number } | null>(null);
   const [thinWallWarning, setThinWallWarning] = useState(false);
   const [manifoldWarning, setManifoldWarning] = useState(false);
+  // See checkWindingConsistent (orientation.ts / orientationSuggest.js) —
+  // a topologically-fine mesh (passes manifoldWarning above) whose
+  // triangles don't all wind the same way, so its computed volume is
+  // silently wrong (near 0 for a real, non-empty part) and the real
+  // slicing engine would get confused by it too. Same hard-block treatment
+  // as manifoldWarning, not just a heads-up (see next() below).
+  const [windingWarning, setWindingWarning] = useState(false);
   // True while prepareOrientedModel (orientation + manifold check) is
   // in-flight for the currently-uploaded file — real user report: without
   // this, "Suivant" only checked manifoldWarning, which still holds its
@@ -160,7 +168,10 @@ export function useQuoteWizard() {
   // dropped before the first one's worker response arrives) never get
   // crossed — matches a plain HTTP request/response pattern, just over
   // postMessage instead of fetch.
-  function runInGeometryWorker(fileBuffer: ArrayBuffer, ext: string): Promise<{ positions: Float32Array; manifold: boolean }> {
+  function runInGeometryWorker(
+    fileBuffer: ArrayBuffer,
+    ext: string,
+  ): Promise<{ positions: Float32Array; manifold: boolean; consistentWinding: boolean }> {
     const worker = getGeometryWorker();
     const id = ++geometryRequestIdRef.current;
     return new Promise((resolve, reject) => {
@@ -172,7 +183,7 @@ export function useQuoteWizard() {
         if (event.data.id !== id) return; // a different, still-in-flight request
         cleanup();
         if (event.data.error) reject(new Error(event.data.error));
-        else resolve({ positions: event.data.positions, manifold: event.data.manifold });
+        else resolve({ positions: event.data.positions, manifold: event.data.manifold, consistentWinding: event.data.consistentWinding });
       }
       // Without this, a worker that fails to even load (a 404 on the
       // script, a syntax error, a browser refusing module workers) never
@@ -267,9 +278,9 @@ export function useQuoteWizard() {
         // rejection right at upload, not just a warning — so a flood of
         // genuinely broken files never even reaches a slice attempt,
         // client or server.
-        const { positions, manifold } = await runInGeometryWorker(buffer, ext);
+        const { positions, manifold, consistentWinding } = await runInGeometryWorker(buffer, ext);
         if (fileRef.current !== targetFile) return null;
-        return { positions, manifold };
+        return { positions, manifold, consistentWinding };
       } catch (e) {
         console.warn("prepareOrientedModel failed, falling back to as-uploaded", e);
         return null;
@@ -279,6 +290,7 @@ export function useQuoteWizard() {
     promise.then((result) => {
       if (fileRef.current !== targetFile) return;
       setManifoldWarning(result ? !result.manifold : false);
+      setWindingWarning(result ? !result.consistentWinding : false);
       setOrientationLoading(false);
     });
     return promise;
@@ -290,6 +302,7 @@ export function useQuoteWizard() {
     } else {
       orientedModelPromiseRef.current = null;
       setManifoldWarning(false);
+      setWindingWarning(false);
       setOrientationLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -314,7 +327,20 @@ export function useQuoteWizard() {
     const oriented = orientedModelPromiseRef.current ? await orientedModelPromiseRef.current : null;
     if (fileRef.current !== targetFile || !ref.current) return null; // stale by the time this resolved
     const mat = materials.find((m) => m.key === material);
-    const color = mat ? mat.colors.find((c) => c.id === colorId)?.colorHex : null;
+    // Step 1's own preview (see renderPreview below) is shown right at
+    // upload, before the visitor has ever seen the material/color picker —
+    // colorId is already silently auto-defaulted by then (loadMaterials/
+    // selectMaterial below both pick the material's first in-stock color,
+    // Black on virtually every material), which made the freshly-uploaded
+    // part nearly invisible against the viewer's own dark background.
+    // useBrandFallbackColor skips that not-yet-real selection and lets
+    // viewer3d.js's own materialFor() fallback (#ff5a3c, the same orange as
+    // the site's "Obtenir un devis instantané" CTA — see index.astro's
+    // .hero-cta-primary) apply instead — visible, and on-brand rather than
+    // an arbitrary white. renderAnalysisPreview (step 3, after the visitor
+    // has actually been through Options) never sets this, so it keeps
+    // showing their real selection, auto-defaulted or explicitly clicked.
+    const color = !extraOpts?.useBrandFallbackColor && mat ? mat.colors.find((c) => c.id === colorId)?.colorHex : null;
     let handle;
     if (oriented) {
       setPreviewUnavailable(false);
@@ -340,7 +366,7 @@ export function useQuoteWizard() {
       previewLoaderTimerRef.current = null;
       setPreviewLoading(true);
     }, 500);
-    const handle = await renderInto(previewRef, previewHandleRef, { animate: false, showGrid: true });
+    const handle = await renderInto(previewRef, previewHandleRef, { animate: false, showGrid: true, useBrandFallbackColor: true });
     if (previewLoaderTimerRef.current) {
       clearTimeout(previewLoaderTimerRef.current);
       previewLoaderTimerRef.current = null;
@@ -616,6 +642,7 @@ export function useQuoteWizard() {
     setSizeMm(null);
     setThinWallWarning(false);
     setManifoldWarning(false);
+    setWindingWarning(false);
     setPreviewUnavailable(false);
     setAnalysisReady(false);
     setAnalysisError(null);
@@ -773,6 +800,7 @@ export function useQuoteWizard() {
         quote_disabled: "Le devis instantané est momentanément indisponible.",
         part_too_large: "Cette pièce dépasse le volume imprimable de toutes nos machines (max 330×320×325mm). Possibilité d'imprimer vos pièces en plusieurs morceaux, utilisez le formulaire de contact.",
         non_manifold_model: "Le modèle contient des erreurs de géométrie (maillage non étanche) — vérifiez le fichier dans votre logiciel de CAO.",
+        inconsistent_normals: "Le maillage a des normales incohérentes (faces retournées) — réparez le fichier dans votre logiciel de CAO (fonction \"recalculer les normales\") puis réessayez.",
         part_too_thin: "Cette pièce est trop fine sur un axe (quasi plate) pour être imprimée telle quelle — vérifiez l'échelle ou le fichier.",
         part_too_complex: "Cette pièce est trop complexe (trop de triangles) pour être analysée par nos serveurs. Essayez de simplifier le maillage, ou contactez-nous directement avec votre fichier.",
         unreadable_file: "Fichier illisible — vérifiez qu'il s'agit bien d'un .stl, .obj ou .3mf valide.",
@@ -797,7 +825,7 @@ export function useQuoteWizard() {
   }
 
   function next() {
-    if (step === 1 && (!scaleFitsPrinter() || scalePartTooThin() || manifoldWarning || orientationLoading)) return;
+    if (step === 1 && (!scaleFitsPrinter() || scalePartTooThin() || manifoldWarning || windingWarning || orientationLoading)) return;
     const nextStep = Math.min(4, step + 1);
     setStep(nextStep);
     if (nextStep === 3 && !analysisReady && !analyzing) submitQuote();
@@ -851,6 +879,7 @@ export function useQuoteWizard() {
     sizeMm,
     thinWallWarning,
     manifoldWarning,
+    windingWarning,
     orientationLoading,
     infillDropdownOpen,
     setInfillDropdownOpen,

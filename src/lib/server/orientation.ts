@@ -142,6 +142,48 @@ export function computeMeshVolumeMm3(positions: Positions): number {
   return Math.abs(volume6) / 6;
 }
 
+// Real, reproduced bug: a customer file (a cylinder) had roughly half its
+// triangles wound in the opposite direction from the other half — still a
+// topologically closed, single-part mesh (checkManifoldAndParts above finds
+// nothing wrong, since edge-sharing doesn't care which way each triangle
+// winds), but computeMeshVolumeMm3's divergence-theorem sum needs
+// consistent winding to mean anything: confirmed live, this exact file's
+// positive-signed and negative-signed per-triangle contributions summed to
+// 3.12mm³ and -3.12mm³ — net volume ~0 despite a real, obviously non-empty
+// 2×2×2mm part. A mesh like that goes on to confuse the real slicing engine
+// too (it also needs consistent outward normals to tell solid from void).
+//
+// netVolume/grossVolume (gross = sum of |each triangle's contribution|) is
+// ~1.0 for a normally-wound mesh and ~0 for one this broken — NOT exactly
+// 1.0 even for a perfectly fine mesh, though: concave/detailed real parts
+// legitimately have triangles contributing both signs (a triangle's sign
+// here depends on whether it faces toward or away from the coordinate
+// origin, not on whether the mesh is "correct"), so some cancellation is
+// normal. Measured live across every real test file available this session
+// (STL, OBJ, 3MF, from a simple bracket to an intricate 194k-triangle
+// fidget toy): the lowest ratio among genuinely fine files was 0.040 — this
+// threshold sits well below that with real margin, while the actually-
+// broken cylinder measured effectively 0 (1e-15, floating-point noise
+// level) — many orders of magnitude of separation, not a close call.
+const MIN_WINDING_CONSISTENCY_RATIO = 0.01;
+
+export function checkWindingConsistent(positions: Positions): boolean {
+  const n = positions.length / 9;
+  let net = 0,
+    gross = 0;
+  for (let i = 0; i < n; i++) {
+    const o = i * 9;
+    const ax = positions[o], ay = positions[o + 1], az = positions[o + 2];
+    const bx = positions[o + 3], by = positions[o + 4], bz = positions[o + 5];
+    const cx = positions[o + 6], cy = positions[o + 7], cz = positions[o + 8];
+    const v = ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx);
+    net += v;
+    gross += Math.abs(v);
+  }
+  if (gross === 0) return true; // no real geometry — MIN_DIMENSION_MM in quotes/index.ts is what rejects this case, not this check
+  return Math.abs(net) / gross >= MIN_WINDING_CONSISTENCY_RATIO;
+}
+
 // "v x y z" + "f i j k [l...]" — the subset of Wavefront OBJ this project's
 // uploads actually use (no normals/UVs/materials needed for geometry-only
 // checks). Faces are 1-indexed and may be negative (relative to the current

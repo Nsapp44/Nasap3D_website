@@ -26,6 +26,7 @@ import {
   computeBoundingBox,
   computeMeshVolumeMm3,
   checkManifoldAndParts,
+  checkWindingConsistent,
   applyTransform,
   serializeBinaryStl,
   type Positions,
@@ -46,6 +47,7 @@ export interface ModelInfo {
   volumeMm3: number;
   manifold: boolean;
   parts: number;
+  consistentWinding: boolean;
 }
 
 export interface PrinterProfile {
@@ -95,7 +97,8 @@ export async function getModelInfo(positions: Positions): Promise<ModelInfo> {
   const bbox = computeBoundingBox(positions);
   const volumeMm3 = computeMeshVolumeMm3(positions);
   const { manifold, parts } = checkManifoldAndParts(positions);
-  return { ...bbox, volumeMm3, manifold, parts };
+  const consistentWinding = checkWindingConsistent(positions);
+  return { ...bbox, volumeMm3, manifold, parts, consistentWinding };
 }
 
 // Bakes scale/rotation into the mesh and re-serializes as STL — replaces

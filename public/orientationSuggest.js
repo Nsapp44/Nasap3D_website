@@ -155,6 +155,26 @@ export function checkManifoldAndParts(triangles) {
   return { manifold, parts: roots.size };
 }
 
+// Ported verbatim from src/lib/server/orientation.ts's checkWindingConsistent
+// — see that file's own comment for the full reasoning/calibration. Runs
+// client-side too, not just server-side, so a broken file gets caught right
+// at upload (blocking "Suivant", see useQuoteWizard.ts) instead of only
+// after a wasted round trip to the server.
+const MIN_WINDING_CONSISTENCY_RATIO = 0.01;
+
+export function checkWindingConsistent(triangles) {
+  let net = 0,
+    gross = 0;
+  for (const t of triangles) {
+    const [a, b, c] = t.v;
+    const v = a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0]) + a[2] * (b[0] * c[1] - b[1] * c[0]);
+    net += v;
+    gross += Math.abs(v);
+  }
+  if (gross === 0) return true;
+  return Math.abs(net) / gross >= MIN_WINDING_CONSISTENCY_RATIO;
+}
+
 const CANDIDATES = [
   { rotateXDeg: 0, rotateYDeg: 0 },
   { rotateXDeg: 180, rotateYDeg: 0 },

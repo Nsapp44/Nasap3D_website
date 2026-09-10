@@ -150,12 +150,17 @@ export default function QuoteWizard() {
                       ⚠ Ce fichier contient des erreurs de géométrie importantes (maillage non étanche) — impossible de continuer avec ce fichier tel quel.{" "}
                       <a href="/contact">Contactez-nous</a> ou réparez le maillage dans votre logiciel de CAO puis réessayez.
                     </div>
+                  ) : w.windingWarning ? (
+                    <div className="qw-scale-warning">
+                      ⚠ Ce fichier a des normales incohérentes (des faces retournées) — impossible de calculer un devis fiable tel quel.{" "}
+                      <a href="/contact">Contactez-nous</a> ou réparez le fichier dans votre logiciel de CAO ("recalculer les normales") puis réessayez.
+                    </div>
                   ) : (
                     <div className="qw-file-success">Fichier chargé avec succès</div>
                   )}
                 </div>
                 <div className="qw-next-row">
-                  <div onClick={w.next} className={`qw-next-btn${scaleTooLarge || scaleTooThin || w.manifoldWarning || w.orientationLoading ? " disabled" : ""}`}>
+                  <div onClick={w.next} className={`qw-next-btn${scaleTooLarge || scaleTooThin || w.manifoldWarning || w.windingWarning || w.orientationLoading ? " disabled" : ""}`}>
                     {w.orientationLoading ? "Vérification…" : "Suivant →"}
                   </div>
                 </div>
