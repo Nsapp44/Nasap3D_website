@@ -5,6 +5,11 @@ export interface AdminOrderItem {
   id: string;
   nameSnapshot: string;
   materialSnapshot: string;
+  colorNameSnapshot: string;
+  colorHexSnapshot: string;
+  infillSnapshot: number;
+  qualitySnapshot: string;
+  layerHeightMm: number | null;
   qty: number;
   fileName: string | null;
   fileAvailable: boolean;

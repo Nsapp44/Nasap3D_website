@@ -30,7 +30,7 @@ export const GET = apiHandler(async (context) => {
       ? { status }
       : undefined;
 
-  const [orders, counts] = await Promise.all([
+  const [orders, counts, qualityProfiles] = await Promise.all([
     prisma.order.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -41,10 +41,22 @@ export const GET = apiHandler(async (context) => {
       },
     }),
     prisma.order.groupBy({ by: ["status"], _count: true }),
+    prisma.qualityProfile.findMany({ select: { label: true, layerHeightMm: true } }),
   ]);
 
   const countByStatus: Record<string, number> = {};
   for (const c of counts) countByStatus[c.status] = c._count;
+
+  // qualitySnapshot only ever stored the profile's label ("Standard") — see
+  // orders.ts's own qualitySnapshot: item.quoteJob.quality.label — not the
+  // layer height itself, so it has to be looked up here rather than read
+  // straight off the order item. Looked up by CURRENT label rather than
+  // also snapshotting layerHeightMm at order time (unlike material/color,
+  // which really do need to freeze at purchase time for pricing/legal
+  // reasons): this is workshop-facing info only, and layer heights per
+  // named profile essentially never change once set, so a live lookup is
+  // simpler than a schema migration for the same practical result.
+  const layerHeightByQualityLabel = new Map(qualityProfiles.map((q) => [q.label, q.layerHeightMm]));
 
   return json({
     orders: orders.map((o) => ({
@@ -81,6 +93,11 @@ export const GET = apiHandler(async (context) => {
         id: i.id,
         nameSnapshot: i.nameSnapshot,
         materialSnapshot: i.materialSnapshot,
+        colorNameSnapshot: i.colorNameSnapshot,
+        colorHexSnapshot: i.colorHexSnapshot,
+        infillSnapshot: i.infillSnapshot,
+        qualitySnapshot: i.qualitySnapshot,
+        layerHeightMm: layerHeightByQualityLabel.get(i.qualitySnapshot) ?? null,
         qty: i.qty,
         fileName: i.quoteJob?.fileName ?? null,
         fileAvailable: !!i.quoteJob && !i.quoteJob.fileDeletedAt,

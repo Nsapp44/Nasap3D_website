@@ -27,6 +27,16 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
   const isAwaitingPayment = order.status === "AWAITING_PAYMENT";
   const isRejected = order.status === "REJECTED";
   const hasFiles = order.items.some((i) => i.fileName);
+  // Useful for the workshop while actually printing the parts (picking
+  // material/quality/infill/color on the printer) — no longer needed once
+  // shipped/delivered, per explicit request, so hidden past that point
+  // rather than cluttering the card for every order forever.
+  const showPrintSpecs = !["READY", "DELIVERED"].includes(order.status);
+  // A small-order-fee line (see computePrice/pricing.ts) is a real
+  // OrderItem row but not an actual printed part — confirmed live on a real
+  // order: its material/quality/color snapshots are all empty strings,
+  // which rendered as an empty, confusing row here before this filter.
+  const printableItems = order.items.filter((i) => i.qualitySnapshot);
   const canBuyLabel = order.status === "PRINTING" && order.canBuyLabel && !order.shippingLabelUrl && !order.shippingOversized;
   const hasLabel = !!order.shippingLabelUrl;
   const labelPending = !!order.boxtalOrderRef && !order.shippingLabelUrl;
@@ -166,6 +176,31 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
           <a href={api.adminOrderInvoiceDownloadUrl(order.id)} target="_blank" rel="noreferrer" className="btn-label">
             Télécharger la facture
           </a>
+        </div>
+      )}
+
+      {showPrintSpecs && printableItems.length > 0 && (
+        <div className="order-section">
+          <div className="section-label">Réglages d'impression</div>
+          {printableItems.map((i) => (
+            <div key={i.id} className="section-text">
+              {i.nameSnapshot} · {i.materialSnapshot} · {i.layerHeightMm !== null ? `${i.layerHeightMm.toFixed(2).replace(".", ",")}mm` : i.qualitySnapshot} · {i.infillSnapshot}% remplissage ·{" "}
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                <span
+                  style={{
+                    display: "inline-block",
+                    width: "10px",
+                    height: "10px",
+                    borderRadius: "50%",
+                    background: i.colorHexSnapshot,
+                    border: "1px solid rgba(255,255,255,.3)",
+                  }}
+                />
+                {i.colorNameSnapshot}
+              </span>{" "}
+              · x{i.qty}
+            </div>
+          ))}
         </div>
       )}
 
