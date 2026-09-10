@@ -315,8 +315,22 @@ export function useQuoteWizard() {
     orientedModelPromiseRef.current = promise;
     promise.then((result) => {
       if (fileRef.current !== targetFile) return;
-      setManifoldWarning(result ? !result.manifold : false);
-      setWindingWarning(result ? !result.consistentWinding : false);
+      // Real, reproduced production bug: geometryWorker.js is served with
+      // Cache-Control: immutable (see serveWorkerScript.ts) — any visitor
+      // whose browser already cached it from BEFORE consistentWinding
+      // existed gets a postMessage with that field simply absent
+      // (undefined), not false. `!undefined` is also true, so a plain
+      // `!result.consistentWinding` wrongly blocked every file for any
+      // visitor on a stale cached worker, good files included — nothing to
+      // do with the actual check, which was already confirmed correct.
+      // Checked against `=== false` explicitly instead, so an old cached
+      // worker that never sends this field at all fails OPEN (silently
+      // skips the check, same as before this feature existed) rather than
+      // wrongly blocking. Same defensive treatment applied to `manifold`
+      // below, even though that field is old/stable, so any *future*
+      // worker-side check addition doesn't reintroduce this exact bug.
+      setManifoldWarning(result ? result.manifold === false : false);
+      setWindingWarning(result ? result.consistentWinding === false : false);
       setOrientationLoading(false);
     });
     return promise;
