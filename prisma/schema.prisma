@@ -265,6 +265,16 @@ model Order {
   shippingCents         Int          @default(0)
   totalCents            Int
   stripePaymentIntentId String?      @unique
+  // Set immediately at checkout.sessions.create() time (orders/[id]/pay.ts),
+  // not waiting on the webhook — real incident: the webhook can fail
+  // (misconfigured secret), and without this, there was no reliable way to
+  // find which Stripe session/invoice belongs to an order after the fact
+  // (Stripe's own List Checkout Sessions API can't filter by our metadata,
+  // only by customer/payment_intent/status/date — a real API limitation,
+  // not a shortcut we chose). Lets the admin force-payment path (see
+  // admin/orders/[id]/index.ts) retrieve the real invoice directly, instead
+  // of the order permanently having none just because the webhook missed it.
+  stripeCheckoutSessionId String?    @unique
   printingAt            DateTime?
   readyAt               DateTime?
   deliveredAt           DateTime?

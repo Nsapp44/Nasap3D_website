@@ -228,6 +228,11 @@ export const api = {
   adminOrderInvoiceDownloadUrl(orderId: string) {
     return apiBase() + "/admin/orders/" + orderId + "/invoice/download";
   },
+  async adminUploadOrderInvoice(orderId: string, file: File) {
+    const form = new FormData();
+    form.append("file", file, file.name);
+    return requestForm<{ ok: boolean; ref: string }>("/admin/orders/" + orderId + "/invoice/upload", form);
+  },
   async adminDeleteOrderFile(orderId: string, itemId: string) {
     return request("DELETE", "/admin/orders/" + orderId + "/items/" + itemId + "/file");
   },

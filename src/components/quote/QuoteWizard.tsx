@@ -354,7 +354,7 @@ export default function QuoteWizard() {
                 <div className="qw-price-value-row">
                   {pct > 0 && <span className="qw-price-raw">{rawTotal.toFixed(2)} €</span>}
                   <span className="qw-price-value">{finalTotal.toFixed(2)} €</span>
-                  <span className="qw-price-ht">HT</span>
+                  <span className="qw-price-ttc">TTC</span>
                   {pct > 0 && <span className="qw-discount-badge">−{pct}%</span>}
                 </div>
               </div>
@@ -470,7 +470,7 @@ export default function QuoteWizard() {
         .qw-price-value-row { display: flex; align-items: baseline; gap: 9px; }
         .qw-price-raw { font: 500 14px 'Space Grotesk',sans-serif; color: rgba(255,255,255,.4); text-decoration: line-through; }
         .qw-price-value { font: 700 26px 'Space Grotesk',sans-serif; color: #ff5a3c; }
-        .qw-price-ht { font: 500 11px 'Inter',sans-serif; color: rgba(255,255,255,.4); }
+        .qw-price-ttc { font: 500 11px 'Inter',sans-serif; color: rgba(255,255,255,.4); }
         .qw-add-btn { background: #ff5a3c; color: #161514; font: 600 12.5px 'Inter',sans-serif; padding: 11px 18px; border-radius: 7px; cursor: pointer; }
         .qw-toast { margin-top: 14px; border: 1px solid rgba(255,90,60,.35); background: rgba(255,90,60,.08); border-radius: 8px; padding: 10px 14px; font: 600 11px 'Inter',sans-serif; color: #f3f1ec; animation: qwFadeUp .3s ease; }
         .qw-toast a { color: #ff5a3c; }

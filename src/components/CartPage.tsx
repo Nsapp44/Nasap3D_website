@@ -371,7 +371,7 @@ export default function CartPage() {
               </div>
             )}
             <div className="summary-total">
-              <span>Total HT</span>
+              <span>Total TTC</span>
               <span>{totalNoShipping.toFixed(2)} €</span>
             </div>
             {cart.smallOrderFeeCents > 0 && <div className="summary-note">En dessous de {eur(cart.minOrderCents)} €, des frais s'appliquent — ajoutez des pièces pour les éviter.</div>}
@@ -585,7 +585,7 @@ export default function CartPage() {
               </div>
             )}
             <div className="summary-total">
-              <span>Total HT</span>
+              <span>Total TTC</span>
               <span>{total.toFixed(2)} €</span>
             </div>
             {cart.smallOrderFeeCents > 0 && <div className="summary-note">En dessous de {eur(cart.minOrderCents)} €, des frais s'appliquent — ajoutez des pièces pour les éviter.</div>}

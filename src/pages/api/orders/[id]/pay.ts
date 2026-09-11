@@ -50,5 +50,14 @@ export const POST = apiHandler(async (context) => {
     metadata: { orderId: order.id },
   });
 
+  // Stored immediately, not left to the webhook to capture later — real
+  // incident: the webhook can fail (a misconfigured secret, downtime), and
+  // without this recorded up front there was no reliable way afterward to
+  // find which Stripe session/invoice belongs to this order (Stripe's own
+  // List Checkout Sessions API can't filter by our metadata). Lets the
+  // admin's emergency "Forcer → Payée" action fetch the real invoice
+  // directly — see fetchAndAttachInvoiceForOrder (stripeInvoice.ts).
+  await prisma.order.update({ where: { id: order.id }, data: { stripeCheckoutSessionId: session.id } });
+
   return json({ url: session.url });
 });

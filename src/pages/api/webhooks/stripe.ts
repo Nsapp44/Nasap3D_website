@@ -2,8 +2,7 @@ import type Stripe from "stripe";
 import { apiHandler, json, jsonError } from "../../../lib/api/handler";
 import { prisma } from "../../../lib/server/prisma";
 import { stripe } from "../../../lib/server/stripeClient";
-import { nextCounter } from "../../../lib/server/counter";
-import { saveFile } from "../../../lib/server/storage";
+import { createInvoiceFromStripeSession } from "../../../lib/server/stripeInvoice";
 import { notifyAdminOrderPaid, sendOrderPaidEmail } from "../../../lib/server/orderEmails";
 
 // Direct port of POST /webhooks/stripe. In Fastify this needed its own
@@ -85,7 +84,12 @@ export const POST = apiHandler(async (context) => {
 
     await prisma.order.update({
       where: { id: orderId },
-      data: { status: "PENDING", stripePaymentIntentId: String(session.payment_intent) },
+      // stripeCheckoutSessionId is normally already set (pay.ts stores it at
+      // checkout-creation time), but set here too — catches an order created
+      // before that existed, or any other case where it somehow wasn't
+      // captured up front; costs nothing to also set it on the path that
+      // definitely has it (session.id).
+      data: { status: "PENDING", stripePaymentIntentId: String(session.payment_intent), stripeCheckoutSessionId: session.id },
     });
     console.log(`order ${order.ref} marked PENDING from Stripe webhook`);
 
@@ -109,40 +113,3 @@ export const POST = apiHandler(async (context) => {
 
   return json({ ok: true });
 });
-
-async function createInvoiceFromStripeSession(
-  session: Stripe.Checkout.Session,
-  orderId: string,
-  user: { id: string; customerNo: string },
-  amountCents: number,
-) {
-  if (!session.invoice) return;
-  const invoice = await stripe().invoices.retrieve(String(session.invoice));
-  if (!invoice.invoice_pdf) return;
-
-  const res = await fetch(invoice.invoice_pdf);
-  const pdfBuffer = Buffer.from(await res.arrayBuffer());
-
-  const now = new Date();
-  const dateKey = now.toISOString().slice(0, 10); // YYYY-MM-DD
-  const dailySeq = await nextCounter("invoice:" + dateKey);
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
-  const dd = String(now.getDate()).padStart(2, "0");
-  const ref = `FA${String(dailySeq).padStart(3, "0")}-${yyyy}_${mm}_${dd}_${user.customerNo}`;
-
-  const pdfKey = `invoices/${ref}.pdf`;
-  await saveFile(pdfKey, pdfBuffer);
-
-  await prisma.invoice.create({
-    data: {
-      ref,
-      orderId,
-      userId: user.id,
-      amountCents,
-      pdfKey,
-      dailySeq,
-      issuedAt: now,
-    },
-  });
-}

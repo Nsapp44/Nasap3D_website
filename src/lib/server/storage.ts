@@ -23,8 +23,16 @@ export async function saveFile(key: string, data: Buffer): Promise<void> {
     await putObject(key, data);
     return;
   }
-  await mkdir(LOCAL_DIR, { recursive: true });
-  await writeFile(path.join(LOCAL_DIR, key), data);
+  // Real, reproduced bug: this created LOCAL_DIR ("uploads/") but not any
+  // subfolder a key might include — invoices/xxx.pdf (see stripeInvoice.ts)
+  // has always used a "invoices/" prefix, so writeFile below failed with
+  // ENOENT on every single invoice save in local-storage mode (S3 not
+  // configured), not just through any one specific code path. mkdir on the
+  // full target file's own directory (not just LOCAL_DIR) handles any
+  // key with a subfolder prefix generically, not just this one case.
+  const filePath = path.join(LOCAL_DIR, key);
+  await mkdir(path.dirname(filePath), { recursive: true });
+  await writeFile(filePath, data);
 }
 
 export async function readFileByKey(key: string): Promise<Buffer> {

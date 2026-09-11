@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api } from "../../lib/api-client";
 import type { AdminOrder } from "../../hooks/useAdminOrders";
 
@@ -47,11 +47,21 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
   const [labelBusy, setLabelBusy] = useState(false);
   const [trackingBusy, setTrackingBusy] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [invoiceUploadBusy, setInvoiceUploadBusy] = useState(false);
   const [trackingDraft, setTrackingDraft] = useState(order.trackingNumber || "");
+  const invoiceFileInputRef = useRef<HTMLInputElement>(null);
 
   const needsAcceptance = order.status === "EXPERTISE";
   const isAwaitingPayment = order.status === "AWAITING_PAYMENT";
   const isRejected = order.status === "REJECTED";
+  // A paid order (anything past AWAITING_PAYMENT/EXPERTISE/REJECTED) should
+  // always end up with an invoice — normally automatic (the webhook, or
+  // "Forcer → Payée"'s own auto-fetch, see stripeInvoice.ts), but either can
+  // still fail to find one (no Stripe session recorded, the session
+  // genuinely has none, a transient error). Without a manual fallback here,
+  // that specific order would be stuck with no invoice and no way to fix it
+  // short of a direct DB/storage edit.
+  const needsInvoiceFallback = !order.hasInvoice && !["EXPERTISE", "AWAITING_PAYMENT", "REJECTED"].includes(order.status);
   const hasFiles = order.items.some((i) => i.fileName);
   // Useful for the workshop while actually printing the parts (picking
   // material/quality/infill/color on the printer) — no longer needed once
@@ -188,6 +198,23 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
     if (res.ok) onChanged();
     else window.alert("Échec de la suppression de la commande.");
   }
+  async function uploadInvoice(file: File) {
+    if (invoiceUploadBusy) return;
+    setInvoiceUploadBusy(true);
+    const res = await api.adminUploadOrderInvoice(order.id, file);
+    setInvoiceUploadBusy(false);
+    if (invoiceFileInputRef.current) invoiceFileInputRef.current.value = "";
+    if (res.ok) onChanged();
+    else {
+      const errKey = (res.data as { error?: string } | null)?.error;
+      const messages: Record<string, string> = {
+        invalid_file_type: "Le fichier doit être un PDF.",
+        file_too_large: "Fichier trop volumineux (10 Mo max).",
+        invoice_already_exists: "Cette commande a déjà une facture.",
+      };
+      window.alert((errKey && messages[errKey]) || "Échec de l'envoi de la facture.");
+    }
+  }
 
   return (
     <div className="order-card">
@@ -254,6 +281,28 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
           <a href={api.adminOrderInvoiceDownloadUrl(order.id)} target="_blank" rel="noreferrer" className="btn-label">
             Télécharger la facture
           </a>
+        </div>
+      )}
+
+      {needsInvoiceFallback && (
+        <div className="order-section">
+          <span onClick={() => invoiceFileInputRef.current?.click()} className="btn-emergency">
+            {invoiceUploadBusy ? "Envoi…" : "⚠ Aucune facture — Uploader une facture (PDF)"}
+          </span>
+          {/* display:none can silently break programmatic .click() on a file
+              input in some browsers (confirmed live) — visually hidden via
+              near-zero size + clipping instead, same standard pattern as a
+              "sr-only" utility class, keeps the element genuinely clickable. */}
+          <input
+            ref={invoiceFileInputRef}
+            type="file"
+            accept="application/pdf"
+            style={{ position: "absolute", width: "1px", height: "1px", padding: 0, margin: "-1px", overflow: "hidden", clip: "rect(0,0,0,0)", border: 0 }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) uploadInvoice(file);
+            }}
+          />
         </div>
       )}
 
