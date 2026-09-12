@@ -4,7 +4,7 @@ import { requireAdmin } from "../../../../../lib/api/auth";
 import { prisma } from "../../../../../lib/server/prisma";
 import { ORDER_STATUSES } from "../../../../../lib/server/orderStatus";
 import { SHIPPING_DATA_PURGE } from "../../../../../lib/server/orderTracking";
-import { fetchAndAttachInvoiceForOrder } from "../../../../../lib/server/stripeInvoice";
+import { createAndAttachInvoiceForOrder } from "../../../../../lib/server/invoiceGenerator";
 
 // Direct port of PATCH /admin/orders/:id — generic status update
 // (PRINTING/READY/DELIVERED) and/or tracking number.
@@ -30,7 +30,7 @@ export const PATCH = apiHandler(async (context) => {
   if (!body.success) return jsonError(400, "invalid_body");
   if (!body.data.status && !body.data.trackingNumber) return jsonError(400, "invalid_body");
 
-  const order = await prisma.order.findUnique({ where: { id }, include: { user: true } });
+  const order = await prisma.order.findUnique({ where: { id }, include: { user: true, items: true } });
   if (!order) return jsonError(404, "not_found");
   // Terminal state — no going back once delivered, on purpose: the
   // shipping/recipient data needed to make sense of an earlier status is
@@ -77,19 +77,21 @@ export const PATCH = apiHandler(async (context) => {
   });
 
   // Automatic, not a separate manual step: exactly the scenario `force`
-  // exists for (a real payment the webhook missed) also means the order's
-  // real Stripe invoice never got fetched — without this, "Forcer → Payée"
-  // would leave the order permanently without a facture, even after it
-  // later reaches DELIVERED, since nothing downstream ever revisits this.
-  // Isolated in its own try/catch (same reasoning as the webhook's own
-  // invoice fetch) — must never block the status change that's the actual
-  // point of this emergency action.
+  // exists for (a real payment the webhook missed) also means the order
+  // never got its invoice generated — without this, "Forcer → Payée" would
+  // leave the order permanently without a facture, even after it later
+  // reaches DELIVERED, since nothing downstream ever revisits this. No
+  // Stripe API call involved: the invoice is built straight from this
+  // order's own rows (see invoiceGenerator.ts), so it works regardless of
+  // whether a Stripe session/invoice was ever recorded for this order.
+  // Isolated in its own try/catch — must never block the status change
+  // that's the actual point of this emergency action.
   if (body.data.force && nextStatus === "PENDING") {
     try {
-      const result = await fetchAndAttachInvoiceForOrder(order);
-      console.warn(`ADMIN EMERGENCY OVERRIDE: invoice fetch for order ${order.ref} — ${result.attached ? "attached successfully" : `not attached (${result.reason})`}`);
+      const result = await createAndAttachInvoiceForOrder(order, order.user);
+      console.warn(`ADMIN EMERGENCY OVERRIDE: invoice generation for order ${order.ref} — ${result.attached ? "attached successfully" : `not attached (${result.reason})`}`);
     } catch (err) {
-      console.error(`ADMIN EMERGENCY OVERRIDE: invoice fetch for order ${order.ref} threw`, err);
+      console.error(`ADMIN EMERGENCY OVERRIDE: invoice generation for order ${order.ref} threw`, err);
     }
   }
 

@@ -190,6 +190,9 @@ export const api = {
   async getQuoteEnabled() {
     return request<{ quoteEnabled: boolean }>("GET", "/quote-enabled");
   },
+  async getQualityProfiles() {
+    return request<{ qualities: { key: string; label: string; layerHeightMm: number }[] }>("GET", "/quality-profiles");
+  },
   // ---- Admin ----
   async adminGetMaterials() {
     return request("GET", "/admin/materials");
@@ -244,6 +247,13 @@ export const api = {
   },
   async adminSetTrackingNumber(orderId: string, trackingNumber: string) {
     return request("PATCH", "/admin/orders/" + orderId, { trackingNumber });
+  },
+  // Counter-only — no devis content ever reaches the server (see
+  // src/pages/api/admin/quote-ref.ts). Just hands back the next daily
+  // sequence number so the devis ref can look like "DEV_010_..." for real
+  // instead of guessing from a timestamp.
+  async adminNextQuoteRef() {
+    return request<{ dailySeq: number }>("POST", "/admin/quote-ref");
   },
   async adminGetSettings() {
     return request("GET", "/admin/settings");

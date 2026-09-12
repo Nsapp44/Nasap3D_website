@@ -4,6 +4,7 @@ import { useAdminAuth } from "../../hooks/useAdminAuth";
 import NavAuthIcon from "../NavAuthIcon";
 import OrdersTab from "./OrdersTab";
 import StockTab from "./StockTab";
+import QuoteBuilderTab from "./QuoteBuilderTab";
 
 interface Settings {
   quoteEnabled: boolean;
@@ -14,11 +15,11 @@ interface Settings {
 
 export default function AdminPage() {
   const authStatus = useAdminAuth();
-  const [tab, setTab] = useState<"orders" | "stock">("orders");
+  const [tab, setTab] = useState<"orders" | "stock" | "quote">("orders");
   const [settings, setSettings] = useState<Settings | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  function selectTab(next: "orders" | "stock") {
+  function selectTab(next: "orders" | "stock" | "quote") {
     setTab(next);
     setMobileNavOpen(false);
   }
@@ -79,6 +80,9 @@ export default function AdminPage() {
                 <span onClick={() => selectTab("stock")} className={`admin-tab${tab === "stock" ? " active" : ""}`}>
                   Stock filament
                 </span>
+                <span onClick={() => selectTab("quote")} className={`admin-tab${tab === "quote" ? " active" : ""}`}>
+                  Devis
+                </span>
               </div>
               <div className="admin-account">
                 <span onClick={adminLogout} className="logout-link">
@@ -125,6 +129,7 @@ export default function AdminPage() {
 
           {tab === "orders" && <OrdersTab />}
           {tab === "stock" && <StockTab settings={settings} onSettingsSaved={loadSettings} />}
+          {tab === "quote" && <QuoteBuilderTab />}
         </>
       )}
 

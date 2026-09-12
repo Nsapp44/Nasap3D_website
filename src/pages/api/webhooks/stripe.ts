@@ -2,7 +2,7 @@ import type Stripe from "stripe";
 import { apiHandler, json, jsonError } from "../../../lib/api/handler";
 import { prisma } from "../../../lib/server/prisma";
 import { stripe } from "../../../lib/server/stripeClient";
-import { createInvoiceFromStripeSession } from "../../../lib/server/stripeInvoice";
+import { createAndAttachInvoiceForOrder } from "../../../lib/server/invoiceGenerator";
 import { notifyAdminOrderPaid, sendOrderPaidEmail } from "../../../lib/server/orderEmails";
 
 // Direct port of POST /webhooks/stripe. In Fastify this needed its own
@@ -65,7 +65,7 @@ export const POST = apiHandler(async (context) => {
       return json({ ok: true });
     }
 
-    const order = await prisma.order.findUnique({ where: { id: orderId }, include: { user: true } });
+    const order = await prisma.order.findUnique({ where: { id: orderId }, include: { user: true, items: true } });
     if (!order) {
       console.error(`checkout.session.completed for missing order ${orderId}`);
       return json({ ok: true });
@@ -103,7 +103,8 @@ export const POST = apiHandler(async (context) => {
     // show a false "delivery failed" for an event that actually succeeded
     // at the one thing that actually matters: recording the payment.
     try {
-      await createInvoiceFromStripeSession(session, orderId, order.user, order.totalCents);
+      const result = await createAndAttachInvoiceForOrder(order, order.user);
+      if (!result.attached) console.error(`order ${order.ref} marked paid, but invoice generation failed: ${result.reason}`);
       await notifyAdminOrderPaid(order.ref, session.customer_email, order.totalCents);
       await sendOrderPaidEmail(order.user.email, order.ref, order.totalCents);
     } catch (err) {

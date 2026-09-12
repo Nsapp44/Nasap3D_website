@@ -7,12 +7,12 @@ import { nextCounter } from "../../../../../../lib/server/counter";
 const MAX_INVOICE_PDF_BYTES = 10 * 1024 * 1024;
 
 // Manual fallback for exactly the case the admin's "Forcer → Payée" auto-
-// fetch (fetchAndAttachInvoiceForOrder, stripeInvoice.ts) can't resolve on
-// its own — no Stripe session recorded (an order from before that existed),
-// the session genuinely has no invoice, or the fetch simply failed. Without
-// this, that specific order would have permanently shown no invoice with no
-// way to fix it short of a direct DB/storage edit — same gap "Forcer" itself
-// was built to close for order status, just for the invoice PDF this time.
+// generation (createAndAttachInvoiceForOrder, invoiceGenerator.ts) can't
+// resolve on its own — a genuine bug in PDF generation, missing order data,
+// or any other unexpected failure. Without this, that specific order would
+// have permanently shown no invoice with no way to fix it short of a direct
+// DB/storage edit — same gap "Forcer" itself was built to close for order
+// status, just for the invoice PDF this time.
 export const POST = apiHandler(async (context) => {
   await requireAdmin(context);
   const { id } = context.params;
@@ -37,7 +37,7 @@ export const POST = apiHandler(async (context) => {
   const yyyy = now.getFullYear();
   const mm = String(now.getMonth() + 1).padStart(2, "0");
   const dd = String(now.getDate()).padStart(2, "0");
-  const ref = `FA${String(dailySeq).padStart(3, "0")}-${yyyy}_${mm}_${dd}_${order.user.customerNo}`;
+  const ref = `FAC_${String(dailySeq).padStart(3, "0")}_${dd}${mm}${yyyy}_${order.user.customerNo}`;
 
   const pdfKey = `invoices/${ref}.pdf`;
   await saveFile(pdfKey, pdfBuffer);

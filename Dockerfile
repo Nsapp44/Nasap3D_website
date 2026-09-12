@@ -96,6 +96,26 @@ COPY --from=build /app/server-entry.mjs ./
 # pages/components) is already baked into dist/ by the build stage and
 # isn't needed at runtime.
 COPY --from=build /app/src/lib/server ./src/lib/server
+# InvoicePdf.tsx (under src/lib/server/, copied above) imports its shared
+# chrome (logo/header/footer/totals) from src/lib/pdf/pdfShared.tsx — that
+# file lives outside src/lib/server/ on purpose (the admin's client-side
+# devis builder needs it too, see QuoteDocument.tsx), so it isn't covered by
+# the COPY above and needs its own line. Without this, the invoice
+# subprocess (invoicePdfWorker.mts) fails with ERR_MODULE_NOT_FOUND on every
+# single invoice generation in production — a real bug caught by testing
+# the actual built image, not by tsc or by running the script via `npx tsx`
+# locally (resolves straight against the repo's own src/ either way).
+COPY --from=build /app/src/lib/pdf ./src/lib/pdf
+# Needed by tsx (esbuild) when it runs invoicePdfWorker.mts as a subprocess
+# (see invoicePdfSubprocess.ts) — without it, esbuild can't see this
+# project's "jsx": "react-jsx" setting and falls back to the classic JSX
+# transform, which expects a global `React` in scope and throws "React is
+# not defined" the moment InvoicePdf.tsx's JSX runs. A real bug caught by
+# testing the actual built image, not by `tsc --noEmit` (which doesn't
+# touch the runtime container at all) or by running the script directly via
+# `npx tsx` locally (picks up this same tsconfig.json from the repo root
+# without needing it copied anywhere).
+COPY --from=build /app/tsconfig.json ./
 RUN npx prisma generate
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh

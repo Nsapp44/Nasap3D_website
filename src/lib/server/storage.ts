@@ -24,7 +24,7 @@ export async function saveFile(key: string, data: Buffer): Promise<void> {
     return;
   }
   // Real, reproduced bug: this created LOCAL_DIR ("uploads/") but not any
-  // subfolder a key might include — invoices/xxx.pdf (see stripeInvoice.ts)
+  // subfolder a key might include — invoices/xxx.pdf (see invoiceGenerator.ts)
   // has always used a "invoices/" prefix, so writeFile below failed with
   // ENOENT on every single invoice save in local-storage mode (S3 not
   // configured), not just through any one specific code path. mkdir on the

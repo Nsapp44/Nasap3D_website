@@ -44,19 +44,15 @@ export const POST = apiHandler(async (context) => {
     mode: "payment",
     line_items: lineItems,
     customer_email: user.email,
-    invoice_creation: { enabled: true },
     success_url: `${process.env.FRONT_URL}/compte?paid=1`,
     cancel_url: `${process.env.FRONT_URL}/compte?canceled=1`,
     metadata: { orderId: order.id },
   });
 
-  // Stored immediately, not left to the webhook to capture later — real
-  // incident: the webhook can fail (a misconfigured secret, downtime), and
-  // without this recorded up front there was no reliable way afterward to
-  // find which Stripe session/invoice belongs to this order (Stripe's own
-  // List Checkout Sessions API can't filter by our metadata). Lets the
-  // admin's emergency "Forcer → Payée" action fetch the real invoice
-  // directly — see fetchAndAttachInvoiceForOrder (stripeInvoice.ts).
+  // Stored for support/reconciliation purposes (looking a payment up in the
+  // Stripe dashboard from an order) — no longer needed for the invoice
+  // itself, which is generated from our own Order/OrderItem rows regardless
+  // of Stripe (see invoiceGenerator.ts), but harmless and cheap to keep.
   await prisma.order.update({ where: { id: order.id }, data: { stripeCheckoutSessionId: session.id } });
 
   return json({ url: session.url });

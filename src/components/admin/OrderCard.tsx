@@ -56,11 +56,10 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
   const isRejected = order.status === "REJECTED";
   // A paid order (anything past AWAITING_PAYMENT/EXPERTISE/REJECTED) should
   // always end up with an invoice — normally automatic (the webhook, or
-  // "Forcer → Payée"'s own auto-fetch, see stripeInvoice.ts), but either can
-  // still fail to find one (no Stripe session recorded, the session
-  // genuinely has none, a transient error). Without a manual fallback here,
-  // that specific order would be stuck with no invoice and no way to fix it
-  // short of a direct DB/storage edit.
+  // "Forcer → Payée"'s own auto-generation, see invoiceGenerator.ts), but
+  // either can still fail (a transient error, unexpected order data). Without
+  // a manual fallback here, that specific order would be stuck with no
+  // invoice and no way to fix it short of a direct DB/storage edit.
   const needsInvoiceFallback = !order.hasInvoice && !["EXPERTISE", "AWAITING_PAYMENT", "REJECTED"].includes(order.status);
   const hasFiles = order.items.some((i) => i.fileName);
   // Useful for the workshop while actually printing the parts (picking
