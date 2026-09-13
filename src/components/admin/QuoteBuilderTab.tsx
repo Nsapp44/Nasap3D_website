@@ -218,6 +218,7 @@ export default function QuoteBuilderTab() {
         clientName: clientName.trim() || null,
         items: items.map((it) => ({
           label: it.pdfLabel,
+          material: it.materialLabel,
           detail: it.detail,
           colorHex: it.colorHex,
           colorName: it.colorName,

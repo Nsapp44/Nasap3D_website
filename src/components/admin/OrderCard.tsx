@@ -61,7 +61,11 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
   // a manual fallback here, that specific order would be stuck with no
   // invoice and no way to fix it short of a direct DB/storage edit.
   const needsInvoiceFallback = !order.hasInvoice && !["EXPERTISE", "AWAITING_PAYMENT", "REJECTED"].includes(order.status);
-  const hasFiles = order.items.some((i) => i.fileName);
+  // Files are auto-purged from storage the moment an order reaches
+  // DELIVERED (see purgeOrderFiles, orderTracking.ts) — hidden here too
+  // rather than showing a card full of "Fichier supprimé" rows for every
+  // past order forever. Same reasoning/pattern as showPrintSpecs above.
+  const hasFiles = order.status !== "DELIVERED" && order.items.some((i) => i.fileName);
   // Useful for the workshop while actually printing the parts (picking
   // material/quality/infill/color on the printer) — no longer needed once
   // shipped/delivered, per explicit request, so hidden past that point
@@ -219,13 +223,12 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
     <div className="order-card">
       <div className="order-head">
         <div>
-          <div className="order-title">
-            {order.ref} — {order.clientEmail}
-          </div>
+          {/* Email + n° client now shown once per group in OrdersTab.tsx's
+              client-group-header, not repeated on every order card. */}
+          <div className="order-title">{order.ref}</div>
           <div className="order-desc">
             {order.items.map((i) => `${i.nameSnapshot} · ${i.materialSnapshot} · x${i.qty}`).join(" + ")} · reçu le {fmtDate(order.createdAt)}
           </div>
-          <div className="order-customer-no">{order.customerNo}</div>
         </div>
         <div className="order-head-right">
           <span className="order-price">{(order.totalCents / 100).toFixed(2)} €</span>

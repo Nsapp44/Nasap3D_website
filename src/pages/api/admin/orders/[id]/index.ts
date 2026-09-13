@@ -3,7 +3,7 @@ import { apiHandler, json, jsonError } from "../../../../../lib/api/handler";
 import { requireAdmin } from "../../../../../lib/api/auth";
 import { prisma } from "../../../../../lib/server/prisma";
 import { ORDER_STATUSES } from "../../../../../lib/server/orderStatus";
-import { SHIPPING_DATA_PURGE } from "../../../../../lib/server/orderTracking";
+import { SHIPPING_DATA_PURGE, purgeOrderFiles } from "../../../../../lib/server/orderTracking";
 import { createAndAttachInvoiceForOrder } from "../../../../../lib/server/invoiceGenerator";
 
 // Direct port of PATCH /admin/orders/:id — generic status update
@@ -75,6 +75,14 @@ export const PATCH = apiHandler(async (context) => {
       ...(nextStatus === "DELIVERED" ? SHIPPING_DATA_PURGE : {}),
     },
   });
+
+  // Same automatic storage cleanup as the periodic Boxtal-tracking sweep
+  // (see purgeOrderFiles's own comment) — this is the manual/admin path to
+  // DELIVERED, that one's the automatic path; both need it, neither should
+  // rely on the admin remembering to delete files by hand per item.
+  if (nextStatus === "DELIVERED") {
+    await purgeOrderFiles(id!);
+  }
 
   // Automatic, not a separate manual step: exactly the scenario `force`
   // exists for (a real payment the webhook missed) also means the order

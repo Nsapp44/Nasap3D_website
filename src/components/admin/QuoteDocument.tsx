@@ -18,6 +18,7 @@ const styles = StyleSheet.create({
   colPrice: { width: "20%", textAlign: "right" },
 
   itemName: { fontSize: 10, fontWeight: 600, lineHeight: 1.4 },
+  itemMaterial: { fontSize: 8.5, color: MUTED, marginTop: 2 },
   specLine: { fontSize: 8.5, color: MUTED, lineHeight: 1.5 },
   colorDot: { width: 6, height: 6, borderRadius: 3, marginRight: 4, borderWidth: 0.5, borderColor: BORDER },
   colorRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
@@ -26,6 +27,7 @@ const styles = StyleSheet.create({
 
 export interface QuotePdfItem {
   label: string;
+  material?: string | null;
   detail?: string | null;
   colorHex?: string | null;
   colorName?: string | null;
@@ -68,6 +70,7 @@ export function QuoteDocument({ data }: { data: QuotePdfData }) {
             <View key={i} style={styles.tRow} wrap={false}>
               <View style={styles.colDesc}>
                 <Text style={styles.itemName}>{item.label}</Text>
+                {item.material && <Text style={styles.itemMaterial}>{item.material}</Text>}
               </View>
               <View style={styles.colSpec}>
                 {item.detail && <Text style={styles.specLine}>{item.detail}</Text>}

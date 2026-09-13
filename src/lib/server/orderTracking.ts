@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { checkLabelStatus, BoxtalApiError, BoxtalConfigError } from "./boxtal";
+import { deleteFile } from "./storage";
 
 // Wiped the moment an order reaches DELIVERED — none of it serves any
 // purpose once the parcel has actually arrived, and there's no reason to
@@ -34,6 +35,34 @@ export const SHIPPING_DATA_PURGE = {
   labelPurchasedAt: null,
 } as const;
 
+// Reclaims storage the moment an order is truly done — the original
+// STL/3MF uploads (QuoteJob.fileKey) have no purpose once delivered
+// (printing finished long before), unlike the Invoice, which stays as the
+// customer's own purchase record and is untouched here. Same underlying
+// deletion as the admin's existing manual per-item "Supprimer" button (see
+// admin/orders/[id]/items/[itemId]/file.ts) — this just does it
+// automatically, for every item on the order, at the moment DELIVERED is
+// reached (whether that's the admin's own PATCH or the automatic Boxtal
+// tracking sweep below), instead of relying on someone to remember to
+// click it per item. Never throws — a storage hiccup on one file must
+// never block the delivery status change itself; failures are logged and
+// left for a manual retry via that same per-item button.
+export async function purgeOrderFiles(orderId: string): Promise<void> {
+  const items = await prisma.orderItem.findMany({
+    where: { orderId, quoteJob: { fileDeletedAt: null } },
+    include: { quoteJob: true },
+  });
+  for (const item of items) {
+    if (!item.quoteJob) continue;
+    try {
+      await deleteFile(item.quoteJob.fileKey);
+      await prisma.quoteJob.update({ where: { id: item.quoteJob.id }, data: { fileDeletedAt: new Date() } });
+    } catch (err) {
+      console.error(`purgeOrderFiles: failed to delete file for order ${orderId}, item ${item.id}`, err);
+    }
+  }
+}
+
 // Pulls the live tracking number + carrier status from Boxtal for one
 // order, persists whatever's new, and auto-transitions to DELIVERED (with
 // the purge above) when the carrier status looks like a delivery — see
@@ -62,6 +91,7 @@ export async function refreshOrderTrackingStatus(orderId: string): Promise<{
       where: { id: orderId },
       data: { status: "DELIVERED", deliveredAt: order.deliveredAt ?? new Date(), ...SHIPPING_DATA_PURGE },
     });
+    await purgeOrderFiles(orderId);
     return { trackingNumber: null, state: status.state, autoDelivered: true };
   }
 
