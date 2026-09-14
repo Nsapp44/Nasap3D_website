@@ -191,10 +191,12 @@ export default function OrdersTab() {
         .btn-label { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,90,60,.35); font: 600 10.5px 'Inter',sans-serif; padding: 6px 12px; border-radius: 5px; }
         .tracking-number { font: 600 10.5px ui-monospace,monospace; color: #e8e6e1; }
         .tracking-input { width: 180px; box-sizing: border-box; height: 28px; border: 1px solid rgba(255,255,255,.15); border-radius: 5px; background: #161514; padding: 0 8px; font: 10.5px ui-monospace,monospace; color: #e8e6e1; outline: none; }
-        .btn-emergency { border: 1px dashed rgba(255,90,60,.5); color: #ff8a70; background: transparent; font: 500 10px 'Inter',sans-serif; padding: 5px 10px; border-radius: 5px; cursor: pointer; white-space: nowrap; }
+        .btn-emergency { border: 1px dashed rgba(255,90,60,.5); color: #ff8a70; background: transparent; font: 500 10px 'Inter',sans-serif; padding: 5px 10px; border-radius: 5px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; }
         .btn-emergency:hover { background: rgba(255,90,60,.08); }
-        .btn-next { border: 1px solid #ff5a3c; color: #ff5a3c; background: transparent; font: 600 10px 'Inter',sans-serif; padding: 5px 10px; border-radius: 5px; cursor: pointer; white-space: nowrap; }
+        .btn-next { border: 1px solid #ff5a3c; color: #ff5a3c; background: transparent; font: 600 10px 'Inter',sans-serif; padding: 5px 10px; border-radius: 5px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; }
         .btn-next:hover { background: rgba(255,90,60,.08); }
+        .btn-next.is-busy, .btn-emergency.is-busy { opacity: .6; cursor: wait; }
+        .status-chip.dim { cursor: not-allowed; }
 
         @media (max-width: 480px) {
           .order-head { flex-direction: column; align-items: flex-start; gap: 8px; }

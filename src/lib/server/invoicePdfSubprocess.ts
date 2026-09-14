@@ -1,7 +1,6 @@
 import { fork } from "node:child_process";
 import { createRequire } from "node:module";
 import path from "node:path";
-import os from "node:os";
 import type { InvoicePdfData } from "./InvoicePdf";
 
 const require = createRequire(import.meta.url);
@@ -24,17 +23,27 @@ const TSX_CLI = require.resolve("tsx/cli");
 // correct in both.
 const WORKER_SCRIPT = path.resolve(process.cwd(), "src/lib/server/invoicePdfWorker.mts");
 
-const GENERATE_TIMEOUT_MS = 15_000;
+// Raised from 15s: a real, reproduced bug — forcing 10 orders paid at once
+// (os.cpus().length was high enough to let most of them spawn their own
+// subprocess simultaneously, see MAX_CONCURRENT's own history below) made
+// every single one time out, none of them CPU-starved individually but all
+// contending for real cores at once. 30s gives real headroom for that kind
+// of pile-up without masking a genuinely hung subprocess for too long.
+const GENERATE_TIMEOUT_MS = 30_000;
 
-// Never more than (CPU cores - 1) invoice subprocesses at once, queued
-// beyond that — a burst of force-payments/webhooks shouldn't be free to
-// spawn an unbounded number of Node processes at once. Realistic load here
-// is low (one real invoice per paid order), so a plain FIFO queue is enough
-// — no need for the weighted/timeout machinery the quote-upload concurrency
-// guard uses (concurrencyGuard.ts), which exists for a genuinely different
-// problem (bounding total memory of a few huge in-flight uploads, not
-// bounding a count of small short-lived processes).
-const MAX_CONCURRENT = Math.max(1, os.cpus().length - 1);
+// Fixed, small cap — NOT os.cpus().length - 1 (the original approach, and
+// itself the cause of a real bug: forcing 10 orders paid at once on a
+// many-core dev machine let nearly all 10 spawn their own tsx+esbuild+React
+// subprocess simultaneously, and EVERY one timed out from real CPU
+// contention, confirmed live via docker logs). Spawning a heavy Node
+// subprocess has a real, roughly fixed startup cost (ESM transform, loading
+// React/react-pdf/Yoga) — running many of them at once doesn't scale with
+// logical core count the way pure compute would, it just means more
+// processes fighting over the same handful of real cores for longer each.
+// Invoice generation is inherently low-frequency for this business (a
+// handful of real orders a day) — there's no throughput reason to allow
+// more than a couple at once, on any machine, dev or prod.
+const MAX_CONCURRENT = 2;
 let active = 0;
 const waiting: (() => void)[] = [];
 

@@ -236,6 +236,9 @@ export const api = {
     form.append("file", file, file.name);
     return requestForm<{ ok: boolean; ref: string }>("/admin/orders/" + orderId + "/invoice/upload", form);
   },
+  async adminGenerateOrderInvoice(orderId: string) {
+    return request("POST", "/admin/orders/" + orderId + "/invoice/generate");
+  },
   async adminDeleteOrderFile(orderId: string, itemId: string) {
     return request("DELETE", "/admin/orders/" + orderId + "/items/" + itemId + "/file");
   },

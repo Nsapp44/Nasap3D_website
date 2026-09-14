@@ -5,7 +5,7 @@ import { useCart, MAX_LINE_QTY, type CartLine } from "../hooks/useCart";
 import CartLineThumbnail from "./CartLineThumbnail";
 import PhoneInput, { type PhoneInputHandle } from "./PhoneInput";
 import BoxtalRelayMap, { type RelayPoint, type RelaySearchParams } from "./BoxtalRelayMap";
-import PrinterLoaderIcon from "./PrinterLoaderIcon";
+import Loader from "./Loader";
 import QuoteCta from "./QuoteCta";
 
 // UE-27 (pas le Royaume-Uni, sorti de l'UE) — France en tête puisque c'est le
@@ -604,9 +604,7 @@ export default function CartPage() {
             )}
             {checkoutState === "redirecting" && (
               <div className="cta-redirecting">
-                <span className="loader-icon-tiny" style={{ ["--pl-nozzle-fill" as string]: "#635bff" }}>
-                  <PrinterLoaderIcon maskId="plMaskCartCheckout" />
-                </span>
+                <Loader size={16} color="#635bff" />
                 <span>Envoi de la commande…</span>
               </div>
             )}
@@ -709,7 +707,6 @@ export default function CartPage() {
         .cta-stripe { display: flex; margin-top: 18px; background: #635bff; font: 600 13px 'Inter',sans-serif; padding: 12px; border-radius: 7px; text-align: center; align-items: center; justify-content: center; }
         .cta-checkout { margin-top: 18px; font: 600 13px 'Inter',sans-serif; padding: 12px; border-radius: 7px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .cta-redirecting { margin-top: 18px; background: #635bff; color: #fff; font: 600 13px 'Inter',sans-serif; padding: 12px; border-radius: 7px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; opacity: .85; }
-        .loader-icon-tiny { width: 11px; height: 11px; display: inline-block; color: #fff; }
 
         .popup-backdrop { position: fixed; inset: 0; background: rgba(10,10,10,.7); display: flex; align-items: center; justify-content: center; z-index: 50; animation: popupBackdropIn .2s ease; }
         .popup-modal { width: 380px; max-width: 90vw; background: #1a1917; border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 26px; text-align: center; animation: popupModalIn .35s cubic-bezier(.2,.9,.3,1.1); }

@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { api } from "../../lib/api-client";
 import type { AdminOrder } from "../../hooks/useAdminOrders";
+import Loader from "../Loader";
 
 const STATUS_DEFS = [
   { key: "PENDING", label: "Payée" },
@@ -48,6 +49,16 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
   const [trackingBusy, setTrackingBusy] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [invoiceUploadBusy, setInvoiceUploadBusy] = useState(false);
+  const [invoiceGenerateBusy, setInvoiceGenerateBusy] = useState(false);
+  // Covers both the chips and the Forcer/Suivant button — a real bug this
+  // session: force-paying several orders in quick succession (or spamming
+  // one click while a request is in flight) could pile up concurrent
+  // invoice-generation subprocesses and make them all time out. Disabling
+  // the whole status-change surface while one request is in flight doesn't
+  // fix that root cause on its own (already fixed separately, see
+  // invoicePdfSubprocess.ts), but it does stop an admin from ever being able
+  // to trigger the pile-up by spam-clicking in the first place.
+  const [statusBusy, setStatusBusy] = useState(false);
   const [trackingDraft, setTrackingDraft] = useState(order.trackingNumber || "");
   const invoiceFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -97,7 +108,7 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
   const nextLabel = nextStatus ? (STATUS_DEFS.find((d) => d.key === nextStatus)?.label ?? nextStatus) : "";
 
   async function advanceStatus() {
-    if (!nextStatus) return;
+    if (!nextStatus || statusBusy) return;
     if (emergencyNextStatus) {
       if (
         !window.confirm(
@@ -105,7 +116,9 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
         )
       )
         return;
+      setStatusBusy(true);
       await api.adminUpdateOrderStatus(order.id, nextStatus, true);
+      setStatusBusy(false);
       onChanged();
       return;
     }
@@ -113,7 +126,10 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
   }
 
   async function setOrderStatus(status: string) {
+    if (statusBusy) return;
+    setStatusBusy(true);
     const res = await api.adminUpdateOrderStatus(order.id, status);
+    setStatusBusy(false);
     if (!res.ok) {
       const messages: Record<string, string> = {
         tracking_number_required: "Ajoutez d'abord un numéro de suivi avant de passer cette commande à l'étape Expédié.",
@@ -124,6 +140,18 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
       return;
     }
     onChanged();
+  }
+
+  async function generateInvoice() {
+    if (invoiceGenerateBusy) return;
+    setInvoiceGenerateBusy(true);
+    const res = await api.adminGenerateOrderInvoice(order.id);
+    setInvoiceGenerateBusy(false);
+    if (res.ok) onChanged();
+    else {
+      const data = res.data as { error?: string; reason?: string } | null;
+      window.alert(data?.reason ? `Échec de la génération : ${data.reason}` : "Échec de la génération de la facture.");
+    }
   }
 
   async function acceptOrder() {
@@ -247,11 +275,11 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
             const active = order.status === def.key;
             const locked = order.status === "DELIVERED";
             const blockedByTracking = def.key === "READY" && !!order.shippingMode && order.shippingMode !== "PICKUP" && !order.trackingNumber;
-            const dim = locked || blockedByTracking;
+            const dim = locked || blockedByTracking || statusBusy;
             return (
               <span
                 key={def.key}
-                onClick={() => setOrderStatus(def.key)}
+                onClick={statusBusy ? undefined : () => setOrderStatus(def.key)}
                 className={`status-chip${active ? " active" : ""}${dim ? " dim" : ""}`}
               >
                 {def.label}
@@ -272,8 +300,14 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
           </div>
         )}
         {!needsAcceptance && nextStatus && (
-          <span onClick={advanceStatus} className={emergencyNextStatus ? "btn-emergency" : "btn-next"}>
-            {emergencyNextStatus ? "🚨 Forcer" : "Suivant"} → {nextLabel}
+          <span onClick={statusBusy ? undefined : advanceStatus} className={`${emergencyNextStatus ? "btn-emergency" : "btn-next"}${statusBusy ? " is-busy" : ""}`}>
+            {statusBusy ? (
+              <Loader size={12} />
+            ) : (
+              <>
+                {emergencyNextStatus ? "🚨 Forcer" : "Suivant"} → {nextLabel}
+              </>
+            )}
           </span>
         )}
       </div>
@@ -288,9 +322,15 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
 
       {needsInvoiceFallback && (
         <div className="order-section">
-          <span onClick={() => invoiceFileInputRef.current?.click()} className="btn-emergency">
-            {invoiceUploadBusy ? "Envoi…" : "⚠ Aucune facture — Uploader une facture (PDF)"}
-          </span>
+          <span className="hint-text" style={{ display: "block", marginBottom: "6px" }}>⚠ Aucune facture pour cette commande</span>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <span onClick={invoiceGenerateBusy ? undefined : generateInvoice} className={`btn-emergency${invoiceGenerateBusy ? " is-busy" : ""}`}>
+              {invoiceGenerateBusy ? <Loader size={12} /> : "Générez la facture"}
+            </span>
+            <span onClick={() => invoiceFileInputRef.current?.click()} className="btn-emergency">
+              {invoiceUploadBusy ? <Loader size={12} /> : "Uploader une facture (PDF)"}
+            </span>
+          </div>
           {/* display:none can silently break programmatic .click() on a file
               input in some browsers (confirmed live) — visually hidden via
               near-zero size + clipping instead, same standard pattern as a
