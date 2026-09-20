@@ -48,6 +48,9 @@ const canonical = new URL(path, Astro.site).toString();
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
+    {import.meta.env.PROD && (
+      <script defer data-domain="nasap3d.com" src="https://plausible.io/js/script.js"></script>
+    )}
     <slot name="head" />
   </head>
   <body>

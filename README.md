@@ -68,7 +68,8 @@ plugins/hooks, reconstruite explicitement puisqu'Astro n'a pas d'équivalent).
 ├── docker-compose.yml       Toute la stack (db, api)
 ├── PRICING.md                Formule de calcul de prix (détaillée, avec exemples)
 ├── SHIPPING.md                Intégration Boxtal
-└── HANDOFF_CLAUDE_CODE.md   Brief d'origine ayant cadré la construction du back-end
+├── HANDOFF_CLAUDE_CODE.md   Brief d'origine ayant cadré la construction du back-end
+└── LESSONS_LEARNED.md      Leçons techniques génériques pour de futurs projets
 ```
 
 ## Prérequis
@@ -301,3 +302,6 @@ Si `POST /api/quotes` échoue avec `slicing_failed`, regarder les logs du conten
 - [`PRICING.md`](PRICING.md) — formule de prix, avec exemples chiffrés.
 - [`SHIPPING.md`](SHIPPING.md) — intégration Boxtal (tarifs + point relais).
 - [`HANDOFF_CLAUDE_CODE.md`](HANDOFF_CLAUDE_CODE.md) — brief d'origine du projet.
+- [`LESSONS_LEARNED.md`](LESSONS_LEARNED.md) — leçons techniques génériques apprises sur ce
+  projet (fuites mémoire PDF, calibrage de concurrence, incidents webhook/prod...), à relire au
+  démarrage d'un prochain projet similaire.
