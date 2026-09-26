@@ -87,6 +87,32 @@ services:
     profiles:
       - full
 
+  monitor:
+    # Same image as api, different entrypoint — deliberately its own
+    # container rather than a background task inside api's own process: if
+    # api crashes/OOMs, a watchdog living inside that same process would die
+    # with it and could never send the alert it exists for. This one keeps
+    # polling GET /api/health over the internal network and can still reach
+    # out over SMTP even while api itself is down. See healthMonitor.mts for
+    # the alerting logic (one email when it goes down, one when it recovers
+    # — never a fresh email every 30s while it stays down).
+    image: ghcr.io/nsapp44/nasap3d-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    volumes:
+      - ./.env:/app/.env:ro
+    environment:
+      NODE_ENV: production
+    entrypoint: ["npx", "tsx", "src/lib/server/healthMonitor.mts"]
+    networks:
+      - nasap3d
+    profiles:
+      - full
+
 networks:
   # Nommé explicitement (au lieu du nom par défaut généré par Compose à
   # partir du dossier, ex. "refontenasap3d_default") pour qu'un autre projet
