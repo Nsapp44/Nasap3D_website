@@ -6,6 +6,17 @@ services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
+    # statement_timeout as a Prisma connection-string param (tried first,
+    # on the api service's DATABASE_URL) does NOT do anything — confirmed
+    # live: a query blocked on a table lock was still running 45s later,
+    # never aborted, the whole request just hung. Setting it here instead
+    # (server-wide, in ms, applies to every session on every database
+    # regardless of client library) actually works — confirmed live: same
+    # lock scenario, the blocked query now gets killed and the app recovers
+    # on its own. This is the real fix for "one stuck query can silently
+    # freeze the whole site with no crash and no restart" — see the api
+    # service's own comment for the full incident this addresses.
+    command: ["postgres", "-c", "statement_timeout=20000"]
     environment:
       POSTGRES_USER: nasap3d
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nasap3d_dev_only}
@@ -62,7 +73,17 @@ services:
       # already does for Postgres; only `docker compose down -v` removes it.
       - nasap3d_uploads_data:/app/uploads
     environment:
-      DATABASE_URL: postgresql://nasap3d:${POSTGRES_PASSWORD:-nasap3d_dev_only}@db:5432/nasap3d
+      # connection_limit/pool_timeout are set explicitly (real, documented
+      # Prisma Postgres-connector URL params) — without them, Prisma sizes
+      # its pool off the host's visible CPU count (num_physical_cpus*2+1),
+      # the same kind of hardware-derived sizing that already caused a real
+      # bug elsewhere in this app (see LESSONS_LEARNED.md) and is
+      # meaningless on a small, RAM-constrained VPS. The actual fix for "a
+      # stuck query hangs forever and eventually freezes the whole site" is
+      # the db service's own statement_timeout, not anything here — see its
+      # comment for why (this same statement_timeout, tried as a query-
+      # string param here first, silently did nothing).
+      DATABASE_URL: postgresql://nasap3d:${POSTGRES_PASSWORD:-nasap3d_dev_only}@db:5432/nasap3d?connection_limit=10&pool_timeout=10
       # .env.example defaults to NODE_ENV=development (for `npm run dev`) —
       # env_file above would otherwise silently override the Dockerfile's
       # own `ENV NODE_ENV=production` with that dev value at container start
