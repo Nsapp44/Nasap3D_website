@@ -149,6 +149,29 @@ function isoDate(d: Date): string {
 export class BoxtalConfigError extends Error {}
 export class BoxtalApiError extends Error {}
 
+// Node's global fetch() has NO default timeout — confirmed live: a fake
+// endpoint that accepts the connection but never replies leaves the call
+// hanging forever, with zero recovery, permanently leaking one socket per
+// call. Every Boxtal call below goes through this instead of a bare
+// fetch() — real risk without it: sweepOrderTracking() (the 24h tracking
+// sweep, src/lib/server/orderTracking.ts) calls checkLabelStatus() once per
+// in-flight order in a loop; if Boxtal is ever slow/unresponsive, each
+// affected call leaks permanently and the NEXT day's sweep tick piles more
+// on top (setInterval doesn't wait for the previous run), accumulating for
+// as long as the process stays up — exactly the "gets worse after several
+// days online" pattern this was built to close off.
+const BOXTAL_FETCH_TIMEOUT_MS = 15_000;
+
+async function timedFetch(url: string, init?: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), BOXTAL_FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export interface ShippingAddress {
   country: string;
   zipcode: string;
@@ -203,7 +226,7 @@ function authHeader(): string {
 export async function fetchLabelDocument(url: string): Promise<{ contentType: string; buffer: Buffer }> {
   let res: Response;
   try {
-    res = await fetch(url, { headers: { Authorization: authHeader() } });
+    res = await timedFetch(url, { headers: { Authorization: authHeader() } });
   } catch (err) {
     throw new BoxtalApiError(`boxtal label document request failed: ${(err as Error).message}`);
   }
@@ -235,7 +258,7 @@ export async function getBoxtalMapAccessToken(): Promise<{ accessToken: string; 
   if (!key || !secret) throw new BoxtalConfigError("BOXTAL_MAP_API_KEY / BOXTAL_MAP_API_SECRET not configured");
   let res: Response;
   try {
-    res = await fetch(MAP_TOKEN_URL, {
+    res = await timedFetch(MAP_TOKEN_URL, {
       method: "POST",
       headers: { Authorization: `Basic ${Buffer.from(`${key}:${secret}`).toString("base64")}` },
     });
@@ -360,7 +383,7 @@ export async function quoteShippingRates(
 
   let res: Response;
   try {
-    res = await fetch(`${BASE_URL}api/v1/cotation?${params.toString()}`, {
+    res = await timedFetch(`${BASE_URL}api/v1/cotation?${params.toString()}`, {
       headers: { "Accept-Language": "fr-FR", "Api-Version": API_VERSION, Authorization: authHeader() },
     });
   } catch (err) {
@@ -516,7 +539,7 @@ export async function purchaseShippingLabel(input: LabelPurchaseInput): Promise<
 
   let res: Response;
   try {
-    res = await fetch(`${BASE_URL}api/v1/order`, {
+    res = await timedFetch(`${BASE_URL}api/v1/order`, {
       method: "POST",
       headers: {
         "Accept-Language": "fr-FR",
@@ -575,7 +598,7 @@ const DELIVERED_STATE_RE = /livr[ée]e?(?![a-zà-ÿ])/i;
 export async function checkLabelStatus(boxtalOrderRef: string): Promise<BoxtalOrderStatus> {
   let res: Response;
   try {
-    res = await fetch(`${BASE_URL}api/v1/order_status/${encodeURIComponent(boxtalOrderRef)}/informations`, {
+    res = await timedFetch(`${BASE_URL}api/v1/order_status/${encodeURIComponent(boxtalOrderRef)}/informations`, {
       headers: { "Accept-Language": "fr-FR", "Api-Version": API_VERSION, Authorization: authHeader() },
     });
   } catch (err) {

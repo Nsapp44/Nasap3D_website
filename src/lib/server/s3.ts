@@ -1,4 +1,15 @@
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { NodeHttpHandler } from "@smithy/node-http-handler";
+
+// AWS SDK v3's default Node HTTP handler has NO timeout at all unless one
+// is configured — confirmed the same failure mode as boxtal.ts's bare
+// fetch() calls: a slow/unresponsive S3 endpoint would hang putObject/
+// getObject/deleteObject forever, leaking a socket permanently. Real risk
+// here: deleteObject is called from the 15-minute cleanup sweep (see
+// cartCleanup.ts/quoteCleanup.ts) — one hung call there means that sweep
+// never finishes, and the next setInterval tick 15 minutes later piles
+// another on top, accumulating indefinitely rather than recovering.
+const requestHandler = new NodeHttpHandler({ connectionTimeout: 5_000, requestTimeout: 15_000 });
 
 function client() {
   return new S3Client({
@@ -9,6 +20,7 @@ function client() {
       accessKeyId: process.env.S3_ACCESS_KEY_ID!,
       secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
     },
+    requestHandler,
   });
 }
 
