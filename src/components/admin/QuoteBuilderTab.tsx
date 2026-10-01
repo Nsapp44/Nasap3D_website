@@ -3,6 +3,11 @@ import { pdf } from "@react-pdf/renderer";
 import { api } from "../../lib/api-client";
 import { useAdminMaterials } from "../../hooks/useAdminMaterials";
 import { QuoteDocument, type QuotePdfData } from "./QuoteDocument";
+// Pure function, no DB/network access (see its own file) — same discount
+// math the real instant-devis cart uses (src/lib/server/cart.ts), reused
+// here rather than re-implemented so a manual devis quantity discount can
+// never silently drift from what a real online order would get.
+import { discountForQty } from "../../lib/server/pricing";
 
 // Full descriptive text printed on the PDF differs from the short label
 // shown in the dropdown for two of these (the admin's own words, verbatim).
@@ -27,13 +32,18 @@ interface QuoteLineItem {
   qualityLabel?: string;
   infill?: string;
   detail?: string | null;
-  // Only meaningful (asked for/shown) on an Impression 3D line — purely
-  // informational, printed on the devis as "×N" so the client sees how many
-  // identical pieces the line covers. Doesn't multiply priceCents: per the
-  // business owner, the typed price is always the line's real total, not a
-  // unit price — admins already factor bulk pricing into that number
-  // themselves, same as before this field existed.
+  // Only meaningful (asked for/shown) on an Impression 3D line — printed on
+  // the devis as "×N" so the client sees how many identical pieces the line
+  // covers, and drives the automatic quantity discount below.
   quantity?: number;
+  // Quantity-tier discount auto-applied on print lines (same tiers/logic as
+  // the real instant-devis cart, see discountForQty) — set only when > 0.
+  // priceCents below is always the REAL final total (post-discount, what's
+  // actually charged/printed); preDiscountCents is what the admin typed
+  // (the pre-discount amount), kept so editing the line restores the typed
+  // value rather than the already-discounted one.
+  discountPct?: number;
+  preDiscountCents?: number;
   priceCents: number;
 }
 
@@ -112,10 +122,14 @@ function colorNameFr(en: string): string {
 export default function QuoteBuilderTab() {
   const { materials } = useAdminMaterials(true);
   const [qualities, setQualities] = useState<{ key: string; label: string; layerHeightMm: number }[]>([]);
+  const [discountTiers, setDiscountTiers] = useState<{ minQty: number; pct: number }[]>([]);
 
   useEffect(() => {
     api.getQualityProfiles().then((res) => {
       if (res.ok && res.data) setQualities(res.data.qualities);
+    });
+    api.getDiscountTiers().then((res) => {
+      if (res.ok && res.data) setDiscountTiers(res.data.tiers);
     });
   }, []);
 
@@ -160,13 +174,37 @@ export default function QuoteBuilderTab() {
     parseEuros(priceDraft)! >= 0 &&
     (!service.isPrint || (materialId && colorId && qualityKey && Number.isInteger(quantity) && quantity >= 1));
 
+  // Live preview of the automatic quantity discount while composing/editing
+  // a print line — same tiers/formula as the real instant-devis cart
+  // (discountForQty), so "10 pièces" here gives the same -X% a real online
+  // order of 10 would get. Only ever applies to Impression 3D lines, never
+  // to the devis as a whole — a rétro-conception/maintenance/modélisation
+  // line next to it is untouched.
+  const previewDiscountPct =
+    service.isPrint && Number.isInteger(quantity) && quantity >= 1 ? discountForQty(quantity, discountTiers) : 0;
+  // The specific tier that produced previewDiscountPct, just to show "dès
+  // combien de pièces" in the preview below — discountForQty itself only
+  // returns the percentage, not which threshold it came from.
+  const previewTierMinQty =
+    previewDiscountPct > 0
+      ? discountTiers.filter((t) => t.pct === previewDiscountPct).reduce((min, t) => Math.min(min, t.minQty), Infinity)
+      : null;
+  const previewPreDiscountCents = parseEuros(priceDraft);
+  const previewNetCents =
+    previewPreDiscountCents !== null ? Math.round(previewPreDiscountCents * (1 - previewDiscountPct / 100)) : null;
+
   // Shared by both "+ Ajouter la prestation" and "Enregistrer les
   // modifications" — editingId (set by startEdit) decides whether this
   // replaces an existing line in place or appends a new one.
   function saveItem() {
-    const priceCents = parseEuros(priceDraft);
-    if (priceCents === null || priceCents < 0) return;
+    const preDiscountCents = parseEuros(priceDraft);
+    if (preDiscountCents === null || preDiscountCents < 0) return;
     if (service.isPrint && (!materialId || !colorId || !qualityKey || !Number.isInteger(quantity) || quantity < 1)) return;
+
+    // Only print lines ever carry a quantity discount — a rétro-conception/
+    // maintenance/modélisation line always charges exactly what's typed.
+    const discountPct = service.isPrint ? discountForQty(quantity, discountTiers) : 0;
+    const priceCents = Math.round(preDiscountCents * (1 - discountPct / 100));
 
     let detail: string | null = null;
     let materialLabel: string | undefined;
@@ -197,6 +235,8 @@ export default function QuoteBuilderTab() {
       qualityLabel,
       infill: infillDraft.trim() || undefined,
       quantity: service.isPrint ? quantity : undefined,
+      discountPct: discountPct > 0 ? discountPct : undefined,
+      preDiscountCents: discountPct > 0 ? preDiscountCents : undefined,
       detail,
       priceCents,
     };
@@ -230,7 +270,10 @@ export default function QuoteBuilderTab() {
     setServiceKey(matchedService.key);
     setQuantityDraft(String(item.quantity ?? 1));
     setInfillDraft(item.infill ?? "");
-    setPriceDraft((item.priceCents / 100).toFixed(2).replace(".", ","));
+    // Restores what was actually typed (pre-discount), not the already-
+    // discounted priceCents — otherwise re-saving an edited discounted line
+    // unchanged would apply the discount a second time on top of itself.
+    setPriceDraft(((item.preDiscountCents ?? item.priceCents) / 100).toFixed(2).replace(".", ","));
     if (item.isPrint) {
       const material = materials.find((m) => m.label === item.materialLabel);
       setMaterialId(material?.id ?? "");
@@ -285,6 +328,8 @@ export default function QuoteBuilderTab() {
           priceCents: it.priceCents,
           isPrint: it.isPrint,
           quantity: it.quantity,
+          discountPct: it.discountPct,
+          preDiscountCents: it.preDiscountCents,
         })),
         totalCents,
       };
@@ -385,10 +430,17 @@ export default function QuoteBuilderTab() {
           )}
 
           <div className="form-field">
-            <span className="field-label">Prix TTC</span>
+            <span className="field-label">{service.isPrint ? "Prix TTC (avant remise)" : "Prix TTC"}</span>
             <input value={priceDraft} onChange={(e) => setPriceDraft(e.target.value)} className="field-input" placeholder="0,00 €" />
           </div>
         </div>
+
+        {service.isPrint && previewDiscountPct > 0 && previewNetCents !== null && (
+          <div className="discount-preview">
+            Remise quantité automatique : <strong>-{previewDiscountPct}%</strong> (dès {previewTierMinQty} pièces) → total net{" "}
+            <strong>{eur(previewNetCents)}</strong>
+          </div>
+        )}
 
         <div className="form-actions">
           <span onClick={canAdd ? saveItem : undefined} className={`save-btn add-btn${canAdd ? "" : " disabled"}`}>
@@ -416,11 +468,19 @@ export default function QuoteBuilderTab() {
                   <div className="order-desc">
                     {it.materialLabel} · {it.qualityLabel}
                     {it.infill ? ` · ${it.infill}% remplissage` : ""} · {it.colorName}
+                    {it.discountPct ? ` · remise -${it.discountPct}%` : ""}
                   </div>
                 )}
               </div>
               <div className="order-head-right">
-                <span className="order-price">{eur(it.priceCents)}</span>
+                {it.discountPct && it.preDiscountCents ? (
+                  <span className="order-price-discounted">
+                    <span className="order-price-before">{eur(it.preDiscountCents)}</span>
+                    <span className="order-price">{eur(it.priceCents)}</span>
+                  </span>
+                ) : (
+                  <span className="order-price">{eur(it.priceCents)}</span>
+                )}
                 <span className="btn-edit" onClick={() => startEdit(it)} title="Modifier">
                   ✎
                 </span>
@@ -462,6 +522,10 @@ export default function QuoteBuilderTab() {
         .save-btn { font: 600 11px 'Inter',sans-serif; padding: 9px 16px; border-radius: 6px; cursor: pointer; background: #ff5a3c; color: #161514; display: inline-block; }
         .save-btn.disabled { opacity: .35; cursor: not-allowed; }
         .add-btn { font-size: 11px; }
+        .discount-preview { font: 500 11px 'Inter',sans-serif; color: #ff8a70; background: rgba(255,90,60,.08); border: 1px solid rgba(255,90,60,.25); border-radius: 6px; padding: 8px 12px; margin-bottom: 16px; }
+        .discount-preview strong { color: #ff5a3c; }
+        .order-price-discounted { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.3; }
+        .order-price-before { font: 400 10.5px 'Inter',sans-serif; color: rgba(255,255,255,.4); text-decoration: line-through; }
         .form-actions { display: flex; align-items: center; gap: 14px; }
         .cancel-edit-btn { font: 600 11px 'Inter',sans-serif; color: rgba(255,255,255,.5); cursor: pointer; }
         .cancel-edit-btn:hover { color: #f3f1ec; }

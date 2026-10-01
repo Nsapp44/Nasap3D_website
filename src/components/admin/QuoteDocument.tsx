@@ -23,6 +23,8 @@ const styles = StyleSheet.create({
   colorDot: { width: 6, height: 6, borderRadius: 3, marginRight: 4, borderWidth: 0.5, borderColor: BORDER },
   colorRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
   priceValue: { fontSize: 10, fontWeight: 600 },
+  priceBefore: { fontSize: 8, color: MUTED, textDecoration: "line-through", marginBottom: 1 },
+  discountLine: { fontSize: 8, color: MUTED, marginTop: 2 },
 });
 
 export interface QuotePdfItem {
@@ -36,6 +38,14 @@ export interface QuotePdfItem {
   // Purely informational (see QuoteBuilderTab.tsx) — printed as "×N" next
   // to the label, doesn't affect priceCents (already the line's real total).
   quantity?: number;
+  // Quantity-tier discount auto-applied on print lines (see
+  // QuoteBuilderTab.tsx) — priceCents is already the post-discount amount;
+  // these two are only here so the devis shows the reduction transparently
+  // (struck-through pre-discount price + "-X%"), same spirit as the real
+  // cart/order always showing its own discount openly rather than just a
+  // final number.
+  discountPct?: number;
+  preDiscountCents?: number;
 }
 
 export interface QuotePdfData {
@@ -86,8 +96,14 @@ export function QuoteDocument({ data }: { data: QuotePdfData }) {
                     <Text style={styles.specLine}>{item.colorName}</Text>
                   </View>
                 )}
+                {item.discountPct && <Text style={styles.discountLine}>Remise quantité : -{item.discountPct}%</Text>}
               </View>
-              <Text style={[styles.priceValue, styles.colPrice]}>{eur(item.priceCents)}</Text>
+              <View style={styles.colPrice}>
+                {item.discountPct && item.preDiscountCents ? (
+                  <Text style={styles.priceBefore}>{eur(item.preDiscountCents)}</Text>
+                ) : null}
+                <Text style={styles.priceValue}>{eur(item.priceCents)}</Text>
+              </View>
             </View>
           ))}
         </View>

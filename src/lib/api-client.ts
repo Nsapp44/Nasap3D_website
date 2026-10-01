@@ -185,7 +185,7 @@ export const api = {
     return apiBase() + "/quotes/" + id + "/file";
   },
   async getDiscountTiers() {
-    return request("GET", "/discount-tiers");
+    return request<{ tiers: { minQty: number; pct: number }[] }>("GET", "/discount-tiers");
   },
   async getQuoteEnabled() {
     return request<{ quoteEnabled: boolean }>("GET", "/quote-enabled");
