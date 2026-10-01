@@ -27,6 +27,13 @@ interface QuoteLineItem {
   qualityLabel?: string;
   infill?: string;
   detail?: string | null;
+  // Only meaningful (asked for/shown) on an Impression 3D line — purely
+  // informational, printed on the devis as "×N" so the client sees how many
+  // identical pieces the line covers. Doesn't multiply priceCents: per the
+  // business owner, the typed price is always the line's real total, not a
+  // unit price — admins already factor bulk pricing into that number
+  // themselves, same as before this field existed.
+  quantity?: number;
   priceCents: number;
 }
 
@@ -120,28 +127,46 @@ export default function QuoteBuilderTab() {
   const [colorId, setColorId] = useState("");
   const [qualityKey, setQualityKey] = useState("");
   const [infillDraft, setInfillDraft] = useState("");
+  const [quantityDraft, setQuantityDraft] = useState("1");
   const [priceDraft, setPriceDraft] = useState("");
+
+  // Set while modifying an existing prestation instead of adding a new one
+  // (see startEdit/cancelEdit below) — per request, an admin who mistyped a
+  // detail on a line they already added shouldn't have to delete it and
+  // recompose it from scratch.
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const service = SERVICE_TYPES.find((s) => s.key === serviceKey)!;
   const selectedMaterial = materials.find((m) => m.id === materialId);
 
-  // Filament/couleur pickers reset when the service type changes away from
-  // Impression 3D and back, and couleur resets whenever filament changes —
-  // an old selection from a different filament's color list would otherwise
-  // silently linger as a stale, invalid colorId.
-  useEffect(() => {
+  // Couleur resets whenever the admin picks a different filament — an old
+  // selection from a different filament's color list would otherwise
+  // silently linger as a stale, invalid colorId. Deliberately wired into
+  // the <select>'s own onChange rather than a useEffect(watch materialId):
+  // startEdit() below also calls setMaterialId (to restore a prestation
+  // being edited) immediately followed by setColorId with the real color to
+  // restore — a materialId-watching effect would run after both and wipe
+  // that restored colorId right back out, since it can't tell "the admin
+  // just changed filament" apart from "materialId changed as part of
+  // loading a whole prestation back into the form".
+  function handleMaterialChange(id: string) {
+    setMaterialId(id);
     setColorId("");
-  }, [materialId]);
+  }
 
+  const quantity = parseInt(quantityDraft, 10);
   const canAdd =
     parseEuros(priceDraft) !== null &&
     parseEuros(priceDraft)! >= 0 &&
-    (!service.isPrint || (materialId && colorId && qualityKey));
+    (!service.isPrint || (materialId && colorId && qualityKey && Number.isInteger(quantity) && quantity >= 1));
 
-  function addItem() {
+  // Shared by both "+ Ajouter la prestation" and "Enregistrer les
+  // modifications" — editingId (set by startEdit) decides whether this
+  // replaces an existing line in place or appends a new one.
+  function saveItem() {
     const priceCents = parseEuros(priceDraft);
     if (priceCents === null || priceCents < 0) return;
-    if (service.isPrint && (!materialId || !colorId || !qualityKey)) return;
+    if (service.isPrint && (!materialId || !colorId || !qualityKey || !Number.isInteger(quantity) || quantity < 1)) return;
 
     let detail: string | null = null;
     let materialLabel: string | undefined;
@@ -161,36 +186,71 @@ export default function QuoteBuilderTab() {
       detail = parts.length > 0 ? parts.join(" · ") : null;
     }
 
-    setItems((prev) => [
-      ...prev,
-      {
-        id: Math.random().toString(36).slice(2),
-        shortLabel: service.shortLabel,
-        pdfLabel: service.pdfLabel,
-        isPrint: service.isPrint,
-        materialLabel,
-        colorName,
-        colorHex,
-        qualityLabel,
-        infill: infillDraft.trim() || undefined,
-        detail,
-        priceCents,
-      },
-    ]);
+    const newItem: QuoteLineItem = {
+      id: editingId ?? Math.random().toString(36).slice(2),
+      shortLabel: service.shortLabel,
+      pdfLabel: service.pdfLabel,
+      isPrint: service.isPrint,
+      materialLabel,
+      colorName,
+      colorHex,
+      qualityLabel,
+      infill: infillDraft.trim() || undefined,
+      quantity: service.isPrint ? quantity : undefined,
+      detail,
+      priceCents,
+    };
 
-    // Reset the form for the next prestation, service type included — an
-    // admin composing a devis with several different services shouldn't
-    // have to manually reset filament/couleur/qualité each time.
+    setItems((prev) => (editingId ? prev.map((it) => (it.id === editingId ? newItem : it)) : [...prev, newItem]));
+
+    resetForm();
+  }
+
+  // Resets the form for the next prestation, service type included — an
+  // admin composing a devis with several different services shouldn't have
+  // to manually reset filament/couleur/qualité each time. Also exits edit
+  // mode, whether called after saving an edit or via "Annuler".
+  function resetForm() {
+    setEditingId(null);
     setServiceKey(SERVICE_TYPES[0].key);
     setMaterialId("");
     setColorId("");
     setQualityKey("");
     setInfillDraft("");
+    setQuantityDraft("1");
     setPriceDraft("");
+  }
+
+  // Loads an existing prestation's fields back into the form above instead
+  // of making the admin delete it and recompose it from scratch — per
+  // request, editing a prestation shouldn't have to mean removing it first.
+  function startEdit(item: QuoteLineItem) {
+    const matchedService = SERVICE_TYPES.find((s) => s.pdfLabel === item.pdfLabel && s.isPrint === item.isPrint) ?? SERVICE_TYPES[0];
+    setEditingId(item.id);
+    setServiceKey(matchedService.key);
+    setQuantityDraft(String(item.quantity ?? 1));
+    setInfillDraft(item.infill ?? "");
+    setPriceDraft((item.priceCents / 100).toFixed(2).replace(".", ","));
+    if (item.isPrint) {
+      const material = materials.find((m) => m.label === item.materialLabel);
+      setMaterialId(material?.id ?? "");
+      const color = material?.colors.find((c) => colorNameFr(c.colorName) === item.colorName);
+      setColorId(color?.id ?? "");
+      const quality = qualities.find((q) => item.qualityLabel?.startsWith(q.label));
+      setQualityKey(quality?.key ?? "");
+    } else {
+      setMaterialId("");
+      setColorId("");
+      setQualityKey("");
+    }
   }
 
   function removeItem(id: string) {
     setItems((prev) => prev.filter((it) => it.id !== id));
+    // A "Supprimer" on the very line being edited must also drop out of
+    // edit mode — otherwise "Enregistrer les modifications" would silently
+    // resurrect the line the admin just removed.
+    if (editingId === id) resetForm();
   }
 
   const totalCents = useMemo(() => items.reduce((sum, it) => sum + it.priceCents, 0), [items]);
@@ -224,6 +284,7 @@ export default function QuoteBuilderTab() {
           colorName: it.colorName,
           priceCents: it.priceCents,
           isPrint: it.isPrint,
+          quantity: it.quantity,
         })),
         totalCents,
       };
@@ -257,7 +318,7 @@ export default function QuoteBuilderTab() {
       </div>
 
       <div className="pricing-card">
-        <div className="pricing-title">Ajouter une prestation</div>
+        <div className="pricing-title">{editingId ? "Modifier la prestation" : "Ajouter une prestation"}</div>
         <div className="add-grid">
           <div className="form-field">
             <span className="field-label">Prestation</span>
@@ -274,7 +335,7 @@ export default function QuoteBuilderTab() {
             <>
               <div className="form-field">
                 <span className="field-label">Filament</span>
-                <select value={materialId} onChange={(e) => setMaterialId(e.target.value)} className="admin-select">
+                <select value={materialId} onChange={(e) => handleMaterialChange(e.target.value)} className="admin-select">
                   <option value="">Choisir...</option>
                   {materials.map((m) => (
                     <option key={m.id} value={m.id}>
@@ -310,6 +371,16 @@ export default function QuoteBuilderTab() {
                 <span className="field-label">Remplissage (%)</span>
                 <input value={infillDraft} onChange={(e) => setInfillDraft(e.target.value)} className="field-input" placeholder="20" />
               </div>
+              <div className="form-field">
+                <span className="field-label">Quantité de pièces</span>
+                <input
+                  value={quantityDraft}
+                  onChange={(e) => setQuantityDraft(e.target.value)}
+                  className="field-input"
+                  placeholder="1"
+                  inputMode="numeric"
+                />
+              </div>
             </>
           )}
 
@@ -319,18 +390,28 @@ export default function QuoteBuilderTab() {
           </div>
         </div>
 
-        <span onClick={canAdd ? addItem : undefined} className={`save-btn add-btn${canAdd ? "" : " disabled"}`}>
-          + Ajouter la prestation
-        </span>
+        <div className="form-actions">
+          <span onClick={canAdd ? saveItem : undefined} className={`save-btn add-btn${canAdd ? "" : " disabled"}`}>
+            {editingId ? "Enregistrer les modifications" : "+ Ajouter la prestation"}
+          </span>
+          {editingId && (
+            <span onClick={resetForm} className="cancel-edit-btn">
+              Annuler
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="quote-items">
         {items.length === 0 && <div className="empty-orders">Aucune prestation ajoutée pour l'instant.</div>}
         {items.map((it) => (
-          <div key={it.id} className="order-card">
+          <div key={it.id} className={`order-card${editingId === it.id ? " editing" : ""}`}>
             <div className="order-head">
               <div>
-                <div className="order-title">{it.shortLabel}</div>
+                <div className="order-title">
+                  {it.shortLabel}
+                  {it.isPrint && it.quantity && it.quantity > 1 ? ` ×${it.quantity}` : ""}
+                </div>
                 {it.isPrint && (
                   <div className="order-desc">
                     {it.materialLabel} · {it.qualityLabel}
@@ -340,7 +421,10 @@ export default function QuoteBuilderTab() {
               </div>
               <div className="order-head-right">
                 <span className="order-price">{eur(it.priceCents)}</span>
-                <span className="btn-close" onClick={() => removeItem(it.id)}>
+                <span className="btn-edit" onClick={() => startEdit(it)} title="Modifier">
+                  ✎
+                </span>
+                <span className="btn-close" onClick={() => removeItem(it.id)} title="Supprimer">
                   ✕
                 </span>
               </div>
@@ -378,16 +462,21 @@ export default function QuoteBuilderTab() {
         .save-btn { font: 600 11px 'Inter',sans-serif; padding: 9px 16px; border-radius: 6px; cursor: pointer; background: #ff5a3c; color: #161514; display: inline-block; }
         .save-btn.disabled { opacity: .35; cursor: not-allowed; }
         .add-btn { font-size: 11px; }
+        .form-actions { display: flex; align-items: center; gap: 14px; }
+        .cancel-edit-btn { font: 600 11px 'Inter',sans-serif; color: rgba(255,255,255,.5); cursor: pointer; }
+        .cancel-edit-btn:hover { color: #f3f1ec; }
         .generate-btn { margin-top: 22px; font-size: 12.5px; padding: 12px 22px; }
         .quote-items { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
         .empty-orders { border: 1px dashed rgba(255,255,255,.15); border-radius: 10px; padding: 34px; text-align: center; font: 500 12px 'Inter',sans-serif; color: rgba(255,255,255,.4); }
         .order-card { border: 1px solid rgba(255,255,255,.1); border-radius: 10px; background: #1a1917; padding: 16px 20px; }
+        .order-card.editing { border-color: rgba(255,90,60,.5); background: rgba(255,90,60,.06); }
         .order-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
         .order-head-right { flex: none; display: flex; align-items: center; gap: 10px; }
         .order-title { font: 600 13px 'Space Grotesk',sans-serif; color: #f3f1ec; margin-bottom: 3px; }
         .order-desc { font: 400 10.5px 'Inter',sans-serif; color: rgba(255,255,255,.45); }
         .order-price { flex: none; font: 700 14px 'Space Grotesk',sans-serif; color: #ff5a3c; white-space: nowrap; }
-        .btn-close { flex: none; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(255,255,255,.15); color: rgba(255,255,255,.45); cursor: pointer; font-size: 11px; }
+        .btn-edit, .btn-close { flex: none; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(255,255,255,.15); color: rgba(255,255,255,.45); cursor: pointer; font-size: 11px; }
+        .btn-edit:hover { border-color: rgba(255,90,60,.5); color: #ff8a70; background: rgba(255,90,60,.08); }
         .btn-close:hover { border-color: rgba(255,90,60,.5); color: #ff8a70; background: rgba(255,90,60,.08); }
         .quote-total-row { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding: 14px 20px; border-radius: 10px; background: #1a1917; border: 1px solid rgba(255,255,255,.1); font: 600 13px 'Space Grotesk',sans-serif; color: #f3f1ec; }
         .quote-total-value { color: #ff5a3c; font-size: 16px; }

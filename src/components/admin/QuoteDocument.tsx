@@ -33,6 +33,9 @@ export interface QuotePdfItem {
   colorName?: string | null;
   priceCents: number;
   isPrint?: boolean;
+  // Purely informational (see QuoteBuilderTab.tsx) — printed as "×N" next
+  // to the label, doesn't affect priceCents (already the line's real total).
+  quantity?: number;
 }
 
 export interface QuotePdfData {
@@ -69,7 +72,10 @@ export function QuoteDocument({ data }: { data: QuotePdfData }) {
           {data.items.map((item, i) => (
             <View key={i} style={styles.tRow} wrap={false}>
               <View style={styles.colDesc}>
-                <Text style={styles.itemName}>{item.label}</Text>
+                <Text style={styles.itemName}>
+                  {item.label}
+                  {item.isPrint && item.quantity && item.quantity > 1 ? ` ×${item.quantity}` : ""}
+                </Text>
                 {item.material && <Text style={styles.itemMaterial}>{item.material}</Text>}
               </View>
               <View style={styles.colSpec}>
