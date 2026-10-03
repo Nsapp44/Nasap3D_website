@@ -52,8 +52,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     </div>
     <div>
       <div class="kicker">Qui sommes-nous</div>
-      <h1 class="hero-title">Nasap3D</h1>
-      <div class="hero-subtitle">Impression 3D, rétro-conception & maquettage — Nantes</div>
+      <h1>
+        <span class="hero-title">Nasap3D</span>
+        <span class="hero-subtitle">Impression 3D, rétro-conception & maquettage — Nantes</span>
+      </h1>
       <div class="hero-text">
         Nasap3D est né en 2022 à Nantes (Canclaux), du croisement entre savoir-faire artisanal et technologie
         d'impression 3D — une micro-entreprise pensée pour aller vite sans sacrifier la qualité.
@@ -136,6 +138,13 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     color: #ff5a3c;
     text-transform: uppercase;
     margin-bottom: 10px;
+  }
+  /* Both lines live in the page's single <h1> (so search engines read
+     "Nasap3D — Impression 3D, rétro-conception & maquettage — Nantes" as the
+     page title); display:block keeps them on two lines exactly as before. */
+  .hero-title,
+  .hero-subtitle {
+    display: block;
   }
   .hero-title {
     font: 700 30px/1.15 "Space Grotesk", sans-serif;
