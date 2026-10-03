@@ -35,14 +35,25 @@ let consecutiveFailures = 0;
 // still-down site doesn't get a fresh email every 30s — one alert per
 // outage, one recovery email when it actually comes back.
 let alertSent = false;
+// What the last failed check actually said — the health endpoint's own
+// error class/codes when it answered with a 503, or why it didn't answer at
+// all. Goes into the alert email so the email itself names the cause.
+let lastFailureDetail = "";
 
 async function checkOnce(): Promise<boolean> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
     const res = await fetch(TARGET_URL, { signal: controller.signal });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+      lastFailureDetail = body
+        ? `HTTP ${res.status} — erreur=${body.errorName ?? "?"} codePrisma=${body.prismaCode ?? "-"} codePostgres=${body.pgCode ?? "-"} version=${body.version ?? "?"}`
+        : `HTTP ${res.status} (pas de détail)`;
+    }
     return res.ok;
-  } catch {
+  } catch (err) {
+    lastFailureDetail = `pas de réponse du conteneur api (${(err as Error).name}: ${(err as Error).message})`;
     return false;
   } finally {
     clearTimeout(timer);
@@ -74,7 +85,7 @@ async function tick() {
   if (!alertSent && consecutiveFailures >= FAILURE_THRESHOLD) {
     alertSent = true;
     const downForSec = Math.round((FAILURE_THRESHOLD * CHECK_INTERVAL_MS) / 1000);
-    console.error(`[healthMonitor] API considered DOWN after ${consecutiveFailures} consecutive failed checks`);
+    console.error(`[healthMonitor] API considered DOWN after ${consecutiveFailures} consecutive failed checks — ${lastFailureDetail}`);
     if (!ALERT_EMAIL) {
       console.error("[healthMonitor] no DOWNTIME_ALERT_EMAIL/ORDER_NOTIFY_EMAIL/CONTACT_NOTIFY_EMAIL configured — cannot send alert");
       return;
@@ -83,7 +94,10 @@ async function tick() {
       ALERT_EMAIL,
       "🚨 Nasap3D — l'API ne répond plus",
       `Le site n'a pas répondu correctement depuis au moins ${downForSec}s (${TARGET_URL}).\n\n` +
+        `Diagnostic : ${lastFailureDetail}\n\n` +
         `Le devis instantané et le reste du site sont probablement inaccessibles pour les visiteurs. ` +
+        `Avant de redémarrer quoi que ce soit, récupérer : docker compose logs api --tail 100 ` +
+        `et le fichier uploads/_diagnostics/db-incidents.log (dans le volume nasap3d_uploads_data). ` +
         `Un email de confirmation sera envoyé automatiquement dès que ça revient.`
     ).catch((err) => console.error("[healthMonitor] failed to send alert email", err));
   }

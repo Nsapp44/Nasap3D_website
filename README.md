@@ -173,14 +173,32 @@ automatiquement après l'inscription.
 
 Une image pré-construite, publiée sur GitHub Container Registry à chaque push sur `master` qui la
 concerne (`.github/workflows/docker-publish.yml`). Le serveur OVH n'a donc besoin que de Docker
-installé — pas de Node/npm/PrusaSlicer, et pas besoin non plus que le dépôt soit cloné/à jour sur
-l'hôte pour que le site soit servi, tout est déjà dans l'image :
+installé — pas de Node/npm/PrusaSlicer. Le code est dans l'image, **mais pas `docker-compose.yml`** :
+
+> ⚠️ `docker compose pull` ne met à jour **que les images**. Toute modification de
+> `docker-compose.yml` (services, `command:` de Postgres, `DATABASE_URL`, rotation des logs,
+> `init:`...) n'est appliquée que si le fichier lui-même est à jour sur le serveur. Ça a déjà coûté
+> plusieurs semaines de correctifs jamais actifs en prod (service `monitor` absent, `statement_timeout`
+> et limite du pool Prisma jamais appliqués). Toujours mettre à jour le fichier avant de déployer.
 
 ```bash
-cp .env.example .env   # remplir les variables de prod, voir le tableau plus haut
+git pull                               # (ou recopier docker-compose.yml à la main) — à chaque déploiement
+cp .env.example .env                   # première fois seulement : remplir les variables de prod
 docker compose --profile full pull
-docker compose --profile full up -d   # site + API sur :3000 (interne), PostgreSQL en conteneur
+docker compose --profile full up -d    # site + API sur :3000 (interne), PostgreSQL, monitor
 ```
+
+Pour vérifier ce qui tourne vraiment : `curl https://nasap3d.com/api/health` donne le commit déployé
+(`version`), et `docker compose --profile full ps` doit lister **trois** services (`db`, `api`,
+`monitor`).
+
+**En cas de panne "toutes les requêtes base de données échouent"** : avant de redémarrer quoi que ce
+soit, récupérer `curl https://nasap3d.com/api/health` (code d'erreur), `docker compose logs api --tail
+100`, et `docker compose exec api cat /app/uploads/_diagnostics/db-incidents.log` (journal du
+watchdog, survit aux redémarrages — voir `src/lib/server/dbWatchdog.ts`). Le watchdog redémarre
+lui-même l'API au bout de 5 min de panne continue, au maximum une fois par 24 h, et seulement si une
+connexion neuve à la base fonctionne (sinon le problème est côté Postgres et un redémarrage de l'API
+n'y changerait rien).
 
 **Le conteneur fait tout seul au démarrage** (`docker-entrypoint.sh`, `ENTRYPOINT` de l'image) :
 `prisma migrate deploy` puis `prisma/seed.ts`, avant de lancer le serveur. Aucune commande à lancer

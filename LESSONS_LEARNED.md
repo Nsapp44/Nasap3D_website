@@ -161,3 +161,35 @@ conversation.
 **Leçon** : dès qu'un secret de prod transite en clair dans un canal qui n'est pas censé les
 stocker durablement (chat, ticket, log), le traiter comme potentiellement compromis et le
 régénérer — même si l'usage immédiat était légitime et de courte durée.
+
+## `docker compose pull` ne déploie pas `docker-compose.yml`
+
+**Problème réel** : plusieurs semaines de correctifs d'infra (service d'alerte, `statement_timeout`
+Postgres, limite du pool Prisma) ont été poussés, "déployés"... et n'ont jamais tourné en prod. Le
+serveur faisait bien `docker compose pull && up -d` (nouvelles images, donc nouveau code), mais son
+`docker-compose.yml` local n'avait jamais été mis à jour. Découvert seulement parce qu'un email
+d'alerte attendu n'est jamais arrivé.
+
+**Leçon** : une image et un fichier compose sont deux choses à déployer séparément. Prévoir dans la
+procédure de déploiement une étape explicite pour le fichier compose (`git pull` sur le serveur), et
+un moyen simple de vérifier que la config attendue tourne vraiment (`docker compose ps` qui liste
+les services attendus, un endpoint qui renvoie la version déployée).
+
+## Rendre une panne capable de se diagnostiquer elle-même
+
+**Problème réel** : une panne récurrente ("toutes les requêtes base de données échouent
+instantanément, un redémarrage du conteneur répare tout") n'a jamais pu être diagnostiquée : la
+seule preuve (`docker logs`) disparaissait à chaque redémarrage, fait en urgence avant que
+quiconque ait regardé. Des heures de tests locaux ont pu éliminer des hypothèses, pas trouver la
+cause.
+
+**Leçon** : pour un bug qu'on ne sait pas reproduire, investir d'abord dans la capture de preuve
+plutôt que dans de nouvelles hypothèses. Concrètement : un endpoint de santé qui renvoie la
+**classe et le code** de l'erreur (jamais le message — il peut contenir des hôtes/du SQL), un
+journal d'incident écrit sur un volume persistant (survit aux redémarrages et recréations), et le
+test qui tranche entre "le client est bloqué" et "la base est en panne" : une connexion neuve
+fonctionne-t-elle pendant que celle de l'app échoue ?
+
+**À faire dès le départ** : sur tout service long-lived, `init: true` dans compose (sinon Node en
+PID 1 ne nettoie jamais les processus orphelins) et une rotation des logs Docker (`json-file`
+n'en fait aucune par défaut).

@@ -3,6 +3,7 @@ import { sweepAbandonedCarts } from "./lib/server/cartCleanup";
 import { sweepExpiredQuoteFiles } from "./lib/server/quoteCleanup";
 import { sweepRejectedOrders } from "./lib/server/orders";
 import { sweepOrderTracking } from "./lib/server/orderTracking";
+import { startDbWatchdog } from "./lib/server/dbWatchdog";
 
 // Replaces two of Fastify's global hooks (server/src/app.ts) that every
 // route implicitly relied on:
@@ -88,6 +89,7 @@ function startBackgroundSweepsOnce() {
   setInterval(runSweep, SWEEP_INTERVAL_MS);
   runTrackingSweep();
   setInterval(runTrackingSweep, TRACKING_SWEEP_INTERVAL_MS);
+  startDbWatchdog();
 }
 
 // Reimplements Astro's own security.checkOrigin (disabled in astro.config.mjs
