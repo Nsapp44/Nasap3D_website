@@ -30,29 +30,53 @@ import { sweepOrderTracking } from "./lib/server/orderTracking";
 const SWEEP_INTERVAL_MS = 15 * 60 * 1000; // 15 min
 const TRACKING_SWEEP_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24h
 
+// setInterval doesn't wait for the previous run: if a run is still going
+// when the next tick fires (a slow external call — S3, Boxtal — inside a
+// sweep), a second copy would start on top of it, then a third, and so on
+// for as long as the slowness lasts. These flags make a tick that finds the
+// previous run still in progress simply skip.
+let sweepRunning = false;
+let trackingSweepRunning = false;
+
 async function runSweep() {
-  try {
-    await sweepAbandonedCarts();
-  } catch (err) {
-    console.error("[sweep] sweepAbandonedCarts failed", err);
+  if (sweepRunning) {
+    console.warn("[sweep] previous run still in progress, skipping this tick");
+    return;
   }
+  sweepRunning = true;
   try {
-    await sweepExpiredQuoteFiles();
-  } catch (err) {
-    console.error("[sweep] sweepExpiredQuoteFiles failed", err);
-  }
-  try {
-    await sweepRejectedOrders();
-  } catch (err) {
-    console.error("[sweep] sweepRejectedOrders failed", err);
+    try {
+      await sweepAbandonedCarts();
+    } catch (err) {
+      console.error("[sweep] sweepAbandonedCarts failed", err);
+    }
+    try {
+      await sweepExpiredQuoteFiles();
+    } catch (err) {
+      console.error("[sweep] sweepExpiredQuoteFiles failed", err);
+    }
+    try {
+      await sweepRejectedOrders();
+    } catch (err) {
+      console.error("[sweep] sweepRejectedOrders failed", err);
+    }
+  } finally {
+    sweepRunning = false;
   }
 }
 
 async function runTrackingSweep() {
+  if (trackingSweepRunning) {
+    console.warn("[sweep] previous tracking run still in progress, skipping this tick");
+    return;
+  }
+  trackingSweepRunning = true;
   try {
     await sweepOrderTracking();
   } catch (err) {
     console.error("[sweep] sweepOrderTracking failed", err);
+  } finally {
+    trackingSweepRunning = false;
   }
 }
 

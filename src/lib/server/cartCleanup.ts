@@ -26,9 +26,17 @@ export async function sweepAbandonedCarts(): Promise<number> {
     select: { id: true, quoteJobId: true },
   });
 
+  // Per-item try/catch: without it, one line that fails (a storage error on
+  // its file, a row already deleted by a concurrent "Retirer") aborted the
+  // whole loop — and since the same line is first in the list again on the
+  // next run, cleanup could stay stuck on it forever.
   for (const item of stale) {
-    await prisma.cartItem.delete({ where: { id: item.id } });
-    await deleteQuoteJobFileIfOrphaned(item.quoteJobId);
+    try {
+      await prisma.cartItem.delete({ where: { id: item.id } });
+      await deleteQuoteJobFileIfOrphaned(item.quoteJobId);
+    } catch (err) {
+      console.error(`[sweep] abandoned cart item ${item.id} failed, continuing`, err);
+    }
   }
   return stale.length;
 }

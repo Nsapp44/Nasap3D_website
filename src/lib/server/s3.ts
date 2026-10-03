@@ -9,7 +9,20 @@ import { NodeHttpHandler } from "@smithy/node-http-handler";
 // cartCleanup.ts/quoteCleanup.ts) — one hung call there means that sweep
 // never finishes, and the next setInterval tick 15 minutes later piles
 // another on top, accumulating indefinitely rather than recovering.
-const requestHandler = new NodeHttpHandler({ connectionTimeout: 5_000, requestTimeout: 15_000 });
+//
+// throwOnRequestTimeout is required, not optional: without it, this
+// version of @smithy/node-http-handler treats requestTimeout as a WARNING
+// only — it logs "a request has exceeded the configured requestTimeout"
+// and keeps waiting forever (see setRequestTimeout in its dist-cjs). The
+// first version of this fix shipped without it and therefore only
+// actually bounded the connection phase. socketTimeout is a second,
+// independent backstop for a socket that goes silent mid-response.
+const requestHandler = new NodeHttpHandler({
+  connectionTimeout: 5_000,
+  requestTimeout: 15_000,
+  throwOnRequestTimeout: true,
+  socketTimeout: 20_000,
+});
 
 function client() {
   return new S3Client({

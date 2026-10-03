@@ -59,8 +59,14 @@ export async function sweepExpiredQuoteFiles(): Promise<number> {
     },
     select: { id: true },
   });
+  // Per-item try/catch: one file whose deletion fails would otherwise abort
+  // the whole loop, and stay first in the list on every later run.
   for (const job of candidates) {
-    await deleteQuoteJobFileIfOrphaned(job.id);
+    try {
+      await deleteQuoteJobFileIfOrphaned(job.id);
+    } catch (err) {
+      console.error(`[sweep] expired quote file ${job.id} failed, continuing`, err);
+    }
   }
   return candidates.length;
 }

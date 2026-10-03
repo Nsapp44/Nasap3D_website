@@ -2,10 +2,23 @@
 # port DB accessible depuis l'hôte pour psql/Prisma Studio). En production,
 # créer un `.env` à la racine du dépôt (à côté de ce fichier — pas
 # server/.env) avec un vrai POSTGRES_PASSWORD ; voir .env.example.
+
+# Docker's default json-file log driver never rotates: each container's
+# log file grows forever on the host disk. During an outage the api logs a
+# full stack trace on every failed health check (every 30s from the
+# monitor), so a long outage slowly fills the VPS disk — and a full disk is
+# itself something that takes Postgres down. 3 x 10MB per container caps it.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
+    logging: *default-logging
     # statement_timeout as a Prisma connection-string param (tried first,
     # on the api service's DATABASE_URL) does NOT do anything — confirmed
     # live: a query blocked on a table lock was still running 45s later,
@@ -50,6 +63,12 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
+    logging: *default-logging
+    # Runs a tiny init (tini) as PID 1 instead of Node itself. Node as PID 1
+    # never reaps orphaned grandchildren — confirmed live: the invoice PDF
+    # worker chain (fork -> tsx -> worker -> esbuild) leaves zombie processes
+    # behind that nothing ever cleans up for the life of the container.
+    init: true
     depends_on:
       db:
         condition: service_healthy
@@ -122,6 +141,8 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
+    logging: *default-logging
+    init: true
     depends_on:
       - api
     volumes:
