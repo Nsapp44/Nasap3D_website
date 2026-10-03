@@ -20,7 +20,7 @@ const { path, title, description, pageTitle, sections } = Astro.props;
 
 <BaseLayout title={title} description={description} path={path}>
   <div class="legal-content">
-    <div class="legal-title">{pageTitle}</div>
+    <h1 class="legal-title">{pageTitle}</h1>
     <div class="legal-body">
       {
         sections.map((s) => (

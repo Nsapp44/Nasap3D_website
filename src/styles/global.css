@@ -6,6 +6,18 @@ body {
   font-family: "Inter", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
+/* The site's titles used to be plain <div>s — invisible as titles to search
+   engines (Bing in particular weighs headings heavily). They're now real
+   h1/h2/h3, and this makes those tags render exactly like the divs they
+   replaced: no browser default margins, size or weight — each title's own
+   class still sets its look. */
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
 a {
   color: #ff5a3c;
 }

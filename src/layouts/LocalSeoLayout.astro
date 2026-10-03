@@ -48,7 +48,7 @@ const {
 <BaseLayout title={title} description={description} path={path} showAuthIcon={false}>
   <div class="hero">
     <div class="kicker">{heroKicker}</div>
-    <div class="hero-title">{heroTitle}</div>
+    <h1 class="hero-title">{heroTitle}</h1>
     <div class="hero-intro">{heroIntro}</div>
   </div>
 
@@ -59,7 +59,7 @@ const {
       {
         statCards.map((card) => (
           <div class="stat-card">
-            <div class="stat-title">{card.title}</div>
+            <h3 class="stat-title">{card.title}</h3>
             <div class="stat-text" set:html={card.text} />
           </div>
         ))
@@ -69,7 +69,7 @@ const {
 
   <div class="cta-wrap">
     <div class="cta-box">
-      <div class="cta-title">{ctaTitle}</div>
+      <h2 class="cta-title">{ctaTitle}</h2>
       <div class="cta-text">Déposez votre fichier et obtenez un prix réel en quelques secondes.</div>
       <QuoteCta className="cta-btn" client:load />
     </div>
