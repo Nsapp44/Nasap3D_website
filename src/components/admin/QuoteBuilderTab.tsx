@@ -19,7 +19,13 @@ const SERVICE_TYPES = [
   { key: "impression3d", shortLabel: "Impression 3D", pdfLabel: "Impression 3D", isPrint: true },
   { key: "maintenance", shortLabel: "Maintenance machine", pdfLabel: "Maintenance machine", isPrint: false },
   { key: "modelisation", shortLabel: "Modélisation 3D", pdfLabel: "Modélisation 3D de votre projet suite aux différents échanges", isPrint: false },
+  // Free line: the admin types the title, description, quantity and unit
+  // price himself instead of picking a ready-made prestation (pdfLabel is
+  // unused — the typed title replaces it). Never gets the quantity discount,
+  // that stays exclusive to "Impression 3D".
+  { key: "libre", shortLabel: "Ligne libre (texte libre)", pdfLabel: "", isPrint: false },
 ] as const;
+const CUSTOM_KEY = "libre";
 
 interface QuoteLineItem {
   id: string;
@@ -36,6 +42,10 @@ interface QuoteLineItem {
   // the devis as "×N" so the client sees how many identical pieces the line
   // covers, and drives the automatic quantity discount below.
   quantity?: number;
+  // Free line only: unitCents is kept so editing restores the typed unit
+  // price (priceCents is the line total, quantity × unit).
+  isCustom?: boolean;
+  unitCents?: number;
   // Quantity-tier discount auto-applied on print lines (same tiers/logic as
   // the real instant-devis cart, see discountForQty) — set only when > 0.
   // priceCents below is always the REAL final total (post-discount, what's
@@ -143,6 +153,8 @@ export default function QuoteBuilderTab() {
   const [infillDraft, setInfillDraft] = useState("");
   const [quantityDraft, setQuantityDraft] = useState("1");
   const [priceDraft, setPriceDraft] = useState("");
+  const [titleDraft, setTitleDraft] = useState("");
+  const [descDraft, setDescDraft] = useState("");
 
   // Set while modifying an existing prestation instead of adding a new one
   // (see startEdit/cancelEdit below) — per request, an admin who mistyped a
@@ -168,11 +180,14 @@ export default function QuoteBuilderTab() {
     setColorId("");
   }
 
+  const isCustom = serviceKey === CUSTOM_KEY;
   const quantity = parseInt(quantityDraft, 10);
+  const validQty = Number.isInteger(quantity) && quantity >= 1;
   const canAdd =
     parseEuros(priceDraft) !== null &&
     parseEuros(priceDraft)! >= 0 &&
-    (!service.isPrint || (materialId && colorId && qualityKey && Number.isInteger(quantity) && quantity >= 1));
+    (!service.isPrint || (materialId && colorId && qualityKey && validQty)) &&
+    (!isCustom || (titleDraft.trim() && validQty));
 
   // Live preview of the automatic quantity discount while composing/editing
   // a print line — same tiers/formula as the real instant-devis cart
@@ -199,12 +214,14 @@ export default function QuoteBuilderTab() {
   function saveItem() {
     const preDiscountCents = parseEuros(priceDraft);
     if (preDiscountCents === null || preDiscountCents < 0) return;
-    if (service.isPrint && (!materialId || !colorId || !qualityKey || !Number.isInteger(quantity) || quantity < 1)) return;
+    if (service.isPrint && (!materialId || !colorId || !qualityKey || !validQty)) return;
+    if (isCustom && (!titleDraft.trim() || !validQty)) return;
 
     // Only print lines ever carry a quantity discount — a rétro-conception/
-    // maintenance/modélisation line always charges exactly what's typed.
+    // maintenance/modélisation line always charges exactly what's typed, and
+    // a free line charges exactly quantity × the typed unit price.
     const discountPct = service.isPrint ? discountForQty(quantity, discountTiers) : 0;
-    const priceCents = Math.round(preDiscountCents * (1 - discountPct / 100));
+    const priceCents = isCustom ? preDiscountCents * quantity : Math.round(preDiscountCents * (1 - discountPct / 100));
 
     let detail: string | null = null;
     let materialLabel: string | undefined;
@@ -226,18 +243,20 @@ export default function QuoteBuilderTab() {
 
     const newItem: QuoteLineItem = {
       id: editingId ?? Math.random().toString(36).slice(2),
-      shortLabel: service.shortLabel,
-      pdfLabel: service.pdfLabel,
+      shortLabel: isCustom ? titleDraft.trim() : service.shortLabel,
+      pdfLabel: isCustom ? titleDraft.trim() : service.pdfLabel,
       isPrint: service.isPrint,
+      isCustom: isCustom || undefined,
+      unitCents: isCustom ? preDiscountCents : undefined,
       materialLabel,
       colorName,
       colorHex,
       qualityLabel,
       infill: infillDraft.trim() || undefined,
-      quantity: service.isPrint ? quantity : undefined,
+      quantity: service.isPrint || isCustom ? quantity : undefined,
       discountPct: discountPct > 0 ? discountPct : undefined,
       preDiscountCents: discountPct > 0 ? preDiscountCents : undefined,
-      detail,
+      detail: isCustom ? descDraft.trim() || null : detail,
       priceCents,
     };
 
@@ -259,21 +278,27 @@ export default function QuoteBuilderTab() {
     setInfillDraft("");
     setQuantityDraft("1");
     setPriceDraft("");
+    setTitleDraft("");
+    setDescDraft("");
   }
 
   // Loads an existing prestation's fields back into the form above instead
   // of making the admin delete it and recompose it from scratch — per
   // request, editing a prestation shouldn't have to mean removing it first.
   function startEdit(item: QuoteLineItem) {
-    const matchedService = SERVICE_TYPES.find((s) => s.pdfLabel === item.pdfLabel && s.isPrint === item.isPrint) ?? SERVICE_TYPES[0];
+    const matchedService = item.isCustom
+      ? SERVICE_TYPES.find((s) => s.key === CUSTOM_KEY)!
+      : (SERVICE_TYPES.find((s) => s.pdfLabel === item.pdfLabel && s.isPrint === item.isPrint) ?? SERVICE_TYPES[0]);
     setEditingId(item.id);
     setServiceKey(matchedService.key);
+    setTitleDraft(item.isCustom ? item.pdfLabel : "");
+    setDescDraft(item.isCustom ? (item.detail ?? "") : "");
     setQuantityDraft(String(item.quantity ?? 1));
     setInfillDraft(item.infill ?? "");
     // Restores what was actually typed (pre-discount), not the already-
     // discounted priceCents — otherwise re-saving an edited discounted line
     // unchanged would apply the discount a second time on top of itself.
-    setPriceDraft(((item.preDiscountCents ?? item.priceCents) / 100).toFixed(2).replace(".", ","));
+    setPriceDraft(((item.unitCents ?? item.preDiscountCents ?? item.priceCents) / 100).toFixed(2).replace(".", ","));
     if (item.isPrint) {
       const material = materials.find((m) => m.label === item.materialLabel);
       setMaterialId(material?.id ?? "");
@@ -321,8 +346,12 @@ export default function QuoteBuilderTab() {
         clientName: clientName.trim() || null,
         items: items.map((it) => ({
           label: it.pdfLabel,
-          material: it.materialLabel,
-          detail: it.detail,
+          // A free line's description goes under its title (same slot a
+          // print line uses for the filament), not in the narrow "Détails"
+          // column, so a long sentence has room.
+          material: it.isCustom ? it.detail : it.materialLabel,
+          detail: it.isCustom ? null : it.detail,
+          unitPriceCents: it.unitCents,
           colorHex: it.colorHex,
           colorName: it.colorName,
           priceCents: it.priceCents,
@@ -375,6 +404,23 @@ export default function QuoteBuilderTab() {
               ))}
             </select>
           </div>
+
+          {isCustom && (
+            <>
+              <div className="form-field">
+                <span className="field-label">Titre</span>
+                <input value={titleDraft} onChange={(e) => setTitleDraft(e.target.value)} className="field-input wide" placeholder="Ex : Transport vers Marlborough" />
+              </div>
+              <div className="form-field">
+                <span className="field-label">Description (optionnel)</span>
+                <input value={descDraft} onChange={(e) => setDescDraft(e.target.value)} className="field-input wide" placeholder="Détail affiché sous le titre" />
+              </div>
+              <div className="form-field">
+                <span className="field-label">Quantité</span>
+                <input value={quantityDraft} onChange={(e) => setQuantityDraft(e.target.value)} className="field-input" placeholder="1" inputMode="numeric" />
+              </div>
+            </>
+          )}
 
           {service.isPrint && (
             <>
@@ -430,7 +476,7 @@ export default function QuoteBuilderTab() {
           )}
 
           <div className="form-field">
-            <span className="field-label">{service.isPrint ? "Prix TTC (avant remise)" : "Prix TTC"}</span>
+            <span className="field-label">{service.isPrint ? "Prix TTC (avant remise)" : isCustom ? "Prix unitaire TTC" : "Prix TTC"}</span>
             <input value={priceDraft} onChange={(e) => setPriceDraft(e.target.value)} className="field-input" placeholder="0,00 €" />
           </div>
         </div>
@@ -439,6 +485,12 @@ export default function QuoteBuilderTab() {
           <div className="discount-preview">
             Remise quantité automatique : <strong>-{previewDiscountPct}%</strong> (dès {previewTierMinQty} pièces) → total net{" "}
             <strong>{eur(previewNetCents)}</strong>
+          </div>
+        )}
+
+        {isCustom && previewPreDiscountCents !== null && validQty && quantity > 1 && (
+          <div className="discount-preview">
+            Total de la ligne : <strong>{eur(previewPreDiscountCents * quantity)}</strong> ({quantity} × {eur(previewPreDiscountCents)})
           </div>
         )}
 
@@ -462,8 +514,9 @@ export default function QuoteBuilderTab() {
               <div>
                 <div className="order-title">
                   {it.shortLabel}
-                  {it.isPrint && it.quantity && it.quantity > 1 ? ` ×${it.quantity}` : ""}
+                  {it.quantity && it.quantity > 1 ? ` ×${it.quantity}` : ""}
                 </div>
+                {it.isCustom && it.detail && <div className="order-desc">{it.detail}</div>}
                 {it.isPrint && (
                   <div className="order-desc">
                     {it.materialLabel} · {it.qualityLabel}

@@ -46,6 +46,8 @@ export interface QuotePdfItem {
   // final number.
   discountPct?: number;
   preDiscountCents?: number;
+  // Free lines only: shown as "N × unit price" under the line total.
+  unitPriceCents?: number;
 }
 
 export interface QuotePdfData {
@@ -84,7 +86,7 @@ export function QuoteDocument({ data }: { data: QuotePdfData }) {
               <View style={styles.colDesc}>
                 <Text style={styles.itemName}>
                   {item.label}
-                  {item.isPrint && item.quantity && item.quantity > 1 ? ` ×${item.quantity}` : ""}
+                  {item.quantity && item.quantity > 1 ? ` ×${item.quantity}` : ""}
                 </Text>
                 {item.material && <Text style={styles.itemMaterial}>{item.material}</Text>}
               </View>
@@ -103,6 +105,11 @@ export function QuoteDocument({ data }: { data: QuotePdfData }) {
                   <Text style={styles.priceBefore}>{eur(item.preDiscountCents)}</Text>
                 ) : null}
                 <Text style={styles.priceValue}>{eur(item.priceCents)}</Text>
+                {item.unitPriceCents !== undefined && item.quantity && item.quantity > 1 ? (
+                  <Text style={styles.discountLine}>
+                    {item.quantity} × {eur(item.unitPriceCents)}
+                  </Text>
+                ) : null}
               </View>
             </View>
           ))}
