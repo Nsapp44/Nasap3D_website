@@ -13,10 +13,11 @@ function truncate(text: string, max = 150) {
 // hardcoded now (see lib/reviews.ts) rather than fetched live from Google
 // Places: that API capped at 4-5 reviews per call and the live badge wasn't
 // worth the upkeep for a rating that barely moves.
-export default function GoogleReviewsCarousel({ idPrefix }: { idPrefix: string }) {
+// `only` : restreint aux avis de ces auteurs (texte inchangé), ex. page d'atterrissage.
+export default function GoogleReviewsCarousel({ idPrefix, only }: { idPrefix: string; only?: string[] }) {
   const [idx, setIdx] = useState(0);
 
-  const reviews = REVIEWS.map((r) => ({
+  const reviews = REVIEWS.filter((r) => !only || only.includes(r.author)).map((r) => ({
     stars: "★".repeat(Math.round(r.rating)) + "☆".repeat(5 - Math.round(r.rating)),
     text: "« " + truncate(r.text) + " »",
     author: r.author,

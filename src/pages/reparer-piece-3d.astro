@@ -1,0 +1,397 @@
+---
+// Page d'atterrissage Google Ads (pièce cassée / introuvable). Volontairement
+// hors du site : noindex (balise meta uniquement, PAS de Disallow dans
+// robots.txt pour que AdsBot puisse la visiter), absente de sitemap.xml et
+// sans aucun lien entrant depuis le menu, le pied de page ou d'autres pages.
+// Aucune redirection : gclid / utm_* restent dans l'URL.
+import BaseLayout from "../layouts/BaseLayout.astro";
+import GoogleReviewsCarousel from "../components/GoogleReviewsCarousel";
+import FaqAccordion from "../components/FaqAccordion";
+import { PRIX_PLANCHER_AFFICHE, PRIX_PLANCHER_PRECISION } from "../lib/siteConfig";
+
+const steps = [
+  { n: "1", title: "Envoyez un fichier ou une photo", text: "Un fichier 3D (STL, OBJ, 3MF) pour un prix en ligne, ou une photo de la pièce avec ses cotes." },
+  { n: "2", title: "Recevez votre prix", text: "Prix calculé sur votre fichier en quelques minutes ; avec une photo, nous revenons vers vous." },
+  { n: "3", title: "Pièce fabriquée à Nantes", text: "Imprimée dans notre atelier, puis retrait à Nantes (Canclaux) ou expédition." },
+];
+
+const reviewAuthors = ["Kevin Attm", "Franck MORODEI", "Veronique Le senechal", "Guy André"];
+
+const realisations = [
+  { img: "/assets/real-12.webp", label: "Pièce rétro-conçue", desc: "Réducteur redessiné en CAO à partir de la pièce d'origine usée." },
+  { img: "/assets/real-18.webp", label: "Cache Peugeot 102", desc: "Cache personnalisé imprimé pour Peugeot 102." },
+];
+
+const faqs = [
+  { q: "Je n'ai pas de fichier 3D, c'est possible ?", a: "Oui. Envoyez-nous une photo de la pièce (idéalement sous plusieurs angles) avec ses cotes principales, ou la pièce elle-même si vous préférez : nous revenons vers vous pour voir comment la reproduire." },
+  { q: "Quelles matières ?", a: "Le configurateur propose PLA, PETG, ABS, ASA, TPU, PP et Nylon. Un doute sur la matière adaptée à votre usage ? Décrivez-le nous, nous vous conseillons." },
+  { q: "Où et comment récupérer la pièce ?", a: "La pièce est fabriquée à Nantes (Canclaux). Vous pouvez la retirer sur place ou la recevoir par expédition ; le tarif d'expédition est calculé à votre adresse au moment de la commande." },
+];
+---
+
+<BaseLayout
+  title="Pièce cassée ou introuvable ? Refaite en 3D à Nantes | Nasap3D"
+  description="Une pièce cassée ou introuvable ? Nasap3D la refait en impression 3D dans son atelier de Nantes. Envoyez un fichier ou une photo."
+  path="/reparer-piece-3d"
+  noindexFollow
+  hideHeader
+>
+  <header class="lp-header">
+    <a href="/" class="lp-logo-link" aria-label="Nasap3D — accueil">
+      <img src="/assets/logo-blanc-full.png" alt="Nasap3D" class="lp-logo" width="170" height="34" />
+    </a>
+  </header>
+
+  <section class="lp-hero">
+    <h1 class="lp-title">Une pièce cassée ou introuvable ? On la refait en 3D.</h1>
+    <p class="lp-subtitle">Atelier d'impression 3D à Nantes : votre pièce est fabriquée sur place, pas sous-traitée.</p>
+    <p class="lp-price">À partir de {PRIX_PLANCHER_AFFICHE} — {PRIX_PLANCHER_PRECISION}</p>
+    <div class="lp-ctas">
+      <a href="/devis-instantane" class="lp-btn lp-btn-primary"><span class="lp-btn-label">J'ai un fichier 3D <span class="lp-arrow" aria-hidden="true">→</span> devis instantané</span></a>
+      <a href="/contact?objet=Pi%C3%A8ce%20%C3%A0%20refaire%20(photo%20%2B%20cotes)" class="lp-btn lp-btn-secondary">Je n'ai pas de fichier → envoyer une photo et les cotes</a>
+    </div>
+  </section>
+
+  <section class="lp-section" data-rv>
+    <h2 class="lp-h2">Comment ça marche</h2>
+    <div class="lp-steps">
+      {
+        steps.map((s) => (
+          <div class="lp-step" style={`--i:${Number(s.n) - 1}`}>
+            <div class="lp-step-n">{s.n}</div>
+            <h3 class="lp-step-title">{s.title}</h3>
+            <p class="lp-step-text">{s.text}</p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="lp-section" data-rv>
+    <h2 class="lp-h2">Ils ont fait refaire une pièce</h2>
+    <GoogleReviewsCarousel idPrefix="nasap-google-lp" only={reviewAuthors} client:visible />
+  </section>
+
+  <section class="lp-section" data-rv>
+    <h2 class="lp-h2">Quelques réalisations</h2>
+    <div class="lp-real-grid">
+      {
+        realisations.map((r) => (
+          <figure class="lp-real" style={`--i:${realisations.indexOf(r)}`}>
+            <img src={r.img} alt={r.label} loading="lazy" decoding="async" width="600" height="450" />
+            <figcaption>
+              <strong>{r.label}</strong>
+              <span>{r.desc}</span>
+            </figcaption>
+          </figure>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="lp-section" data-rv>
+    <h2 class="lp-h2">Questions fréquentes</h2>
+    <FaqAccordion items={faqs} client:visible />
+  </section>
+
+  <section class="lp-section lp-final" data-rv>
+    <h2 class="lp-h2">On refait votre pièce ?</h2>
+    <div class="lp-ctas">
+      <a href="/devis-instantane" class="lp-btn lp-btn-primary"><span class="lp-btn-label">J'ai un fichier 3D <span class="lp-arrow" aria-hidden="true">→</span> devis instantané</span></a>
+      <a href="/contact?objet=Pi%C3%A8ce%20%C3%A0%20refaire%20(photo%20%2B%20cotes)" class="lp-btn lp-btn-secondary">Je n'ai pas de fichier → envoyer une photo et les cotes</a>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  // Apparition douce au défilement (même esprit que le fade-up du configurateur).
+  // Sans JS ou avec « réduire les animations », tout reste visible.
+  const items = document.querySelectorAll<HTMLElement>("[data-rv]");
+  if (items.length && !matchMedia("(prefers-reduced-motion: reduce)").matches && "IntersectionObserver" in window) {
+    document.documentElement.classList.add("lp-motion");
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            e.target.classList.add("is-in");
+            io.unobserve(e.target);
+          }
+        }
+      },
+      { threshold: 0.12 },
+    );
+    items.forEach((el) => io.observe(el));
+  }
+</script>
+
+<style>
+  .lp-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .lp-logo-link {
+    display: inline-block;
+  }
+  .lp-logo {
+    height: 34px;
+    width: auto;
+    display: block;
+  }
+  .lp-hero,
+  .lp-section {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  .lp-hero {
+    padding-top: 40px;
+    padding-bottom: 40px;
+  }
+  .lp-section {
+    padding-bottom: 44px;
+  }
+  .lp-title {
+    font: 700 32px/1.15 "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin: 0 0 14px;
+  }
+  .lp-subtitle {
+    font: 400 15px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.65);
+    margin: 0 0 14px;
+  }
+  .lp-price {
+    font: 600 14px "Inter", sans-serif;
+    color: #ff5a3c;
+    margin: 0 0 22px;
+  }
+  .lp-ctas {
+    display: flex;
+    gap: 12px;
+  }
+  .lp-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    text-decoration: none;
+    font: 600 14px/1.35 "Inter", sans-serif;
+    padding: 14px 18px;
+    border-radius: 8px;
+  }
+  .lp-btn-primary {
+    background: #ff5a3c;
+    color: #161514;
+  }
+  .lp-btn-secondary {
+    border: 1px solid rgba(255, 90, 60, 0.6);
+    background: rgba(255, 90, 60, 0.08);
+    color: #f3f1ec;
+  }
+  .lp-h2 {
+    font: 700 20px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin: 0 0 16px;
+  }
+  .lp-steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .lp-step {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 18px;
+    background: #1a1917;
+  }
+  .lp-step-n {
+    font: 700 18px "Space Grotesk", sans-serif;
+    color: #ff5a3c;
+    margin-bottom: 6px;
+  }
+  .lp-step-title {
+    font: 600 14px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin: 0 0 6px;
+  }
+  .lp-step-text {
+    font: 400 12px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+    margin: 0;
+  }
+  .lp-real-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  .lp-real {
+    margin: 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #1a1917;
+  }
+  .lp-real img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+  }
+  .lp-real figcaption {
+    padding: 12px 14px;
+    font: 400 12px/1.5 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+  }
+  .lp-real strong {
+    display: block;
+    color: #f3f1ec;
+    font: 600 13px "Space Grotesk", sans-serif;
+    margin-bottom: 2px;
+  }
+  .lp-final {
+    border: 1px solid rgba(255, 90, 60, 0.3);
+    background: rgba(255, 90, 60, 0.08);
+    border-radius: 12px;
+    padding: 28px 24px;
+    margin-bottom: 44px;
+  }
+
+  /* Motion : entrée du hero au chargement, apparition au défilement, survols. */
+  @keyframes lpFadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes lpGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 90, 60, 0); }
+    50% { box-shadow: 0 0 0 6px rgba(255, 90, 60, 0.18); }
+  }
+  .lp-logo-link { animation: lpFadeUp .5s ease both; }
+  .lp-title { animation: lpFadeUp .6s .05s ease both; }
+  .lp-subtitle { animation: lpFadeUp .6s .15s ease both; }
+  .lp-price { animation: lpFadeUp .6s .25s ease both; }
+  .lp-hero .lp-btn-primary { animation: lpFadeUp .6s .35s ease both, lpGlow 2.8s 1.4s ease-in-out infinite; }
+  .lp-hero .lp-btn-secondary { animation: lpFadeUp .6s .45s ease both; }
+
+  :global(.lp-motion) [data-rv] {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity .6s ease, transform .6s ease;
+  }
+  :global(.lp-motion) [data-rv].is-in {
+    opacity: 1;
+    transform: none;
+  }
+  :global(.lp-motion) .lp-step,
+  :global(.lp-motion) .lp-real {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity .55s ease, transform .55s ease, border-color .25s ease, box-shadow .25s ease;
+    transition-delay: calc(var(--i, 0) * 110ms + 120ms), calc(var(--i, 0) * 110ms + 120ms), 0s, 0s;
+  }
+  :global(.lp-motion) [data-rv].is-in .lp-step,
+  :global(.lp-motion) [data-rv].is-in .lp-real {
+    opacity: 1;
+    transform: none;
+  }
+
+  .lp-btn {
+    transition: transform .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
+  }
+  .lp-btn:hover {
+    transform: translateY(-2px);
+  }
+  .lp-btn-primary:hover {
+    background: #ff7155;
+    box-shadow: 0 8px 22px rgba(255, 90, 60, 0.28);
+  }
+  .lp-btn-secondary:hover {
+    border-color: #ff5a3c;
+    background: rgba(255, 90, 60, 0.16);
+  }
+  .lp-btn:active {
+    transform: translateY(0);
+  }
+  .lp-step,
+  .lp-real {
+    transition: border-color .25s ease, box-shadow .25s ease;
+  }
+  .lp-step:hover,
+  .lp-real:hover {
+    border-color: rgba(255, 90, 60, 0.45);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  }
+  .lp-real img {
+    transition: transform .6s ease;
+  }
+  .lp-real:hover img {
+    transform: scale(1.04);
+  }
+  .lp-real {
+    overflow: hidden;
+  }
+
+  /* CTA principal : plus massif, reflet qui balaie, flèche qui s'avance au survol. */
+  .lp-btn-primary {
+    position: relative;
+    overflow: hidden;
+    padding: 18px 22px;
+    font-size: 15px;
+    font-weight: 700;
+    box-shadow: 0 6px 20px rgba(255, 90, 60, 0.22);
+  }
+  .lp-btn-primary::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -60%;
+    width: 40%;
+    height: 100%;
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+    transform: skewX(-20deg);
+    animation: lpShine 4.5s 2s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes lpShine {
+    0% { left: -60%; }
+    22%, 100% { left: 130%; }
+  }
+  .lp-btn-label {
+    position: relative;
+    z-index: 1;
+  }
+  .lp-btn-label {
+    display: inline-block;
+    transition: transform .25s ease;
+  }
+  .lp-btn-primary:hover .lp-btn-label {
+    transform: scale(1.06);
+  }
+  .lp-btn-primary:active {
+    transform: translateY(1px) scale(0.99);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lp-btn-primary::after { animation: none; display: none; }
+    .lp-logo-link, .lp-title, .lp-subtitle, .lp-price, .lp-btn { animation: none !important; }
+    .lp-btn:hover, .lp-real:hover img, .lp-btn-primary:hover .lp-btn-label { transform: none; }
+  }
+
+  @media (max-width: 640px) {
+    .lp-title {
+      font-size: 26px;
+    }
+    .lp-ctas {
+      flex-direction: column;
+    }
+    .lp-steps,
+    .lp-real-grid {
+      grid-template-columns: 1fr;
+    }
+    .lp-final {
+      margin-left: 16px;
+      margin-right: 16px;
+    }
+  }
+</style>

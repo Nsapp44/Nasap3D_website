@@ -10,10 +10,12 @@ interface Props {
   path: string;
   showAuthIcon?: boolean;
   noindex?: boolean;
+  // noindex mais liens suivis + canonical conservé (page d'atterrissage Ads).
+  noindexFollow?: boolean;
   hideFooter?: boolean;
   hideHeader?: boolean;
 }
-const { title, description, path, showAuthIcon, noindex = false, hideFooter = false, hideHeader = false } = Astro.props;
+const { title, description, path, showAuthIcon, noindex = false, noindexFollow = false, hideFooter = false, hideHeader = false } = Astro.props;
 const canonical = new URL(path, Astro.site).toString();
 ---
 
@@ -42,6 +44,7 @@ const canonical = new URL(path, Astro.site).toString();
     <title>{title}</title>
     <meta name="description" content={description} />
     {noindex && <meta name="robots" content="noindex,nofollow" />}
+    {noindexFollow && <meta name="robots" content="noindex, follow" />}
     {!noindex && <link rel="canonical" href={canonical} />}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
@@ -55,7 +58,7 @@ const canonical = new URL(path, Astro.site).toString();
   </head>
   <body>
     <div class={`page-shell${hideFooter ? " page-shell-flex" : ""}`}>
-      <MobileNavToggle client:load />
+      {!hideHeader && <MobileNavToggle client:load />}
       {!hideHeader && <Header currentPath={path} showAuthIcon={showAuthIcon} />}
       <slot />
       {!hideFooter && <Footer />}

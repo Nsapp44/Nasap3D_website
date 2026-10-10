@@ -3,9 +3,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import QuoteWizardSection from "../components/quote/QuoteWizardSection";
 import GoogleReviewsCarousel from "../components/GoogleReviewsCarousel";
 import FaqAccordion from "../components/FaqAccordion";
+import { PRIX_PLANCHER_AFFICHE, PRIX_PLANCHER_PRECISION } from "../lib/siteConfig";
 
 const faqs = [
-  { q: "Quels formats de fichiers acceptez-vous ?", a: "STL, OBJ et 3MF. Pas de fichier prêt ? Contactez-nous pour être accompagné." },
+  { q: "Quels formats de fichiers acceptez-vous ?", a: "STL, OBJ et 3MF (le STEP n'est pas accepté par le configurateur). Pas de fichier prêt ? Contactez-nous avec une photo et les cotes." },
   { q: "Quelle taille de pièce est possible ?", a: "Jusqu'à 330 × 320 × 325 mm selon la machine. Les pièces plus grandes peuvent être imprimées en plusieurs parties puis assemblées." },
   { q: "Quels sont les délais ?", a: "Ils dépendent du volume, du remplissage, de la qualité choisie et de la charge de l'atelier." },
   { q: "Comment choisir mon matériau ?", a: "Le configurateur propose PLA, PETG, ABS, ASA, TPU, PP et Nylon (le PEEK/PEKK n'est pas proposé). Un doute ? Consultez le guide ci-dessus ou contactez-nous." },
@@ -46,7 +47,7 @@ const materialsAdvice = [
 
 <BaseLayout
   title="Devis Instantané Impression 3D — Prix en Ligne | Nasap3D"
-  description="Déposez votre fichier STL, OBJ ou STEP et obtenez un prix réel en quelques secondes, calculé par un vrai tranchage 3D. Commande et paiement en ligne."
+  description="Déposez votre fichier STL, OBJ ou 3MF : prix calculé sur votre fichier en quelques minutes, par un vrai tranchage 3D. Commande et paiement en ligne."
   path="/devis-instantane"
 >
   <div class="di-hero">
@@ -54,6 +55,7 @@ const materialsAdvice = [
     <div class="di-eyebrow">Configurateur &amp; conseils</div>
     <h1 class="di-title">Votre devis en quelques minutes — et les bons réglages pour bien choisir.</h1>
     <div class="di-subtitle">Déposez votre fichier, choisissez vos options, l'analyse automatique calcule le prix. Pas sûr d'un réglage ? Les explications sont juste en dessous.</div>
+    <div class="di-floor-price">À partir de {PRIX_PLANCHER_AFFICHE} — {PRIX_PLANCHER_PRECISION}</div>
     <div class="di-timing-note">Cela peut prendre 1 à 6 minutes selon la complexité de votre pièce — ce délai permet d'obtenir le prix le plus juste pour votre pièce.</div>
   </div>
 
@@ -184,6 +186,11 @@ const materialsAdvice = [
     font: 400 13px/1.6 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.55);
     max-width: 560px;
+  }
+  .di-floor-price {
+    font: 600 13px "Inter", sans-serif;
+    color: #ff5a3c;
+    margin-top: 12px;
   }
   .di-timing-note {
     font: 500 12.5px/1.6 "Inter", sans-serif;

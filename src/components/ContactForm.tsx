@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { api } from "../lib/api-client";
 import { useHcaptcha } from "../hooks/useHcaptcha";
 import Loader from "./Loader";
@@ -38,6 +38,12 @@ export default function ContactForm() {
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // ?objet=... pré-remplit l'objet (liens depuis les pages d'atterrissage).
+  useEffect(() => {
+    const o = new URLSearchParams(window.location.search).get("objet");
+    if (o) setSubject(o.slice(0, 80));
+  }, []);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const sentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
