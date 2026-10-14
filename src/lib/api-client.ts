@@ -255,8 +255,8 @@ export const api = {
   // src/pages/api/admin/quote-ref.ts). Just hands back the next daily
   // sequence number so the devis ref can look like "DEV_010_..." for real
   // instead of guessing from a timestamp.
-  async adminNextQuoteRef() {
-    return request<{ dailySeq: number }>("POST", "/admin/quote-ref");
+  async adminNextQuoteRef(kind: "devis" | "facture" = "devis") {
+    return request<{ dailySeq: number }>("POST", kind === "facture" ? "/admin/quote-ref?kind=facture" : "/admin/quote-ref");
   },
   async adminGetSettings() {
     return request("GET", "/admin/settings");

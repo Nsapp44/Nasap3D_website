@@ -15,6 +15,9 @@ export const POST = apiHandler(async (context) => {
   await requireAdmin(context);
   const now = new Date();
   const dateKey = now.toISOString().slice(0, 10);
-  const dailySeq = await nextCounter("devis:" + dateKey);
+  // ?kind=facture shares the real invoices' counter ("invoice:") so a manual
+  // facture never reuses a daily number already given to an order invoice.
+  const kind = new URL(context.request.url).searchParams.get("kind");
+  const dailySeq = await nextCounter((kind === "facture" ? "invoice:" : "devis:") + dateKey);
   return json({ dailySeq });
 });

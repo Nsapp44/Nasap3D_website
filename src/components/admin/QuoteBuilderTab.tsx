@@ -38,6 +38,9 @@ interface QuoteLineItem {
   qualityLabel?: string;
   infill?: string;
   detail?: string | null;
+  // Optional free text typed under a ready-made prestation (piece name for
+  // a print, machine name for maintenance...), printed under its label.
+  note?: string;
   // Only meaningful (asked for/shown) on an Impression 3D line — printed on
   // the devis as "×N" so the client sees how many identical pieces the line
   // covers, and drives the automatic quantity discount below.
@@ -144,6 +147,8 @@ export default function QuoteBuilderTab() {
   }, []);
 
   const [clientName, setClientName] = useState("");
+  const [docType, setDocType] = useState<"devis" | "facture">("devis");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
   const [items, setItems] = useState<QuoteLineItem[]>([]);
 
   const [serviceKey, setServiceKey] = useState<(typeof SERVICE_TYPES)[number]["key"]>(SERVICE_TYPES[0].key);
@@ -155,6 +160,7 @@ export default function QuoteBuilderTab() {
   const [priceDraft, setPriceDraft] = useState("");
   const [titleDraft, setTitleDraft] = useState("");
   const [descDraft, setDescDraft] = useState("");
+  const [noteDraft, setNoteDraft] = useState("");
 
   // Set while modifying an existing prestation instead of adding a new one
   // (see startEdit/cancelEdit below) — per request, an admin who mistyped a
@@ -253,6 +259,7 @@ export default function QuoteBuilderTab() {
       colorHex,
       qualityLabel,
       infill: infillDraft.trim() || undefined,
+      note: !isCustom ? noteDraft.trim() || undefined : undefined,
       quantity: service.isPrint || isCustom ? quantity : undefined,
       discountPct: discountPct > 0 ? discountPct : undefined,
       preDiscountCents: discountPct > 0 ? preDiscountCents : undefined,
@@ -276,6 +283,7 @@ export default function QuoteBuilderTab() {
     setColorId("");
     setQualityKey("");
     setInfillDraft("");
+    setNoteDraft("");
     setQuantityDraft("1");
     setPriceDraft("");
     setTitleDraft("");
@@ -293,6 +301,7 @@ export default function QuoteBuilderTab() {
     setServiceKey(matchedService.key);
     setTitleDraft(item.isCustom ? item.pdfLabel : "");
     setDescDraft(item.isCustom ? (item.detail ?? "") : "");
+    setNoteDraft(item.note ?? "");
     setQuantityDraft(String(item.quantity ?? 1));
     setInfillDraft(item.infill ?? "");
     // Restores what was actually typed (pre-discount), not the already-
@@ -334,16 +343,18 @@ export default function QuoteBuilderTab() {
       // adminNextQuoteRef's own comment for exactly what this endpoint does
       // and doesn't persist. Falls back to "001" if the call fails so a
       // transient network hiccup doesn't block generating the PDF outright.
-      const seqRes = await api.adminNextQuoteRef();
+      const seqRes = await api.adminNextQuoteRef(docType);
       const dailySeq = seqRes.ok && seqRes.data ? seqRes.data.dailySeq : 1;
       const dd = pad(now.getDate());
       const mm = pad(now.getMonth() + 1);
       const yyyy = now.getFullYear();
-      const ref = `DEV_${String(dailySeq).padStart(3, "0")}_${dd}${mm}${yyyy}`;
+      const ref = `${docType === "facture" ? "FAC" : "DEV"}_${String(dailySeq).padStart(3, "0")}_${dd}${mm}${yyyy}`;
       const data: QuotePdfData = {
         ref,
         issuedAt: now,
         clientName: clientName.trim() || null,
+        docType,
+        deliveryAddress: deliveryAddress.trim() || null,
         items: items.map((it) => ({
           label: it.pdfLabel,
           // A free line's description goes under its title (same slot a
@@ -351,6 +362,7 @@ export default function QuoteBuilderTab() {
           // column, so a long sentence has room.
           material: it.isCustom ? it.detail : it.materialLabel,
           detail: it.isCustom ? null : it.detail,
+          note: it.note,
           unitPriceCents: it.unitCents,
           colorHex: it.colorHex,
           colorName: it.colorName,
@@ -379,10 +391,31 @@ export default function QuoteBuilderTab() {
   return (
     <div className="quote-tab">
       <div className="eyebrow">Devis</div>
-      <div className="title">Créer un devis</div>
+      <div className="title">Créer un devis ou une facture</div>
 
       <div className="pricing-card">
         <div className="pricing-title">Informations</div>
+        <div className="pricing-row">
+          <div className="pricing-field">
+            <span className="field-label">Document</span>
+            <select value={docType} onChange={(e) => setDocType(e.target.value as "devis" | "facture")} className="admin-select">
+              <option value="devis">Devis</option>
+              <option value="facture">Facture</option>
+            </select>
+          </div>
+        </div>
+        <div className="pricing-row">
+          <div className="pricing-field">
+            <span className="field-label">Adresse de livraison (optionnel)</span>
+            <textarea
+              value={deliveryAddress}
+              onChange={(e) => setDeliveryAddress(e.target.value)}
+              className="field-input wide"
+              rows={4}
+              placeholder="Attn : prénom nom, société, adresse, pays (une ligne par info)"
+            />
+          </div>
+        </div>
         <div className="pricing-row">
           <div className="pricing-field">
             <span className="field-label">Client (optionnel)</span>
@@ -404,6 +437,24 @@ export default function QuoteBuilderTab() {
               ))}
             </select>
           </div>
+
+          {!isCustom && (
+            <div className="form-field">
+              <span className="field-label">{service.isPrint ? "Nom de la pièce (optionnel)" : "Précision (optionnel)"}</span>
+              <input
+                value={noteDraft}
+                onChange={(e) => setNoteDraft(e.target.value)}
+                className="field-input wide"
+                placeholder={
+                  service.isPrint
+                    ? "Ex : Support capteur, Engrenage 24 dents"
+                    : serviceKey === "maintenance"
+                      ? "Ex : nom de la machine, intervention"
+                      : "Ex : nom de la pièce, précision"
+                }
+              />
+            </div>
+          )}
 
           {isCustom && (
             <>
@@ -517,6 +568,7 @@ export default function QuoteBuilderTab() {
                   {it.quantity && it.quantity > 1 ? ` ×${it.quantity}` : ""}
                 </div>
                 {it.isCustom && it.detail && <div className="order-desc">{it.detail}</div>}
+                {it.note && <div className="order-desc">{it.note}</div>}
                 {it.isPrint && (
                   <div className="order-desc">
                     {it.materialLabel} · {it.qualityLabel}
@@ -554,7 +606,7 @@ export default function QuoteBuilderTab() {
       )}
 
       <span onClick={items.length > 0 && !generating ? createQuotePdf : undefined} className={`save-btn generate-btn${items.length > 0 && !generating ? "" : " disabled"}`}>
-        {generating ? "Génération..." : "Créer le devis"}
+        {generating ? "Génération..." : docType === "facture" ? "Créer la facture" : "Créer le devis"}
       </span>
 
       <style>{`

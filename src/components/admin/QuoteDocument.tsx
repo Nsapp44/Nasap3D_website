@@ -31,6 +31,8 @@ export interface QuotePdfItem {
   label: string;
   material?: string | null;
   detail?: string | null;
+  // Free text typed by the admin (piece / machine name), shown under the label.
+  note?: string | null;
   colorHex?: string | null;
   colorName?: string | null;
   priceCents: number;
@@ -54,23 +56,39 @@ export interface QuotePdfData {
   ref: string;
   issuedAt: Date;
   clientName?: string | null;
+  // "facture" reuses the same layout with invoice wording (no validity line).
+  docType?: "devis" | "facture";
+  // Free multi-line text (contact + address), printed under "Livraison".
+  deliveryAddress?: string | null;
   items: QuotePdfItem[];
   totalCents: number;
 }
 
 export function QuoteDocument({ data }: { data: QuotePdfData }) {
   const hasPrintItem = data.items.some((it) => it.isPrint);
+  const isInvoice = data.docType === "facture";
+  const deliveryLines = (data.deliveryAddress ?? "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
   return (
     <Document>
       <Page size="A4" style={sharedPdfStyles.page}>
-        <PdfHeader title="DEVIS" refLabel={`N° ${data.ref}`} date={data.issuedAt} />
+        <PdfHeader title={isInvoice ? "FACTURE" : "DEVIS"} refLabel={`N° ${data.ref}`} date={data.issuedAt} />
 
         <View style={sharedPdfStyles.partiesRow}>
           <PdfIssuerBlock />
           {data.clientName && (
             <View style={sharedPdfStyles.partyBlock}>
-              <Text style={sharedPdfStyles.partyLabel}>Devis pour</Text>
+              <Text style={sharedPdfStyles.partyLabel}>{isInvoice ? "Facturé à" : "Devis pour"}</Text>
               <Text style={[sharedPdfStyles.partyLine, { fontWeight: 600 }]}>{data.clientName}</Text>
+            </View>
+          )}
+          {deliveryLines.length > 0 && (
+            <View style={sharedPdfStyles.partyBlock}>
+              <Text style={sharedPdfStyles.partyLabel}>Livraison</Text>
+              {deliveryLines.map((line, i) => (
+                <Text key={i} style={i === 0 ? sharedPdfStyles.partyLine : sharedPdfStyles.partyLineMuted}>
+                  {line}
+                </Text>
+              ))}
             </View>
           )}
         </View>
@@ -88,6 +106,7 @@ export function QuoteDocument({ data }: { data: QuotePdfData }) {
                   {item.label}
                   {item.quantity && item.quantity > 1 ? ` ×${item.quantity}` : ""}
                 </Text>
+                {item.note && <Text style={styles.itemMaterial}>{item.note}</Text>}
                 {item.material && <Text style={styles.itemMaterial}>{item.material}</Text>}
               </View>
               <View style={styles.colSpec}>
@@ -126,8 +145,10 @@ export function QuoteDocument({ data }: { data: QuotePdfData }) {
         </View>
 
         <View style={sharedPdfStyles.footerBlock}>
-          <Text style={sharedPdfStyles.footerTitle}>Validité et modalités</Text>
-          <Text style={sharedPdfStyles.footerLine}>Devis valable 30 jours à compter de la date d'émission. Paiement à la commande.</Text>
+          <Text style={sharedPdfStyles.footerTitle}>{isInvoice ? "Modalités" : "Validité et modalités"}</Text>
+          <Text style={sharedPdfStyles.footerLine}>
+            {isInvoice ? "Facture à régler à réception." : "Devis valable 30 jours à compter de la date d'émission. Paiement à la commande."}
+          </Text>
           <Text style={sharedPdfStyles.legalMention}>TVA non applicable, art. 293 B du CGI</Text>
         </View>
 
