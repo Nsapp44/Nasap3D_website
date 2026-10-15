@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, apiBase } from "../lib/api-client";
 import { dynamicImport } from "../lib/dynamic-import";
+import { trackEvent } from "../lib/analytics";
 import { buildKiriDevice, buildKiriProcess, filamentLengthToWeightG, CLIENT_QUALITY_LAYER_HEIGHT } from "../lib/kiriProfiles";
 
 const ALLOWED_EXT = [".stl", ".obj", ".3mf"];
@@ -639,6 +640,7 @@ export function useQuoteWizard() {
     setCommittedScalePct(100);
     setFileState(f);
     setFileError(null);
+    trackEvent("Devis - fichier chargé");
   }
   // Also re-runs on `step`, not just `file`: previewRef's DOM node only
   // exists while step 1 is showing (see QuoteWizard.tsx's JSX), so coming
@@ -860,6 +862,7 @@ export function useQuoteWizard() {
     await thinWallPromise;
     setAnalyzing(false);
     setAnalysisReady(true);
+    trackEvent("Devis - prix affiché");
     setQuote((res.data as { quote: QuoteResult }).quote);
     // Preview render is handled by the [step, analysisReady] effect above —
     // it needs the step-3 DOM node to exist first, which this setState
@@ -903,6 +906,7 @@ export function useQuoteWizard() {
       return;
     }
     addedToCartRef.current = true;
+    trackEvent("Devis - ajout panier");
     window.dispatchEvent(new Event("nasap3d-cart-changed"));
     setShowAddedToast(true);
     clearTimeout(toastTimerRef.current || undefined);
