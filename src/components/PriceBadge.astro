@@ -1,0 +1,64 @@
+---
+interface Props {
+  floorLabel: string; minOrderLabel: string; feeLabel: string;
+  feeRule?: boolean;            // pricing.hasSmallOrderFee
+  variant?: "hero" | "inline";
+  style?: string;               // marges fixées par la page appelante
+}
+const { floorLabel, minOrderLabel, feeLabel, feeRule = true, variant = "inline", style } = Astro.props;
+---
+<div class:list={["pb", `pb--${variant}`]} style={style}>
+  <div class="pb-card">
+    <p class="pb-price">
+      <span class="pb-kicker">À partir de</span>
+      <span class="pb-amount">{floorLabel}</span>
+      <span class="pb-unit">la pièce <span aria-hidden="true">·</span> hors livraison</span>
+    </p>
+    <ul class="pb-rules" role="list">
+      {feeRule && (
+        <li>
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.25"/><path d="M8 7.3v4M8 4.8v.1"/></svg>
+          <span>Commande minimum <strong>{minOrderLabel}</strong> : en dessous, <strong>+{feeLabel}</strong> de frais de petite commande.</span>
+        </li>
+      )}
+      <li>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 1.75h5l3 3v9.5H4z"/><path d="M9 1.75v3h3"/><path d="m6.2 10 1.4 1.4 2.6-2.8"/></svg>
+        <span>Prix exact calculé sur votre fichier.</span>
+      </li>
+    </ul>
+  </div>
+</div>
+<style>
+  .pb { container-type: inline-size; width: 100%; max-width: 600px;
+        filter: drop-shadow(0 10px 26px rgba(255, 90, 60, 0.14));
+        animation: pb-in 0.5s 0.15s ease-out both; }
+  .pb--hero { max-width: 580px; margin-inline: auto; }
+  .pb-card { --pb-col: 190px; display: grid; text-align: left; color: #e7e3dd;
+        font-family: "Inter", sans-serif; border-radius: 12px;
+        border: 1px solid rgba(255, 90, 60, 0.38); background-color: #1d1b1a;
+        background-image: linear-gradient(135deg, rgba(255, 90, 60, 0.14), rgba(255, 90, 60, 0.03) 60%); }
+  .pb--inline .pb-card { background-color: #201d1b; box-shadow: inset 3px 0 0 #ff5a3c; }
+  .pb-price { margin: 0; padding: 16px 20px 14px; display: flex; flex-direction: column; gap: 3px; }
+  .pb--hero .pb-price { align-items: center; text-align: center; }
+  .pb-kicker { font: 600 11px/1.2 "Inter", sans-serif; letter-spacing: 1.4px;
+        text-transform: uppercase; color: #b8b1a9; }
+  .pb-amount { font: 700 32px/1.05 "Space Grotesk", "Inter", sans-serif; letter-spacing: -0.5px;
+        color: #ff5a3c; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .pb-unit { font: 500 13px/1.4 "Inter", sans-serif; color: #d6d1ca; white-space: nowrap; }
+  .pb-rules { list-style: none; margin: 0; padding: 14px 20px 16px; display: grid; gap: 8px;
+        align-content: center; border-top: 1px dashed rgba(255, 90, 60, 0.4); }
+  .pb-rules li { display: flex; gap: 9px; align-items: flex-start;
+        font: 400 13px/1.5 "Inter", sans-serif; color: #e7e3dd; }
+  .pb-rules svg { flex: none; width: 16px; height: 16px; margin-top: 2px; color: #ff7a5f; }
+  .pb-rules strong { font-weight: 600; color: #f3f1ec; }
+  @container (min-width: 520px) {
+    .pb-card { grid-template-columns: var(--pb-col) 1fr;
+      --pb-notch: radial-gradient(circle at var(--pb-col) 0, #0000 7.5px, #000 8px) top / 100% 51% no-repeat,
+                  radial-gradient(circle at var(--pb-col) 100%, #0000 7.5px, #000 8px) bottom / 100% 51% no-repeat;
+      -webkit-mask: var(--pb-notch); mask: var(--pb-notch); }
+    .pb-price { justify-content: center; padding: 18px 20px; }
+    .pb-rules { border-top: 0; border-left: 1px dashed rgba(255, 90, 60, 0.4); padding: 16px 20px; }
+  }
+  @keyframes pb-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .pb { animation: none; } }
+</style>

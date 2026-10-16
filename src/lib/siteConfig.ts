@@ -1,9 +1,9 @@
 // Textes réutilisés sur plusieurs pages — une seule source pour que délai,
 // formats et prix plancher ne divergent plus entre meta, FAQ et pages locales.
 
-// Reflète le prix plancher par pièce réglé dans l'admin (minUnitPriceCents,
-// 8,90 € par défaut — voir PRICING.md). Affichage seulement : le prix réel
-// vient toujours du serveur. À mettre à jour si le réglage admin change.
+// Les prix « à partir de » affichés viennent de l'admin (table Settings) via
+// src/lib/server/publicPricing.ts : source de vérité = l'admin.
+// Ces deux constantes ne sont plus utilisées par les pages (valeurs de secours seulement).
 export const PRIX_PLANCHER_AFFICHE = "8,90 €";
 export const PRIX_PLANCHER_PRECISION = "petite pièce en PLA — prix exact calculé sur votre fichier";
 

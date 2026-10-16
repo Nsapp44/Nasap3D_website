@@ -6,7 +6,8 @@
 // dans le header d'origine (contrairement à la plupart des autres pages).
 import BaseLayout from "./BaseLayout.astro";
 import QuoteCta from "../components/QuoteCta";
-import { PRIX_PLANCHER_AFFICHE, PRIX_PLANCHER_PRECISION } from "../lib/siteConfig";
+import PriceBadge from "../components/PriceBadge.astro";
+import { getPublicPricing } from "../lib/server/publicPricing";
 
 interface StatCard {
   title: string;
@@ -46,6 +47,7 @@ const {
   faqItems,
   floorPrice = false,
 } = Astro.props;
+const pricing = floorPrice ? await getPublicPricing() : null;
 ---
 
 <BaseLayout title={title} description={description} path={path} showAuthIcon={false}>
@@ -74,8 +76,8 @@ const {
     <div class="cta-box">
       <h2 class="cta-title">{ctaTitle}</h2>
       <div class="cta-text">Déposez votre fichier : prix calculé sur votre fichier en quelques minutes.</div>
+      {pricing && <PriceBadge variant="hero" floorLabel={pricing.floorLabel} minOrderLabel={pricing.minOrderLabel} feeLabel={pricing.feeLabel} feeRule={pricing.hasSmallOrderFee} style="margin: 0 auto 18px" />}
       <QuoteCta className="cta-btn" client:load />
-      {floorPrice && <div class="cta-floor">À partir de {PRIX_PLANCHER_AFFICHE} — {PRIX_PLANCHER_PRECISION}</div>}
     </div>
   </div>
 
@@ -95,11 +97,6 @@ const {
 </BaseLayout>
 
 <style>
-  .cta-floor {
-    font: 600 12px "Inter", sans-serif;
-    color: #ff5a3c;
-    margin-top: 12px;
-  }
   .hero {
     padding: 56px 24px 0;
   }

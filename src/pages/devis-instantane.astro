@@ -3,15 +3,49 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import QuoteWizardSection from "../components/quote/QuoteWizardSection";
 import GoogleReviewsCarousel from "../components/GoogleReviewsCarousel";
 import FaqAccordion from "../components/FaqAccordion";
-import { PRIX_PLANCHER_AFFICHE, PRIX_PLANCHER_PRECISION } from "../lib/siteConfig";
+import PriceBadge from "../components/PriceBadge.astro";
+import { getPublicPricing } from "../lib/server/publicPricing";
+
+const pricing = await getPublicPricing();
 
 const faqs = [
-  { q: "Quels formats de fichiers acceptez-vous ?", a: "STL, OBJ et 3MF (le STEP n'est pas accepté par le configurateur). Pas de fichier prêt ? Contactez-nous avec une photo et les cotes." },
-  { q: "Quelle taille de pièce est possible ?", a: "Jusqu'à 330 × 320 × 325 mm selon la machine. Les pièces plus grandes peuvent être imprimées en plusieurs parties puis assemblées." },
-  { q: "Quels sont les délais ?", a: "Ils dépendent du volume, du remplissage, de la qualité choisie et de la charge de l'atelier." },
-  { q: "Comment choisir mon matériau ?", a: "Le configurateur propose PLA, PETG, ABS, ASA, TPU, PP et Nylon (le PEEK/PEKK n'est pas proposé). Un doute ? Consultez le guide ci-dessus ou contactez-nous." },
-  { q: "Comment se passent le paiement et la livraison ?", a: "Paiement en ligne sécurisé via Stripe à la validation du panier. Retrait à Nantes (Canclaux) ou expédition." },
+  { q: "Comment est calculé le prix de mon devis instantané ?", a: `Votre fichier est réellement tranché : le poids de matière et le temps d'impression obtenus donnent le coût matière (prix au kilo du matériau) et le coût machine (temps × taux horaire). Un prix plancher s'applique aux très petites pièces, à partir de ${pricing.floorLabel}.` },
+  { q: "Combien de temps faut-il pour obtenir mon prix ?", a: "Le prix est calculé sur votre fichier en 1 à 6 minutes selon la complexité de la pièce. Le délai de fabrication dépend ensuite du volume, du remplissage, de la qualité choisie et de la charge de l'atelier." },
+  { q: "Quels formats de fichiers 3D acceptez-vous ?", a: "STL, OBJ et 3MF (le STEP n'est pas accepté par le configurateur). Les pièces peuvent mesurer jusqu'à 330 × 320 × 325 mm ; au-delà, elles peuvent être imprimées en plusieurs parties puis assemblées." },
+  { q: "Quelles matières puis-je choisir ?", a: "Le configurateur propose PLA, PETG, ABS, ASA, TPU, PP et Nylon (le PEEK/PEKK n'est pas proposé). Un doute ? Consultez le guide des matériaux sur cette page ou contactez-nous." },
+  { q: "Livraison ou retrait à Nantes ?", a: "Paiement en ligne sécurisé via Stripe à la validation du panier. Retrait à Nantes (Canclaux) ou expédition." },
+  { q: "Que faire si je n'ai pas de fichier 3D ?", a: "Contactez-nous avec une photo de la pièce et ses cotes : nous établissons un devis sur-mesure (modélisation, rétro-conception) en dehors du configurateur." },
 ];
+
+const siteUrl = "https://nasap3d.com";
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      name: "Devis instantané impression 3D Nasap3D",
+      url: `${siteUrl}/devis-instantane`,
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      inLanguage: "fr-FR",
+      offers: {
+        "@type": "Offer",
+        price: pricing.floorDecimal,
+        priceCurrency: "EUR",
+        description: `${pricing.priceLine}. ${pricing.priceNote}`,
+      },
+      provider: { "@type": "Organization", name: "Nasap3D", url: `${siteUrl}/` },
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: faqs.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    },
+  ],
+};
 
 const infillLevels = [
   { pct: 15, label: "Minimum, déco fragile", density: "1" },
@@ -50,12 +84,15 @@ const materialsAdvice = [
   description="Déposez votre fichier STL, OBJ ou 3MF : prix calculé sur votre fichier en quelques minutes, par un vrai tranchage 3D. Commande et paiement en ligne."
   path="/devis-instantane"
 >
+  <Fragment slot="head">
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
+  </Fragment>
   <div class="di-hero">
     <div class="di-breadcrumb"><a href="/">Accueil</a> / Devis instantané</div>
     <div class="di-eyebrow">Configurateur &amp; conseils</div>
-    <h1 class="di-title">Votre devis en quelques minutes — et les bons réglages pour bien choisir.</h1>
+    <h1 class="di-title">Devis instantané d'impression 3D : votre prix en ligne en quelques minutes</h1>
     <div class="di-subtitle">Déposez votre fichier, choisissez vos options, l'analyse automatique calcule le prix. Pas sûr d'un réglage ? Les explications sont juste en dessous.</div>
-    <div class="di-floor-price">À partir de {PRIX_PLANCHER_AFFICHE} — {PRIX_PLANCHER_PRECISION}</div>
+    <PriceBadge variant="inline" floorLabel={pricing.floorLabel} minOrderLabel={pricing.minOrderLabel} feeLabel={pricing.feeLabel} feeRule={pricing.hasSmallOrderFee} style="margin-top: 18px" />
     <div class="di-timing-note">Cela peut prendre 1 à 6 minutes selon la complexité de votre pièce — ce délai permet d'obtenir le prix le plus juste pour votre pièce.</div>
   </div>
 
@@ -140,6 +177,18 @@ const materialsAdvice = [
   </div>
 
   <div class="di-section">
+    <div class="di-kicker">Transparence</div>
+    <h2 class="di-h2">Comment est calculé le prix de votre impression 3D</h2>
+    <div class="di-prose">
+      <p>Notre devis instantané d'impression 3D ne repose ni sur une grille approximative ni sur un tarif au volume : votre fichier STL, OBJ ou 3MF est réellement tranché, comme avant une vraie impression. Le logiciel de tranchage (Kiri:Moto) simule chaque couche et renvoie deux mesures concrètes : le poids de matière nécessaire et le temps d'impression estimé.</p>
+      <p>Le prix se construit ensuite en deux parties. Le coût matière est le poids en grammes multiplié par le prix au kilo du matériau choisi (PLA, PETG, ABS, ASA, TPU, PP ou Nylon). Le coût machine est le temps d'impression multiplié par le taux horaire de l'atelier. Il n'y a ni marge cachée ni frais fixes ajoutés au calcul.</p>
+      <p>Sur une pièce volumineuse ou en qualité fine, c'est le temps machine qui pèse le plus lourd : c'est pourquoi le taux de remplissage et la hauteur de couche changent directement le prix. À l'inverse, une petite pièce rapide tombe sous le prix plancher de {pricing.floorLabel} par pièce, qui s'applique alors tel quel.</p>
+      <p>Le calcul tient aussi compte de l'échelle que vous choisissez, de l'orientation d'impression retenue pour limiter les surplombs et des supports nécessaires : ils sont inclus dans le poids et le temps mesurés, donc dans le prix affiché. Vous commandez plusieurs exemplaires ? Une remise de 5 % à 30 % s'applique selon des paliers de quantité (5, 15, 50, 100 et 500 pièces).</p>
+      <p>Face à un devis manuel, la différence est simple : il n'y a pas de délai de réponse ni d'estimation au jugé. Le prix est calculé sur votre fichier en quelques minutes, puis recalculé côté serveur au moment de l'ajout au panier, si bien que le montant payé correspond exactement à ce qui a été mesuré. Pour une pièce hors gabarit, une série ou un besoin de rétro-conception, le <a href="/contact">devis sur-mesure</a> reste disponible.</p>
+    </div>
+  </div>
+
+  <div class="di-section">
     <div class="di-kicker">Avant de vous lancer</div>
     <div class="di-h2">Questions fréquentes</div>
     <FaqAccordion items={faqs} client:load />
@@ -187,16 +236,11 @@ const materialsAdvice = [
     color: rgba(255, 255, 255, 0.55);
     max-width: 560px;
   }
-  .di-floor-price {
-    font: 600 13px "Inter", sans-serif;
-    color: #ff5a3c;
-    margin-top: 12px;
-  }
   .di-timing-note {
     font: 500 12.5px/1.6 "Inter", sans-serif;
     color: #f3f1ec;
     max-width: 560px;
-    margin-top: 10px;
+    margin-top: 14px;
   }
 
   .di-section {
@@ -218,6 +262,15 @@ const materialsAdvice = [
     font: 700 20px "Space Grotesk", sans-serif;
     color: #f3f1ec;
     margin-bottom: 16px;
+  }
+  .di-prose p {
+    font: 400 12.5px/1.7 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+    max-width: 700px;
+    margin-bottom: 12px;
+  }
+  .di-prose a {
+    color: #ff5a3c;
   }
   .di-lead {
     font: 400 12px/1.6 "Inter", sans-serif;

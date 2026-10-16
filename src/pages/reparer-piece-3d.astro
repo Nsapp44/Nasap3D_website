@@ -7,7 +7,10 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import GoogleReviewsCarousel from "../components/GoogleReviewsCarousel";
 import FaqAccordion from "../components/FaqAccordion";
-import { PRIX_PLANCHER_AFFICHE, PRIX_PLANCHER_PRECISION } from "../lib/siteConfig";
+import PriceBadge from "../components/PriceBadge.astro";
+import { getPublicPricing } from "../lib/server/publicPricing";
+
+const pricing = await getPublicPricing();
 
 const steps = [
   { n: "1", title: "Envoyez un fichier ou une photo", text: "Un fichier 3D (STL, OBJ, 3MF) pour un prix en ligne, ou une photo de la pièce avec ses cotes." },
@@ -45,7 +48,7 @@ const faqs = [
   <section class="lp-hero">
     <h1 class="lp-title">Une pièce cassée ou introuvable ? On la refait en 3D.</h1>
     <p class="lp-subtitle">Atelier d'impression 3D à Nantes : votre pièce est fabriquée sur place, pas sous-traitée.</p>
-    <p class="lp-price">À partir de {PRIX_PLANCHER_AFFICHE} — {PRIX_PLANCHER_PRECISION}</p>
+    <PriceBadge variant="inline" floorLabel={pricing.floorLabel} minOrderLabel={pricing.minOrderLabel} feeLabel={pricing.feeLabel} feeRule={pricing.hasSmallOrderFee} style="margin: 4px 0 24px" />
     <div class="lp-ctas">
       <a href="/devis-instantane" class="lp-btn lp-btn-primary"><span class="lp-btn-label">J'ai un fichier 3D <span class="lp-arrow" aria-hidden="true">→</span> devis instantané</span></a>
       <a href="/contact?objet=Pi%C3%A8ce%20%C3%A0%20refaire%20(photo%20%2B%20cotes)" class="lp-btn lp-btn-secondary">Je n'ai pas de fichier → envoyer une photo et les cotes</a>
@@ -160,11 +163,6 @@ const faqs = [
     color: rgba(255, 255, 255, 0.65);
     margin: 0 0 14px;
   }
-  .lp-price {
-    font: 600 14px "Inter", sans-serif;
-    color: #ff5a3c;
-    margin: 0 0 22px;
-  }
   .lp-ctas {
     display: flex;
     gap: 12px;
@@ -270,7 +268,6 @@ const faqs = [
   .lp-logo-link { animation: lpFadeUp .5s ease both; }
   .lp-title { animation: lpFadeUp .6s .05s ease both; }
   .lp-subtitle { animation: lpFadeUp .6s .15s ease both; }
-  .lp-price { animation: lpFadeUp .6s .25s ease both; }
   .lp-hero .lp-btn-primary { animation: lpFadeUp .6s .35s ease both, lpGlow 2.8s 1.4s ease-in-out infinite; }
   .lp-hero .lp-btn-secondary { animation: lpFadeUp .6s .45s ease both; }
 
@@ -374,7 +371,7 @@ const faqs = [
 
   @media (prefers-reduced-motion: reduce) {
     .lp-btn-primary::after { animation: none; display: none; }
-    .lp-logo-link, .lp-title, .lp-subtitle, .lp-price, .lp-btn { animation: none !important; }
+    .lp-logo-link, .lp-title, .lp-subtitle, .lp-btn { animation: none !important; }
     .lp-btn:hover, .lp-real:hover img, .lp-btn-primary:hover .lp-btn-label { transform: none; }
   }
 

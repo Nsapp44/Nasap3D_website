@@ -8,6 +8,10 @@ import HomeReviewsCarousel from "../components/home/HomeReviewsCarousel";
 import QuoteWizardSection from "../components/quote/QuoteWizardSection";
 import ContactForm from "../components/ContactForm";
 import ContactMap from "../components/ContactMap";
+import PriceBadge from "../components/PriceBadge.astro";
+import { getPublicPricing } from "../lib/server/publicPricing";
+
+const pricing = await getPublicPricing();
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -55,8 +59,11 @@ const jsonLd = {
       <div class="hero-title">As soon as possible.<br />Sans compromis sur la qualité.</div>
       <div class="hero-subtitle">
         Prototypage, rétro-conception, maquettage, petites séries. Le savoir-faire artisan, la cadence d'un atelier
-        outillé — à Nantes.
+        outillé — à Nantes. Votre
+        <a href="/devis-instantane" style="color: inherit; text-decoration: underline">devis instantané impression 3D</a>
+        en quelques minutes.
       </div>
+      <PriceBadge variant="hero" floorLabel={pricing.floorLabel} minOrderLabel={pricing.minOrderLabel} feeLabel={pricing.feeLabel} feeRule={pricing.hasSmallOrderFee} style="margin: 0 auto 26px" />
       <div class="hero-ctas">
         <a href="/devis-instantane" class="hero-cta-primary">Obtenir un devis instantané</a>
         <a href="#sec-services" class="hero-cta-secondary">Nos services</a>
