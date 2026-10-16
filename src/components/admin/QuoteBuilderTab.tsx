@@ -147,7 +147,6 @@ export default function QuoteBuilderTab() {
   }, []);
 
   const [clientName, setClientName] = useState("");
-  const [docType, setDocType] = useState<"devis" | "facture">("devis");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [items, setItems] = useState<QuoteLineItem[]>([]);
 
@@ -343,17 +342,16 @@ export default function QuoteBuilderTab() {
       // adminNextQuoteRef's own comment for exactly what this endpoint does
       // and doesn't persist. Falls back to "001" if the call fails so a
       // transient network hiccup doesn't block generating the PDF outright.
-      const seqRes = await api.adminNextQuoteRef(docType);
+      const seqRes = await api.adminNextQuoteRef();
       const dailySeq = seqRes.ok && seqRes.data ? seqRes.data.dailySeq : 1;
       const dd = pad(now.getDate());
       const mm = pad(now.getMonth() + 1);
       const yyyy = now.getFullYear();
-      const ref = `${docType === "facture" ? "FAC" : "DEV"}_${String(dailySeq).padStart(3, "0")}_${dd}${mm}${yyyy}`;
+      const ref = `DEV_${String(dailySeq).padStart(3, "0")}_${dd}${mm}${yyyy}`;
       const data: QuotePdfData = {
         ref,
         issuedAt: now,
         clientName: clientName.trim() || null,
-        docType,
         deliveryAddress: deliveryAddress.trim() || null,
         items: items.map((it) => ({
           label: it.pdfLabel,
@@ -391,21 +389,12 @@ export default function QuoteBuilderTab() {
   return (
     <div className="quote-tab">
       <div className="eyebrow">Devis</div>
-      <div className="title">Créer un devis ou une facture</div>
+      <div className="title">Créer un devis</div>
 
       <div className="pricing-card">
         <div className="pricing-title">Informations</div>
         <div className="pricing-row">
-          <div className="pricing-field">
-            <span className="field-label">Document</span>
-            <select value={docType} onChange={(e) => setDocType(e.target.value as "devis" | "facture")} className="admin-select">
-              <option value="devis">Devis</option>
-              <option value="facture">Facture</option>
-            </select>
-          </div>
-        </div>
-        <div className="pricing-row">
-          <div className="pricing-field">
+          <div className="pricing-field info">
             <span className="field-label">Adresse de livraison (optionnel)</span>
             <textarea
               value={deliveryAddress}
@@ -417,7 +406,7 @@ export default function QuoteBuilderTab() {
           </div>
         </div>
         <div className="pricing-row">
-          <div className="pricing-field">
+          <div className="pricing-field info">
             <span className="field-label">Client (optionnel)</span>
             <input value={clientName} onChange={(e) => setClientName(e.target.value)} className="field-input wide" placeholder="Nom / société" />
           </div>
@@ -606,7 +595,7 @@ export default function QuoteBuilderTab() {
       )}
 
       <span onClick={items.length > 0 && !generating ? createQuotePdf : undefined} className={`save-btn generate-btn${items.length > 0 && !generating ? "" : " disabled"}`}>
-        {generating ? "Génération..." : docType === "facture" ? "Créer la facture" : "Créer le devis"}
+        {generating ? "Génération..." : "Créer le devis"}
       </span>
 
       <style>{`
@@ -616,7 +605,11 @@ export default function QuoteBuilderTab() {
         .pricing-card { border: 1px solid rgba(255,255,255,.1); border-radius: 10px; background: #1a1917; padding: 18px 20px; margin-bottom: 20px; }
         .pricing-title { font: 600 12.5px 'Space Grotesk',sans-serif; color: #f3f1ec; margin-bottom: 14px; }
         .pricing-row { display: flex; gap: 28px; flex-wrap: wrap; }
+        .pricing-row + .pricing-row { margin-top: 18px; }
         .pricing-field { display: flex; align-items: center; gap: 8px; }
+        .pricing-field.info { gap: 16px; align-items: flex-start; }
+        .pricing-field.info .field-label { width: 170px; flex: none; padding-top: 10px; }
+        .pricing-field.info .admin-select, .pricing-field.info .field-input { margin-top: 0; }
         .field-label { font: 400 10px 'Inter',sans-serif; color: rgba(255,255,255,.4); }
         .field-input { width: 90px; box-sizing: border-box; height: 32px; border: 1px solid rgba(255,255,255,.15); border-radius: 5px; background: #161514; padding: 0 10px; font: 11.5px 'Inter',sans-serif; color: #e8e6e1; outline: none; }
         .field-input.wide { width: 260px; }
