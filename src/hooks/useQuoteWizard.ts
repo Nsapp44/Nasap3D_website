@@ -497,7 +497,20 @@ export function useQuoteWizard() {
       // needs to catch the rare single/handful of aligned but still-
       // spurious hits slipping past that filter, not do the heavy lifting
       // itself — a real thin-wall problem still shows up well past 4mm².
-      const MIN_THIN_AREA_MM2 = 4;
+      // Also relative to the whole part (1% of its surface, 20mm² floor): on a
+      // large part a few mm² of mesh noise is not a thin wall. Hits closer
+      // than MIN_HIT_DISTANCE_MM are coincident/duplicated faces (mesh
+      // artifacts), not a wall a nozzle could extrude.
+      let totalAreaMm2 = 0;
+      for (let i = 0; i < triCount; i++) {
+        const o = i * 9;
+        const ux = positions[o + 3] - positions[o], uy = positions[o + 4] - positions[o + 1], uz = positions[o + 5] - positions[o + 2];
+        const vx = positions[o + 6] - positions[o], vy = positions[o + 7] - positions[o + 1], vz = positions[o + 8] - positions[o + 2];
+        totalAreaMm2 += Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx) / 2;
+      }
+      totalAreaMm2 *= scale * scale;
+      const MIN_THIN_AREA_MM2 = Math.max(20, totalAreaMm2 * 0.01);
+      const MIN_HIT_DISTANCE_MM = 0.05 / scale;
       // A genuine thin wall's opposite face points roughly the same way the
       // ray travels (two near-parallel surfaces facing away from each
       // other) — texture noise on a detailed mesh tends to hit facets at
@@ -527,7 +540,7 @@ export function useQuoteWizard() {
         const hits = raycaster.intersectObject(mesh, false);
         const hit = hits[0];
         const aligned = hit?.face && hit.face.normal.dot(raycaster.ray.direction) >= MIN_HIT_NORMAL_ALIGNMENT;
-        if (hit && hit.distance < THRESHOLD_MM && aligned) {
+        if (hit && hit.distance >= MIN_HIT_DISTANCE_MM && hit.distance < THRESHOLD_MM && aligned) {
           const triArea = b.clone().sub(a).cross(c.clone().sub(a)).length() / 2;
           thinAreaMm2 += triArea * step * scale * scale;
           if (thinAreaMm2 >= MIN_THIN_AREA_MM2) {

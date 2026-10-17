@@ -344,8 +344,8 @@ export default function QuoteWizard() {
             </div>
             {w.thinWallWarning && (
               <div className="qw-thinwall-warning">
-                ⚠ Cette pièce contient des parois très fines (moins de 0,4 mm) — un problème d'impression est probable à cet endroit. Vous pouvez continuer, mais on vous conseille de nous{" "}
-                <a href="/contact">contacter via le formulaire de contact</a> pour vérifier la faisabilité avant de commander.
+                ⚠ Cette pièce contient des parois très fines (moins de 0,4 mm) — un problème d'impression est possible à cet endroit. Vous pouvez continuer : nous le vérifions lors de l'<strong>expertise de la commande</strong> et vous prévenons si besoin. Si vous préférez en parler avant de commander, vous pouvez aussi nous{" "}
+                <a href="/contact">contacter via le formulaire de contact</a>.
               </div>
             )}
             <div className="qw-price-row">
