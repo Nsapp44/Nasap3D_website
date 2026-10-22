@@ -1,24 +1,18 @@
 # SUIVI : état courant (22/10/2026)
 
-## Fait
-- Échelle du projet stockée/affichée partout : commit `bb1989b` poussé sur master.
-- Point « expertise humaine avant paiement » (NON commité, en attente d'accord de Nolann) :
-  `ExpertiseSteps.astro` (nouveau) sur `/devis-instantane` et accueil ; FAQ, meta et CGU art. 3 corrigées.
-  Responsive vérifié : mobile 375, tablette 768 (pas de scroll horizontal), accueil mobile OK.
-- Skill `verif-responsive-web` créé ; `CLAUDE.md` du projet créé.
-
-## Reste pour le point expertise
-- Libellés de boutons : `CartPage.tsx` (:597 « Se connecter pour commander », :386 « Passer la commande »),
-  `QuoteWizard.tsx:361`, `Dashboard.tsx`, pages ville (Angers/Cholet « du devis au paiement »),
-  `QuoteDocument.tsx:150` « Paiement à la commande. », e-mails `orderEmails.ts`.
-- Captures desktop larges à montrer à Nolann, puis accord → retirer `astro.dev.tmp.mjs` → commit/push.
+## Fait (poussé sur master)
+- Échelle du projet stockée/affichée partout (`bb1989b`).
+- Point « expertise humaine avant paiement » terminé (`addf8b3` + libellés panier) : `ExpertiseSteps.astro`,
+  FAQ, meta, CGU art. 3, pages ville, devis PDF ; panier : « Passer la commande pour expertise »,
+  « Se connecter pour commander », « Envoyer pour expertise ». E-mails et compte déjà conformes.
+- Plausible goals, Search Console `/devis-instantane` : OK selon Nolann. Ads : marchent bien.
 
 ## Prochain pas exact
-Ajuster les libellés ci-dessus, puis montrer les captures et demander l'accord de commit.
+Nolann fait un point sur le prochain sujet (probablement stratégie X-Tools C1) ; retour ads possible.
 
 ## Ensuite
 Stratégie X-Tools C1 (shop Etsy séparé sans diluer NASAP 3D, `machines.astro` Cricut→C1, mention discrète, SEO, TikTok auto).
-Points ouverts : goals Plausible, Search Console `/devis-instantane`, prix admin, retest STL, bilan ads (1-2 sem.), migration d'échelle après déploiement.
+Points ouverts : prix admin, retest STL, migration d'échelle après déploiement (à vérifier en prod).
 
 ## Ce qui n'a pas marché
-Hydratation React cassée en dev via jonction `node_modules` (403 `@fs`) → `fs.strict=false` temporaire.
+Hydratation React cassée en dev via jonction `node_modules` (403 `@fs`) → `fs.strict=false` temporaire (jamais commité).

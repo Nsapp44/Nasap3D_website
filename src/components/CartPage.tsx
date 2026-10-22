@@ -383,7 +383,7 @@ export default function CartPage() {
               )}
               {!authLoading && isLoggedIn && (
                 <div className="cta-primary" onClick={goToCheckout}>
-                  Passer à l'expertise
+                  Passer la commande pour expertise
                 </div>
               )}
             </div>
@@ -594,7 +594,7 @@ export default function CartPage() {
 
             {needsLogin && (
               <a href="/compte" className="cta-stripe">
-                Se connecter pour l'expertise
+                Se connecter pour commander
               </a>
             )}
             {checkoutState === "idle" && !needsLogin && (
