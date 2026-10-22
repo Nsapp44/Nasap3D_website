@@ -147,7 +147,7 @@ export function QuoteDocument({ data }: { data: QuotePdfData }) {
         <View style={sharedPdfStyles.footerBlock}>
           <Text style={sharedPdfStyles.footerTitle}>{isInvoice ? "Modalités" : "Validité et modalités"}</Text>
           <Text style={sharedPdfStyles.footerLine}>
-            {isInvoice ? "Facture à régler à réception." : "Devis valable 30 jours à compter de la date d'émission. Paiement à la commande."}
+            {isInvoice ? "Facture à régler à réception." : "Devis valable 30 jours à compter de la date d'émission. Paiement après acceptation de la commande."}
           </Text>
           <Text style={sharedPdfStyles.legalMention}>TVA non applicable, art. 293 B du CGI</Text>
         </View>

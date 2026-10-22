@@ -4,6 +4,7 @@ import QuoteWizardSection from "../components/quote/QuoteWizardSection";
 import GoogleReviewsCarousel from "../components/GoogleReviewsCarousel";
 import FaqAccordion from "../components/FaqAccordion";
 import PriceBadge from "../components/PriceBadge.astro";
+import ExpertiseSteps from "../components/ExpertiseSteps.astro";
 import { getPublicPricing } from "../lib/server/publicPricing";
 
 const pricing = await getPublicPricing();
@@ -13,7 +14,7 @@ const faqs = [
   { q: "Combien de temps faut-il pour obtenir mon prix ?", a: "Le prix est calculé sur votre fichier en 1 à 6 minutes selon la complexité de la pièce. Le délai de fabrication dépend ensuite du volume, du remplissage, de la qualité choisie et de la charge de l'atelier." },
   { q: "Quels formats de fichiers 3D acceptez-vous ?", a: "STL, OBJ et 3MF (le STEP n'est pas accepté par le configurateur). Les pièces peuvent mesurer jusqu'à 330 × 320 × 325 mm ; au-delà, elles peuvent être imprimées en plusieurs parties puis assemblées." },
   { q: "Quelles matières puis-je choisir ?", a: "Le configurateur propose PLA, PETG, ABS, ASA, TPU, PP et Nylon (le PEEK/PEKK n'est pas proposé). Un doute ? Consultez le guide des matériaux sur cette page ou contactez-nous." },
-  { q: "Livraison ou retrait à Nantes ?", a: "Paiement en ligne sécurisé via Stripe à la validation du panier. Retrait à Nantes (Canclaux) ou expédition." },
+  { q: "Livraison ou retrait à Nantes ?", a: "Chaque commande est d'abord expertisée par un humain : aucun paiement n'est demandé à l'envoi. Une fois la commande acceptée, vous payez en ligne de façon sécurisée via Stripe. Retrait à Nantes (Canclaux) ou expédition." },
   { q: "Que faire si je n'ai pas de fichier 3D ?", a: "Contactez-nous avec une photo de la pièce et ses cotes : nous établissons un devis sur-mesure (modélisation, rétro-conception) en dehors du configurateur." },
 ];
 
@@ -81,7 +82,7 @@ const materialsAdvice = [
 
 <BaseLayout
   title="Devis Instantané Impression 3D — Prix en Ligne | Nasap3D"
-  description="Déposez votre fichier STL, OBJ ou 3MF : prix calculé sur votre fichier en quelques minutes, par un vrai tranchage 3D. Commande et paiement en ligne."
+  description="Déposez votre fichier STL, OBJ ou 3MF : prix calculé sur votre fichier en quelques minutes, par un vrai tranchage 3D. Commande expertisée par un humain avant tout paiement."
   path="/devis-instantane"
 >
   <Fragment slot="head">
@@ -94,6 +95,7 @@ const materialsAdvice = [
     <div class="di-subtitle">Déposez votre fichier, choisissez vos options, l'analyse automatique calcule le prix. Pas sûr d'un réglage ? Les explications sont juste en dessous.</div>
     <PriceBadge variant="inline" floorLabel={pricing.floorLabel} minOrderLabel={pricing.minOrderLabel} feeLabel={pricing.feeLabel} feeRule={pricing.hasSmallOrderFee} style="margin-top: 18px" />
     <div class="di-timing-note">Cela peut prendre 1 à 6 minutes selon la complexité de votre pièce — ce délai permet d'obtenir le prix le plus juste pour votre pièce.</div>
+    <ExpertiseSteps style="margin-top: 22px" />
   </div>
 
   <div class="di-section di-wizard-wrap">

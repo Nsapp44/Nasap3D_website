@@ -383,7 +383,7 @@ export default function CartPage() {
               )}
               {!authLoading && isLoggedIn && (
                 <div className="cta-primary" onClick={goToCheckout}>
-                  Passer la commande
+                  Passer à l'expertise
                 </div>
               )}
             </div>
@@ -594,12 +594,12 @@ export default function CartPage() {
 
             {needsLogin && (
               <a href="/compte" className="cta-stripe">
-                Se connecter pour commander
+                Se connecter pour l'expertise
               </a>
             )}
             {checkoutState === "idle" && !needsLogin && (
               <div className="cta-checkout" style={{ background: canCheckout ? "#635bff" : "#3a3936", color: canCheckout ? "#fff" : "rgba(255,255,255,.4)", cursor: canCheckout ? "pointer" : "not-allowed" }} onClick={startCheckout}>
-                <span>Passer la commande pour expertise</span>
+                <span>Envoyer pour expertise</span>
               </div>
             )}
             {checkoutState === "redirecting" && (

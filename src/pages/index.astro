@@ -9,6 +9,7 @@ import QuoteWizardSection from "../components/quote/QuoteWizardSection";
 import ContactForm from "../components/ContactForm";
 import ContactMap from "../components/ContactMap";
 import PriceBadge from "../components/PriceBadge.astro";
+import ExpertiseSteps from "../components/ExpertiseSteps.astro";
 import { getPublicPricing } from "../lib/server/publicPricing";
 
 const pricing = await getPublicPricing();
@@ -74,6 +75,7 @@ const jsonLd = {
   <div class="section section-alt configurator-section">
     <div class="section-inner">
       <h2 class="eyebrow">Devis instantané</h2>
+      <ExpertiseSteps style="max-width: none; margin-bottom: 26px" />
       <QuoteWizardSection client:load />
     </div>
   </div>
