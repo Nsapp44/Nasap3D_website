@@ -32,12 +32,17 @@ const styles = StyleSheet.create({
   colorRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
 });
 
+function formatScale(scale: number): string {
+  return `${String(Math.round(scale * 10000) / 100).replace(".", ",")} %`;
+}
+
 export interface InvoicePdfItem {
   nameSnapshot: string;
   materialSnapshot: string;
   colorNameSnapshot: string;
   colorHexSnapshot: string;
   infillSnapshot: number;
+  scaleSnapshot: number | null;
   qualitySnapshot: string;
   qty: number;
   unitPriceCents: number;
@@ -87,7 +92,7 @@ export function InvoiceDocument({ data }: { data: InvoicePdfData }) {
                 <Text style={styles.itemMaterial}>{item.materialSnapshot}</Text>
               </View>
               <View style={styles.colSpec}>
-                <Text style={styles.specLine}>{item.qualitySnapshot} · {item.infillSnapshot}% remplissage</Text>
+                <Text style={styles.specLine}>{item.qualitySnapshot} · {item.infillSnapshot}% remplissage{item.scaleSnapshot != null ? ` · échelle ${formatScale(item.scaleSnapshot)}` : ""}</Text>
                 <View style={styles.colorRow}>
                   <View style={[styles.colorDot, { backgroundColor: item.colorHexSnapshot }]} />
                   <Text style={styles.specLine}>{item.colorNameSnapshot}</Text>

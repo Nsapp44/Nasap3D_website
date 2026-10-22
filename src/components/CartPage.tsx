@@ -324,7 +324,7 @@ export default function CartPage() {
                   <div className="line-meta">
                     <span className="line-color-dot" style={{ background: item.colorHex || "#ff5a3c" }} />
                     <span>
-                      {item.material} · {item.colorName} · remplissage {item.infillPct}% · qualité {item.quality}
+                      {item.material} · {item.colorName} · remplissage {item.infillPct}% · qualité {item.quality}{item.scale != null ? ` · échelle ${Math.round(item.scale * 10000) / 100} %` : ""}
                     </span>
                   </div>
                   <div className="line-qty-row">

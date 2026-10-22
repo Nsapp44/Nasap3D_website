@@ -14,6 +14,7 @@ export interface CartLine {
   colorHex: string;
   quality: string;
   infillPct: number;
+  scale: number | null;
 }
 
 export interface CartSummary {
@@ -57,6 +58,7 @@ export async function getCartSummary(identity: { userId: string } | { sessionId:
       colorHex: q.color.colorHex,
       quality: q.quality.label,
       infillPct: q.infillPct,
+      scale: q.scale,
     };
   });
 

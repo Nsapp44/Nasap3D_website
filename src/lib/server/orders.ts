@@ -83,6 +83,7 @@ export async function createOrderFromCart(
                 colorNameSnapshot: item.quoteJob.color.colorName,
                 colorHexSnapshot: item.quoteJob.color.colorHex,
                 infillSnapshot: item.quoteJob.infillPct,
+                scaleSnapshot: item.quoteJob.scale,
                 qualitySnapshot: item.quoteJob.quality.label,
                 qty: item.qty,
                 unitPriceCents: line.unitPriceCents,

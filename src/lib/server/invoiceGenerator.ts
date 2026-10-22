@@ -36,6 +36,7 @@ export function buildInvoicePdfData(
       colorNameSnapshot: item.colorNameSnapshot,
       colorHexSnapshot: item.colorHexSnapshot,
       infillSnapshot: item.infillSnapshot,
+      scaleSnapshot: item.scaleSnapshot,
       qualitySnapshot: item.qualitySnapshot,
       qty: item.qty,
       unitPriceCents: item.unitPriceCents,

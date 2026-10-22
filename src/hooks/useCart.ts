@@ -7,6 +7,7 @@ export interface CartLine {
   fileName: string;
   material: string;
   infillPct: number;
+  scale: number | null;
   quality: string;
   qty: number;
   colorHex: string;

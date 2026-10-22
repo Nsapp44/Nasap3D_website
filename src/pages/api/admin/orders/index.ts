@@ -96,6 +96,7 @@ export const GET = apiHandler(async (context) => {
         colorNameSnapshot: i.colorNameSnapshot,
         colorHexSnapshot: i.colorHexSnapshot,
         infillSnapshot: i.infillSnapshot,
+        scaleSnapshot: i.scaleSnapshot,
         qualitySnapshot: i.qualitySnapshot,
         layerHeightMm: layerHeightByQualityLabel.get(i.qualitySnapshot) ?? null,
         qty: i.qty,

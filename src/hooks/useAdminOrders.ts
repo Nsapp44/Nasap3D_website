@@ -8,6 +8,7 @@ export interface AdminOrderItem {
   colorNameSnapshot: string;
   colorHexSnapshot: string;
   infillSnapshot: number;
+  scaleSnapshot: number | null;
   qualitySnapshot: string;
   layerHeightMm: number | null;
   qty: number;

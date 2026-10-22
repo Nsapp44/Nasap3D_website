@@ -217,6 +217,9 @@ model QuoteJob {
   qualityId        String
   quality          QualityProfile @relation(fields: [qualityId], references: [id])
   infillPct        Int
+  // Facteur d'échelle choisi par le client (1 = taille d'origine, 1.5 = 150 %).
+  // Null pour les anciens devis créés avant le suivi de l'échelle.
+  scale            Float?
   quantity         Int
   volumeCm3        Float?
   bboxXMm          Float?
@@ -346,6 +349,7 @@ model OrderItem {
   colorNameSnapshot  String
   colorHexSnapshot   String
   infillSnapshot     Int
+  scaleSnapshot      Float?
   qualitySnapshot    String
   qty                Int
   unitPriceCents     Int

@@ -353,7 +353,7 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
           <div className="section-label">Réglages d'impression</div>
           {printableItems.map((i) => (
             <div key={i.id} className="section-text">
-              {i.nameSnapshot} · {i.materialSnapshot} · {i.layerHeightMm !== null ? `${i.layerHeightMm.toFixed(2).replace(".", ",")}mm` : i.qualitySnapshot} · {i.infillSnapshot}% remplissage ·{" "}
+              {i.nameSnapshot} · {i.materialSnapshot} · {i.layerHeightMm !== null ? `${i.layerHeightMm.toFixed(2).replace(".", ",")}mm` : i.qualitySnapshot} · {i.infillSnapshot}% remplissage · {i.scaleSnapshot != null ? `échelle ${Math.round(i.scaleSnapshot * 10000) / 100} %` : "échelle inconnue"} ·{" "}
               <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
                 <span
                   style={{

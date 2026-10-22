@@ -401,6 +401,7 @@ export const POST = apiHandler(async (context) => {
           colorId: color.id,
           qualityId: quality.id,
           infillPct,
+          scale,
           quantity,
           volumeCm3: sliced.volumeCm3,
           bboxXMm: info.sizeXMm,
