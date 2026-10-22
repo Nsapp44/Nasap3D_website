@@ -10,6 +10,8 @@ interface Settings {
   quoteEnabled: boolean;
   hourlyRateCents: number;
   minUnitPriceCents: number;
+  minOrderCents: number;
+  smallOrderFeeCents: number;
   dailyOrderLimit: number;
 }
 

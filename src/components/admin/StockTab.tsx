@@ -6,6 +6,8 @@ import { useSavedFlash } from "../../hooks/useSavedFlash";
 interface Settings {
   hourlyRateCents: number;
   minUnitPriceCents: number;
+  minOrderCents: number;
+  smallOrderFeeCents: number;
   dailyOrderLimit: number;
 }
 
@@ -26,9 +28,13 @@ export default function StockTab({ settings, onSettingsSaved }: { settings: Sett
   const [hourlyRateDraft, setHourlyRateDraft] = useState("");
   const [minPriceDraft, setMinPriceDraft] = useState("");
   const [dailyLimitDraft, setDailyLimitDraft] = useState("");
+  const [minOrderDraft, setMinOrderDraft] = useState("");
+  const [smallFeeDraft, setSmallFeeDraft] = useState("");
   const hourlyRateFlash = useSavedFlash();
   const minPriceFlash = useSavedFlash();
   const dailyLimitFlash = useSavedFlash();
+  const minOrderFlash = useSavedFlash();
+  const smallFeeFlash = useSavedFlash();
   const [priceDrafts, setPriceDrafts] = useState<Record<string, string>>({});
   const [priceFlashIds, setPriceFlashIds] = useState<Record<string, boolean>>({});
 
@@ -37,6 +43,8 @@ export default function StockTab({ settings, onSettingsSaved }: { settings: Sett
     setHourlyRateDraft((settings.hourlyRateCents / 100).toFixed(2));
     setMinPriceDraft((settings.minUnitPriceCents / 100).toFixed(2));
     setDailyLimitDraft(String(settings.dailyOrderLimit));
+    setMinOrderDraft((settings.minOrderCents / 100).toFixed(2));
+    setSmallFeeDraft((settings.smallOrderFeeCents / 100).toFixed(2));
   }, [settings]);
 
   async function saveHourlyRate() {
@@ -54,6 +62,24 @@ export default function StockTab({ settings, onSettingsSaved }: { settings: Sett
     const res = await api.adminUpdateSettings({ minUnitPriceCents: cents });
     if (res.ok) {
       minPriceFlash.flash();
+      onSettingsSaved();
+    }
+  }
+  async function saveMinOrder() {
+    const cents = parseEuros(minOrderDraft);
+    if (cents === null || cents < 0) return;
+    const res = await api.adminUpdateSettings({ minOrderCents: cents });
+    if (res.ok) {
+      minOrderFlash.flash();
+      onSettingsSaved();
+    }
+  }
+  async function saveSmallFee() {
+    const cents = parseEuros(smallFeeDraft);
+    if (cents === null || cents < 0) return;
+    const res = await api.adminUpdateSettings({ smallOrderFeeCents: cents });
+    if (res.ok) {
+      smallFeeFlash.flash();
       onSettingsSaved();
     }
   }
@@ -84,7 +110,7 @@ export default function StockTab({ settings, onSettingsSaved }: { settings: Sett
 
       <div className="pricing-card">
         <div className="pricing-title">Tarification atelier</div>
-        <div className="pricing-hint">Prix pièce = taux horaire × temps d'impression + prix matière (ci-dessous), avec un minimum discret par pièce.</div>
+        <div className="pricing-hint">Prix pièce = taux horaire × temps d'impression + prix matière (ci-dessous), avec un minimum discret par pièce. Panier sous le seuil « petite commande » → frais ajoutés (panier égal ou au-dessus : aucun frais).</div>
         <div className="pricing-row">
           <div className="pricing-field">
             <span className="field-label">Taux horaire</span>
@@ -100,6 +126,22 @@ export default function StockTab({ settings, onSettingsSaved }: { settings: Sett
             <span className="field-label">€</span>
             <span onClick={saveMinPrice} className={`save-btn${minPriceFlash.saved ? " saved" : ""}`}>
               {minPriceFlash.saved ? "✓" : "OK"}
+            </span>
+          </div>
+          <div className="pricing-field">
+            <span className="field-label">Petite commande sous</span>
+            <input value={minOrderDraft} onChange={(e) => setMinOrderDraft(e.target.value)} className="field-input" />
+            <span className="field-label">€</span>
+            <span onClick={saveMinOrder} className={`save-btn${minOrderFlash.saved ? " saved" : ""}`}>
+              {minOrderFlash.saved ? "✓" : "OK"}
+            </span>
+          </div>
+          <div className="pricing-field">
+            <span className="field-label">Frais petite commande</span>
+            <input value={smallFeeDraft} onChange={(e) => setSmallFeeDraft(e.target.value)} className="field-input" />
+            <span className="field-label">€ (0 = aucun frais)</span>
+            <span onClick={saveSmallFee} className={`save-btn${smallFeeFlash.saved ? " saved" : ""}`}>
+              {smallFeeFlash.saved ? "✓" : "OK"}
             </span>
           </div>
           <div className="pricing-field">
