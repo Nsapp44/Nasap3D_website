@@ -3,7 +3,7 @@ import { useState } from "react";
 const SERVICES = [
   { title: "Rétro-conception", desc: "CAO à partir d'une pièce existante", href: "/services#retroconception" },
   { title: "Impression 3D", desc: "Proto, pièces, séries ≤500", href: "/services#impression3d" },
-  { title: "Maquettage", desc: "Maquettage de produit, d'outil pédagogique, de bâtiment...", href: "/services#maquettage" },
+  { title: "Maquettage", desc: "Maquettage de produit, d'outil pédagogique, de bâtiment...", href: "/maquette-impression-3d" },
   { title: "Customisation Multisupports", desc: "Laser, vinyle, stickers, sublimation", href: "/services#customisation" },
   { title: "Maintenance machine", desc: "Diagnostic, réparation, garantie 3j", href: "/services#maintenance" },
   { title: "Initiation", desc: "Formules dès 90€", href: "/services#initiation" },

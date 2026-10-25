@@ -14,8 +14,10 @@ interface Props {
   noindexFollow?: boolean;
   hideFooter?: boolean;
   hideHeader?: boolean;
+  // Image d'aperçu pour les partages (og:image / twitter:image), chemin depuis la racine.
+  ogImage?: string;
 }
-const { title, description, path, showAuthIcon, noindex = false, noindexFollow = false, hideFooter = false, hideHeader = false } = Astro.props;
+const { title, description, path, showAuthIcon, noindex = false, noindexFollow = false, hideFooter = false, hideHeader = false, ogImage = "/assets/logo.png" } = Astro.props;
 const canonical = new URL(path, Astro.site).toString();
 ---
 
@@ -46,6 +48,17 @@ const canonical = new URL(path, Astro.site).toString();
     {noindex && <meta name="robots" content="noindex,nofollow" />}
     {noindexFollow && <meta name="robots" content="noindex, follow" />}
     {!noindex && <link rel="canonical" href={canonical} />}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Nasap3D" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL(ogImage, Astro.site).toString()} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={new URL(ogImage, Astro.site).toString()} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
