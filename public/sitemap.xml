@@ -13,6 +13,10 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://nasap3d.com/maquette-impression-3d</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://nasap3d.com/machines</loc>
     <priority>0.6</priority>
   </url>

@@ -48,6 +48,15 @@ const DEVIS_INDEX = 2; // position d'origine de "Devis instantané" dans la nav
         ),
       )
     }
+    {
+      currentPath === "/maquette-impression-3d" ? (
+        <span class="nav-current nav-hover-scale">Maquettes</span>
+      ) : (
+        <a href="/maquette-impression-3d" class="nav-hover-scale">
+          Maquettes
+        </a>
+      )
+    }
     <QuoteNavLink isCurrent={currentPath === "/devis-instantane"} client:load />
     {
       NAV_ITEMS.slice(DEVIS_INDEX).map((item) =>

@@ -86,6 +86,9 @@ export default function HomeHeader() {
             {item.label}
           </a>
         ))}
+        <a href="/maquette-impression-3d" className="nav-hover-scale">
+          Maquettes
+        </a>
         {quoteEnabled && (
           <a href="/devis-instantane" className="nav-hover-scale n3d-quote-gate">
             Devis instantané

@@ -1,0 +1,218 @@
+---
+// Cartes : "main" = cœur de métier (pleine largeur, la plus grande) ; "wide" = bandeau pleine largeur
+// sans photo (icône) ; les autres vont 2 par 2.
+const machines = [
+  {
+    name: "Impression 3D · Bambu Lab H2C",
+    img: "/assets/machines/bambu-h2c.webp",
+    alt: "Imprimante 3D multi-matériaux Bambu Lab H2C",
+    main: true,
+    use: "Notre cœur de métier : impression multi-matériaux et multicolore, modèles en coupe, pièces fonctionnelles et maquettes.",
+  },
+  {
+    name: "xTool C1",
+    img: "/assets/machines/xtool-c1.webp",
+    alt: "Découpeuse et graveuse laser de bureau xTool C1",
+    use: "Découpe et gravure de matériaux fins : papier, carton, vinyle, cuir et plastique fin.",
+  },
+  {
+    name: "xTool Omni",
+    img: "/assets/machines/xtool-omni.webp",
+    alt: "Laser tout-en-un xTool Omni",
+    use: "Découpe et gravure sur bois, acrylique et cuir : plaques, repères et étiquettes.",
+  },
+  {
+    name: "xTool S1",
+    img: "/assets/machines/xtool-s1.webp",
+    alt: "Laser diode 40 W xTool S1",
+    use: "Laser diode 40 W : découpe nette de panneaux en bois et acrylique, gravure précise.",
+  },
+  {
+    name: "Impression résine SLA",
+    img: "/assets/machines/anycubic-sla.webp",
+    alt: "Imprimante 3D résine SLA Anycubic Photon Mono",
+    use: "Détails très fins et grande précision, pour les éléments miniatures de la maquette.",
+  },
+  {
+    name: "Peinture et finition",
+    img: "/assets/machines/peinture-finition.webp",
+    alt: "Pictogramme d'un pinceau et d'une pièce en cours de peinture",
+    wide: true,
+    use: "Ponçage, apprêt, peinture et vernis : un rendu réaliste, couleurs et textures.",
+  },
+];
+---
+
+<div class="ms">
+  <h2 class="ms-h2">Le matériel derrière nos maquettes</h2>
+  <p class="ms-intro">Chaque maquette est réalisée dans notre atelier avec ces machines, choisies selon la matière et le niveau de détail attendus.</p>
+  <div class="ms-grid">
+    {
+      machines.map((m, i) => (
+        <figure class={`ms-card${m.main ? " ms-main" : ""}${m.wide ? " ms-wide" : ""}`} style={`--i:${i}`}>
+          {m.wide ? (
+            m.img && (
+              <div class="ms-icon">
+                <img src={m.img} alt={m.alt} width="176" height="176" loading="lazy" decoding="async" />
+              </div>
+            )
+          ) : (
+            <div class="ms-frame">
+              <img src={m.img} alt={m.alt} width="1200" height="1200" loading="lazy" decoding="async" />
+            </div>
+          )}
+          <figcaption>
+            <strong>{m.name}</strong>
+            <span>{m.use}</span>
+          </figcaption>
+        </figure>
+      ))
+    }
+  </div>
+</div>
+
+<style>
+  .ms-h2 {
+    font: 700 20px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin: 0 0 8px;
+  }
+  .ms-intro {
+    font: 400 14px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.65);
+    margin: 0 0 24px;
+  }
+  .ms-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .ms-card {
+    min-width: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    background: #1a1917;
+    color: rgba(255, 255, 255, 0.65);
+    padding: 16px;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+  }
+  .ms-card:hover {
+    border-color: #ff5a3c;
+    transform: scale(1.02);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.4);
+  }
+  .ms-card:hover .ms-frame img {
+    transform: scale(1.05);
+  }
+
+  /* Cadre photo : ton chaud au lieu du blanc pur ; multiply fond le blanc des photos dans ce ton. */
+  .ms-frame {
+    background: #efebe5;
+    border-radius: 8px;
+    padding: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  }
+  .ms-frame img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    transition: transform 0.4s ease;
+  }
+  .ms-frame img {
+    object-fit: contain;
+    mix-blend-mode: multiply;
+  }
+
+  figcaption {
+    padding: 16px 4px 4px;
+    font: 400 15px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.65);
+  }
+  figcaption strong {
+    display: block;
+    margin-bottom: 4px;
+    font: 600 18px/1.3 "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+  }
+
+  /* Cœur de métier : pleine largeur, photo à gauche, titre plus grand, liseré accent. */
+  .ms-card.ms-main {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    gap: 32px;
+    align-items: center;
+    padding: 24px;
+    border-color: rgba(255, 90, 60, 0.35);
+    background: #201d1b;
+  }
+  .ms-main figcaption {
+    padding: 0;
+    font-size: 17px;
+  }
+  .ms-main figcaption strong {
+    margin-bottom: 8px;
+    font-size: 26px;
+  }
+
+  /* Peinture et finition : bandeau pleine largeur, liseré accent ; image facultative à gauche. */
+  .ms-card.ms-wide {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    border-left: 3px solid #ff5a3c;
+  }
+  .ms-icon {
+    flex: 0 0 auto;
+    width: 88px;
+    height: 88px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: #201d1b;
+    border: 1px solid rgba(255, 90, 60, 0.35);
+    overflow: hidden;
+  }
+  .ms-icon img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .ms-wide figcaption {
+    padding: 0;
+  }
+
+  @media (max-width: 559px) {
+    .ms-grid { grid-template-columns: minmax(0, 1fr); }
+    .ms-card.ms-main {
+      display: flex;
+      gap: 16px;
+      padding: 16px;
+    }
+    .ms-main figcaption { font-size: 15px; }
+    .ms-main figcaption strong { font-size: 22px; }
+    .ms-icon { width: 72px; height: 72px; }
+  }
+
+  @keyframes msUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+  .ms-card {
+    /* backwards (pas both) : sinon le transform final de l'animation écrase le scale du survol. */
+    animation: msUp 0.5s ease backwards;
+    animation-delay: calc(var(--i, 0) * 90ms);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ms-card { animation: none; transition: none; }
+    .ms-card:hover,
+    .ms-card:hover .ms-frame img { transform: none; }
+  }
+</style>

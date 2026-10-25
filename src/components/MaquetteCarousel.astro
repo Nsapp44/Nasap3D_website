@@ -1,0 +1,873 @@
+---
+// Carrousel de maquettes « 360° » : viewer canvas 2D « tourne en glissant » sur des images pré-rendues
+// (aucun fichier 3D en ligne). Images produites par scripts/build-maquette-frames.mjs dans
+// public/assets/maquettes/<dir>/{base,sm,rank,glow}/e<élévation>_a<NNN>.{avif,webp}.
+// Pour ajouter une maquette : ajouter une entrée ici + ses images.
+// `soon: true` = maquette « À venir » : slide générique, aucune image ni canvas, rien n'est chargé.
+interface Maquette {
+  id: string;
+  title: string;
+  caption: string;
+  detail: string; // phrase propre à la maquette, affichée sous le viewer
+  dir?: string; // dossier des images pré-rendues
+  elevs?: number[]; // élévations disponibles (degrés), du plus bas au plus haut
+  frames?: number; // nombre d'azimuts (un tour complet)
+  startEl?: number; // index d'élévation de départ
+  posterWebp?: string; // image statique : aperçu avant chargement et repli
+  posterAlt?: string;
+  soon?: boolean;
+}
+
+// Texte commun aux maquettes réelles (tout est « possible », rien d'obligatoire).
+const COMMON =
+  "Nos maquettes ne sortent pas toutes brutes de l'imprimante : ponçage puis peinture possibles, plusieurs couleurs et matières possibles, détails rapportés.";
+
+const MAQUETTES: Maquette[] = [
+  {
+    id: "cellule",
+    title: "Maquette cellule",
+    caption: "Modèle pédagogique en coupe",
+    detail: "Ici, la coque verte est peinte et l'intérieur est imprimé en couleur.",
+    dir: "/assets/maquettes/cellule",
+    elevs: [12, 28, 55],
+    frames: 72,
+    startEl: 1,
+    posterWebp: "/assets/real-8.webp",
+    posterAlt: "Maquette de cellule en coupe, aperçu avant chargement de la vue à 360°",
+  },
+  {
+    id: "fluidique",
+    title: "Maquette fluidique",
+    caption: "À venir",
+    detail: "Prochainement : la maquette d'un circuit fluidique, à explorer en 3D.",
+    soon: true,
+  },
+  {
+    id: "caravane",
+    title: "Caravane",
+    caption: "À venir",
+    detail: "Prochainement : une caravane modélisée en 3D, à explorer sous tous les angles.",
+    soon: true,
+  },
+];
+---
+
+<div class="mq" data-mq data-items={JSON.stringify(MAQUETTES)} data-common={COMMON}>
+  <div class="mq-card">
+    <div class="mq-stage" tabindex="0" role="group" aria-roledescription="carrousel" aria-label="Maquettes à 360°">
+      <img class="mq-poster" data-src={MAQUETTES[0].posterWebp} alt={MAQUETTES[0].posterAlt} width="600" height="450" decoding="async" />
+      <canvas class="mq-canvas" role="img" aria-label={`${MAQUETTES[0].title} : vue à 360°. Flèches du clavier ou glisser pour tourner, molette ou pincement pour zoomer.`}></canvas>
+      <div class="mq-glow" aria-hidden="true"></div>
+      <div class="mq-loader" role="status"><span class="mq-spin" aria-hidden="true"></span><span class="mq-loader-txt">Chargement de la maquette…</span></div>
+      <div class="mq-soon" hidden>
+        <span class="mq-soon-badge">À venir</span>
+        <span class="mq-soon-title"></span>
+      </div>
+      <p class="mq-msg" hidden></p>
+      <p class="mq-hint" hidden>Glisse pour tourner</p>
+      <button type="button" class="mq-nav mq-prev" aria-label="Maquette précédente" hidden>
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </button>
+      <button type="button" class="mq-nav mq-next" aria-label="Maquette suivante" hidden>
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </button>
+      <button type="button" class="mq-reset" aria-label="Réinitialiser la vue" hidden>
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.5-5.8M4 4v4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        Réinitialiser la vue
+      </button>
+    </div>
+    <div class="mq-grip" hidden aria-hidden="true"><span></span></div>
+    <div class="mq-foot">
+      <p class="mq-caption" aria-live="polite"><strong>{MAQUETTES[0].title}</strong> <span>{MAQUETTES[0].caption}</span></p>
+      <div class="mq-meta" hidden>
+        <div class="mq-dots" role="group" aria-label="Choisir une maquette"></div>
+        <span class="mq-count">1 / 1</span>
+      </div>
+    </div>
+    <div class="mq-detail" aria-live="polite">
+      <p class="mq-detail-common">{COMMON}</p>
+      <p class="mq-detail-own">{MAQUETTES[0].detail}</p>
+    </div>
+  </div>
+</div>
+
+<script is:inline>
+  (() => {
+    const root = document.querySelector("[data-mq]");
+    if (!root) return;
+    const all = JSON.parse(root.dataset.items);
+    const items = all;
+    const COMMON = root.dataset.common || "";
+    const $ = (s) => root.querySelector(s);
+    const stage = $(".mq-stage"), poster = $(".mq-poster"), loader = $(".mq-loader"), cv = $(".mq-canvas"), msg = $(".mq-msg");
+    const hint = $(".mq-hint"), prevBtn = $(".mq-prev"), nextBtn = $(".mq-next"), resetBtn = $(".mq-reset");
+    const grip = $(".mq-grip"), meta = $(".mq-meta"), dots = $(".mq-dots"), count = $(".mq-count");
+    const captionEl = $(".mq-caption"), detailEl = $(".mq-detail"), soonEl = $(".mq-soon");
+    const ctx = cv.getContext("2d");
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const small = matchMedia("(max-width: 640px)").matches; // mobile : images sm/ (640x480)
+    const multi = items.length >= 2;
+    const track = (name, props) => {
+      try { window.plausible && window.plausible(name, props ? { props } : undefined); } catch {}
+    };
+
+    // Réglages. Chenille LED : cycle 5 s = montée 3 s, allumé 1 s, extinction en ordre inverse 1 s.
+    const PX_PER_FRAME = 5, EL_PX = 70, AUTO_SPEED = 2.2, INERTIA = 3.2; // px, px, images/s, décroissance /s
+    const ZMIN = 1, ZMAX = 1.6;
+    const LED_RISE = 3, LED_HOLD = 1, LED_FALL = 1, LED_FADE = 0.06;
+    const LED_W = 800, LED_H = 600; // résolution fixe des calques rank / glow
+    const CONC_BASE = 4, CONC_LED = 2;
+
+    let idx = 0, busy = false, hintDone = false, tracked = false;
+    let V = null, onScreen = false, raf = 0, lastTs = 0, lastLed = 0, W = 0, zoom = 1;
+    const views = new Map(); // état par maquette (images déjà chargées conservées)
+
+    // ---- Carrousel (points, flèches, légende) : inchangé ----
+    if (multi) {
+      [prevBtn, nextBtn, grip, meta].forEach((el) => (el.hidden = false));
+      items.forEach((m, i) => {
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "mq-dot";
+        b.setAttribute("aria-label", `${m.title} (${i + 1} sur ${items.length})`);
+        b.addEventListener("click", () => go(i));
+        dots.appendChild(b);
+      });
+    }
+    function paintMeta() {
+      const m = items[idx];
+      count.textContent = `${idx + 1} / ${items.length}`;
+      [...dots.children].forEach((d, i) => d.classList.toggle("on", i === idx));
+      captionEl.classList.remove("in");
+      captionEl.innerHTML = "";
+      const s = document.createElement("strong"); s.textContent = m.title;
+      const sp = document.createElement("span"); sp.textContent = m.caption;
+      captionEl.append(s, " ", sp);
+      detailEl.classList.remove("in");
+      detailEl.innerHTML = "";
+      if (!m.soon) { const c = document.createElement("p"); c.className = "mq-detail-common"; c.textContent = COMMON; detailEl.append(c); }
+      const o = document.createElement("p"); o.className = "mq-detail-own"; o.textContent = m.detail; detailEl.append(o);
+      void detailEl.offsetWidth;
+      detailEl.classList.add("in");
+      void captionEl.offsetWidth;
+      captionEl.classList.add("in");
+    }
+    paintMeta();
+    function showMsg(t) { msg.textContent = t; msg.hidden = false; }
+    const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+    // ---- Chargement des images ----
+    const avifOk = new Promise((res) => {
+      const i = new Image();
+      i.onload = () => res(i.width > 0);
+      i.onerror = () => res(false);
+      i.src = "data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUEAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdGwAAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAIAAAACAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQAMAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgANogQEAwgMg8f8D///8WfhwB8+ErK42A=";
+    });
+    function loadImg(url) {
+      return new Promise((res, rej) => {
+        const i = new Image();
+        i.decoding = "async";
+        i.onload = () => res(i);
+        i.onerror = () => rej(new Error("img " + url));
+        i.src = url;
+      });
+    }
+    const fname = (e, a) => `e${e}_a${String(a).padStart(3, "0")}`;
+    const key = (e, a) => e + "_" + a;
+
+    function newView(item) {
+      return {
+        item, n: item.frames, az: 0, elF: item.startEl, vaz: 0, auto: !reduce,
+        dragging: false, dirty: true, ready: false, failed: false, started: false,
+        base: new Map(), rank: new Map(), glow: new Map(), led: new Map(),
+        avif: false,
+      };
+    }
+    // Ordre de chargement : 1re vue, 1 sur 2 à l'élévation moyenne, le reste de cette élévation, puis les autres élévations.
+    function loadOrder(v) {
+      const { elevs, startEl, frames } = v.item;
+      const mid = elevs[startEl], list = [[mid, 0]];
+      for (let a = 2; a < frames; a += 2) list.push([mid, a]);
+      for (let a = 1; a < frames; a += 2) list.push([mid, a]);
+      for (const e of elevs) if (e !== mid) for (const p of [0, 1]) for (let a = p; a < frames; a += 2) list.push([e, a]);
+      return list;
+    }
+    async function fetchBase(v, e, a) {
+      const dir = `${v.item.dir}/${small ? "sm" : "base"}/${fname(e, a)}`;
+      if (v.avif) { try { return await loadImg(dir + ".avif"); } catch {} }
+      return loadImg(dir + ".webp");
+    }
+    const fetchLayer = (v, kind, e, a) => loadImg(`${v.item.dir}/${kind}/${fname(e, a)}.webp`);
+
+    async function pool(list, conc, fn) {
+      let i = 0;
+      const worker = async () => { while (i < list.length) { const it = list[i++]; try { await fn(it); } catch {} } };
+      await Promise.all(Array.from({ length: conc }, worker));
+    }
+
+    // Le premier affichage de la page passe avant : on ne charge les vues qu'après l'événement load, quand le navigateur est au repos.
+    const pageIdle = new Promise((res) => {
+      const idle = () => ("requestIdleCallback" in window ? requestIdleCallback(() => res(), { timeout: 1500 }) : setTimeout(res, 300));
+      if (document.readyState === "complete") idle(); else window.addEventListener("load", idle, { once: true });
+    });
+    function fail(v) {
+      v.failed = true;
+      if (v !== V) return;
+      loader.hidden = true;
+      stage.classList.add("fail");
+      if (!poster.getAttribute("src")) poster.src = poster.dataset.src || "";
+      showMsg("La vue à 360° n'a pas pu être chargée. L'aperçu photo reste affiché.");
+    }
+    async function startLoading(v) {
+      if (v.started) return;
+      v.started = true;
+      await pageIdle;
+      v.avif = await avifOk;
+      const order = loadOrder(v), [e0, a0] = order[0];
+      try {
+        v.base.set(key(e0, a0), await fetchBase(v, e0, a0));
+      } catch (err) {
+        console.warn("[maquette-360]", err && err.message ? err.message : err);
+        fail(v);
+        return;
+      }
+      v.ready = true; v.dirty = true;
+      if (v === V) shown();
+      // base et calques LED en parallèle, dans le même ordre
+      pool(order.slice(1), CONC_BASE, async ([e, a]) => {
+        v.base.set(key(e, a), await fetchBase(v, e, a));
+        if (v === V) v.dirty = true;
+      });
+      pool(order, CONC_LED, async ([e, a]) => {
+        const k = key(e, a);
+        const [r, g] = await Promise.all([fetchLayer(v, "rank", e, a), fetchLayer(v, "glow", e, a)]);
+        v.rank.set(k, r); v.glow.set(k, g);
+      });
+    }
+
+    function shown() {
+      loader.hidden = true;
+      poster.classList.add("off");
+      cv.classList.add("on");
+      resetBtn.hidden = false;
+      if (!hintDone) hint.hidden = false;
+      resize();
+      kick();
+    }
+
+    // ---- Calques LED : extraction (une fois par vue) puis animation ----
+    const scratch = document.createElement("canvas");
+    scratch.width = LED_W; scratch.height = LED_H;
+    const sctx = scratch.getContext("2d", { willReadFrequently: true });
+    sctx.imageSmoothingEnabled = false;
+    const lc = document.createElement("canvas"); // calque LED recomposé à chaque image
+    lc.width = LED_W; lc.height = LED_H;
+    const lctx = lc.getContext("2d");
+    const hc = document.createElement("canvas"); // version réduite : sert de halo une fois ré-agrandie
+    hc.width = 160; hc.height = 120;
+    const hctx = hc.getContext("2d");
+    hctx.imageSmoothingQuality = "high";
+    const idat = lctx.createImageData(LED_W, LED_H);
+
+    function ledOf(v, k) {
+      let L = v.led.get(k);
+      if (L) return L;
+      const ri = v.rank.get(k), gi = v.glow.get(k);
+      if (!ri || !gi) return null;
+      sctx.clearRect(0, 0, LED_W, LED_H); sctx.drawImage(ri, 0, 0, LED_W, LED_H);
+      const R = sctx.getImageData(0, 0, LED_W, LED_H).data;
+      sctx.clearRect(0, 0, LED_W, LED_H); sctx.drawImage(gi, 0, 0, LED_W, LED_H);
+      const G = sctx.getImageData(0, 0, LED_W, LED_H).data;
+      let n = 0;
+      for (let p = 3; p < G.length; p += 4) if (G[p]) n++;
+      L = { n, pos: new Uint32Array(n), rank: new Float32Array(n), rgba: new Uint8Array(n * 4) };
+      let j = 0;
+      for (let p = 0; p < LED_W * LED_H; p++) {
+        const o = p * 4;
+        if (!G[o + 3]) continue;
+        L.pos[j] = o;
+        L.rank[j] = R[o + 3] ? R[o] / 255 : 1; // pas de rang sous le glow : s'allume en dernier
+        L.rgba[j * 4] = G[o]; L.rgba[j * 4 + 1] = G[o + 1]; L.rgba[j * 4 + 2] = G[o + 2]; L.rgba[j * 4 + 3] = G[o + 3];
+        j++;
+      }
+      v.led.set(k, L);
+      if (v.led.size > 10) v.led.delete(v.led.keys().next().value); // petit cache : l'extraction est le seul coût
+      return L;
+    }
+    function ledT(ms) {
+      if (reduce) return 1;
+      const s = (ms / 1000) % (LED_RISE + LED_HOLD + LED_FALL);
+      return s < LED_RISE ? s / LED_RISE : s < LED_RISE + LED_HOLD ? 1 : 1 - (s - LED_RISE - LED_HOLD) / LED_FALL;
+    }
+    // Rang <= t visible, avec fondu ; te dépasse 1 pour que tout soit allumé à t = 1.
+    function paintLed(L, t) {
+      const d = idat.data, te = t * (1 + LED_FADE);
+      d.fill(0);
+      if (te <= 0) return false;
+      for (let j = 0; j < L.n; j++) {
+        const vis = (te - L.rank[j]) / LED_FADE;
+        if (vis <= 0) continue;
+        const o = L.pos[j], q = j * 4, f = vis >= 1 ? 1 : vis;
+        d[o] = L.rgba[q]; d[o + 1] = L.rgba[q + 1]; d[o + 2] = L.rgba[q + 2]; d[o + 3] = L.rgba[q + 3] * f;
+      }
+      lctx.putImageData(idat, 0, 0);
+      hctx.clearRect(0, 0, 160, 120); hctx.drawImage(lc, 0, 0, 160, 120);
+      return true;
+    }
+
+    // ---- Dessin ----
+    function pickFrame(v, e, a) {
+      if (v.base.has(key(e, a))) return [e, a];
+      for (let d = 1; d <= v.n / 2; d++) { // image chargée la plus proche, même élévation
+        for (const s of [1, -1]) {
+          const aa = (((a + s * d) % v.n) + v.n) % v.n;
+          if (v.base.has(key(e, aa))) return [e, aa];
+        }
+      }
+      for (const [k] of v.base) { const p = k.split("_"); return [+p[0], +p[1]]; }
+      return null;
+    }
+    function draw(now) {
+      if (!W) return;
+      const v = V, { elevs } = v.item;
+      const e = elevs[clamp(Math.round(v.elF), 0, elevs.length - 1)];
+      const a = ((Math.round(v.az) % v.n) + v.n) % v.n;
+      const f = pickFrame(v, e, a);
+      ctx.globalCompositeOperation = "source-over";
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      if (!f) return;
+      const img = v.base.get(key(f[0], f[1]));
+      const ar = 4 / 3, dw = Math.min(cv.width, cv.height * ar), dh = dw / ar;
+      const dx = (cv.width - dw) / 2, dy = (cv.height - dh) / 2;
+      ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, dx, dy, dw, dh);
+      const L = ledOf(v, key(f[0], f[1])); // LED seulement si calques de cette même vue chargés
+      if (L && paintLed(L, ledT(now))) {
+        ctx.globalCompositeOperation = "lighter";
+        ctx.drawImage(lc, dx, dy, dw, dh);
+        ctx.globalAlpha = 0.7; ctx.drawImage(hc, dx, dy, dw, dh); ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = "source-over";
+      }
+    }
+
+    function resize() {
+      const w = stage.clientWidth, h = stage.clientHeight;
+      if (!w || !h) return;
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      W = w;
+      cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+      if (V) V.dirty = true;
+      kick();
+    }
+    function setZoom(z) {
+      zoom = clamp(z, ZMIN, ZMAX);
+      cv.style.transform = zoom === 1 ? "" : `scale(${zoom.toFixed(3)})`;
+    }
+
+    // ---- Boucle : inertie, auto-rotation, LED ----
+    const alive = () => onScreen && !document.hidden && V && V.ready;
+    function tick(now) {
+      raf = 0;
+      if (!alive()) return;
+      const dt = Math.min(0.05, (now - (lastTs || now)) / 1000); lastTs = now;
+      const v = V;
+      if (!v.dragging) {
+        if (v.auto) { v.az += AUTO_SPEED * dt; v.dirty = true; }
+        else if (Math.abs(v.vaz) > 0.05) { v.az += v.vaz * dt; v.vaz *= Math.exp(-INERTIA * dt); v.dirty = true; }
+        else v.vaz = 0;
+      }
+      v.az = ((v.az % v.n) + v.n) % v.n;
+      const ledAnim = !reduce && now - lastLed >= 33; // chenille : ~30 images/s
+      if (v.dirty || ledAnim) { draw(now); v.dirty = false; if (ledAnim) lastLed = now; }
+      if (!reduce || v.dragging || v.auto || Math.abs(v.vaz) > 0.05 || v.dirty) raf = requestAnimationFrame(tick);
+      else lastTs = 0;
+    }
+    function kick() { if (!raf && alive()) raf = requestAnimationFrame(tick); }
+
+    // ---- Interactions ----
+    function touched() {
+      if (V) V.auto = false;
+      if (!hintDone) { hintDone = true; hint.classList.add("gone"); }
+      if (!tracked) { tracked = true; track("maquette_3d_open", { id: items[idx].id }); }
+    }
+    const pts = new Map();
+    let pinch0 = 0, pinchZ = 1, lastT = 0;
+    stage.addEventListener("pointerdown", (e) => {
+      if (!V || !V.ready || e.target.closest("button")) return;
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      try { stage.setPointerCapture(e.pointerId); } catch {}
+      touched();
+      if (pts.size === 2) {
+        const [p, q] = [...pts.values()];
+        pinch0 = Math.hypot(p.x - q.x, p.y - q.y) || 1; pinchZ = zoom; V.dragging = false;
+      } else { V.dragging = true; V.vaz = 0; lastT = e.timeStamp; stage.classList.add("grab"); }
+      kick();
+    });
+    stage.addEventListener("pointermove", (e) => {
+      const p = pts.get(e.pointerId);
+      if (!p || !V) return;
+      const dx = e.clientX - p.x, dy = e.clientY - p.y;
+      p.x = e.clientX; p.y = e.clientY;
+      if (pts.size === 2) {
+        const [a, b] = [...pts.values()];
+        setZoom(pinchZ * (Math.hypot(a.x - b.x, a.y - b.y) / pinch0));
+        return;
+      }
+      const df = -dx / PX_PER_FRAME, dtS = Math.max(0.008, (e.timeStamp - lastT) / 1000); lastT = e.timeStamp;
+      V.az += df;
+      V.vaz = V.vaz * 0.6 + (df / dtS) * 0.4;
+      V.elF = clamp(V.elF + dy / EL_PX, 0, V.item.elevs.length - 1); // glisser vers le bas = vue de plus haut
+      V.dirty = true; kick();
+    });
+    const release = (e) => {
+      if (!pts.delete(e.pointerId) || !V) return;
+      if (pts.size === 1) { V.dragging = true; V.vaz = 0; return; } // fin de pincement : on ne saute pas
+      V.dragging = false; stage.classList.remove("grab");
+      if (reduce || e.timeStamp - lastT > 100) V.vaz = 0; // arrêt net avant de relâcher = pas d'inertie
+      kick();
+    };
+    stage.addEventListener("pointerup", release);
+    stage.addEventListener("pointercancel", release);
+    // Molette : zoom 1x à 1,6x ; à 1x, la molette vers le bas laisse défiler la page.
+    stage.addEventListener("wheel", (e) => {
+      if (!V || !V.ready) return;
+      const nz = clamp(zoom * Math.exp(-e.deltaY * 0.0015), ZMIN, ZMAX);
+      if (nz === zoom) return;
+      e.preventDefault(); setZoom(nz);
+    }, { passive: false });
+    resetBtn.addEventListener("click", () => {
+      if (!V) return;
+      V.az = 0; V.elF = V.item.startEl; V.vaz = 0; V.auto = !reduce; V.dirty = true; setZoom(1); kick();
+    });
+    stage.addEventListener("keydown", (e) => {
+      if (!V || !V.ready) return;
+      const step = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+      if (step) {
+        e.preventDefault(); touched();
+        V.az += step[0]; V.elF = clamp(Math.round(V.elF) + step[1], 0, V.item.elevs.length - 1); V.vaz = 0;
+      } else if (e.key === "+" || e.key === "=") setZoom(zoom + 0.2);
+      else if (e.key === "-") setZoom(zoom - 0.2);
+      else return;
+      V.dirty = true; kick();
+    });
+
+    // ---- Changement de maquette ----
+    function mount(i) {
+      const m = items[i];
+      if (m.soon) { // slide « À venir » : rien à charger, pas de canvas
+        V = null; setZoom(1); msg.hidden = true;
+        soonEl.querySelector(".mq-soon-title").textContent = m.title;
+        soonEl.hidden = false;
+        poster.classList.add("off"); cv.classList.remove("on"); loader.hidden = true;
+        resetBtn.hidden = true; hint.hidden = true;
+        return;
+      }
+      soonEl.hidden = true;
+      let v = views.get(i);
+      if (!v) { v = newView(m); views.set(i, v); }
+      V = v;
+      poster.removeAttribute("src"); poster.dataset.src = m.posterWebp; poster.alt = m.posterAlt; stage.classList.remove("fail");
+      cv.setAttribute("aria-label", `${m.title} : vue à 360°. Flèches du clavier ou glisser pour tourner, molette ou pincement pour zoomer.`);
+      msg.hidden = true; setZoom(1);
+      cv.classList.remove("on"); poster.classList.remove("off"); loader.hidden = false;
+      if (onScreen) startLoading(v);
+      if (v.ready) shown();
+      else if (v.failed) fail(v);
+    }
+    async function go(to) {
+      if (!multi || busy) return;
+      to = (to + items.length) % items.length;
+      if (to === idx) return;
+      const dir = to > idx || (idx === items.length - 1 && to === 0) ? 1 : -1;
+      busy = true;
+      idx = to;
+      paintMeta();
+      track("maquette_3d_next", { id: items[idx].id });
+      stage.style.setProperty("--dir", dir);
+      stage.classList.add("is-swap");
+      await new Promise((r) => setTimeout(r, reduce ? 0 : 260));
+      mount(idx);
+      stage.classList.remove("is-swap");
+      busy = false;
+    }
+    prevBtn.addEventListener("click", () => go(idx - 1));
+    nextBtn.addEventListener("click", () => go(idx + 1));
+
+    // Swipe horizontal sur la poignée (hors zone de rotation).
+    let sx = null;
+    grip.addEventListener("pointerdown", (e) => { sx = e.clientX; grip.setPointerCapture(e.pointerId); grip.classList.add("drag"); });
+    const endSwipe = (e) => {
+      if (sx === null) return;
+      const dx = e.clientX - sx; sx = null; grip.classList.remove("drag");
+      if (Math.abs(dx) > 40) go(dx < 0 ? idx + 1 : idx - 1);
+    };
+    grip.addEventListener("pointerup", endSwipe);
+    grip.addEventListener("pointercancel", () => { sx = null; grip.classList.remove("drag"); });
+
+    // Chargement paresseux : rien n'est téléchargé avant que la section approche de l'écran.
+    new ResizeObserver(resize).observe(stage);
+    new IntersectionObserver((es) => {
+      onScreen = es[0].isIntersecting;
+      if (onScreen && V) { startLoading(V); if (V.ready) { V.dirty = true; kick(); } }
+    }, { rootMargin: "200px 0px", threshold: 0 }).observe(stage);
+    document.addEventListener("visibilitychange", () => { lastTs = 0; kick(); });
+    mount(idx);
+    window.__mq = { go: (i) => go(i), get ready() { return !!(V && V.ready); } };
+  })();
+</script>
+
+<style>
+  .mq {
+    margin-top: 20px;
+  }
+  .mq-card {
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    background: #1a1917;
+    overflow: hidden;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+  }
+  .mq-stage {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    max-height: 70vh;
+    /* Fond studio : halo clair derrière la maquette, flaque de lumière au sol, vignettage. */
+    background:
+      radial-gradient(ellipse 120% 100% at 50% 45%, transparent 55%, rgba(0, 0, 0, 0.32) 100%),
+      radial-gradient(ellipse 42% 40% at 50% 40%, rgba(255, 242, 228, 0.075), transparent 70%),
+      radial-gradient(ellipse 46% 16% at 50% 82%, rgba(255, 236, 218, 0.07), transparent 70%),
+      radial-gradient(ellipse at 50% 38%, #2a2623 0%, #1a1917 60%, #161514 100%);
+    color: #f3f1ec;
+    overflow: hidden;
+    outline: none;
+    touch-action: pan-y; /* le scroll vertical de la page reste possible hors orbite */
+  }
+  .mq-stage:focus-visible {
+    box-shadow: inset 0 0 0 2px #ff5a3c;
+  }
+  .mq-poster,
+  .mq-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .mq-poster {
+    object-fit: cover;
+    opacity: 0; /* la photo n'est montrée qu'en cas d'échec du chargement : pas de photo moche en attendant */
+    pointer-events: none;
+  }
+  .mq-stage.fail .mq-poster:not(.off) { opacity: 0.85; }
+  .mq-loader {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    color: rgba(243, 241, 236, 0.7);
+    font: 500 14px "Inter", sans-serif;
+    pointer-events: none;
+  }
+  .mq-loader[hidden] { display: none; }
+  .mq-spin {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.12);
+    border-top-color: #ff5a3c;
+    animation: mqSpin 0.9s linear infinite;
+  }
+  @keyframes mqSpin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    .mq-spin { animation: none; border-top-color: #ff5a3c; border-right-color: #ff5a3c; }
+  }
+  .mq-canvas {
+    opacity: 0;
+    touch-action: pan-y; /* glisser horizontal = rotation ; le scroll vertical de la page reste possible */
+    cursor: grab;
+    transform-origin: 50% 50%;
+    will-change: transform;
+  }
+  .mq-canvas.on {
+    opacity: 1;
+  }
+  .mq-stage.grab .mq-canvas {
+    cursor: grabbing;
+  }
+  .mq-glow {
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 36%;
+    background: radial-gradient(ellipse at 50% 100%, rgba(255, 90, 60, 0.1), transparent 70%);
+    pointer-events: none;
+  }
+  /* Transition entre modèles : fondu + léger zoom + glissement dans le sens du changement */
+  .mq-stage.is-swap .mq-poster,
+  .mq-stage.is-swap .mq-soon,
+  .mq-stage.is-swap .mq-canvas {
+    opacity: 0;
+    transform: translateX(calc(var(--dir, 1) * -24px)) scale(0.97);
+  }
+  .mq-soon {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 14px;
+    padding: 0 72px;
+    text-align: center;
+    background: radial-gradient(ellipse at 50% 40%, #2a2623 0%, #1a1917 60%, #161514 100%);
+    color: #f3f1ec;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .mq-soon-badge {
+    padding: 6px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 90, 60, 0.6);
+    background: rgba(255, 90, 60, 0.12);
+    font: 600 13px "Inter", sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #ff5a3c;
+  }
+  .mq-soon-title {
+    font: 700 24px/1.2 "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+  }
+  .mq-detail {
+    padding: 16px 18px 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-left: 3px solid #ff5a3c;
+    background: #161514;
+    color: #f3f1ec;
+  }
+  .mq-detail.in {
+    animation: mqUp 0.5s ease both;
+  }
+  .mq-detail :global(p) {
+    margin: 0;
+    font: 400 16px/1.6 "Inter", sans-serif;
+    color: rgba(243, 241, 236, 0.9);
+    overflow-wrap: anywhere;
+  }
+  .mq-detail :global(.mq-detail-common + .mq-detail-own) {
+    margin-top: 8px;
+    font-weight: 600;
+    color: #f3f1ec;
+  }
+  .mq-nav:focus-visible,
+  .mq-reset:focus-visible,
+  .mq-dots :global(.mq-dot:focus-visible) {
+    outline: 2px solid #ff5a3c;
+    outline-offset: 3px;
+  }
+  .mq-soon[hidden],
+  .mq-msg[hidden],
+  .mq-hint[hidden],
+  .mq-nav[hidden],
+  .mq-reset[hidden],
+  .mq-grip[hidden],
+  .mq-meta[hidden] {
+    display: none;
+  }
+  .mq-msg {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    margin: 0;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(22, 21, 20, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font: 400 12px/1.5 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.75);
+    text-align: center;
+  }
+  .mq-hint {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    transform: translateX(-50%);
+    margin: 0;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(22, 21, 20, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    font: 500 12px "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.8);
+    pointer-events: none;
+    animation: mqPulse 2.4s ease-in-out infinite;
+    transition: opacity 0.4s ease;
+  }
+  .mq-hint.gone {
+    opacity: 0;
+    animation: none;
+  }
+  @keyframes mqPulse {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-3px); }
+  }
+  .mq-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 52px;
+    height: 52px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(22, 21, 20, 0.72);
+    color: #f3f1ec;
+    cursor: pointer;
+    z-index: 2;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  }
+  .mq-nav:hover {
+    background: rgba(255, 90, 60, 0.2);
+    border-color: #ff5a3c;
+  }
+  .mq-prev { left: 12px; }
+  .mq-next { right: 12px; }
+  .mq-prev:hover { transform: translateY(-50%) translateX(-2px); }
+  .mq-next:hover { transform: translateY(-50%) translateX(2px); }
+  .mq-reset {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(22, 21, 20, 0.72);
+    color: #f3f1ec;
+    font: 500 12px "Inter", sans-serif;
+    cursor: pointer;
+    z-index: 2;
+    transition: border-color 0.2s ease, background 0.2s ease;
+  }
+  .mq-reset:hover {
+    border-color: #ff5a3c;
+    background: rgba(255, 90, 60, 0.18);
+  }
+  .mq-grip {
+    display: none !important;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    cursor: ew-resize;
+    touch-action: pan-y;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    background: #201d1b;
+  }
+  .mq-grip span {
+    width: 44px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.22);
+    transition: background 0.2s ease, width 0.2s ease;
+  }
+  .mq-grip:hover span,
+  .mq-grip.drag span {
+    background: #ff5a3c;
+    width: 64px;
+  }
+  .mq-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .mq-caption {
+    margin: 0;
+    font: 400 13px/1.5 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.6);
+  }
+  .mq-caption :global(strong) {
+    display: block;
+    font: 600 15px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+  }
+  .mq-caption.in {
+    animation: mqUp 0.5s ease both;
+  }
+  @keyframes mqUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+  .mq-meta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+  }
+  .mq-dots {
+    display: flex;
+    gap: 4px;
+  }
+  .mq-dots :global(.mq-dot) {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+  }
+  .mq-dots :global(.mq-dot::after) {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.25);
+    transition: background 0.2s ease, width 0.25s ease, border-radius 0.25s ease;
+  }
+  .mq-dots :global(.mq-dot.on::after) {
+    width: 20px;
+    border-radius: 4px;
+    background: #ff5a3c;
+  }
+  .mq-count {
+    font: 500 12px "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+    font-variant-numeric: tabular-nums;
+  }
+  @media (max-width: 640px) {
+    .mq-stage { aspect-ratio: 1 / 1; }
+    .mq-nav { width: 44px; height: 44px; }
+    .mq-prev { left: 8px; }
+    .mq-next { right: 8px; }
+    .mq-foot { padding: 12px 14px; }
+    .mq-detail { padding: 14px; }
+    .mq-detail :global(p) { font-size: 15px; }
+    .mq-soon { padding: 0 56px; }
+    .mq-soon-title { font-size: 20px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mq-hint,
+    .mq-caption.in,
+    .mq-detail.in { animation: none; }
+    .mq-poster,
+    .mq-canvas,
+    .mq-soon,
+    .mq-nav { transition: none; }
+    .mq-stage.is-swap .mq-poster,
+    .mq-stage.is-swap .mq-soon,
+    .mq-stage.is-swap .mq-canvas { transform: none; }
+  }
+</style>

@@ -1,0 +1,438 @@
+---
+// Page indexable : maquettes sur mesure. Cible « maquette / maquettiste / modélisation de maquette »
+// (et non « impression 3D Nantes », déjà couvert par d'autres pages).
+import BaseLayout from "../layouts/BaseLayout.astro";
+import FaqAccordion from "../components/FaqAccordion";
+import MaquetteCarousel from "../components/MaquetteCarousel.astro";
+import MachinesStrip from "../components/MachinesStrip.astro";
+
+const types = [
+  { title: "Maquette design produit", text: "Maquette de forme et de présentation, prototype d'aspect pour valider un objet, un packaging ou une ergonomie avant la série." },
+  { title: "Maquette d'architecture", text: "Maquette de bâtiment, de quartier ou d'aménagement intérieur, à l'échelle de votre choix, pour concours, promotion immobilière ou présentation client." },
+  { title: "Maquette pédagogique et scientifique", text: "Maquette en coupe, modèle multicolore et peint pour expliquer une cellule, un mécanisme ou un procédé en cours, en laboratoire ou en médiation scientifique." },
+  { title: "Maquette industrielle et commerciale", text: "Maquette de machine, d'équipement ou de procédé (système de filtration, bioréacteur) pour salons, démonstrations commerciales et appels d'offres." },
+];
+
+const steps = [
+  { n: "1", title: "Vous décrivez le projet", text: "Fichier 3D, plans, photos ou simple idée : tout point de départ convient." },
+  { n: "2", title: "Modélisation 3D si besoin", text: "Pas de fichier ? Nous modélisons la maquette à partir de vos éléments." },
+  { n: "3", title: "Expertise humaine", text: "Nous examinons la faisabilité de votre maquette avant tout paiement." },
+  { n: "4", title: "Impression, finitions, livraison", text: "Fabriquée dans notre atelier à Nantes, puis retrait sur place ou livraison en France." },
+];
+
+const gallery = [
+  { img: "/assets/real-1.webp", label: "Maquette de système de filtration" },
+  { img: "/assets/real-19.webp", label: "Maquette de bioréacteur" },
+  { img: "/assets/real-21.webp", label: "Détail vannes et manomètres du bioréacteur" },
+  { img: "/assets/real-8.webp", label: "Maquette de cellule en coupe" },
+  { img: "/assets/real-17.webp", label: "Maquettes de design produit" },
+  { img: "/assets/real-2.webp", label: "Panneau fluidique à l'échelle" },
+];
+
+const faqs = [
+  { q: "Réalisez-vous des maquettes d'architecture, de design produit ou pédagogiques ?", a: "Oui : maquette d'architecture, maquette de design produit, maquette pédagogique et scientifique, maquette industrielle et commerciale. Chaque maquette est conçue sur mesure à partir de vos plans, fichiers ou photos." },
+  { q: "Quels matériaux et quelles finitions pour une maquette ?", a: "Nous choisissons la matière selon l'usage de la maquette (présentation, manipulation, démonstration). Ponçage, apprêt et peinture sont possibles selon le rendu attendu ; décrivez votre projet et nous vous conseillons lors de l'expertise." },
+  { q: "Quelle échelle et quelles dimensions maximales ?", a: "L'échelle se choisit librement selon votre projet. Une pièce unique est limitée par le volume de nos machines ; au-delà, la maquette est découpée en plusieurs parties puis assemblée. Nous confirmons la faisabilité à l'expertise." },
+  { q: "Faut-il un fichier 3D pour commander une maquette ?", a: "Non. Avec des plans, des photos, des cotes ou même une simple description, nous pouvons modéliser la maquette nous-mêmes avant de la fabriquer." },
+  { q: "Quels sont les délais ?", a: "Le délai précis vous est confirmé lors de l'expertise, avant tout paiement." },
+  { q: "Peut-on avoir une maquette peinte ou multicolore ?", a: "Oui. Une maquette peut être imprimée en plusieurs couleurs ou peinte après impression, par exemple pour distinguer les parties d'un modèle pédagogique." },
+  { q: "Livrez-vous les maquettes hors de Nantes ?", a: "Oui, partout en France. Vous pouvez aussi retirer votre maquette à Nantes (Canclaux). Chaque commande est d'abord examinée par un humain ; vous ne payez qu'une fois la commande acceptée." },
+];
+
+const siteUrl = "https://nasap3d.com";
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Service",
+      name: "Réalisation de maquettes sur mesure",
+      serviceType: "Maquettes sur mesure",
+      url: `${siteUrl}/maquette-impression-3d`,
+      inLanguage: "fr-FR",
+      provider: {
+        "@type": "Organization",
+        name: "Nasap 3D",
+        url: `${siteUrl}/`,
+        address: { "@type": "PostalAddress", addressLocality: "Nantes", addressCountry: "FR" },
+      },
+      areaServed: { "@type": "Country", name: "France" },
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: faqs.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    },
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Accueil", item: `${siteUrl}/` },
+        { "@type": "ListItem", position: 2, name: "Maquettes", item: `${siteUrl}/maquette-impression-3d` },
+      ],
+    },
+  ],
+};
+---
+
+<BaseLayout
+  title="Maquette sur mesure : architecture, produit, pédagogique | Nasap 3D"
+  description="Maquettiste à Nantes : maquette d'architecture, de design produit, pédagogique, scientifique, industrielle. Modélisation 3D, peinture et finitions, livraison en France."
+  path="/maquette-impression-3d"
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
+  </Fragment>
+
+  <section class="lp-hero">
+    <h1 class="lp-title">Maquettes sur mesure : architecture, design produit, pédagogique, industrielle</h1>
+    <p class="lp-subtitle">Maquettiste à Nantes, nous concevons et fabriquons des maquettes uniques : modélisation 3D, impression, ponçage, peinture et finitions, le tout dans notre atelier. Une maquette réaliste, soignée et fidèle à votre projet, livrée partout en France.</p>
+    <div class="lp-ctas">
+      <a href="/contact" class="lp-btn lp-btn-primary"><span class="lp-btn-label">Parler de mon projet <span class="lp-arrow" aria-hidden="true">→</span></span></a>
+    </div>
+  </section>
+
+  <section class="lp-section" data-rv>
+    <h2 class="lp-h2">Quatre types de maquettes sur mesure</h2>
+    <div class="lp-steps">
+      {
+        types.map((t, i) => (
+          <div class="lp-step" style={`--i:${i}`}>
+            <h3 class="lp-step-title">{t.title}</h3>
+            <p class="lp-step-text">{t.text}</p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="lp-section" data-rv>
+    <h2 class="lp-h2">Réaliser votre maquette : comment ça se passe</h2>
+    <div class="lp-steps">
+      {
+        steps.map((s, i) => (
+          <div class="lp-step" style={`--i:${i}`}>
+            <div class="lp-step-n">{s.n}</div>
+            <h3 class="lp-step-title">{s.title}</h3>
+            <p class="lp-step-text">{s.text}</p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="lp-section" data-rv>
+    <h2 class="lp-h2">Nos maquettes</h2>
+    <div class="lp-real-grid">
+      {
+        gallery.map((r, i) => (
+          <figure class="lp-real" style={`--i:${i}`}>
+            <img src={r.img} alt={r.label} loading="lazy" decoding="async" width="600" height="750" />
+            <figcaption>
+              <strong>{r.label}</strong>
+            </figcaption>
+          </figure>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="lp-section" data-rv>
+    <h2 class="lp-h2">Explorez nos maquettes en 3D</h2>
+    <MaquetteCarousel />
+  </section>
+
+  <section class="lp-section" data-rv>
+    <MachinesStrip />
+  </section>
+
+  <section class="lp-section" data-rv>
+    <h2 class="lp-h2">Questions fréquentes</h2>
+    <FaqAccordion items={faqs} client:visible />
+  </section>
+
+  <section class="lp-section lp-final" data-rv>
+    <h2 class="lp-h2">Un projet de maquette ?</h2>
+    <div class="lp-ctas">
+      <a href="/contact" class="lp-btn lp-btn-primary"><span class="lp-btn-label">Parler de mon projet <span class="lp-arrow" aria-hidden="true">→</span></span></a>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  // Apparition douce au défilement. Sans JS ou avec « réduire les animations », tout reste visible.
+  const items = document.querySelectorAll<HTMLElement>("[data-rv]");
+  if (items.length && !matchMedia("(prefers-reduced-motion: reduce)").matches && "IntersectionObserver" in window) {
+    document.documentElement.classList.add("lp-motion");
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            e.target.classList.add("is-in");
+            io.unobserve(e.target);
+          }
+        }
+      },
+      { threshold: 0.12 },
+    );
+    items.forEach((el) => io.observe(el));
+  }
+</script>
+
+<style>
+  .lp-hero,
+  .lp-section {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  .lp-hero {
+    padding-top: 40px;
+    padding-bottom: 40px;
+  }
+  .lp-section {
+    padding-bottom: 44px;
+  }
+  .lp-title {
+    font: 700 32px/1.15 "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin: 0 0 14px;
+  }
+  .lp-subtitle {
+    font: 400 15px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.65);
+    margin: 0 0 24px;
+  }
+  .lp-ctas {
+    display: flex;
+    gap: 12px;
+  }
+  .lp-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    text-decoration: none;
+    font: 600 14px/1.35 "Inter", sans-serif;
+    padding: 14px 18px;
+    border-radius: 8px;
+  }
+  .lp-btn-secondary {
+    border: 1px solid rgba(255, 90, 60, 0.6);
+    background: rgba(255, 90, 60, 0.08);
+    color: #f3f1ec;
+  }
+  .lp-h2 {
+    font: 700 20px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin: 0 0 16px;
+  }
+  .lp-steps {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  .lp-step {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 18px;
+    background: #1a1917;
+  }
+  .lp-step-n {
+    font: 700 18px "Space Grotesk", sans-serif;
+    color: #ff5a3c;
+    margin-bottom: 6px;
+  }
+  .lp-step-title {
+    font: 600 14px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin: 0 0 6px;
+  }
+  .lp-step-text {
+    font: 400 12px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+    margin: 0;
+  }
+  .lp-real-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  .lp-real {
+    margin: 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #1a1917;
+  }
+  .lp-real img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 5;
+    object-fit: contain;
+    background: #201d1b;
+  }
+  .lp-real figcaption {
+    padding: 12px 14px;
+    font: 400 12px/1.5 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+  }
+  .lp-real strong {
+    display: block;
+    color: #f3f1ec;
+    font: 600 13px "Space Grotesk", sans-serif;
+  }
+  .lp-final {
+    border: 1px solid rgba(255, 90, 60, 0.3);
+    background: rgba(255, 90, 60, 0.08);
+    border-radius: 12px;
+    padding: 28px 24px;
+    margin-bottom: 44px;
+  }
+
+  /* Motion : entrée du hero au chargement, apparition au défilement, survols. */
+  @keyframes lpFadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .lp-title { animation: lpFadeUp .5s .05s ease both; }
+  .lp-subtitle { animation: lpFadeUp .5s .15s ease both; }
+  .lp-hero .lp-btn-primary { animation: lpFadeUp .5s .25s ease both; }
+  .lp-hero .lp-btn-secondary { animation: lpFadeUp .5s .35s ease both; }
+
+  :global(.lp-motion) [data-rv] {
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity .5s ease, transform .5s ease;
+  }
+  :global(.lp-motion) [data-rv].is-in {
+    opacity: 1;
+    transform: none;
+  }
+  :global(.lp-motion) .lp-step,
+  :global(.lp-motion) .lp-real {
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity .5s ease, transform .5s ease, border-color .25s ease, box-shadow .25s ease, scale .25s ease;
+    transition-delay: calc(var(--i, 0) * 90ms + 100ms), calc(var(--i, 0) * 90ms + 100ms), 0s, 0s, 0s;
+  }
+  :global(.lp-motion) [data-rv].is-in .lp-step,
+  :global(.lp-motion) [data-rv].is-in .lp-real {
+    opacity: 1;
+    transform: none;
+  }
+
+  .lp-btn {
+    transition: transform .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
+  }
+  .lp-btn:hover {
+    transform: translateY(-2px);
+  }
+  .lp-btn:active {
+    transform: translateY(0);
+  }
+  .lp-btn-secondary:hover {
+    border-color: #ff5a3c;
+    background: rgba(255, 90, 60, 0.16);
+  }
+  .lp-step:hover,
+  .lp-real:hover {
+    border-color: rgba(255, 90, 60, 0.45);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  }
+  /* Même survol que les cartes machines : carte +2 % (propriété scale, indépendante du transform d'entrée), photo +5 %. */
+  .lp-real {
+    transition: scale .25s ease, border-color .25s ease, box-shadow .25s ease;
+  }
+  .lp-real:hover {
+    scale: 1.02;
+  }
+
+  /* Bouton principal : UNE seule définition. Le halo vit sur ::before (animation d'opacité seule),
+     pour que l'animation ne touche jamais au box-shadow du bouton (ni au survol). */
+  @keyframes lpHalo {
+    0%, 100% { opacity: .6; }
+    50% { opacity: 1; }
+  }
+  .lp-btn-primary {
+    position: relative;
+    isolation: isolate;
+    flex: 0 0 auto;
+    padding: 20px 32px;
+    font-size: 17px;
+    font-weight: 700;
+    border-radius: 10px;
+    background: #ff5a3c;
+    color: #161514;
+    box-shadow: 0 8px 26px rgba(255, 90, 60, 0.35), 0 0 0 1px rgba(255, 90, 60, 0.5);
+  }
+  .lp-btn-primary::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    box-shadow: 0 0 36px 8px rgba(255, 90, 60, 0.5);
+    pointer-events: none;
+    animation: lpHalo 3.6s ease-in-out infinite;
+  }
+  .lp-btn-primary:hover {
+    background: #ff7155;
+    box-shadow: 0 12px 34px rgba(255, 90, 60, 0.5), 0 0 0 1px rgba(255, 90, 60, 0.7);
+  }
+  .lp-btn-primary:active {
+    transform: translateY(1px) scale(0.99);
+  }
+  .lp-btn-primary:focus-visible {
+    outline: 3px solid #f3f1ec;
+    outline-offset: 3px;
+  }
+  .lp-btn-label {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .lp-arrow {
+    display: inline-block;
+    transition: transform .25s ease;
+  }
+  .lp-btn-primary:hover .lp-arrow,
+  .lp-btn-primary:focus-visible .lp-arrow {
+    transform: translateX(6px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lp-title, .lp-subtitle, .lp-btn { animation: none !important; }
+    .lp-btn-primary::before { animation: none; opacity: .8; }
+    .lp-real:hover { scale: none; }
+    .lp-btn:hover, .lp-btn:active, .lp-real:hover img,
+    .lp-btn-primary:hover .lp-arrow, .lp-btn-primary:focus-visible .lp-arrow { transform: none; }
+    .lp-btn, .lp-arrow, .lp-real img { transition: none; }
+  }
+
+  @media (max-width: 640px) {
+    .lp-title {
+      font-size: 26px;
+    }
+    .lp-ctas {
+      flex-direction: column;
+    }
+    .lp-btn-primary {
+      width: 100%;
+      padding: 20px 22px;
+    }
+    .lp-steps,
+    .lp-real-grid {
+      grid-template-columns: 1fr;
+    }
+    .lp-final {
+      margin-left: 16px;
+      margin-right: 16px;
+    }
+  }
+</style>
