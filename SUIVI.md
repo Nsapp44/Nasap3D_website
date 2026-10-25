@@ -1,4 +1,12 @@
-# SUIVI : état courant (22/10/2026)
+# SUIVI : état courant (25/10/2026)
+
+## PASSATION vers la conversation NASAP Shop (Opus ultracode, 25/10 soir)
+Tout est commité et poussé (mobile OK : burger accueil, CTA, audit 18 pages). Redéploiement OVH ~15 min après push. L'ancienne conversation peut être supprimée.
+Mission : architecture + maquette + branding complet du shop (sous-domaine séparé, marque « NASAP Shop », logo à créer, ADN NASAP : Space Grotesk + Inter, cartes arrondies, palette plus claire et vivante), validés par Nolann (captures 375/768/desktop) avant tout code.
+À lire : item 22 ci-dessous (décisions SEO, liens, paiement) et `Nasap3D website/NOTES-SUR-MESURE/SUIVI.md` (produits sur mesure ; LECTURE SEULE, autre conversation).
+Visuels/logo via GPT : OK de Nolann le 25/10 pour ce chantier ; tout capter en local avant la fin d'accès GPT (fin novembre).
+Questions ouvertes (pop-up) : prix, paiement immédiat vs expertise d'abord, papercraft (Cricut ou xTool C1), nom exact du sous-domaine.
+Lien « Shop » dans le menu de nasap3d.com : plus tard, une fois le shop en ligne.
 
 ## Fait (poussé sur master)
 - Échelle du projet stockée/affichée partout (`bb1989b`).
@@ -9,7 +17,7 @@
 
 ## File des demandes (25/10/2026)
 - [x] 25/10 URGENT mobile : burger absent sur l'accueil (index.astro masque le Header commun → ajout MobileNavToggle) ; CTA « Parler de mon projet » débordait (box-sizing) ; reveals plus tôt (700px) ; viewer chargé 500px avant. Audit 375px des 18 pages : plus aucun débordement. À refaire systématiquement à chaque changement d'interface.
-Fait, NON commité (attente OK Nolann) : hub `/maquette-impression-3d` (SEO "Maquette …", FAQ, JSON-LD), `MaquetteCarousel.astro` (viewer three.js, éclairage studio + bloom, LED qui respirent, cellule GLB passe 4 : LED seulement dans les petits trous ronds), `MachinesStrip.astro`, images machines, liens services/footer/sitemap.
+Fait et POUSSÉ (30d327f, b203bc2, 023dbf8) : hub `/maquette-impression-3d` (SEO "Maquette …", FAQ, JSON-LD), `MaquetteCarousel.astro` (viewer three.js, éclairage studio + bloom, LED qui respirent, cellule GLB passe 4 : LED seulement dans les petits trous ronds), `MachinesStrip.astro`, images machines, liens services/footer/sitemap.
 À faire :
 1. [x] (fait) GLB passe 5 : les 2 hélices ADN de devant = jaune et cyan (celle de gauche) ; pièce du milieu = gris foncé bien net (ids à identifier ; 50/52 actuellement gris foncé mais paraissent noirs → éclaircir un peu).
 2. [ ] Page hub COMPLÉTÉE : description du parc machines (une fiche par machine) + exemples d'application concrets pour que le visiteur se projette. **Maquette/design de cette section = Opus ultracode** (brief ci-dessous).
