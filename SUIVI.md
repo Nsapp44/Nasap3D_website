@@ -38,12 +38,11 @@ But : section « Notre parc machines » sur `/maquette-impression-3d`, remplaça
 18. [ ] Nolann vérifie lui-même tout le responsive A→Z ; il fournira les fichiers Blender des 2 autres maquettes (ce soir / demain).
 
 19. [x] Menu : « Maquettes » ajouté après Services (Header.astro + HomeHeader.tsx), avant Devis instantané. Raccourci Shop : PAS maintenant (Nolann le fera plus tard, avec sous-partie). En attente : OK de Nolann pour commit + push master (mise en prod).
-20. [x] LED qui scintillaient : corrigé (rang propagé depuis le voisin classé). Poids : le viewer ne charge seul que le tour à hauteur de départ (≈ 2,2 Mo desktop, avif) ; les 2 autres hauteurs (reste, ≈ 6,8 Mo au total) seulement au 1er survol/toucher ; mobile = images `sm`. Nolann a dit « On push » (25/10) : commit + merge master + push. 2e commit : 2 dernières maquettes (fichiers Blender à venir).
+20. [x] LED qui scintillaient : corrigé (rang propagé depuis le voisin classé). Poids : le viewer ne charge seul que le tour à hauteur de départ (≈ 2,2 Mo desktop, avif) ; les 2 autres hauteurs (reste, ≈ 6,8 Mo au total) seulement au 1er survol/toucher ; mobile = images `sm`. Nolann a dit « On push » (25/10) : commit + merge master + push. POUSSÉ sur master le 25/10 (30d327f). 2e commit : 2 dernières maquettes : on ATTEND les OBJ propres + textures de Yanis (collègue de Nolann), puis rendu Blender (pipeline `Source machine/glb/`), conversion, ajout au carrousel.
 16. [x] Loader viewer, zoom survol cartes machines, CTA sans bug (architecte), refonte MachinesStrip appliquée.
 
 ## Prochain pas exact
-Rendu complet fini (216 vues × base/rank/glow), converti (`scripts/build-maquette-frames.mjs` → `public/assets/maquettes/cellule/`, ~3,5 Mo desktop, ~2,5 Mo mobile), viewer canvas écrit (`MaquetteCarousel.astro`), `public/assets/3d/cellule.glb` retiré. Testé via `astro build` + `astro preview --port 4325` : desktop, 768 et 375 OK (viewer, glisser, LED vertes visibles, pas de scroll horizontal).
-Reste : voir la chenille LED en direct (cycle 5 s, halo), tactile/pincement, thème sombre Windows, mémoire ; montrer captures à Nolann ; questions (tactile vertical = scroll de page, 5e branche à 2 LED, trous 212/214/220 écartés). Puis brief Opus ultracode (item 2) en nouvelle conversation. Aucun commit sans OK de Nolann. Nolann supprime à la main `C:\renders_test\rank\`.
+Attendre les OBJ + textures de Yanis ; vérifier la page en ligne après le déploiement OVH ; puis pipeline des 2 maquettes (rendu base/rank/glow, `build-maquette-frames.mjs`, entrées du carrousel, pages par maquette).
 
 ## Ensuite
 Stratégie X-Tools C1 (shop Etsy séparé sans diluer NASAP 3D, `machines.astro` Cricut→C1, mention discrète, SEO, TikTok auto).
