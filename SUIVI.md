@@ -38,6 +38,7 @@ But : section « Notre parc machines » sur `/maquette-impression-3d`, remplaça
 18. [ ] Nolann vérifie lui-même tout le responsive A→Z ; il fournira les fichiers Blender des 2 autres maquettes (ce soir / demain).
 
 19. [x] Menu : « Maquettes » ajouté après Services (Header.astro + HomeHeader.tsx), avant Devis instantané. Raccourci Shop : PAS maintenant (Nolann le fera plus tard, avec sous-partie). En attente : OK de Nolann pour commit + push master (mise en prod).
+20. [x] LED qui scintillaient : corrigé (rang propagé depuis le voisin classé). Poids : le viewer ne charge seul que le tour à hauteur de départ (≈ 2,2 Mo desktop, avif) ; les 2 autres hauteurs (reste, ≈ 6,8 Mo au total) seulement au 1er survol/toucher ; mobile = images `sm`. Nolann a dit « On push » (25/10) : commit + merge master + push. 2e commit : 2 dernières maquettes (fichiers Blender à venir).
 16. [x] Loader viewer, zoom survol cartes machines, CTA sans bug (architecte), refonte MachinesStrip appliquée.
 
 ## Prochain pas exact

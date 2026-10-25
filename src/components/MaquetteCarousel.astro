@@ -233,15 +233,23 @@ const MAQUETTES: Maquette[] = [
       v.ready = true; v.dirty = true;
       if (v === V) shown();
       // base et calques LED en parallèle, dans le même ordre
-      pool(order.slice(1), CONC_BASE, async ([e, a]) => {
+      // Économie de données : le tour à hauteur de départ se charge seul ; les autres hauteurs seulement
+      // au premier survol / toucher / touche (le visiteur qui ne touche pas à la maquette ne les télécharge pas).
+      const nMid = v.item.frames;
+      const touched = new Promise((res) => {
+        for (const t of ["pointerenter", "pointerdown", "keydown", "wheel", "focus"]) stage.addEventListener(t, res, { once: true });
+      });
+      const loadBase = async ([e, a]) => {
         v.base.set(key(e, a), await fetchBase(v, e, a));
         if (v === V) v.dirty = true;
-      });
-      pool(order, CONC_LED, async ([e, a]) => {
+      };
+      const loadLed = async ([e, a]) => {
         const k = key(e, a);
         const [r, g] = await Promise.all([fetchLayer(v, "rank", e, a), fetchLayer(v, "glow", e, a)]);
         v.rank.set(k, r); v.glow.set(k, g);
-      });
+      };
+      pool(order.slice(1, nMid), CONC_BASE, loadBase).then(() => touched).then(() => pool(order.slice(nMid), CONC_BASE, loadBase));
+      pool(order.slice(0, nMid), CONC_LED, loadLed).then(() => touched).then(() => pool(order.slice(nMid), CONC_LED, loadLed));
     }
 
     function shown() {
@@ -277,15 +285,32 @@ const MAQUETTES: Maquette[] = [
       const R = sctx.getImageData(0, 0, LED_W, LED_H).data;
       sctx.clearRect(0, 0, LED_W, LED_H); sctx.drawImage(gi, 0, 0, LED_W, LED_H);
       const G = sctx.getImageData(0, 0, LED_W, LED_H).data;
+      // Pixels de lueur sans rang (bord de LED, halo) : ils prennent le rang du voisin classé le plus proche,
+      // sinon ils s'allumaient tous d'un coup à la fin (scintillement différent d'une vue à l'autre).
+      const RK = new Float32Array(LED_W * LED_H).fill(-1);
+      for (let p = 0; p < LED_W * LED_H; p++) if (R[p * 4 + 3]) RK[p] = R[p * 4] / 255;
+      for (let it = 0; it < 6; it++) {
+        const nx = RK.slice();
+        for (let y = 1; y < LED_H - 1; y++) for (let x = 1; x < LED_W - 1; x++) {
+          const p = y * LED_W + x;
+          if (RK[p] >= 0 || !G[p * 4 + 3]) continue;
+          let best = -1;
+          for (const q of [p - 1, p + 1, p - LED_W, p + LED_W, p - LED_W - 1, p - LED_W + 1, p + LED_W - 1, p + LED_W + 1]) {
+            if (RK[q] >= 0 && (best < 0 || RK[q] < best)) best = RK[q];
+          }
+          if (best >= 0) nx[p] = best;
+        }
+        RK.set(nx);
+      }
       let n = 0;
-      for (let p = 3; p < G.length; p += 4) if (G[p]) n++;
+      for (let p = 3; p < G.length; p += 4) if (G[p] && RK[(p - 3) >> 2] >= 0) n++;
       L = { n, pos: new Uint32Array(n), rank: new Float32Array(n), rgba: new Uint8Array(n * 4) };
       let j = 0;
       for (let p = 0; p < LED_W * LED_H; p++) {
         const o = p * 4;
-        if (!G[o + 3]) continue;
+        if (!G[o + 3] || RK[p] < 0) continue; // sans rang même après propagation = parasite isolé, ignoré
         L.pos[j] = o;
-        L.rank[j] = R[o + 3] ? R[o] / 255 : 1; // pas de rang sous le glow : s'allume en dernier
+        L.rank[j] = RK[p];
         L.rgba[j * 4] = G[o]; L.rgba[j * 4 + 1] = G[o + 1]; L.rgba[j * 4 + 2] = G[o + 2]; L.rgba[j * 4 + 3] = G[o + 3];
         j++;
       }
