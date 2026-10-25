@@ -533,7 +533,7 @@ const MAQUETTES: Maquette[] = [
     new IntersectionObserver((es) => {
       onScreen = es[0].isIntersecting;
       if (onScreen && V) { startLoading(V); if (V.ready) { V.dirty = true; kick(); } }
-    }, { rootMargin: "200px 0px", threshold: 0 }).observe(stage);
+    }, { rootMargin: "500px 0px", threshold: 0 }).observe(stage);
     document.addEventListener("visibilitychange", () => { lastTs = 0; kick(); });
     mount(idx);
     window.__mq = { go: (i) => go(i), get ready() { return !!(V && V.ready); } };

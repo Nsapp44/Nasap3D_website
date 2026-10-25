@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import HomeHeader from "../components/home/HomeHeader";
+import MobileNavToggle from "../components/MobileNavToggle";
 import NPrintLogo from "../components/home/NPrintLogo";
 import ServicesGrid from "../components/home/ServicesGrid";
 import RealisationsCarousel from "../components/home/RealisationsCarousel";
@@ -49,6 +50,7 @@ const jsonLd = {
     <script is:inline src="https://js.hcaptcha.com/1/api.js?render=explicit&hl=fr" async defer></script>
   </Fragment>
 
+  <MobileNavToggle client:load />
   <HomeHeader client:load />
 
   <div id="sec-accueil" class="hero-wrap">
