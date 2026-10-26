@@ -17,23 +17,49 @@ const pricing = await getPublicPricing();
 
 const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "LocalBusiness",
-  "@id": "https://nasap3d.com/#business",
-  name: "Nasap3D",
-  image: "https://nasap3d.com/assets/logo.png",
-  url: "https://nasap3d.com/",
-  telephone: "+33661430506",
-  email: "nasap3D@gmail.com",
-  address: {
-    "@type": "PostalAddress",
-    streetAddress: "29 rue Mellier",
-    postalCode: "44100",
-    addressLocality: "Nantes",
-    addressCountry: "FR",
-  },
-  geo: { "@type": "GeoCoordinates", latitude: 47.21023, longitude: -1.580297 },
-  areaServed: ["Nantes", "Cholet", "Angers"],
-  priceRange: "€€",
+  "@graph": [
+    {
+      "@type": "LocalBusiness",
+      "@id": "https://nasap3d.com/#business",
+      name: "Nasap3D",
+      image: ["https://nasap3d.com/assets/logo.png", "https://nasap3d.com/assets/og-nasap3d.jpg"],
+      url: "https://nasap3d.com/",
+      telephone: "+33661430506",
+      email: "nasap3D@gmail.com",
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "29 rue Mellier",
+        postalCode: "44100",
+        addressLocality: "Nantes",
+        addressCountry: "FR",
+      },
+      geo: { "@type": "GeoCoordinates", latitude: 47.21023, longitude: -1.580297 },
+      areaServed: ["Nantes", "Cholet", "Angers"],
+      priceRange: "€€",
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: "5.0",
+        reviewCount: "54",
+        bestRating: "5",
+      },
+      parentOrganization: { "@id": "https://nasap3d.com/#organization" },
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://nasap3d.com/#organization",
+      name: "Nasap3D",
+      url: "https://nasap3d.com/",
+      logo: "https://nasap3d.com/assets/logo.png",
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://nasap3d.com/#website",
+      name: "Nasap3D",
+      url: "https://nasap3d.com/",
+      inLanguage: "fr-FR",
+      publisher: { "@id": "https://nasap3d.com/#organization" },
+    },
+  ],
 };
 ---
 
@@ -45,9 +71,6 @@ const jsonLd = {
 >
   <Fragment slot="head">
     <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script is:inline src="https://js.hcaptcha.com/1/api.js?render=explicit&hl=fr" async defer></script>
   </Fragment>
 
   <MobileNavToggle client:load />
@@ -60,7 +83,8 @@ const jsonLd = {
     </script>
     <div class="hero-fade"></div>
     <div class="hero-content">
-      <div class="hero-title">As soon as possible.<br />Sans compromis sur la qualité.</div>
+      <h1 class="hero-title">Impression 3D à Nantes</h1>
+      <p class="hero-slogan">As soon as possible. Sans compromis sur la qualité.</p>
       <div class="hero-subtitle">
         Prototypage, rétro-conception, maquettage, petites séries. Le savoir-faire artisan, la cadence d'un atelier
         outillé — à Nantes. Votre{" "}
@@ -77,7 +101,7 @@ const jsonLd = {
 
   <div class="section section-alt configurator-section">
     <div class="section-inner">
-      <h2 class="eyebrow">Devis instantané</h2>
+      <h2 class="eyebrow">Devis d'impression 3D instantané</h2>
       <ExpertiseSteps style="max-width: none; margin-bottom: 26px" />
       <QuoteWizardSection client:load />
     </div>
@@ -97,24 +121,24 @@ const jsonLd = {
 
   <div id="sec-services" class="section">
     <div class="section-inner">
-      <h2 class="eyebrow">Nos services</h2>
+      <h2 class="eyebrow">Nos services d'impression 3D et de fabrication</h2>
       <div class="eyebrow-sub">Chaque prestation a sa page dédiée</div>
-      <ServicesGrid client:load />
+      <ServicesGrid client:visible={{ rootMargin: "600px" }} />
     </div>
   </div>
 
   <div class="section section-alt">
     <div class="section-inner">
-      <HomeReviewsCarousel idPrefix="nasap-google-home" client:load />
+      <HomeReviewsCarousel idPrefix="nasap-google-home" client:visible={{ rootMargin: "600px" }} />
     </div>
   </div>
 
   <div id="sec-apropos" class="section about-section">
     <div class="section-inner about-grid">
-      <NPrintLogo client:load />
+      <NPrintLogo client:visible={{ rootMargin: "600px" }} />
       <div>
-        <h2 class="eyebrow">Qui sommes-nous</h2>
-        <h1 class="about-title">Nasap3D<br />Impression 3D, rétro-conception &amp; maquettage</h1>
+        <h2 class="eyebrow">Un atelier d'impression 3D à Nantes</h2>
+        <h2 class="about-title">Nasap3D<br />Impression 3D, rétro-conception &amp; maquettage</h2>
         <div class="about-text">
           Nasap3D est né en 2022 à Nantes, du croisement entre savoir-faire artisanal et technologie d'impression 3D.
         </div>
@@ -124,14 +148,14 @@ const jsonLd = {
 
   <div id="sec-realisations" class="section section-alt">
     <div class="section-inner">
-      <h2 class="eyebrow">Réalisations</h2>
-      <RealisationsCarousel client:load />
+      <h2 class="eyebrow">Nos réalisations en impression 3D</h2>
+      <RealisationsCarousel client:visible={{ rootMargin: "600px" }} />
     </div>
   </div>
 
   <div id="sec-machines" class="section">
     <div class="section-inner">
-      <h2 class="eyebrow">Parc machine</h2>
+      <h2 class="eyebrow">Notre parc de machines</h2>
       <h3 class="machines-subhead">Impression 3D</h3>
       <div class="machines-grid-3">
         <div class="machine-card">
@@ -174,17 +198,30 @@ const jsonLd = {
     </div>
   </div>
 
+  <div class="section seo-section">
+    <div class="section-inner">
+      <div class="seo-text">
+        <h2 class="seo-title">L'impression 3D à Nantes, à l'unité ou en série</h2>
+        <p>Nasap3D est un atelier d'impression 3D installé à Nantes, dans le quartier Canclaux, depuis 2022. Nous fabriquons des pièces sur mesure pour les particuliers, les artisans, les entreprises et les architectes : pièce de remplacement introuvable, prototype, support technique, petite série ou maquette.</p>
+        <p>Vous avez un fichier 3D ? Déposez-le sur notre <a href="/devis-instantane">devis instantané</a> : le prix est calculé sur votre fichier en quelques minutes, à partir de 8,90 € la pièce. Vous n'en avez pas ? Envoyez des photos et les dimensions de la pièce : nous la redessinons en 3D (rétro-conception), puis nous l'imprimons.</p>
+        <p>Chaque commande est expertisée avant fabrication : nous vérifions la faisabilité, la matière et la solidité de la pièce, et vous ne payez qu'une fois la commande acceptée. L'atelier imprime en PLA, PETG, ABS, ASA, TPU, PP et Nylon sur des imprimantes Bambu Lab H2C, X2D et X1C, et en résine pour les détails très fins. Il grave aussi au laser, sur métal comme sur bois, et réalise des maquettes d'architecture.</p>
+        <p>Nos clients nous notent 5,0 sur 54 avis Google : arceau de casque audio réparé et renforcé, engrenage de scie à onglet qui n'était plus fabriqué, pièce complexe pour l'aéronautique de loisir, série de 528 pièces en TPU.</p>
+        <p>Retrait gratuit à l'atelier sur rendez-vous, ou livraison partout en France et en Europe. Particulier ? Lisez notre <a href="/impression-3d-particuliers">guide de l'impression 3D pour particuliers</a>. Pour comparer les matières ou estimer un budget, consultez les guides des <a href="/materiaux-impression-3d">matériaux</a> et des <a href="/prix-impression-3d">prix</a>, ou découvrez l'<a href="/impression-3d-en-ligne">impression 3D en ligne</a>.</p>
+      </div>
+    </div>
+  </div>
+
   <div id="sec-contact" class="section section-alt">
     <div class="section-inner contact-grid">
       <div>
-        <h2 class="eyebrow">Contact</h2>
-        <ContactForm client:load />
+        <h2 class="eyebrow">Contact et atelier à Nantes (Canclaux)</h2>
+        <ContactForm client:visible={{ rootMargin: "600px" }} />
       </div>
       <div class="contact-info">
         <div class="contact-info-title">Nasap3D</div>
         29 rue Mellier, 44100 Nantes<br />06 61 43 05 06<br />nasap3D@gmail.com
         <div class="contact-map">
-          <ContactMap height="300px" client:load />
+          <ContactMap height="300px" client:visible={{ rootMargin: "600px" }} />
         </div>
       </div>
     </div>
@@ -218,7 +255,14 @@ const jsonLd = {
   .hero-title {
     font: 700 40px/1.12 "Space Grotesk", sans-serif;
     color: #f3f1ec;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
+    text-wrap: balance;
+  }
+  .hero-slogan {
+    font: 600 18px/1.3 "Space Grotesk", sans-serif;
+    color: rgba(255, 255, 255, 0.62);
+    margin: 0 auto 16px;
+    text-wrap: balance;
   }
   .hero-subtitle {
     font: 400 13.5px/1.6 "Inter", sans-serif;
@@ -355,6 +399,34 @@ const jsonLd = {
     max-width: 520px;
   }
 
+  .seo-section {
+    padding-top: 0;
+  }
+  .seo-title {
+    font: 700 22px/1.25 "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 14px;
+  }
+  .seo-text p {
+    font: 400 13.5px/1.7 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.65);
+    max-width: 70ch;
+    margin: 0 0 12px;
+  }
+  .seo-text a {
+    color: #ff5a3c;
+    text-decoration: none;
+  }
+  .seo-text a:hover {
+    color: #ff7a5c;
+    text-decoration: underline;
+  }
+  .seo-text a:focus-visible {
+    outline: 2px solid #ff5a3c;
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
   .machines-subhead {
     font: 600 9.5px "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.5);
@@ -466,6 +538,12 @@ const jsonLd = {
   @media (max-width: 480px) {
     .hero-title {
       font-size: 28px;
+    }
+    .hero-slogan {
+      font-size: 15px;
+    }
+    .seo-title {
+      font-size: 19px;
     }
   }
   @media (max-width: 420px) {
