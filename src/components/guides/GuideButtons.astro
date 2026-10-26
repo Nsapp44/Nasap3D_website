@@ -1,0 +1,72 @@
+---
+/**
+ * GuideButtons : paire de boutons des guides (principal devis + secondaire contact).
+ * Utilisé par GuideHero et GuideCta ; peut aussi servir seul.
+ *
+ * Props (toutes facultatives) :
+ *  - primaryLabel?: string     texte du bouton principal (défaut « Obtenir mon prix en ligne »).
+ *                              Rendu par QuoteCta (îlot React existant) : lien vers /devis-instantane,
+ *                              qui bascule vers /contact (« Nous contacter → ») si le devis est en pause.
+ *  - secondaryLabel?: string   texte du bouton secondaire (défaut « Pas de fichier 3D ? »)
+ *  - secondaryHref?: string    lien du bouton secondaire (défaut « /contact »)
+ *  - showSecondary?: boolean   false = un seul bouton (guides prix et matériaux), défaut true
+ *  - class?: string            classe ajoutée au conteneur (marges)
+ *
+ * Styles des boutons : mêmes valeurs et mêmes animations que .hero-cta-primary / .hero-cta-secondary
+ * de la page d'accueil (survol translateY(-2px) + ombre, 0,2 s), avec une hauteur mini de 44 px (cible tactile).
+ */
+import QuoteCta from "../QuoteCta";
+
+interface Props {
+  primaryLabel?: string;
+  secondaryLabel?: string;
+  secondaryHref?: string;
+  showSecondary?: boolean;
+  class?: string;
+}
+const {
+  primaryLabel = "Obtenir mon prix en ligne",
+  secondaryLabel = "Pas de fichier 3D ?",
+  secondaryHref = "/contact",
+  showSecondary = true,
+  class: extraClass = "",
+} = Astro.props;
+---
+<div class:list={["gbtns", extraClass]}>
+  <QuoteCta className="gbtn gbtn-p" label={primaryLabel} client:load />
+  {showSecondary && <a class="gbtn gbtn-s" href={secondaryHref}>{secondaryLabel}</a>}
+</div>
+<style>
+  .gbtns { display: flex; flex-wrap: wrap; gap: 10px; }
+  /* Les liens du bouton principal sont rendus par un îlot React : sélecteurs en :global() sous .gbtns. */
+  .gbtns :global(.gbtn) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-height: 44px;
+    text-align: center;
+    text-decoration: none;
+    font: 600 13px "Inter", sans-serif;
+    padding: 12px 22px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .gbtns :global(.gbtn:hover),
+  .gbtns :global(.gbtn:focus-visible) { text-decoration: none; }
+  .gbtns :global(.gbtn:focus-visible) { outline: 2px solid #f3f1ec; outline-offset: 3px; }
+  .gbtns :global(.gbtn-p),
+  .gbtns :global(.gbtn-p:hover) { background: #ff5a3c; color: #161514; }
+  .gbtns :global(.gbtn-p:hover) { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(255, 90, 60, 0.35); }
+  .gbtns :global(.gbtn-s),
+  .gbtns :global(.gbtn-s:hover) { border: 1px solid rgba(255, 255, 255, 0.25); background: #1e1c1a; color: #f3f1ec; font-weight: 500; }
+  .gbtns :global(.gbtn-s:hover) { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35); border-color: #ff5a3c; }
+  @media (max-width: 520px) {
+    .gbtns :global(.gbtn) { flex: 1 1 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .gbtns :global(.gbtn) { transition: none; }
+    .gbtns :global(.gbtn:hover) { transform: none; }
+  }
+</style>

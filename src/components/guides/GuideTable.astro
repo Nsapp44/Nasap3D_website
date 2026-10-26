@@ -1,0 +1,40 @@
+---
+/**
+ * GuideTable : tableau comparatif qui défile horizontalement DANS son cadre (jamais sur la page).
+ * La zone est focusable au clavier (tabindex=0) pour pouvoir la faire défiler.
+ *
+ * Props :
+ *  - headers: string[]    en-têtes de colonnes
+ *  - rows: string[][]     lignes ; la 1re cellule de chaque ligne est l'en-tête de ligne (en gras)
+ *  - label: string        nom accessible du tableau (lu par les lecteurs d'écran), ex. "Comparatif des matières"
+ */
+interface Props { headers: string[]; rows: string[][]; label: string }
+const { headers, rows, label } = Astro.props;
+---
+<div class="gtbl" role="region" aria-label={label} tabindex="0">
+  <table>
+    <caption class="gtbl-cap">{label}</caption>
+    <thead>
+      <tr>{headers.map((h) => <th scope="col">{h}</th>)}</tr>
+    </thead>
+    <tbody>
+      {rows.map((row) => (
+        <tr>
+          <th scope="row">{row[0]}</th>
+          {row.slice(1).map((cell) => <td>{cell}</td>)}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+<style>
+  .gtbl { max-width: 100%; overflow-x: auto; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; margin: 12px 0; background: #1a1917; }
+  .gtbl:focus-visible { outline: 2px solid #ff5a3c; outline-offset: 2px; }
+  .gtbl-cap { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  table { border-collapse: collapse; width: 100%; min-width: 620px; font: 400 13.5px/1.5 "Inter", sans-serif; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); vertical-align: top; }
+  thead th { background: #201d1b; font: 600 12.5px "Inter", sans-serif; color: #f3f1ec; }
+  td { color: rgba(255, 255, 255, 0.78); }
+  tbody th { color: #f3f1ec; font-weight: 600; white-space: nowrap; background: transparent; }
+  tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
+</style>

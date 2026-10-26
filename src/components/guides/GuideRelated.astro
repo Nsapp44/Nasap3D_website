@@ -1,0 +1,52 @@
+---
+/**
+ * GuideRelated : liens vers les autres guides (le guide courant est exclu automatiquement).
+ * Absent de la maquette validée : ajout pour le maillage interne (à valider par Nolann).
+ *
+ * Props :
+ *  - current: string    chemin du guide courant, ex. "/impression-3d-en-ligne" (exclu de la liste)
+ *  - title?: string     texte du h2 (défaut « Nos autres guides »)
+ *
+ * La liste des 4 guides est définie dans le frontmatter ci-dessous (un seul endroit à modifier).
+ */
+interface Props { current: string; title?: string }
+const { current, title = "Nos autres guides" } = Astro.props;
+
+const GUIDES = [
+  { href: "/impression-3d-en-ligne", label: "Impression 3D en ligne", text: "Déposer son fichier, prix en quelques minutes, livraison partout en France." },
+  { href: "/impression-3d-particuliers", label: "Impression 3D pour particuliers", text: "Une pièce cassée ou introuvable, même sans fichier 3D." },
+  { href: "/prix-impression-3d", label: "Prix de l'impression 3D", text: "Comment le prix est calculé, exemples réels." },
+  { href: "/materiaux-impression-3d", label: "Matériaux d'impression 3D", text: "PLA, PETG, ABS, ASA, TPU, PP, Nylon : quelle matière choisir." },
+];
+const others = GUIDES.filter((g) => g.href !== current.replace(/\/$/, ""));
+---
+<section class="grel" aria-labelledby="grel-titre">
+  <h2 id="grel-titre">{title}</h2>
+  <ul class="grel-list" role="list">
+    {others.map((g) => (
+      <li>
+        <a class="grel-card" href={g.href}>
+          <span class="grel-name">{g.label}</span>
+          <span class="grel-text">{g.text}</span>
+        </a>
+      </li>
+    ))}
+  </ul>
+</section>
+<style>
+  .grel { margin-top: 38px; }
+  .grel h2 { margin: 0 0 14px; font: 600 21px/1.2 "Space Grotesk", sans-serif; letter-spacing: -0.01em; color: #f3f1ec; }
+  .grel-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
+  .grel-card {
+    display: flex; flex-direction: column; gap: 4px; height: 100%; box-sizing: border-box; min-height: 44px;
+    padding: 14px 16px; background: #1a1917; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;
+    text-decoration: none; transition: border-color 0.2s ease, transform 0.2s ease;
+  }
+  .grel-card:hover { border-color: rgba(255, 90, 60, 0.45); transform: translateY(-2px); }
+  .grel-card:focus-visible { outline: 2px solid #ff5a3c; outline-offset: 2px; }
+  .grel-name { font: 600 15px/1.3 "Space Grotesk", sans-serif; color: #f3f1ec; }
+  .grel-card:hover .grel-name { color: #ff5a3c; }
+  .grel-text { font: 400 13px/1.5 "Inter", sans-serif; color: rgba(255, 255, 255, 0.62); }
+  @media (min-width: 640px) { .grel-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } .grel h2 { font-size: 25px; } }
+  @media (prefers-reduced-motion: reduce) { .grel-card { transition: none; } .grel-card:hover { transform: none; } }
+</style>

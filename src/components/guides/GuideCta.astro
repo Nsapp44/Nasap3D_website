@@ -1,0 +1,52 @@
+---
+/**
+ * GuideCta : bandeau final d'un guide (h2, phrase, deux boutons, rappel « aucun paiement à la commande »).
+ * Boutons = GuideButtons (devis instantané + contact existants du site).
+ *
+ * Props (toutes facultatives) :
+ *  - title?: string            h2 (défaut « Prêt à imprimer votre pièce ? »)
+ *  - text?: string             phrase sous le titre (défaut « Déposez votre fichier : le prix s'affiche en quelques minutes. »)
+ *  - note?: string             rappel sous les boutons (défaut « Aucun paiement à la commande. Expertise et validation de votre pièce en amont. »)
+ *  - primaryLabel?, secondaryLabel?, secondaryHref?, showSecondary?   transmis à GuideButtons
+ */
+import GuideButtons from "./GuideButtons.astro";
+
+interface Props {
+  title?: string;
+  text?: string;
+  note?: string;
+  primaryLabel?: string;
+  secondaryLabel?: string;
+  secondaryHref?: string;
+  showSecondary?: boolean;
+}
+const {
+  title = "Prêt à imprimer votre pièce ?",
+  text = "Déposez votre fichier : le prix s'affiche en quelques minutes.",
+  note = "Aucun paiement à la commande. Expertise et validation de votre pièce en amont.",
+  primaryLabel, secondaryLabel, secondaryHref, showSecondary,
+} = Astro.props;
+---
+<section class="gcta" aria-labelledby="gcta-titre">
+  <h2 id="gcta-titre">{title}</h2>
+  <p class="gcta-text">{text}</p>
+  <GuideButtons {primaryLabel} {secondaryLabel} {secondaryHref} {showSecondary} />
+  <p class="gcta-note">{note}</p>
+</section>
+<style>
+  .gcta {
+    margin-top: 40px;
+    padding: 22px;
+    border: 1px solid rgba(255, 90, 60, 0.38);
+    border-radius: 14px;
+    background-color: #201d1b;
+    background-image: linear-gradient(135deg, rgba(255, 90, 60, 0.14), rgba(255, 90, 60, 0) 65%);
+    color: #f3f1ec;
+    animation: gcta-in 0.5s ease-out both;
+  }
+  .gcta h2 { margin: 0 0 6px; font: 600 22px/1.2 "Space Grotesk", sans-serif; letter-spacing: -0.01em; color: #f3f1ec; }
+  .gcta .gcta-text { margin: 0 0 16px; font: 400 15px/1.6 "Inter", sans-serif; color: rgba(255, 255, 255, 0.78); }
+  .gcta .gcta-note { margin: 12px 0 0; font: 400 12.5px/1.5 "Inter", sans-serif; color: rgba(255, 255, 255, 0.62); }
+  @keyframes gcta-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .gcta { animation: none; } }
+</style>

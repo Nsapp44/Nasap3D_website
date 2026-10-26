@@ -1,0 +1,22 @@
+---
+/**
+ * GuideArticle : conteneur d'un guide (largeur 800 px et marges de 24 px comme les autres pages de contenu).
+ * Place le fond et la couleur de texte (thème sombre de Windows). À mettre directement dans BaseLayout,
+ * avec GuideHero, GuideSection, GuideFaq, GuideCta et GuideRelated à l'intérieur.
+ *
+ * Props : aucune. Contenu = slot par défaut.
+ */
+---
+<article class="garticle"><slot /></article>
+<style>
+  .garticle {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px 24px 72px;
+    background: #161514;
+    color: #f3f1ec;
+    font: 400 15px/1.6 "Inter", system-ui, sans-serif;
+  }
+</style>

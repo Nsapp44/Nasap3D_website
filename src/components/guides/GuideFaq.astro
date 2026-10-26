@@ -1,0 +1,49 @@
+---
+/**
+ * GuideFaq : section « Questions fréquentes » d'un guide. Une seule source de vérité : le tableau `items`
+ * produit à la fois le HTML visible (details/summary natifs, sans JavaScript, q = h3) ET le JSON-LD FAQPage.
+ *
+ * Props :
+ *  - items: { q: string; a: string }[]   questions et réponses en TEXTE BRUT (pas de HTML : la même chaîne
+ *                                        sert à l'affichage et au JSON-LD)
+ *  - title?: string                      texte du h2 (défaut « Questions fréquentes »)
+ *  - id?: string                         ancre de la section (défaut « faq »)
+ *  - openFirst?: boolean                 1re question ouverte au chargement (défaut true)
+ */
+import GuideSection from "./GuideSection.astro";
+
+interface Item { q: string; a: string }
+interface Props { items: Item[]; title?: string; id?: string; openFirst?: boolean }
+const { items, title = "Questions fréquentes", id = "faq", openFirst = true } = Astro.props;
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: items.map((it) => ({
+    "@type": "Question",
+    name: it.q,
+    acceptedAnswer: { "@type": "Answer", text: it.a },
+  })),
+};
+---
+<script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
+<GuideSection id={id} title={title}>
+  <div class="gfaq">
+    {items.map((it, i) => (
+      <details open={openFirst && i === 0}>
+        <summary><h3 class="gfaq-q">{it.q}</h3></summary>
+        <p class="gfaq-a">{it.a}</p>
+      </details>
+    ))}
+  </div>
+</GuideSection>
+<style>
+  .gfaq details { border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding: 4px 0; }
+  .gfaq details summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 44px; }
+  .gfaq details summary::-webkit-details-marker { display: none; }
+  .gfaq details summary::after { content: "+"; flex: none; color: #ff5a3c; font: 500 20px "Inter", sans-serif; }
+  .gfaq details[open] summary::after { content: "–"; }
+  .gfaq details summary:focus-visible { outline: 2px solid #ff5a3c; outline-offset: 2px; border-radius: 4px; }
+  .gfaq details summary .gfaq-q { margin: 0; font: 600 15.5px/1.3 "Space Grotesk", sans-serif; color: #f3f1ec; }
+  .gfaq details .gfaq-a { margin: 2px 0 12px; }
+</style>

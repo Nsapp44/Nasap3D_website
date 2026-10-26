@@ -1,0 +1,104 @@
+---
+/**
+ * GuideHero : haut de page d'un guide. Fil d'Ariane visible, eyebrow, h1 (le seul de la page), chapeau,
+ * boutons, puces. Émet aussi le JSON-LD BreadcrumbList (Accueil > guide) et Article/WebPage.
+ *
+ * Props :
+ *  - path: string               chemin du guide, ex. "/impression-3d-en-ligne" (sert au JSON-LD et à l'ancre canonique)
+ *  - crumbLabel: string         dernier maillon du fil d'Ariane, ex. "Impression 3D en ligne"
+ *  - eyebrow: string            petite ligne au-dessus du h1, ex. "Guide · Impression 3D en ligne"
+ *  - title: string              texte du h1 (aussi utilisé comme headline de l'Article)
+ *  - lead: string               chapeau sous le h1
+ *  - description: string        meta description de la page (reprise dans l'Article)
+ *  - chips?: { text: string; star?: boolean }[]   puces sous les boutons (star = étoile devant le texte)
+ *  - dateModified?: string      ISO, défaut "2026-10-26"
+ *  - primaryLabel?, secondaryLabel?, secondaryHref?, showSecondary?   transmis à GuideButtons
+ *
+ * Le contenu du slot par défaut (ex. <ExpertiseSteps/>) s'affiche sous les puces.
+ */
+import GuideButtons from "./GuideButtons.astro";
+
+interface Chip { text: string; star?: boolean }
+interface Props {
+  path: string;
+  crumbLabel: string;
+  eyebrow: string;
+  title: string;
+  lead: string;
+  description: string;
+  chips?: Chip[];
+  dateModified?: string;
+  primaryLabel?: string;
+  secondaryLabel?: string;
+  secondaryHref?: string;
+  showSecondary?: boolean;
+}
+const {
+  path, crumbLabel, eyebrow, title, lead, description, chips = [], dateModified = "2026-10-26",
+  primaryLabel, secondaryLabel, secondaryHref, showSecondary,
+} = Astro.props;
+
+const pageUrl = new URL(path, Astro.site).toString();
+const homeUrl = new URL("/", Astro.site).toString();
+const org = { "@type": "Organization", "@id": "https://nasap3d.com/#business", name: "Nasap3D", url: "https://nasap3d.com/" };
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Accueil", item: homeUrl },
+      { "@type": "ListItem", position: 2, name: crumbLabel, item: pageUrl },
+    ],
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: title,
+    description,
+    inLanguage: "fr-FR",
+    dateModified,
+    mainEntityOfPage: { "@type": "WebPage", "@id": pageUrl },
+    author: org,
+    publisher: org,
+  },
+];
+---
+{jsonLd.map((block) => <script type="application/ld+json" is:inline set:html={JSON.stringify(block)} />)}
+<header class="ghero">
+  <nav class="gcrumb" aria-label="Fil d'Ariane">
+    <ol>
+      <li><a href="/">Accueil</a></li>
+      <li aria-current="page">{crumbLabel}</li>
+    </ol>
+  </nav>
+  <p class="geyebrow">{eyebrow}</p>
+  <h1 class="gtitle">{title}</h1>
+  <p class="glead">{lead}</p>
+  <GuideButtons class="ghero-btns" {primaryLabel} {secondaryLabel} {secondaryHref} {showSecondary} />
+  {chips.length > 0 && (
+    <ul class="gchips" role="list">
+      {chips.map((c) => (
+        <li class="gchip">{c.star && <span class="gstar" aria-hidden="true">★ </span>}{c.text}</li>
+      ))}
+    </ul>
+  )}
+  <slot />
+</header>
+<style>
+  .ghero { animation: ghero-in 0.5s ease-out both; }
+  .gcrumb ol { list-style: none; margin: 0 0 6px; padding: 0; display: flex; flex-wrap: wrap; align-items: center; font: 400 12.5px/1.4 "Inter", sans-serif; color: rgba(255, 255, 255, 0.62); }
+  .gcrumb li + li::before { content: "›"; margin: 0 8px; opacity: 0.6; }
+  .gcrumb a { display: inline-flex; align-items: center; min-height: 44px; color: rgba(255, 255, 255, 0.78); text-decoration: none; }
+  .gcrumb a:hover { color: #ff5a3c; text-decoration: underline; }
+  .gcrumb a:focus-visible { outline: 2px solid #ff5a3c; outline-offset: 2px; border-radius: 3px; }
+  .geyebrow { margin: 0 0 10px; font: 600 11.5px "Inter", sans-serif; text-transform: uppercase; letter-spacing: 0.12em; color: #ff5a3c; }
+  .gtitle { margin: 0 0 14px; font: 700 28px/1.2 "Space Grotesk", sans-serif; letter-spacing: -0.01em; color: #f3f1ec; }
+  .glead { margin: 0 0 18px; max-width: 680px; font: 400 16.5px/1.6 "Inter", sans-serif; color: rgba(255, 255, 255, 0.78); }
+  .ghero :global(.ghero-btns) { margin: 0 0 14px; }
+  .gchips { list-style: none; margin: 0 0 20px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .gchip { font: 500 12.5px/1.4 "Inter", sans-serif; color: rgba(255, 255, 255, 0.78); background: #1a1917; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 999px; padding: 5px 11px; }
+  .gstar { color: #fbbc04; }
+  @media (min-width: 640px) { .gtitle { font-size: 38px; } }
+  @keyframes ghero-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .ghero { animation: none; } }
+</style>

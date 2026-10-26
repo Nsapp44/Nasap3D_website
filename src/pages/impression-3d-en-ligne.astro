@@ -1,0 +1,232 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import ExpertiseSteps from "../components/ExpertiseSteps.astro";
+import GuideArticle from "../components/guides/GuideArticle.astro";
+import GuideHero from "../components/guides/GuideHero.astro";
+import GuideToc from "../components/guides/GuideToc.astro";
+import GuideSection from "../components/guides/GuideSection.astro";
+import GuidePriceCards from "../components/guides/GuidePriceCards.astro";
+import GuideTable from "../components/guides/GuideTable.astro";
+import GuideFaq from "../components/guides/GuideFaq.astro";
+import GuideCta from "../components/guides/GuideCta.astro";
+import GuideRelated from "../components/guides/GuideRelated.astro";
+import { getPublicPricing } from "../lib/server/publicPricing";
+
+// Plancher, minimum de commande et frais : réglages admin (repli sur les valeurs par défaut).
+const { floorLabel, minOrderLabel, feeLabel, hasSmallOrderFee } = await getPublicPricing();
+const minOrderText = hasSmallOrderFee ? ` Commande minimum ${minOrderLabel} ; en dessous, ${feeLabel} de frais de petite commande.` : "";
+
+const PATH = "/impression-3d-en-ligne";
+const TITLE = "Impression 3D en ligne : devis instantané et livraison | Nasap3D";
+const DESCRIPTION =
+  `Impression 3D en ligne : déposez votre STL, OBJ ou 3MF, prix en quelques minutes dès ${floorLabel}. Aucun paiement à la commande, livraison France et UE.`;
+const H1 = "Impression 3D en ligne : votre pièce fabriquée et livrée partout en France";
+
+const toc = [
+  { label: "Comment ça marche", href: "#fonctionnement" },
+  { label: "Combien ça coûte", href: "#cout" },
+  { label: "Fichiers acceptés (ou pas de fichier)", href: "#fichiers" },
+  { label: "Quelle matière choisir", href: "#matieres" },
+  { label: "Nos machines", href: "#machines" },
+  { label: "Livraison et retrait", href: "#livraison" },
+  { label: "Exemples de pièces", href: "#exemples" },
+  { label: "Avis clients", href: "#avis" },
+  { label: "Pourquoi un atelier", href: "#atelier" },
+  { label: "Questions fréquentes", href: "#faq" },
+];
+
+const prices = [
+  { what: "Petite pièce en PLA · 8 g · 15 min d'impression", price: floorLabel, note: "prix minimum par pièce" },
+  { what: "Cube de 50 mm en PETG · 103 g · 5 h 49 d'impression", price: "31,76 €" },
+];
+
+const materialHeaders = ["Matière", "Pour quoi", "Points forts", "À savoir"];
+const materialRows = [
+  ["PLA", "Déco, prototypes visuels, usage intérieur", "Précis, bel état de surface, beaucoup de couleurs", "Se ramollit vers 55-60 °C : pas en plein soleil ni dans une voiture"],
+  ["PETG", "Pièces d'usage, extérieur, contact humide", "Plus tenace que le PLA, ne craint pas l'eau", "Tient mieux la chaleur que le PLA"],
+  ["ABS", "Pièces techniques exposées à la chaleur", "Tient la chaleur, se ponce et se colle", "Imprimé en caisson fermé (H2C)"],
+  ["ASA", "Extérieur, pièces au soleil", "Les qualités de l'ABS, en plus résistant aux UV", "Imprimé en caisson fermé (H2C)"],
+  ["TPU", "Joints, amortisseurs, pièces souples", "Flexible et élastique (par exemple TPU 90A)", "Moins adapté aux très petits détails"],
+  ["PP", "Charnières, contact avec des produits chimiques", "Résistance chimique, se plie sans casser", "Faisabilité vérifiée à l'expertise"],
+  ["Nylon", "Engrenages, pièces mécaniques, frottements", "Résiste à l'usure et aux chocs", "Craint l'humidité avant impression"],
+];
+
+const shots = [
+  { src: "/assets/real-12.webp", w: 1200, h: 1600, alt: "Réducteur rétro-conçu et imprimé en 3D", title: "Pièce rétro-conçue", text: "Réducteur redessiné en CAO à partir de la pièce d'origine usée." },
+  { src: "/assets/real-14.webp", w: 1173, h: 1600, alt: "Pièces en TPU noir imprimées en série", title: "Petite série technique", text: "Pièce en TPU noir 90A, série de 528 unités." },
+  { src: "/assets/real-18.webp", w: 654, h: 726, alt: "Cache personnalisé imprimé en 3D pour Peugeot 102", title: "Cache Peugeot 102", text: "Cache personnalisé imprimé pour Peugeot 102." },
+];
+
+const reviews = [
+  { text: "Réparation de l'arceau de mon casque audio impeccable! Nolann a même renforcé la pièce pour une meilleure résistance.\nMerci !", who: "Kevin Attm" },
+  { text: "merci à nolann pour la fabrication à l'identique d'un engrenage d'une scie à onglet que la société métabo ne fabriquait plus", who: "Guy André" },
+  { text: "Parfaite réalisation d'une pièce complexe pour l'aéronautique de loisir. Délai tenu et prix raisonnable. Je recommande vivement cette entreprise", who: "Jean Tramalloni" },
+];
+
+const faq = [
+  { q: "Combien coûte une impression 3D en ligne ?", a: `À partir de ${floorLabel} la pièce, hors livraison. Le prix exact dépend du poids de matière et du temps d'impression, mesurés sur votre fichier : par exemple 31,76 € pour un cube de 50 mm en PETG.${minOrderText}` },
+  { q: "Dois-je payer au moment de commander ?", a: "Non. Aucun paiement à la commande. Expertise et validation de votre pièce en amont : nous vérifions votre fichier sous 24 à 48 h, puis vous payez en ligne (Stripe) une fois la commande acceptée." },
+  { q: "Quels formats de fichier acceptez-vous ?", a: "STL, OBJ et 3MF. Un fichier STEP ou un modèle SolidWorks, Fusion 360 ou FreeCAD s'exporte en STL ou en 3MF depuis le logiciel." },
+  { q: "Je n'ai pas de fichier 3D, est-ce possible ?", a: "Oui. Envoyez des photos de la pièce et ses dimensions principales : nous la redessinons en 3D, sur devis, avant de l'imprimer." },
+  { q: "Quelle est la taille maximale d'une pièce ?", a: "330 × 320 × 325 mm sur nos Bambu Lab H2C. Pour une pièce plus grande, contactez-nous : nous étudions la solution avec vous." },
+  { q: "Livrez-vous partout en France ?", a: "Oui, en point relais ou à domicile, en France et dans l'Union européenne. Les frais de port sont calculés dans le panier. Retrait gratuit à l'atelier de Nantes, sur rendez-vous." },
+  { q: "Quel est le délai ?", a: "L'expertise prend 24 à 48 h. Le délai de fabrication dépend de la pièce et de la quantité ; il vous est indiqué à la validation de la commande." },
+  { q: "Le prix affiché inclut-il la TVA ?", a: "TVA non applicable (article 293 B du CGI) : le prix affiché est le prix que vous payez, hors livraison." },
+];
+---
+<BaseLayout title={TITLE} description={DESCRIPTION} path={PATH}>
+  <GuideArticle>
+    <GuideHero
+      path={PATH}
+      crumbLabel="Impression 3D en ligne"
+      eyebrow="Guide · Impression 3D en ligne"
+      title={H1}
+      lead="Déposez votre fichier STL, OBJ ou 3MF : le prix est calculé sur votre fichier en quelques minutes, par un vrai tranchage 3D. Votre pièce est ensuite expertisée dans notre atelier de Nantes, imprimée sur nos machines Bambu Lab, puis expédiée chez vous ou en point relais."
+      description={DESCRIPTION}
+      chips={[
+        { text: "5,0 · 54 avis Google", star: true },
+        { text: `Dès ${floorLabel} la pièce` },
+        { text: "Livraison France et UE" },
+      ]}
+    >
+      <ExpertiseSteps style="margin: 6px 0 8px" />
+    </GuideHero>
+
+    <GuideToc items={toc} />
+
+    <GuideSection id="fonctionnement" title="Comment fonctionne l'impression 3D en ligne chez Nasap3D ?">
+      <ol>
+        <li><strong>Vous déposez votre fichier</strong> sur la page Devis instantané, puis vous choisissez la matière, la couleur et la quantité.</li>
+        <li><strong>Le prix est calculé sur votre pièce.</strong> Notre logiciel tranche réellement votre fichier, comme le fera l'imprimante : il mesure le poids de matière et le temps d'impression, puis en déduit le prix. Comptez quelques minutes.</li>
+        <li><strong>Vous envoyez la commande, sans payer.</strong> Nous ouvrons votre fichier et vérifions l'épaisseur des parois, l'orientation, les supports et la matière choisie. Si quelque chose cloche, nous vous le disons avant de fabriquer. Réponse sous 24 à 48 h.</li>
+        <li><strong>Vous payez une fois la commande acceptée</strong>, en ligne et de façon sécurisée (Stripe), depuis votre compte. L'impression est lancée, puis la pièce part en point relais ou à domicile, ou vous la retirez à l'atelier.</li>
+      </ol>
+      <p>Ce fonctionnement évite la mauvaise surprise classique de l'impression 3D en ligne : payer une pièce qui ne peut pas être imprimée telle quelle, ou qui ne tiendra pas à l'usage.</p>
+    </GuideSection>
+
+    <GuideSection id="cout" title="Combien coûte une impression 3D en ligne ?">
+      <p>Le prix dépend de deux mesures faites sur votre fichier : la <strong>matière utilisée</strong> (le poids en grammes) et le <strong>temps machine</strong>. Pas de forfait au jugé ni de marge cachée : le calcul est refait sur notre serveur à chaque devis.</p>
+      <GuidePriceCards items={prices} />
+      <ul>
+        <li><strong>À partir de {floorLabel} la pièce</strong>, hors livraison.</li>
+        {hasSmallOrderFee && <li><strong>Commande minimum {minOrderLabel}</strong> : en dessous, {feeLabel} de frais de petite commande s'ajoutent.</li>}
+        <li><strong>Remise automatique dès 5 exemplaires</strong>, de plus en plus forte avec la quantité.</li>
+        <li><strong>TVA non applicable</strong> (article 293 B du CGI) : le prix affiché est le prix que vous payez.</li>
+      </ul>
+      <p>Tous les détails et d'autres exemples dans notre <a href="/prix-impression-3d">guide des prix de l'impression 3D</a>.</p>
+    </GuideSection>
+
+    <GuideSection id="fichiers" title="Quels fichiers envoyer, et que faire sans fichier 3D ?">
+      <ul>
+        <li><strong>Formats acceptés : STL, OBJ et 3MF.</strong> Un fichier de CAO (STEP, SolidWorks, Fusion 360, FreeCAD…) s'exporte en STL ou en 3MF depuis votre logiciel.</li>
+        <li><strong>Taille maximale : 330 × 320 × 325 mm</strong> sur nos Bambu Lab H2C. Pour une pièce plus grande, contactez-nous : nous étudions la solution avec vous.</li>
+        <li><strong>Pas de fichier ?</strong> Envoyez des photos de la pièce, même cassée, avec ses dimensions principales. Nous la redessinons en 3D (rétro-conception), sur devis, avant de l'imprimer.</li>
+      </ul>
+    </GuideSection>
+
+    <GuideSection id="matieres" title="Quelle matière choisir pour votre pièce ?">
+      <p>Sept matières sont proposées dans le configurateur. Le tableau ci-dessous vous aide à choisir ; en cas de doute, nous vérifions votre choix pendant l'expertise.</p>
+      <GuideTable label="Comparatif des sept matières proposées" headers={materialHeaders} rows={materialRows} />
+      <p>Comparatif complet dans le <a href="/materiaux-impression-3d">guide des matériaux d'impression 3D</a>.</p>
+    </GuideSection>
+
+    <GuideSection id="machines" title="Avec quelles machines votre pièce est-elle imprimée ?">
+      <div class="machine">
+        <div>
+          <ul>
+            <li><strong>Deux Bambu Lab H2C</strong> : grand format (330 × 320 × 325 mm), plusieurs matières sur une même pièce, caisson fermé pour l'ABS et l'ASA.</li>
+            <li><strong>Une Bambu Lab X2D</strong> : la vitesse, pour les petites séries.</li>
+            <li><strong>Une Bambu Lab X1C</strong> : la polyvalente de l'atelier.</li>
+            <li><strong>Une imprimante résine (SLA)</strong> : pour les détails très fins et les surfaces lisses.</li>
+          </ul>
+          <p class="gmore">Voir tout le <a href="/machines">parc machine</a>.</p>
+        </div>
+        <img
+          class="machine-img"
+          src="/assets/machine-h2c.webp"
+          alt="Imprimante 3D Bambu Lab H2C de l'atelier Nasap3D à Nantes"
+          width="809"
+          height="810"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+    </GuideSection>
+
+    <GuideSection id="livraison" title="Livraison partout en France et en Europe">
+      <ul>
+        <li><strong>Expédition en point relais (Mondial Relay) ou à domicile (Colissimo)</strong>, en France et dans les pays de l'Union européenne. Les frais de port sont calculés dans le panier, avec un forfait d'emballage de 1,50 €.</li>
+        <li><strong>Vous êtes près de Nantes ?</strong> Retrait gratuit à l'atelier, 29 rue Mellier (quartier Canclaux), sur rendez-vous.</li>
+        <li><strong>Délai :</strong> l'expertise prend 24 à 48 h. Le délai de fabrication dépend de la pièce et de la quantité ; il vous est indiqué à la validation de la commande.</li>
+      </ul>
+    </GuideSection>
+
+    <GuideSection id="exemples" title="Exemples de pièces fabriquées à l'atelier">
+      <div class="grid3">
+        {shots.map((s) => (
+          <figure class="shot">
+            <img src={s.src} alt={s.alt} width={s.w} height={s.h} loading="lazy" decoding="async" />
+            <figcaption class="shot-cap">
+              <span class="shot-title">{s.title}</span>
+              <span class="shot-text">{s.text}</span>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+      <p class="gmore"><a href="/realisations">Voir toutes les réalisations</a></p>
+    </GuideSection>
+
+    <GuideSection id="avis" title="Ce que disent nos clients">
+      <div class="rev-head">
+        <span class="rev-score">5,0</span>
+        <div>
+          <div class="rev-stars" role="img" aria-label="5 étoiles sur 5">★★★★★</div>
+          <span class="rev-count">54 avis Google</span>
+        </div>
+      </div>
+      <div class="grid3">
+        {reviews.map((r) => (
+          <figure class="rev">
+            <blockquote class="rev-text">{r.text}</blockquote>
+            <figcaption class="rev-who">{r.who} <span class="rev-src">· Google</span></figcaption>
+          </figure>
+        ))}
+      </div>
+    </GuideSection>
+
+    <GuideSection id="atelier" title="Pourquoi passer par un atelier plutôt que par une plateforme ?">
+      <p>Beaucoup de plateformes d'impression 3D en ligne transmettent votre fichier à un sous-traitant que vous ne connaissez pas. Chez Nasap3D, votre pièce est imprimée dans notre atelier de Nantes, sur nos machines, par l'équipe qui a validé votre fichier.</p>
+      <p>Vous avez un interlocuteur joignable, qui peut renforcer une zone fragile, conseiller une autre matière ou redessiner une pièce introuvable. L'atelier est ouvert depuis 2022 et nos clients nous notent 5,0 sur 54 avis Google.</p>
+    </GuideSection>
+
+    <GuideFaq items={faq} title="Questions fréquentes sur l'impression 3D en ligne" />
+
+    <GuideCta />
+
+    <GuideRelated current={PATH} />
+  </GuideArticle>
+</BaseLayout>
+<style>
+  /* Contenu propre à ce guide (le slot de GuideSection reçoit les styles de lecture ; ceci règle les blocs visuels). */
+  .grid3 { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); margin: 12px 0; }
+  @media (min-width: 640px) { .grid3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+  .machine { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); align-items: center; }
+  .machine-img { width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); background: #201d1b; }
+  @media (min-width: 640px) { .machine { grid-template-columns: minmax(0, 1fr) 260px; } }
+
+  .shot { margin: 0; background: #1a1917; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; overflow: hidden; }
+  .shot img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; background: #201d1b; }
+  .shot-cap { display: flex; flex-direction: column; gap: 2px; padding: 10px 13px 12px; }
+  .shot-title { font: 600 14px/1.3 "Space Grotesk", sans-serif; color: #f3f1ec; }
+  .shot-text { font: 400 13px/1.5 "Inter", sans-serif; color: rgba(255, 255, 255, 0.62); }
+
+  .rev-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .rev-score { font: 700 30px/1 "Space Grotesk", sans-serif; color: #f3f1ec; }
+  .rev-stars { color: #fbbc04; letter-spacing: 2px; line-height: 1.2; }
+  .rev-count { font: 400 13px/1.4 "Inter", sans-serif; color: rgba(255, 255, 255, 0.62); }
+  .rev { margin: 0; background: #1a1917; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px 16px; }
+  .rev .rev-text { margin: 0 0 8px; max-width: none; font: 400 14px/1.6 "Inter", sans-serif; color: rgba(255, 255, 255, 0.78); white-space: pre-line; }
+  .rev .rev-who { font: 600 13px/1.4 "Inter", sans-serif; color: #f3f1ec; }
+  .rev .rev-src { font-weight: 500; color: rgba(255, 255, 255, 0.62); }
+</style>
