@@ -3,7 +3,8 @@
 // no invisible auto-minted token: each page must render a real, visible,
 // user-solved checkbox widget (the
 // <script src="https://js.hcaptcha.com/1/api.js?render=explicit"> tag is
-// added directly to the page that needs it) and read the token back out of
+// injected by renderHcaptcha() on first use if the page doesn't already carry
+// it, e.g. compte.astro's own <head> tag) and read the token back out of
 // a callback.
 
 declare global {
@@ -13,6 +14,23 @@ declare global {
       reset: (widgetId: string) => void;
     };
   }
+}
+
+const HCAPTCHA_SCRIPT_BASE = "https://js.hcaptcha.com/1/api.js";
+const HCAPTCHA_SCRIPT_SRC = `${HCAPTCHA_SCRIPT_BASE}?render=explicit&hl=fr`;
+
+// Adds the hCaptcha API script (same URL/params as the former <head> tags)
+// once, only if neither window.hcaptcha nor a matching <script> tag is
+// already on the page — a page that still ships the tag in its <head>
+// (compte.astro) is left untouched.
+function ensureHcaptchaScript(): void {
+  if (typeof document === "undefined" || window.hcaptcha) return;
+  if (document.querySelector(`script[src^="${HCAPTCHA_SCRIPT_BASE}"]`)) return;
+  const script = document.createElement("script");
+  script.src = HCAPTCHA_SCRIPT_SRC;
+  script.async = true;
+  script.defer = true;
+  document.head.appendChild(script);
 }
 
 function waitForHcaptcha(timeoutMs = 10000): Promise<NonNullable<Window["hcaptcha"]>> {
@@ -64,6 +82,7 @@ export async function renderHcaptcha(
 ): Promise<string | null> {
   if (!container) return null;
   const { sitekey, onToken, onExpire, scale = 0.8 } = opts;
+  ensureHcaptchaScript();
   const hcaptcha = await waitForHcaptcha();
   container.innerHTML = "";
   const outer = document.createElement("div");

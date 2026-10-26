@@ -48,9 +48,33 @@ const {
   floorPrice = false,
 } = Astro.props;
 const pricing = floorPrice ? await getPublicPricing() : null;
+// FAQPage + fil d'Ariane, construits depuis les mêmes données que la FAQ affichée.
+const pageUrl = new URL(path, Astro.site).toString();
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "FAQPage",
+      "@id": `${pageUrl}#faq`,
+      mainEntity: faqItems.map((item) => ({
+        "@type": "Question",
+        name: item.q,
+        acceptedAnswer: { "@type": "Answer", text: item.a },
+      })),
+    },
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Accueil", item: new URL("/", Astro.site).toString() },
+        { "@type": "ListItem", position: 2, name: heroTitle, item: pageUrl },
+      ],
+    },
+  ],
+};
 ---
 
 <BaseLayout title={title} description={description} path={path} showAuthIcon={false}>
+  <script slot="head" type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
   <div class="hero">
     <div class="kicker">{heroKicker}</div>
     <h1 class="hero-title">{heroTitle}</h1>
@@ -58,7 +82,7 @@ const pricing = floorPrice ? await getPublicPricing() : null;
   </div>
 
   <div class="section">
-    <div class="section-kicker">{sectionKicker}</div>
+    <h2 class="section-kicker">{sectionKicker}</h2>
     <div class="section-intro">{sectionIntro}</div>
     <div class="stat-grid">
       {
@@ -82,12 +106,12 @@ const pricing = floorPrice ? await getPublicPricing() : null;
   </div>
 
   <div class="faq-wrap">
-    <div class="faq-kicker">{faqKicker}</div>
+    <h2 class="faq-kicker">{faqKicker}</h2>
     <div class="faq-list">
       {
         faqItems.map((item) => (
           <div class="faq-item">
-            <div class="faq-q">{item.q}</div>
+            <h3 class="faq-q">{item.q}</h3>
             <div class="faq-a">{item.a}</div>
           </div>
         ))

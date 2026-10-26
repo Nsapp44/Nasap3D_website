@@ -8,9 +8,51 @@ declare global {
 
 const NASAP3D_COORDS: [number, number] = [47.21023, -1.580297];
 
+const LEAFLET_CSS_HREF = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+const LEAFLET_JS_SRC = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+
+let leafletPromise: Promise<any> | null = null; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+// Loads Leaflet (same CDN files/version as the former <head> tags in
+// index.astro/contact.astro) on demand, once per page — the promise is cached
+// so several maps share a single load. Resolves with the global `L` once both
+// the stylesheet and the script are ready; a failed load clears the cache so
+// a later mount can retry.
+function loadLeaflet(): Promise<any> { // eslint-disable-line @typescript-eslint/no-explicit-any
+  if (leafletPromise) return leafletPromise;
+  if (window.L) return Promise.resolve(window.L);
+
+  const cssReady = new Promise<void>((resolve) => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = LEAFLET_CSS_HREF;
+    // A stylesheet failure is not fatal: the map still initialises.
+    link.onload = () => resolve();
+    link.onerror = () => resolve();
+    document.head.appendChild(link);
+  });
+  const jsReady = new Promise<any>((resolve, reject) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    const script = document.createElement("script");
+    script.src = LEAFLET_JS_SRC;
+    script.async = true;
+    script.onload = () => (window.L ? resolve(window.L) : reject(new Error("leaflet_missing_global")));
+    script.onerror = () => reject(new Error("leaflet_load_failed"));
+    document.head.appendChild(script);
+  });
+
+  leafletPromise = Promise.all([cssReady, jsReady])
+    .then(([, L]) => L)
+    .catch((err) => {
+      leafletPromise = null;
+      throw err;
+    });
+  return leafletPromise;
+}
+
 // Leaflet map centered on the workshop — ported from Contact.dc.html's
-// _initMap(). Leaflet itself stays a CDN <script>/<link> (see contact.astro),
-// not bundled, matching the original.
+// _initMap(). Leaflet itself stays a CDN <script>/<link>, not bundled,
+// matching the original — but it is now injected on demand by loadLeaflet()
+// when the map mounts instead of blocking the <head> of every page.
 export default function ContactMap({ height = "420px" }: { height?: string }) {
   const mapElRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -18,18 +60,12 @@ export default function ContactMap({ height = "420px" }: { height?: string }) {
   useEffect(() => {
     let cancelled = false;
     let resizeObserver: ResizeObserver | null = null;
-    let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
-    function init(attempt = 0) {
+    function init(L: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
       if (cancelled) return;
       const el = mapElRef.current;
       if (!el) return;
-      if (typeof window.L === "undefined") {
-        if (attempt < 40) retryTimer = setTimeout(() => init(attempt + 1), 150);
-        return;
-      }
       if (mapRef.current) return;
-      const L = window.L;
       const map = L.map(el, { zoomControl: false, attributionControl: false }).setView(NASAP3D_COORDS, 6);
       mapRef.current = map;
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -55,11 +91,12 @@ export default function ContactMap({ height = "420px" }: { height?: string }) {
         resizeObserver.observe(el);
       }
     }
-    init();
+    loadLeaflet().then(init, () => {
+      // CDN unreachable: leave the empty map frame, same as before.
+    });
 
     return () => {
       cancelled = true;
-      if (retryTimer) clearTimeout(retryTimer);
       resizeObserver?.disconnect();
       mapRef.current?.remove();
       mapRef.current = null;

@@ -1,0 +1,47 @@
+---
+// Analytics only, no markup. One delegated click listener (capture phase) that
+// sends Plausible custom events for mail / phone / contact / quote links, on
+// every page where this component is included. Never changes any behaviour:
+// no preventDefault, everything in try/catch.
+---
+
+<script>
+  type PlausibleFn = (name: string, opts?: { props?: Record<string, string> }) => void;
+
+  document.addEventListener(
+    "click",
+    (e) => {
+      try {
+        const target = e.target;
+        if (!(target instanceof Element)) return;
+        const a = target.closest("a");
+        if (!a) return;
+
+        const track = (name: string) => {
+          (window as unknown as { plausible?: PlausibleFn }).plausible?.(name, {
+            props: { page: location.pathname },
+          });
+        };
+
+        const rawHref = (a.getAttribute("href") || "").trim().toLowerCase();
+        if (rawHref.startsWith("mailto:")) {
+          track("Clic mail");
+          return;
+        }
+        if (rawHref.startsWith("tel:")) {
+          track("Clic téléphone");
+          return;
+        }
+
+        const url = new URL(a.href, location.href);
+        if (url.origin !== location.origin) return;
+        const path = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, "") : url.pathname;
+        if (path === "/contact") track("Clic contact");
+        else if (path === "/devis-instantane") track("Clic devis");
+      } catch {
+        /* analytics only */
+      }
+    },
+    true,
+  );
+</script>

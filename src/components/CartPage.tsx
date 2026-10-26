@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../lib/api-client";
+import { trackEvent } from "../lib/analytics";
 import { useAuth } from "../hooks/useAuth";
 import { useCart, MAX_LINE_QTY, type CartLine } from "../hooks/useCart";
 import CartLineThumbnail from "./CartLineThumbnail";
@@ -87,6 +88,7 @@ export default function CartPage() {
   const hideSuggestionsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function goToCheckout() {
+    trackEvent("Panier - clic commander", { connecte: isLoggedIn ? "oui" : "non" });
     if (!isLoggedIn || cart.lines.length === 0) return;
     setStep("checkout");
   }
@@ -217,12 +219,25 @@ export default function CartPage() {
   const relaySearchParams: RelaySearchParams | null = shipMode === "RELAY" ? { country: shipCountry, zipCode: shipZipcode, city: shipCity, street: shipAddress } : null;
 
   async function startCheckout() {
-    if (!isLoggedIn) return;
-    if (!phoneRef.current?.isValidNumber()) return;
+    trackEvent("Panier - envoi expertise");
+    if (!isLoggedIn) {
+      trackEvent("Panier - blocage", { raison: "non_connecte" });
+      return;
+    }
+    if (!phoneRef.current?.isValidNumber()) {
+      trackEvent("Panier - blocage", { raison: "telephone" });
+      return;
+    }
     if (deliveryMode === "PICKUP") {
-      if (!shipName.trim()) return;
+      if (!shipName.trim()) {
+        trackEvent("Panier - blocage", { raison: "nom" });
+        return;
+      }
     } else {
-      if (!shipMode || (shipMode === "RELAY" && !relayPoint)) return;
+      if (!shipMode || (shipMode === "RELAY" && !relayPoint)) {
+        trackEvent("Panier - blocage", { raison: "relais" });
+        return;
+      }
     }
     setCheckoutState("redirecting");
     setCheckoutError(null);
@@ -239,6 +254,7 @@ export default function CartPage() {
     const data = res.data as { ok?: boolean; error?: string } | null;
     if (!res.ok || !data || !data.ok) {
       if (data?.error === "daily_limit_reached") {
+        trackEvent("Panier - échec envoi", { raison: "daily_limit_reached" });
         setCheckoutState("idle");
         setDailyLimitPopup(true);
         return;
@@ -250,10 +266,12 @@ export default function CartPage() {
         shipping_provider_error: "Le calcul des frais de livraison a échoué, réessayez.",
         shipping_offer_unavailable: "Cette offre de livraison n'est plus disponible, recalculez les frais.",
       };
+      trackEvent("Panier - échec envoi", { raison: data?.error || "inconnu" });
       setCheckoutState("idle");
       setCheckoutError((data?.error && messages[data.error]) || "La commande n'a pas pu être envoyée, réessayez.");
       return;
     }
+    trackEvent("Panier - commande envoyée");
     setCheckoutState("idle");
     setOrderPlacedPopup(true);
   }
@@ -377,7 +395,7 @@ export default function CartPage() {
             {cart.smallOrderFeeCents > 0 && <div className="summary-note">En dessous de {eur(cart.minOrderCents)} €, des frais s'appliquent — ajoutez des pièces pour les éviter.</div>}
             <div className="summary-cta">
               {needsLogin && (
-                <a href="/compte?next=panier" className="cta-primary">
+                <a href="/compte?next=panier" className="cta-primary" onClick={() => trackEvent("Panier - clic se connecter")}>
                   Se connecter
                 </a>
               )}
