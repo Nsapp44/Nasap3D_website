@@ -29,6 +29,18 @@ const NAV_ITEMS = [
   { href: "/contact", label: "Contact" },
 ];
 const DEVIS_INDEX = 2; // position d'origine de "Devis instantané" dans la nav
+
+// Menu "Guides" : mini déroulant sur ordinateur, groupe de liens dans le menu
+// burger sur mobile. Inséré juste avant "Contact" (voir GUIDES_INDEX).
+// `short` = libellé court du menu mobile. Même liste dans HomeHeader.tsx.
+const GUIDES = [
+  { href: "/impression-3d-en-ligne", title: "Impression 3D en ligne", sub: "Commander depuis toute la France", short: "Impression 3D en ligne" },
+  { href: "/impression-3d-particuliers", title: "Impression 3D pour particuliers", sub: "Même sans fichier 3D", short: "Pour particuliers" },
+  { href: "/prix-impression-3d", title: "Prix de l'impression 3D", sub: "Comment le prix est calculé, exemples", short: "Prix" },
+  { href: "/materiaux-impression-3d", title: "Matériaux d'impression 3D", sub: "PLA, PETG, TPU, ABS…", short: "Matériaux" },
+];
+const GUIDES_INDEX = 5; // position de "Contact" dans NAV_ITEMS
+const guidesIsCurrent = GUIDES.some((g) => g.href === currentPath);
 ---
 
 <div class="site-header">
@@ -59,7 +71,48 @@ const DEVIS_INDEX = 2; // position d'origine de "Devis instantané" dans la nav
     }
     <QuoteNavLink isCurrent={currentPath === "/devis-instantane"} client:load />
     {
-      NAV_ITEMS.slice(DEVIS_INDEX).map((item) =>
+      NAV_ITEMS.slice(DEVIS_INDEX, GUIDES_INDEX).map((item) =>
+        item.href === currentPath ? (
+          <span class="nav-current nav-hover-scale">{item.label}</span>
+        ) : (
+          <a href={item.href} class="nav-hover-scale">
+            {item.label}
+          </a>
+        ),
+      )
+    }
+    <div class="nav-guides" data-guides>
+      <button
+        type="button"
+        class={`nav-guides-btn nav-hover-scale${guidesIsCurrent ? " nav-current" : ""}`}
+        aria-expanded="false"
+        aria-controls="guides-menu"
+      >
+        Guides
+      </button>
+      <span class="guides-grp" aria-hidden="true">Guides</span>
+      <div class="guides-menu" id="guides-menu">
+        <ul class="guides-list" aria-label="Guides">
+          {
+            GUIDES.map((g) => (
+              <li>
+                <a
+                  href={g.href}
+                  class={`g-link${g.href === currentPath ? " is-current" : ""}`}
+                  aria-current={g.href === currentPath ? "page" : undefined}
+                >
+                  <b class="g-t">{g.title}</b>
+                  <small class="g-s">{g.sub}</small>
+                  <i class="g-m">{g.short}</i>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+    {
+      NAV_ITEMS.slice(GUIDES_INDEX).map((item) =>
         item.href === currentPath ? (
           <span class="nav-current nav-hover-scale">{item.label}</span>
         ) : (
@@ -124,10 +177,120 @@ const DEVIS_INDEX = 2; // position d'origine de "Devis instantané" dans la nav
     text-decoration: none;
     color: inherit;
   }
+  /* Bouton "Guides" : rendu comme les liens voisins (reset du bouton ; placé
+     avant .nav-current pour que celui-ci puisse remettre sa bordure). */
+  .nav-guides-btn {
+    appearance: none;
+    background: none;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    font: inherit;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .nav-guides-btn:focus-visible {
+    outline: 2px solid #ff5a3c;
+    outline-offset: 6px;
+    border-radius: 4px;
+  }
   .nav-current {
     color: #f3f1ec;
     border-bottom: 2px solid #ff5a3c;
     padding-bottom: 4px;
+  }
+  /* Menu déroulant "Guides" (ordinateur) : ouvert au survol, au focus clavier
+     et au clic/tap (classe .is-open posée par le script ci-dessous ;
+     .is-closed = fermé volontairement par Échap / second clic). */
+  .nav-guides {
+    position: relative;
+  }
+  .guides-grp,
+  .g-m {
+    display: none;
+  }
+  .guides-menu {
+    position: absolute;
+    top: 100%;
+    right: -14px; /* ancré à droite : un panneau masqué déborde vers la gauche, jamais de scroll horizontal */
+    padding-top: 12px;
+    z-index: 60;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px);
+    transition:
+      opacity 0.2s ease,
+      transform 0.2s ease,
+      visibility 0s linear 0.2s;
+  }
+  .nav-guides:not(.is-closed):hover .guides-menu,
+  .nav-guides:not(.is-closed):focus-within .guides-menu,
+  .nav-guides.is-open .guides-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    transition:
+      opacity 0.2s ease,
+      transform 0.2s ease,
+      visibility 0s;
+  }
+  .guides-menu .guides-list {
+    list-style: none;
+    margin: 0;
+    padding: 8px;
+    width: 340px;
+    max-width: calc(100vw - 32px);
+    box-sizing: border-box;
+    background: #201d1b;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.45);
+  }
+  .guides-menu .g-link {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 44px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+  }
+  .guides-menu .g-t {
+    display: block;
+    font: 600 14px/1.3 "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    transition: color 0.2s ease;
+  }
+  .guides-menu .g-s {
+    display: block;
+    margin-top: 2px;
+    font: 400 12.5px/1.35 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+  }
+  .guides-menu .g-link:hover,
+  .guides-menu .g-link:focus-visible {
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .guides-menu .g-link:hover .g-t,
+  .guides-menu .g-link:focus-visible .g-t,
+  .guides-menu .g-link.is-current .g-t {
+    color: #ff5a3c;
+  }
+  .guides-menu .g-link:focus-visible {
+    outline: 2px solid #ff5a3c;
+    outline-offset: -2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .guides-menu,
+    .nav-guides:not(.is-closed):hover .guides-menu,
+    .nav-guides:not(.is-closed):focus-within .guides-menu,
+    .nav-guides.is-open .guides-menu,
+    .guides-menu .g-t {
+      transition: none;
+    }
+    .guides-menu {
+      transform: none;
+    }
   }
   .header-account {
     display: flex;
@@ -203,7 +366,9 @@ const DEVIS_INDEX = 2; // position d'origine de "Devis instantané" dans la nav
       z-index: 50;
     }
     :global(html.nasap-nav-open) .nav-links {
-      max-height: 480px;
+      max-height: 760px;
+      overflow-x: hidden;
+      overflow-y: auto;
       opacity: 1;
       transform: scale(1);
       padding: 8px 16px 14px;
@@ -236,5 +401,116 @@ const DEVIS_INDEX = 2; // position d'origine de "Devis instantané" dans la nav
       text-decoration-thickness: 2px;
       text-underline-offset: 6px;
     }
+    /* "Guides" sur mobile : pas de déroulant. Intitulé de groupe non
+       cliquable + 4 liens en retrait, toujours visibles dans le burger. */
+    .nav-links .nav-guides-btn {
+      display: none;
+    }
+    .nav-links .guides-grp {
+      display: block;
+      padding: 14px 4px 6px;
+      border-bottom: 0;
+      font: 600 11px "Inter", sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.42);
+    }
+    .nav-links .guides-menu {
+      position: static;
+      padding: 0;
+      opacity: 1;
+      visibility: visible;
+      transform: none;
+      transition: none;
+    }
+    .nav-links .guides-menu .guides-list {
+      width: auto;
+      max-width: none;
+      padding: 0;
+      background: none;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    .nav-links .guides-menu .g-link {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      min-height: 44px;
+      padding: 10px 4px 10px 18px;
+      border-radius: 0;
+      background: none;
+    }
+    .nav-links .guides-menu .g-t,
+    .nav-links .guides-menu .g-s {
+      display: none;
+    }
+    .nav-links .guides-menu .g-m {
+      display: inline;
+      font-style: normal;
+    }
+    .nav-links .guides-menu .g-link.is-current {
+      color: #f3f1ec;
+    }
+    .nav-links .guides-menu .g-link.is-current .g-m {
+      font-weight: 700;
+      text-decoration: underline;
+      text-decoration-color: rgb(255, 90, 60);
+      text-decoration-thickness: 2px;
+      text-underline-offset: 6px;
+    }
   }
 </style>
+
+<script>
+  // Menu "Guides" (ordinateur) : le CSS l'ouvre déjà au survol et au focus
+  // clavier ; ce script ajoute le clic/tap (.is-open + aria-expanded), la
+  // fermeture sur Échap, second clic et clic extérieur (.is-closed masque le
+  // panneau malgré le survol/focus restant). Sans effet sur mobile (bouton masqué).
+  const root = document.querySelector<HTMLElement>("[data-guides]");
+  const btn = root && root.querySelector<HTMLButtonElement>(".nav-guides-btn");
+  if (root && btn) {
+    const setOpen = (open: boolean) => {
+      root.classList.toggle("is-open", open);
+      btn.setAttribute("aria-expanded", String(open));
+    };
+    const dismiss = () => {
+      setOpen(false);
+      root.classList.add("is-closed");
+    };
+    const isShown = () =>
+      root.classList.contains("is-open") || root.matches(":hover") || root.matches(":focus-within");
+
+    btn.addEventListener("click", () => {
+      if (root.classList.contains("is-open")) dismiss();
+      else {
+        root.classList.remove("is-closed");
+        setOpen(true);
+      }
+    });
+    root.addEventListener("mouseenter", () => root.classList.remove("is-closed"));
+    root.addEventListener("mouseleave", () => {
+      setOpen(false);
+      root.classList.remove("is-closed");
+      // Un clic souris laisse le focus sur le bouton : on le retire pour que
+      // :focus-within ne garde pas le panneau ouvert (le focus clavier reste).
+      const f = document.activeElement;
+      if (f instanceof HTMLElement && root.contains(f) && !f.matches(":focus-visible")) f.blur();
+    });
+    root.addEventListener("focusout", (e) => {
+      if (e.relatedTarget && !root.contains(e.relatedTarget as Node)) {
+        setOpen(false);
+        root.classList.remove("is-closed");
+      }
+    });
+    document.addEventListener("click", (e) => {
+      if (!root.contains(e.target as Node) && root.classList.contains("is-open")) setOpen(false);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape" || !isShown()) return;
+      const hadFocus = root.contains(document.activeElement);
+      dismiss();
+      if (hadFocus) btn.focus();
+    });
+  }
+</script>

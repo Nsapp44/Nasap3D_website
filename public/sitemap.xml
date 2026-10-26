@@ -2,62 +2,97 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://nasap3d.com/</loc>
+    <lastmod>2026-10-26</lastmod>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://nasap3d.com/devis-instantane</loc>
+    <lastmod>2026-10-26</lastmod>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://nasap3d.com/services</loc>
+    <lastmod>2026-10-26</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nasap3d.com/impression-3d-en-ligne</loc>
+    <lastmod>2026-10-26</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nasap3d.com/impression-3d-particuliers</loc>
+    <lastmod>2026-10-26</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nasap3d.com/prix-impression-3d</loc>
+    <lastmod>2026-10-26</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nasap3d.com/materiaux-impression-3d</loc>
+    <lastmod>2026-10-26</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://nasap3d.com/maquette-impression-3d</loc>
+    <lastmod>2026-10-26</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://nasap3d.com/machines</loc>
+    <lastmod>2026-10-26</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nasap3d.com/realisations</loc>
+    <lastmod>2026-10-26</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nasap3d.com/a-propos</loc>
+    <lastmod>2026-10-26</lastmod>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://nasap3d.com/contact</loc>
+    <lastmod>2026-10-26</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nasap3d.com/impression-3d-nantes</loc>
+    <lastmod>2026-10-26</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://nasap3d.com/impression-3d-cholet</loc>
+    <lastmod>2026-10-26</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://nasap3d.com/impression-3d-angers</loc>
+    <lastmod>2026-10-26</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://nasap3d.com/cgu</loc>
+    <lastmod>2026-10-26</lastmod>
     <priority>0.1</priority>
   </url>
   <url>
     <loc>https://nasap3d.com/confidentialite</loc>
+    <lastmod>2026-10-26</lastmod>
     <priority>0.1</priority>
   </url>
   <url>
     <loc>https://nasap3d.com/cookies</loc>
+    <lastmod>2026-10-26</lastmod>
     <priority>0.1</priority>
   </url>
   <url>
     <loc>https://nasap3d.com/mentions-legales</loc>
+    <lastmod>2026-10-26</lastmod>
     <priority>0.1</priority>
   </url>
 </urlset>

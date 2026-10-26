@@ -3,6 +3,7 @@ import "../styles/global.css";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import MobileNavToggle from "../components/MobileNavToggle";
+import AnalyticsClicks from "../components/AnalyticsClicks.astro";
 
 interface Props {
   title: string;
@@ -17,7 +18,7 @@ interface Props {
   // Image d'aperçu pour les partages (og:image / twitter:image), chemin depuis la racine.
   ogImage?: string;
 }
-const { title, description, path, showAuthIcon, noindex = false, noindexFollow = false, hideFooter = false, hideHeader = false, ogImage = "/assets/logo.png" } = Astro.props;
+const { title, description, path, showAuthIcon, noindex = false, noindexFollow = false, hideFooter = false, hideHeader = false, ogImage = "/assets/og-nasap3d.jpg" } = Astro.props;
 const canonical = new URL(path, Astro.site).toString();
 ---
 
@@ -55,6 +56,9 @@ const canonical = new URL(path, Astro.site).toString();
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={new URL(ogImage, Astro.site).toString()} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Objets liturgiques imprimés en 3D par Nasap3D à Nantes" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
@@ -76,6 +80,7 @@ const canonical = new URL(path, Astro.site).toString();
       <slot />
       {!hideFooter && <Footer />}
     </div>
+    <AnalyticsClicks />
   </body>
 </html>
 
