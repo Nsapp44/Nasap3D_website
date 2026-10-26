@@ -124,6 +124,10 @@ export function useQuoteWizard() {
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [quote, setQuote] = useState<QuoteResult | null>(null);
   const [showAddedToast, setShowAddedToast] = useState(false);
+  // Add-to-cart failure, shown on step 4 next to the button. Kept apart from
+  // analysisError, which only step 3 renders (and whose "Réessayer" would
+  // re-run the whole analysis instead of retrying the cart).
+  const [cartError, setCartError] = useState<string | null>(null);
   const [materials, setMaterials] = useState<QuoteMaterial[]>([]);
   const [discountTiers, setDiscountTiers] = useState<DiscountTier[]>(DEFAULT_TIERS);
 
@@ -640,10 +644,12 @@ export function useQuoteWizard() {
     if (!f) return;
     if (!extOk(f.name)) {
       setFileError("Format non supporté — utilisez .stl, .obj ou .3mf");
+      trackEvent("Devis - fichier refusé", { raison: "format" });
       return;
     }
     if (f.size > 150 * 1024 * 1024) {
       setFileError("Fichier trop volumineux (150 Mo max)");
+      trackEvent("Devis - fichier refusé", { raison: "taille" });
       return;
     }
     // Real report: dropping a new file kept whatever scale was left over
@@ -677,8 +683,19 @@ export function useQuoteWizard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, analysisReady]);
 
+  // Analytics only: one event per step change (back or forward), but not at
+  // mount on step 1 — the page view already counts that. The ref also keeps
+  // React StrictMode's double effect run from sending it twice.
+  const prevStepRef = useRef(1);
+  useEffect(() => {
+    if (prevStepRef.current === step) return;
+    prevStepRef.current = step;
+    trackEvent("Devis - étape", { etape: String(step) });
+  }, [step]);
+
   function dropFile() {
     if (file) return;
+    trackEvent("Devis - clic zone dépôt");
     fileInputRef.current?.click();
   }
   // Not in the original — added on request, to let someone swap the
@@ -703,6 +720,7 @@ export function useQuoteWizard() {
     setPreviewUnavailable(false);
     setAnalysisReady(false);
     setAnalysisError(null);
+    setCartError(null);
     setQuote(null);
   }
   function onFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -717,6 +735,7 @@ export function useQuoteWizard() {
     setDragging(false);
   }
   function onDrop(e: React.DragEvent) {
+    trackEvent("Devis - fichier déposé");
     e.preventDefault();
     setDragging(false);
     setFile(e.dataTransfer.files && e.dataTransfer.files[0]);
@@ -833,6 +852,7 @@ export function useQuoteWizard() {
       setAnalysisError("Options incomplètes — retournez à l'étape précédente.");
       return;
     }
+    trackEvent("Devis - analyse lancée");
     setAnalyzing(true);
     setAnalysisError(null);
     const targetFile = file;
@@ -868,6 +888,7 @@ export function useQuoteWizard() {
         invalid_scale: "Échelle invalide — vérifiez l'unité et le pourcentage saisis à l'étape précédente.",
       };
       const errKey = (res.data as { error?: string } | null)?.error;
+      trackEvent("Devis - erreur analyse", { code: errKey || "inconnu" });
       setAnalyzing(false);
       setAnalysisError((errKey && messages[errKey]) || "Une erreur est survenue pendant l'analyse, réessayez.");
       return;
@@ -883,7 +904,22 @@ export function useQuoteWizard() {
   }
 
   function next() {
-    if (step === 1 && (!scaleFitsPrinter() || scalePartTooThin() || manifoldWarning || windingWarning || tooComplexWarning || orientationLoading)) return;
+    if (step === 1 && (!scaleFitsPrinter() || scalePartTooThin() || manifoldWarning || windingWarning || tooComplexWarning || orientationLoading)) {
+      // Same conditions as the guard above, same priority order; analytics only.
+      const raison = !scaleFitsPrinter()
+        ? "echelle"
+        : scalePartTooThin()
+          ? "trop_fin"
+          : manifoldWarning
+            ? "maillage"
+            : windingWarning
+              ? "normales"
+              : tooComplexWarning
+                ? "trop_complexe"
+                : "chargement";
+      trackEvent("Devis - blocage étape 1", { raison });
+      return;
+    }
     const nextStep = Math.min(4, step + 1);
     setStep(nextStep);
     if (nextStep === 3 && !analysisReady && !analyzing) submitQuote();
@@ -894,6 +930,7 @@ export function useQuoteWizard() {
   function goStep(n: number) {
     if (n >= step) return;
     setStep(n);
+    setCartError(null);
     // Re-rendering into step 1's remounted previewRef node is handled by
     // the [file, step] effect above.
     // Going back to step 2 (material/quality/infill/qty) invalidates the
@@ -913,9 +950,11 @@ export function useQuoteWizard() {
 
   async function addToCart() {
     if (!quote) return;
+    setCartError(null);
     const res = await api.addCartItem(quote.id, quote.quantity);
     if (!res.ok) {
-      setAnalysisError("Impossible d'ajouter au panier, réessayez.");
+      trackEvent("Devis - erreur panier");
+      setCartError("Impossible d'ajouter au panier, réessayez.");
       return;
     }
     addedToCartRef.current = true;
@@ -961,6 +1000,7 @@ export function useQuoteWizard() {
     analyzing,
     analysisReady,
     analysisError,
+    cartError,
     quote,
     showAddedToast,
     materials,

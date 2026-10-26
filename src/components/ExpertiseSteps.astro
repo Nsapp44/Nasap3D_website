@@ -5,14 +5,14 @@ interface Props {
 const { style } = Astro.props;
 const steps = [
   { n: "1", title: "Votre devis instantané", text: "Prix calculé sur votre fichier, en quelques minutes." },
-  { n: "2", title: "Expertise humaine", text: "Nous vérifions votre pièce à la main avant tout paiement.", hl: true },
+  { n: "2", title: "Expertise de votre pièce", text: "Votre pièce est vérifiée et validée avant tout paiement, sous 24 à 48 h.", hl: true },
   { n: "3", title: "Paiement après validation", text: "Vous payez uniquement une fois la commande acceptée." },
 ];
 ---
 <div class="es" style={style}>
   <p class="es-head">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.75 2.75 3.9v3.7c0 3 2.1 5.2 5.25 6.65 3.15-1.45 5.25-3.65 5.25-6.65V3.9z"/><path d="m5.9 8 1.5 1.5 2.7-2.9"/></svg>
-    <span>Aucun paiement à la commande : <strong>un humain valide d'abord votre pièce</strong>.</span>
+    <span><strong>Aucun paiement à la commande.</strong> Expertise et validation de votre pièce en amont.</span>
   </p>
   <ol class="es-steps" role="list">
     {steps.map((s) => (

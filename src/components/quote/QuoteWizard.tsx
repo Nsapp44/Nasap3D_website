@@ -1,10 +1,13 @@
 import { useQuoteWizard } from "../../hooks/useQuoteWizard";
 import PrinterLoaderIcon from "../PrinterLoaderIcon";
+import { trackEvent } from "../../lib/analytics";
 
 // Ported 1:1 from Devis Instantane.dc.html's configurator (also embedded on
 // Home, see Phase 8) — the wizard box only; the surrounding hero/advice/FAQ
 // content lives in the page itself so this component can be reused as-is.
-export default function QuoteWizard() {
+// showNoFileCards: only /devis-instantane asks for the price examples + "Pas
+// de fichier STL ?" cards under the drop zone; the Home embed leaves it off.
+export default function QuoteWizard({ showNoFileCards = false }: { showNoFileCards?: boolean }) {
   const w = useQuoteWizard();
 
   const railStep = (n: number, label: string) => {
@@ -178,6 +181,25 @@ export default function QuoteWizard() {
                   <div className="qw-dropzone-hint">ou cliquez pour parcourir — 150 Mo max</div>
                 </div>
                 {w.fileError && <div className="qw-file-error">{w.fileError}</div>}
+                {showNoFileCards && (
+                  <div className="qw-ex-wrap">
+                    <div className="qw-ex-grid">
+                      <div className="qw-ex-card">
+                        <p className="qw-ex-what">Exemple · petite pièce en PLA, 8 g</p>
+                        <p className="qw-ex-price">8,90 €</p>
+                      </div>
+                      <div className="qw-ex-card">
+                        <p className="qw-ex-what">Exemple · cube de 50 mm en PETG, 103 g</p>
+                        <p className="qw-ex-price">31,76 €</p>
+                      </div>
+                      <div className="qw-ex-card qw-ex-card--hl">
+                        <p className="qw-ex-title">Pas de fichier STL ?</p>
+                        <p className="qw-ex-text">Envoyez des photos et les dimensions de votre pièce : nous la redessinons en 3D.</p>
+                        <a href="/contact" className="qw-ex-cta" onClick={() => trackEvent("Devis - clic pas de STL")}>Envoyer mes photos</a>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </>
@@ -360,6 +382,9 @@ export default function QuoteWizard() {
               </div>
               <div onClick={w.addToCart} className="qw-add-btn">Ajouter au panier</div>
             </div>
+            {w.cartError && (
+              <div className="qw-file-error" role="alert">{w.cartError}</div>
+            )}
             {w.showAddedToast && (
               <div className="qw-toast">✓ Ajouté au panier — <a href="/panier">voir le panier</a></div>
             )}
@@ -474,6 +499,26 @@ export default function QuoteWizard() {
         .qw-add-btn { background: #ff5a3c; color: #161514; font: 600 12.5px 'Inter',sans-serif; padding: 11px 18px; border-radius: 7px; cursor: pointer; }
         .qw-toast { margin-top: 14px; border: 1px solid rgba(255,90,60,.35); background: rgba(255,90,60,.08); border-radius: 8px; padding: 10px 14px; font: 600 11px 'Inter',sans-serif; color: #f3f1ec; animation: qwFadeUp .3s ease; }
         .qw-toast a { color: #ff5a3c; }
+
+        .qw-ex-wrap { container-type: inline-size; margin-top: 14px; }
+        .qw-ex-grid { display: grid; grid-template-columns: minmax(0,1fr); gap: 12px; }
+        .qw-ex-card { min-width: 0; box-sizing: border-box; background: #1a1917; color: #f3f1ec; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 14px 16px; }
+        .qw-ex-card--hl { background-color: #201d1b; background-image: linear-gradient(135deg, rgba(255,90,60,.14), rgba(255,90,60,.03) 60%); border-color: rgba(255,90,60,.38); }
+        .qw-ex-what { margin: 0 0 6px; font: 400 13px/1.45 'Inter',sans-serif; color: rgba(255,255,255,.62); }
+        .qw-ex-price { margin: 0; font: 700 26px 'Space Grotesk',sans-serif; color: #f3f1ec; }
+        .qw-ex-title { margin: 0 0 4px; font: 600 15px 'Space Grotesk',sans-serif; color: #f3f1ec; }
+        .qw-ex-text { margin: 0 0 10px; font: 400 13px/1.5 'Inter',sans-serif; color: rgba(255,255,255,.78); }
+        /* Same look and hover as the Home page's secondary button (index.astro .hero-cta-secondary); that class is Astro-scoped, so it can't be shared with this island. */
+        .qw-ex-cta { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 44px; padding: 0 20px; text-decoration: none; font: 500 13px 'Inter',sans-serif; color: #f3f1ec; background: #1e1c1a; border: 1px solid rgba(255,255,255,.25); border-radius: 7px; cursor: pointer; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+        .qw-ex-cta:hover { color: #f3f1ec; transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0,0,0,.35); border-color: #ff5a3c; }
+        .qw-ex-cta:focus-visible { outline: 2px solid #ff5a3c; outline-offset: 2px; }
+        @container (min-width: 620px) {
+          .qw-ex-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .qw-ex-cta { transition: none; }
+          .qw-ex-cta:hover { transform: none; }
+        }
 
         @keyframes qwFadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
