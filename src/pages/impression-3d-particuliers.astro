@@ -1,0 +1,229 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import ExpertiseSteps from "../components/ExpertiseSteps.astro";
+import GuideArticle from "../components/guides/GuideArticle.astro";
+import GuideHero from "../components/guides/GuideHero.astro";
+import GuideToc from "../components/guides/GuideToc.astro";
+import GuideSection from "../components/guides/GuideSection.astro";
+import GuidePriceCards from "../components/guides/GuidePriceCards.astro";
+import GuideFaq from "../components/guides/GuideFaq.astro";
+import GuideCta from "../components/guides/GuideCta.astro";
+import GuideRelated from "../components/guides/GuideRelated.astro";
+import { getPublicPricing } from "../lib/server/publicPricing";
+
+// Plancher, minimum de commande et frais : réglages admin (repli sur les valeurs par défaut).
+const { floorLabel, minOrderLabel, feeLabel, hasSmallOrderFee } = await getPublicPricing();
+const minOrderText = hasSmallOrderFee ? ` Commande minimum ${minOrderLabel} ; en dessous, ${feeLabel} de frais de petite commande.` : "";
+
+const PATH = "/impression-3d-particuliers";
+const TITLE = "Impression 3D pour particuliers : pièce sur mesure | Nasap3D";
+const DESCRIPTION =
+  `Pièce cassée, introuvable ou sur mesure : faites-la imprimer en 3D, même sans fichier. Dès ${floorLabel}, aucun paiement à la commande, livraison partout en France.`;
+const H1 = "Impression 3D pour particuliers : faites fabriquer votre pièce, même sans fichier";
+
+const toc = [
+  { label: "Ce que vous pouvez faire imprimer", href: "#objets" },
+  { label: "Pas de fichier 3D : nous redessinons votre pièce", href: "#sans-fichier" },
+  { label: "Combien coûte une pièce à l'unité", href: "#cout" },
+  { label: "Exemples réels", href: "#exemples" },
+  { label: "Commander en ligne ou à l'atelier", href: "#commander" },
+  { label: "Questions fréquentes", href: "#faq" },
+];
+
+const topReviews = [
+  { text: "Merci beaucoup à Nolann qui a ete très réactif à notre demande de petite pièce de salle de bain que l'on ne trouvait plus du tout en magasin et qu'il nous a refait à l'identique. Je garde son adresse en mémoire au cas où...", who: "Veronique Le senechal" },
+  { text: "Pièce répliquée en parfaite cohérence avec l'ancienne et remontée à la perfection.\nBravo et merci pour ce sauvetage de dernière minute 👌", who: "Franck MORODEI" },
+];
+
+const prices = [
+  { what: "Petite pièce en PLA · 8 g · 15 min d'impression", price: floorLabel, note: "prix minimum par pièce" },
+  { what: "Cube de 50 mm en PETG · 103 g · 5 h 49 d'impression", price: "31,76 €" },
+];
+
+const peugeot = { src: "/assets/real-18.webp", w: 654, h: 726, alt: "Cache personnalisé imprimé en 3D pour Peugeot 102", title: "Cache Peugeot 102", text: "Cache personnalisé imprimé pour Peugeot 102." };
+
+const shots = [
+  { src: "/assets/real-5.webp", w: 1200, h: 1600, alt: "Caravanes Fendt miniatures imprimées en 3D", title: "Caravanes Fendt miniatures", text: "Série de modèles réduits imprimés et détaillés." },
+  { src: "/assets/real-16.webp", w: 824, h: 517, alt: "Figurines en résine SLA prêtes pour la peinture", title: "Figurines résine SLA", text: "Impression résine haute définition prête pour peinture." },
+];
+
+const exampleReviews = [
+  { text: "merci à nolann pour la fabrication à l'identique d'un engrenage d'une scie à onglet que la société métabo ne fabriquait plus", who: "Guy André" },
+  { text: "Réparation de l'arceau de mon casque audio impeccable! Nolann a même renforcé la pièce pour une meilleure résistance.\nMerci !", who: "Kevin Attm" },
+];
+
+const faq = [
+  { q: "Je n'ai pas de fichier 3D : puis-je quand même faire imprimer ma pièce ?", a: "Oui. Envoyez des photos de la pièce, sous plusieurs angles, avec ses dimensions principales, ou la pièce elle-même si vous préférez. Nous revenons vers vous pour voir comment la reproduire, puis nous la redessinons en 3D (rétro-conception) avant de l'imprimer. La modélisation est facturée au temps passé, sur devis." },
+  { q: "Combien coûte une pièce imprimée en 3D à l'unité ?", a: `À partir de ${floorLabel} la pièce, hors livraison. Le prix exact dépend du poids de matière et du temps d'impression, mesurés sur votre fichier : par exemple 31,76 € pour un cube de 50 mm en PETG.${minOrderText} Prix TTC : le prix affiché est le prix que vous payez.` },
+  { q: "Quel est le délai pour recevoir ma pièce ?", a: "L'expertise prend 24 à 48 h. Le délai de fabrication dépend de la pièce et de la quantité ; il vous est indiqué à la validation de la commande. Pour une commande passée en ligne, le panier affiche aussi une date de livraison estimée." },
+  { q: "Une pièce imprimée en 3D est-elle assez solide ?", a: "Cela dépend de la matière et de l'usage. Le PETG est plus tenace que le PLA et ne craint pas l'eau ; le Nylon résiste à l'usure et aux chocs ; le PLA se ramollit vers 55-60 °C. Pendant l'expertise, nous vérifions l'épaisseur des parois, l'orientation et la matière choisie, et nous pouvons renforcer une zone fragile." },
+  { q: "Dois-je payer au moment de commander ?", a: "Non. Aucun paiement à la commande. Expertise et validation de votre pièce en amont. Nous vérifions votre demande sous 24 à 48 h, puis vous payez en ligne (Stripe) depuis votre compte une fois la commande acceptée." },
+  { q: "Comment ma pièce m'est-elle livrée ?", a: "En point relais (Mondial Relay) ou à domicile (Colissimo), partout en France et dans l'Union européenne. Les frais de port sont calculés dans le panier. Vous habitez près de Nantes ? Retrait gratuit à l'atelier de Nantes, sur rendez-vous." },
+];
+---
+<BaseLayout title={TITLE} description={DESCRIPTION} path={PATH}>
+  <GuideArticle>
+    <GuideHero
+      path={PATH}
+      crumbLabel="Impression 3D pour particuliers"
+      eyebrow="Guide · Particuliers"
+      title={H1}
+      lead="Une pièce cassée introuvable en magasin, un support sur mesure, un objet à refaire à l'identique : nous fabriquons votre pièce à l'unité, à partir de votre fichier 3D ou de simples photos avec les dimensions."
+      description={DESCRIPTION}
+      secondaryLabel="Envoyer des photos de ma pièce"
+      secondaryHref="/contact"
+      chips={[
+        { text: "5,0 · 54 avis Google", star: true },
+        { text: `Dès ${floorLabel} la pièce` },
+        { text: "Livraison France et UE ou retrait à Nantes" },
+      ]}
+    >
+      <ExpertiseSteps style="margin: 6px 0 8px" />
+      <div class="grid2">
+        {topReviews.map((r) => (
+          <figure class="rev">
+            <blockquote class="rev-text">{r.text}</blockquote>
+            <figcaption class="rev-who">{r.who} <span class="rev-src">· Google</span></figcaption>
+          </figure>
+        ))}
+      </div>
+    </GuideHero>
+
+    <GuideToc items={toc} />
+
+    <GuideSection id="objets" title="Ce qu'un particulier peut faire imprimer en 3D">
+      <p>Une pièce qui casse, un modèle qui n'existe plus, un support que rien ne remplace dans le commerce : l'impression 3D sert d'abord à cela. Nous fabriquons votre pièce à l'unité, dans notre atelier de Nantes, à partir de votre fichier 3D ou de photos avec les dimensions.</p>
+      <p>Voici des exemples de pièces que l'atelier a déjà fabriquées pour ses clients :</p>
+      <ul>
+        <li><strong>Une pièce de salle de bain</strong> introuvable en magasin, refaite à l'identique.</li>
+        <li><strong>Un engrenage ou une pièce mécanique</strong> que le fabricant ne produit plus, comme l'engrenage d'une scie à onglet.</li>
+        <li><strong>Une pièce d'appareil cassée</strong>, comme l'arceau d'un casque audio, réparée et renforcée.</li>
+        <li><strong>Un cache ou une pièce de véhicule</strong>, comme le cache personnalisé d'un Peugeot 102.</li>
+        <li><strong>Un support ou une fixation sur mesure</strong>, à vos dimensions.</li>
+        <li><strong>Un modèle réduit ou une figurine</strong>, en filament, ou en résine (SLA, sur devis) pour les détails très fins.</li>
+      </ul>
+      <h3>Quelle matière pour quel usage ?</h3>
+      <p>Nous imprimons en PLA, PETG, ABS, ASA, TPU, PP et Nylon. Le choix dépend de l'usage de la pièce :</p>
+      <ul>
+        <li><strong>PETG</strong> pour une pièce d'usage ou en contact avec l'eau : plus tenace que le PLA, il ne craint pas l'humidité.</li>
+        <li><strong>Nylon</strong> pour un engrenage ou une pièce qui frotte : il résiste à l'usure et aux chocs.</li>
+        <li><strong>TPU</strong> pour un joint, un amortisseur ou toute pièce souple.</li>
+        <li><strong>PLA</strong> pour la déco et les usages intérieurs. Il se ramollit vers 55-60 °C : pas en plein soleil ni dans une voiture.</li>
+      </ul>
+      <p>En cas de doute, ne vous inquiétez pas : nous vérifions votre choix pendant l'expertise. Le comparatif complet est dans notre <a href="/materiaux-impression-3d">guide des matériaux d'impression 3D</a>.</p>
+      <p>Côté taille, nos Bambu Lab H2C impriment jusqu'à 330 × 320 × 325 mm. Pour une pièce plus grande, contactez-nous : nous étudions la solution avec vous.</p>
+    </GuideSection>
+
+    <GuideSection id="sans-fichier" title="Pas de fichier 3D : nous redessinons votre pièce">
+      <p>Vous n'avez pas de fichier 3D, et vous n'avez pas besoin d'en avoir. Pour une pièce existante, même cassée, envoyez-nous :</p>
+      <ul>
+        <li><strong>des photos de la pièce</strong>, idéalement sous plusieurs angles ;</li>
+        <li><strong>ses dimensions principales</strong> ;</li>
+        <li><strong>quelques mots sur son usage</strong> : où elle se monte, ce qu'elle doit supporter (chaleur, eau, effort).</li>
+      </ul>
+      <p>Vous préférez nous montrer la pièce elle-même ? C'est possible : nous revenons vers vous pour voir comment la reproduire.</p>
+      <h3>Comment fonctionne la rétro-conception</h3>
+      <p>Nous reconcevons ensuite la pièce en CAO à partir de l'originale, qu'elle soit cassée, usée ou introuvable dans le commerce. Vous obtenez un fichier 3D fidèle et réutilisable, puis nous imprimons la pièce. Un exemple : un réducteur redessiné en CAO à partir de la pièce d'origine usée, à retrouver dans nos <a href="/realisations">réalisations</a>.</p>
+      <p>La modélisation est facturée <strong>au temps passé, sur devis</strong>. Le <a href="/devis-instantane">devis instantané</a> ne calcule que l'impression d'un fichier existant : si vous partez de photos, nous vous donnons le prix de la modélisation avant de commencer.</p>
+      <p class="gmore"><a href="/contact">Envoyer des photos de ma pièce</a></p>
+    </GuideSection>
+
+    <GuideSection id="cout" title="Combien coûte une pièce à l'unité ?">
+      <p>Le prix dépend de deux mesures faites sur votre fichier : la <strong>matière utilisée</strong> (le poids en grammes) et le <strong>temps d'impression</strong> sur la machine. Notre logiciel tranche réellement votre fichier, comme le fera l'imprimante. Pas de forfait au jugé : une petite pièce rapide tombe sur le prix minimum, une grosse pièce longue à imprimer coûte davantage.</p>
+      <GuidePriceCards items={prices} />
+      <ul>
+        <li><strong>À partir de {floorLabel} la pièce</strong>, hors livraison. C'est le cas typique d'une petite pièce rapide.</li>
+        {hasSmallOrderFee && <li><strong>Commande minimum {minOrderLabel}</strong> : en dessous, {feeLabel} de frais de petite commande s'ajoutent. Ils s'appliquent au niveau du panier : plusieurs pièces dans une même commande comptent ensemble.</li>}
+        <li><strong>Remise automatique dès 5 exemplaires</strong>, de plus en plus forte avec la quantité.</li>
+        <li><strong>Prix TTC</strong> : le prix affiché est le prix que vous payez.</li>
+      </ul>
+      <p>Si vous partez de photos, le prix comprend deux postes : la modélisation de la pièce, sur devis, puis son impression.</p>
+      <p>Tous les détails et d'autres exemples dans notre <a href="/prix-impression-3d">guide des prix de l'impression 3D</a>.</p>
+    </GuideSection>
+
+    <GuideSection id="exemples" title="Exemples réels de pièces refaites à l'atelier">
+      <p>Voici trois pièces fabriquées à l'atelier pour des clients, avec leurs mots quand ils nous en ont laissé.</p>
+      <h3>Un cache pour Peugeot 102</h3>
+      <p>Un cache personnalisé a été imprimé à l'atelier pour un Peugeot 102 : une pièce fabriquée à l'unité, sans passer par une série.</p>
+      <figure class="shot shot--solo">
+        <img src={peugeot.src} alt={peugeot.alt} width={peugeot.w} height={peugeot.h} loading="lazy" decoding="async" />
+        <figcaption class="shot-cap">
+          <span class="shot-title">{peugeot.title}</span>
+          <span class="shot-text">{peugeot.text}</span>
+        </figcaption>
+      </figure>
+      <h3>L'engrenage d'une scie à onglet</h3>
+      <p>Le fabricant ne produisait plus cet engrenage : nous l'avons refait à l'identique.</p>
+      <figure class="rev rev--solo">
+        <blockquote class="rev-text">{exampleReviews[0].text}</blockquote>
+        <figcaption class="rev-who">{exampleReviews[0].who} <span class="rev-src">· Google</span></figcaption>
+      </figure>
+      <h3>L'arceau d'un casque audio</h3>
+      <p>Réparer ne veut pas dire refaire la même pièce fragile : en la reproduisant, nous pouvons renforcer une zone faible.</p>
+      <figure class="rev rev--solo">
+        <blockquote class="rev-text">{exampleReviews[1].text}</blockquote>
+        <figcaption class="rev-who">{exampleReviews[1].who} <span class="rev-src">· Google</span></figcaption>
+      </figure>
+      <h3>D'autres réalisations de l'atelier</h3>
+      <div class="grid2">
+        {shots.map((s) => (
+          <figure class="shot">
+            <img src={s.src} alt={s.alt} width={s.w} height={s.h} loading="lazy" decoding="async" />
+            <figcaption class="shot-cap">
+              <span class="shot-title">{s.title}</span>
+              <span class="shot-text">{s.text}</span>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+      <p class="gmore"><a href="/realisations">Voir toutes les réalisations</a></p>
+    </GuideSection>
+
+    <GuideSection id="commander" title="Commander en ligne ou passer à l'atelier de Nantes">
+      <ol>
+        <li><strong>Vous nous envoyez votre fichier ou vos photos.</strong> Avec un fichier STL, OBJ ou 3MF, déposez-le sur le <a href="/devis-instantane">devis instantané</a> : le prix s'affiche en quelques minutes. Avec des photos, écrivez-nous par la page <a href="/contact">contact</a>.</li>
+        <li><strong>Nous expertisons votre pièce.</strong> Nous vérifions la faisabilité, l'épaisseur des parois, l'orientation, les supports et la matière. Si quelque chose cloche, nous vous le disons avant de fabriquer. Réponse sous 24 à 48 h.</li>
+        <li><strong>Vous payez une fois la commande acceptée</strong>, en ligne et de façon sécurisée (Stripe), depuis votre compte. Votre facture y est disponible.</li>
+        <li><strong>Nous fabriquons votre pièce</strong> dans notre atelier, sur nos machines Bambu Lab.</li>
+        <li><strong>Vous la recevez</strong> en point relais (Mondial Relay) ou à domicile (Colissimo), en France et dans l'Union européenne.</li>
+      </ol>
+      <p>Aucun paiement à la commande. Expertise et validation de votre pièce en amont. Vous évitez ainsi de payer une pièce qui ne peut pas être imprimée telle quelle.</p>
+      <h3>Livraison, retrait et délai</h3>
+      <ul>
+        <li><strong>Livraison :</strong> les frais de port sont calculés dans le panier, avec un forfait d'emballage de 1,50 €. Une date de livraison estimée y est affichée.</li>
+        <li><strong>Vous êtes près de Nantes ?</strong> Retrait gratuit à l'atelier, 29 rue Mellier (quartier Canclaux), sur rendez-vous. Pour convenir d'un rendez-vous, contactez-nous au <a href="tel:+33661430506">06 61 43 05 06</a> ou par la page <a href="/contact">contact</a>.</li>
+        <li><strong>Délai :</strong> l'expertise prend 24 à 48 h. Le délai de fabrication dépend de la pièce et de la quantité ; il vous est indiqué à la validation de la commande.</li>
+      </ul>
+      <p>Vous voulez en savoir plus sur le fonctionnement du devis, des formats de fichier et de la livraison ? Lisez notre guide de l'<a href="/impression-3d-en-ligne">impression 3D en ligne</a>.</p>
+    </GuideSection>
+
+    <GuideFaq items={faq} title="Questions fréquentes sur l'impression 3D pour particuliers" />
+
+    <GuideCta
+      title="Une pièce à refaire ?"
+      text="Déposez votre fichier : le prix s'affiche en quelques minutes. Sans fichier, envoyez-nous des photos de la pièce avec ses dimensions."
+      secondaryLabel="Envoyer des photos de ma pièce"
+      secondaryHref="/contact"
+    />
+
+    <GuideRelated current={PATH} />
+  </GuideArticle>
+</BaseLayout>
+<style>
+  /* Contenu propre à ce guide (le slot reçoit les styles de lecture de GuideSection ; ceci règle les blocs visuels). */
+  .grid2 { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); margin: 14px 0 6px; }
+  @media (min-width: 640px) { .grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+  .shot--solo { margin: 10px 0 14px; max-width: 360px; }
+  .shot { margin: 0; background: #1a1917; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; overflow: hidden; }
+  .shot img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; background: #201d1b; }
+  .shot-cap { display: flex; flex-direction: column; gap: 2px; padding: 10px 13px 12px; }
+  .shot-title { font: 600 14px/1.3 "Space Grotesk", sans-serif; color: #f3f1ec; }
+  .shot-text { font: 400 13px/1.5 "Inter", sans-serif; color: rgba(255, 255, 255, 0.62); }
+
+  .rev { margin: 0; background: #1a1917; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px 16px; }
+  .rev--solo { margin: 8px 0 14px; max-width: 70ch; }
+  .rev .rev-text { margin: 0 0 8px; max-width: none; font: 400 14px/1.6 "Inter", sans-serif; color: rgba(255, 255, 255, 0.78); white-space: pre-line; }
+  .rev .rev-who { font: 600 13px/1.4 "Inter", sans-serif; color: #f3f1ec; }
+  .rev .rev-src { font-weight: 500; color: rgba(255, 255, 255, 0.62); }
+</style>

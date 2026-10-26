@@ -71,7 +71,7 @@ const faq = [
   { q: "Quelle est la taille maximale d'une pièce ?", a: "330 × 320 × 325 mm sur nos Bambu Lab H2C. Pour une pièce plus grande, contactez-nous : nous étudions la solution avec vous." },
   { q: "Livrez-vous partout en France ?", a: "Oui, en point relais ou à domicile, en France et dans l'Union européenne. Les frais de port sont calculés dans le panier. Retrait gratuit à l'atelier de Nantes, sur rendez-vous." },
   { q: "Quel est le délai ?", a: "L'expertise prend 24 à 48 h. Le délai de fabrication dépend de la pièce et de la quantité ; il vous est indiqué à la validation de la commande." },
-  { q: "Le prix affiché inclut-il la TVA ?", a: "TVA non applicable (article 293 B du CGI) : le prix affiché est le prix que vous payez, hors livraison." },
+  { q: "Le prix affiché inclut-il la TVA ?", a: "Oui, les prix sont affichés TTC : le prix affiché est le prix que vous payez pour la pièce. Seule la livraison s'ajoute, sauf retrait à l'atelier." },
 ];
 ---
 <BaseLayout title={TITLE} description={DESCRIPTION} path={PATH}>
@@ -111,7 +111,7 @@ const faq = [
         <li><strong>À partir de {floorLabel} la pièce</strong>, hors livraison.</li>
         {hasSmallOrderFee && <li><strong>Commande minimum {minOrderLabel}</strong> : en dessous, {feeLabel} de frais de petite commande s'ajoutent.</li>}
         <li><strong>Remise automatique dès 5 exemplaires</strong>, de plus en plus forte avec la quantité.</li>
-        <li><strong>TVA non applicable</strong> (article 293 B du CGI) : le prix affiché est le prix que vous payez.</li>
+        <li><strong>Prix TTC</strong> : le prix affiché est le prix que vous payez.</li>
       </ul>
       <p>Tous les détails et d'autres exemples dans notre <a href="/prix-impression-3d">guide des prix de l'impression 3D</a>.</p>
     </GuideSection>
