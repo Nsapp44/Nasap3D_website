@@ -5,7 +5,7 @@ import PrinterLoaderIcon from "../PrinterLoaderIcon";
 // Gates the configurator behind the server-authoritative quoteEnabled flag
 // (see useQuoteEnabled) — the paused message replaces the whole wizard,
 // same as Devis Instantane.dc.html's quotePaused/quoteEnabled sc-if pair.
-export default function QuoteWizardSection({ showNoFileCards = false }: { showNoFileCards?: boolean }) {
+export default function QuoteWizardSection({ showNoFileCards = false, floorLabel }: { showNoFileCards?: boolean; floorLabel?: string }) {
   const { quoteEnabled, loading } = useQuoteEnabled();
 
   // Genuinely unknown yet (only ever true on a visitor's first-ever page
@@ -53,5 +53,5 @@ export default function QuoteWizardSection({ showNoFileCards = false }: { showNo
     );
   }
 
-  return <QuoteWizard showNoFileCards={showNoFileCards} />;
+  return <QuoteWizard showNoFileCards={showNoFileCards} floorLabel={floorLabel} />;
 }

@@ -7,7 +7,9 @@ import { trackEvent } from "../../lib/analytics";
 // content lives in the page itself so this component can be reused as-is.
 // showNoFileCards: only /devis-instantane asks for the price examples + "Pas
 // de fichier STL ?" cards under the drop zone; the Home embed leaves it off.
-export default function QuoteWizard({ showNoFileCards = false }: { showNoFileCards?: boolean }) {
+// floorLabel: the admin floor price (getPublicPricing) — the 8 g PLA example
+// is below the floor, so its real price IS the floor.
+export default function QuoteWizard({ showNoFileCards = false, floorLabel = "8,90 €" }: { showNoFileCards?: boolean; floorLabel?: string }) {
   const w = useQuoteWizard();
 
   const railStep = (n: number, label: string) => {
@@ -186,7 +188,7 @@ export default function QuoteWizard({ showNoFileCards = false }: { showNoFileCar
                     <div className="qw-ex-grid">
                       <div className="qw-ex-card">
                         <p className="qw-ex-what">Exemple · petite pièce en PLA, 8 g</p>
-                        <p className="qw-ex-price">8,90 €</p>
+                        <p className="qw-ex-price">{floorLabel}</p>
                       </div>
                       <div className="qw-ex-card">
                         <p className="qw-ex-what">Exemple · cube de 50 mm en PETG, 103 g</p>
