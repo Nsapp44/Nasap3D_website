@@ -38,7 +38,7 @@ Archives : `docs/SUIVI_archive_2026-10-25.md`, `docs/SUIVI_archive_2026-10-27.md
 - Recherche international / Nantes, archivée : `docs/international_seo_2026-10-27.md`.
 
 ### File des demandes (ouvertes)
-31. [~] Plan SEO national : doc écrit et toutes ses réponses intégrées. **Reste : son oui pour exécuter le §8.**
+31. [x] Plan SEO national : exécuté en local (oui de Nolann 27/10), 4 commits locaux. **Reste : son test local puis son oui pour le push.**
 32. [x] « Guides » qui touchait le logo : corrigé et vérifié (au moins 49 px d'écart de 1061 à 1440 px, 1280 et 1440 identiques à avant). **À montrer à Nolann.**
 33. [x] Bloc « Un projet singulier ou original ? » (accueil) : capturé à 375/768/1024/1280/1440, propre. Plausible ne suit pas `/maquette-impression-3d` (à décider). **À montrer à Nolann.**
 34. [x] Nantes + « international » : c'était un malentendu, il voulait dire national. Garde-fous Nantes inscrits dans le plan §9.
@@ -48,7 +48,7 @@ Shop (non urgent) : questions de SEO-COMMUN.md ; prix d'exemple 14,10 € vs 23,
 10. Fin : Nolann teste en local, push sur son oui.
 
 ### État technique
-- Aperçu local : `npx astro build`, puis la config `.claude/launch.json` « nasap-seo-4456 » (`node server-entry.mjs`, PORT 4456) → http://localhost:4456.
+- Aperçu local : `npx astro build`, puis la config `.claude/launch.json` « nasap-seo-4457 » (`node server-entry.mjs`, PORT 4457) → http://localhost:4457.
 - **L'ancien serveur 4455 tourne encore** (PID 6788, dist de l'ancien worktree). L'arrêt a été refusé par le mode auto ; Nolann peut le fermer.
 - Captures avant (live) / après (local) : `C:\Users\Nolann\AppData\Roaming\Claude\side-session-notes\local_d5887c7c-3fd7-4561-8901-2eaabdcc644f\captures-2026-10-27` (`entete__*`, `bloc__*`, `mesures.json`).
 - Script de capture CDP : `caps/header.mjs` dans le scratchpad de l'ancienne session. La copie d'origine est dans `local_fd5f6327…\outils-captures\header.mjs`.
@@ -62,6 +62,6 @@ Shop (non urgent) : questions de SEO-COMMUN.md ; prix d'exemple 14,10 € vs 23,
 - Boucle de compaction le 27/10 au soir : passation vers une nouvelle conversation.
 
 ### Prochain pas exact
-1. Montrer à Nolann http://localhost:4456 et les captures (bloc__375, bloc__1280, entete__accueil__1100__apres) pour les items 32 et 33.
-2. Lui demander son oui (pop-up) pour exécuter le plan §8 en **Sonnet medium**, avec un commit local par étape, un build, les contrôles dist et des captures. Pas de push sans son oui.
-3. À la fin : `resize_window` desktop sur le navigateur intégré.
+1. **Plan §8 exécuté en local (27/10 nuit), 4 commits locaux, rien poussé** : titres/meta + `@id` guides ; h2 de /devis-instantane (computed style identique) ; pied de page « Livraison partout en France » + devis/réalisations/services (liens Nantes/Cholet/Angers gardés) ; aria-label des 8 images machines. Contrôles : titles 63/59 car., meta accueil 154, JSON-LD valide, `areaServed` inchangé, pas de scroll horizontal à 375/768/1280.
+2. Aperçu : `.claude/launch.json` « nasap-seo-4457 » (port 4457, non commité). L'ancien serveur 4456 (PID 37516) et 4455 (PID 6788) tournent encore : Nolann peut les fermer.
+3. Nolann teste http://localhost:4457 ; **push seulement sur son oui** (redéploie le site). Ensuite : hors site (§7).
