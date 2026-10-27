@@ -158,26 +158,27 @@ temps machine) tombe largement sous le prix plancher, donc c'est ce dernier
 qui fixe le prix affiché — sans que le client ne voie de ligne "minimum"
 séparée.
 
-## Exemple chiffré n°2 — pièce plus grosse, PETG, qualité Fine
+## Exemple chiffré n°2 — pièce plus grosse, PETG, qualité Standard
 
-Cube de test 50×50×50mm, PETG, remplissage 60%, qualité Fine (couche
-0,12mm), quantité 1. Taux horaire : 5,00 €/h.
+Cube de test 60×60×60mm, PETG, remplissage 40%, qualité Standard (couche
+0,20mm), quantité 1. Taux horaire : 5,00 €/h. Mesuré le 27/10/2026 avec le
+vrai moteur (Kiri:Moto 4.7.3 côté client, formule de `pricing.ts`).
 
 | Mesure par le slicer | Valeur           |
 | -------------------- | ---------------- |
-| Poids                | 103,16 g         |
-| Temps estimé         | 348,9 min (5h49) |
+| Poids                | 148,9 g          |
+| Temps estimé         | 238,6 min (3h59) |
 
 | Calcul            | Détail                                                    | Résultat    |
 | ----------------- | --------------------------------------------------------- | ----------- |
-| Coût matière      | 103,16 g ÷ 1000 × 26,00 €/kg                              | 2,682 €     |
-| Coût machine      | 348,9 min ÷ 60 × 5,00 €/h                                 | 29,074 €    |
-| Avant plancher    | 2,682 + 29,074                                            | 31,76 €     |
-| **Prix unitaire** | max(8,90 €, 31,76 €) → le calcul dépasse déjà le plancher | **31,76 €** |
+| Coût matière      | 148,9 g ÷ 1000 × 26,00 €/kg                               | 3,871 €     |
+| Coût machine      | 238,6 min ÷ 60 × 5,00 €/h                                 | 19,883 €    |
+| Avant plancher    | 3,871 + 19,883                                            | 23,75 €     |
+| **Prix unitaire** | max(8,90 €, 23,75 €) → le calcul dépasse déjà le plancher | **23,75 €** |
 
 On voit bien ici que c'est le **temps machine qui domine largement** le prix
-sur une pièce volumineuse en qualité fine — cohérent avec la réalité d'un
-atelier où la place sur l'imprimante coûte plus cher que la matière.
+sur une pièce volumineuse — cohérent avec la réalité d'un atelier où la place
+sur l'imprimante coûte plus cher que la matière.
 
 ## Les valeurs de départ (à ajuster)
 

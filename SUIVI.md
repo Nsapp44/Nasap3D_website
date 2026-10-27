@@ -3,7 +3,7 @@
 Archives (maquettes 3D, Protection 3D, shop, passation 25/10) : `docs/SUIVI_archive_2026-10-25.md`.
 
 ## CHANTIER : SEO national + conversion /devis-instantane
-Branche de travail : celle de la session en cours, partie de `claude/seo-conversion-de1652` @ commit de passation (27/10) ; à l'origine partie de master 614f30d. Brief : `reseaux-sociaux/docs/brief_opus_seo_site.md` (dépôt principal). Coordination shop : `Nasap3D website/SEO-COMMUN.md` (hors dépôt, n'éditer que la section « Session SEO site »).
+Branche de travail : `claude/seo-conversion-suite-fe4650` (partie de `claude/seo-conversion-de1652` @ 414ee31, 27/10) ; à l'origine partie de master 614f30d. Brief : `reseaux-sociaux/docs/brief_opus_seo_site.md` (dépôt principal). Coordination shop : `Nasap3D website/SEO-COMMUN.md` (hors dépôt, n'éditer que la section « Session SEO site »).
 Règles : **commits LOCAUX autorisés sur cette branche (oui de Nolann 26/10), JAMAIS de push sans son oui** ; URLs, JSON-LD, ads intacts. Fin = Docker local, tout vérifié, Nolann teste, push seulement quand on est sûrs.
 Maquette validée (26/10) : https://claude.ai/artifact/P3GfWv2y1AFENNK3JTyvDF (source : `N\maquette-seo.html`, ne pas modifier). Galerie côte à côte : https://claude.ai/artifact/EC6H2W9afGKFUNJCdTpqHD (source `N\galerie\index.html` ; republier avec `url` = ce lien après `Artifact read`).
 **N** = dossier durable hors dépôt : `C:\Users\Nolann\AppData\Roaming\Claude\side-session-notes\local_fd5f6327-4589-40c3-8f1d-ce3eb0044621`.
@@ -65,10 +65,9 @@ Plus tard : slogan anglais, ancre « devis instantané impression 3D », PriceBa
 - Prix : tout est dans `docs/prix_exemple_2026-10-27.md` (+ `N\prix-exemple\`). À vérifier avant d'écrire : le prix facturé vient-il du tranchage client (Kiri) ou serveur (`kiriSlicer.ts`, grid-apps Linux) ? Le texte ne cache pas les 5 € de frais sous 18 € : proposer la formulation à Nolann (ex. « 14,10 € la pièce ; frais de 5 € sous 18 € de commande »).
 - Nolann (27/10) : je crée moi-même la nouvelle conversation et je supprime l'ancienne. L'ancienne (`local_3fc6639f-ded6-4b4a-a5be-d76929843ca4`) possède l'ancien worktree `nasap3d-social-media-folders-171abf` : la nouvelle a son PROPRE worktree, donc la suppression de l'ancienne ne touche pas au travail en cours.
 
-### Prochain pas exact
-0. Dès que Nolann écrit dans la nouvelle conversation : supprimer l'ancienne `local_3fc6639f-ded6-4b4a-a5be-d76929843ca4` (`delete_session`, la carte d'approbation = son oui). Préparer le worktree (node_modules, .env, launch.json : voir État technique), mettre à jour la ligne « Branche de travail » ci-dessus.
-1. Relire les diffs E1/E2/E4/E5 (`git show 8e83dff`) ; appliquer les constats « composants du chantier » de `docs/controle_visuel_2026-10-27.md` (pas reparer), via `executant`.
-2. Item 26 (a)(b)(c) via `executant`.
-3. `npx astro build` en arrière-plan, relancer l'aperçu 4455 ; copier `N\outils-captures\` dans le scratchpad et corriger `capture.mjs` (chemins ; souris au coin, blur, attente > 300 ms) ; `testeur` : recaptures toutes pages × 375/768/1024/1280 (pages entières), sw == cw partout, reparer + configurateur identiques à avant.
-4. Captures avant/après côte à côte + liste des écarts à Nolann, galerie republiée (page ville menus fermés). Commit local sur son oui.
-5. Item 24 : chiffre CHOISI (14,10 €, PETG, voir plus haut). Vérifier d'abord que le prix facturé vient du même moteur (client Kiri ou serveur), puis remplacer 31,76 € et sa ligne de réglages aux emplacements : `QuoteWizard.tsx:194-195`, `impression-3d-particuliers.astro:40,57`, `impression-3d-en-ligne.astro:40,67`, `prix-impression-3d.astro:38-39,45,98-99`, `PRICING.md` L159-176. Montrer la formulation des frais avant de l'écrire. Ensuite item 19, villes (item 20), Bing, push sur son oui. `resize_window` preset desktop à la fin.
+### Prochain pas exact (28 : conversation `seo-conversion-suite-fe4650`)
+Fait (27/10) : corrections composants guides, item 26 (pied centré, machines 4/3 + grille 3+2, burger 44 px, lien actif), prix d'exemple 23,75 € (cube 60 mm PETG, 149 g, 3 h 59 ; remplace 31,76 €) dans QuoteWizard, en-ligne, particuliers, prix, PRICING.md. Build refait, aperçu 4455 relancé, recaptures `--all` faites (69 captures : sw == cw partout, seule la 404 est signalée, menu Guides et burger OK, 68 liens internes en 200). Captures dans le scratchpad `apres\`, outils dans `outils\`.
+1. [x] Page avant/après publiée (27/10) : artifact EC6H2W9afGKFUNJCdTpqHD, lien « Avant / après » dans le menu de la galerie (fichier avant-apres.html, 20 images). Reste : la présenter à Nolann avec les écarts (ExpertiseSteps 13 px/.7 partagé, badge x2 à 12 px non demandé, height machines inutilisé, fr() FAQ devis non appliqué).
+2. Demander à Nolann son oui pour le commit local (aucun commit, aucun push fait). Message avec Co-Authored-By Claude Sonnet 5.5.
+3. Ensuite item 19 (migration locale `prisma migrate deploy` sur refontenasap3d-db-1 seulement), villes (item 20), Bing, push sur son oui. `resize_window` preset desktop à la fin.
+Note capture : sur machines, la capture pleine page montre le menu Guides ouvert (artefact de capture ; le haut de page est fermé).

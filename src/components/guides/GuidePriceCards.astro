@@ -22,8 +22,8 @@ const { items } = Astro.props;
 </div>
 <style>
   .gprices { margin: 12px 0; display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
-  .gprice { background: #1a1917; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px 16px; }
-  .gprice .gwhat { margin: 0 0 6px; max-width: none; font: 400 13.5px/1.5 "Inter", sans-serif; color: rgba(255, 255, 255, 0.62); }
+  .gprice { background: #1a1917; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; justify-content: space-between; }
+  .gprice .gwhat { flex: 1; margin: 0 0 6px; max-width: none; font: 400 13.5px/1.5 "Inter", sans-serif; color: rgba(255, 255, 255, 0.62); }
   .gprice .gamount { margin: 0; max-width: none; font: 700 26px/1.2 "Space Grotesk", sans-serif; color: #f3f1ec; }
   .gamount small { margin-left: 6px; font: 500 12.5px "Inter", sans-serif; color: rgba(255, 255, 255, 0.62); }
   @media (min-width: 560px) { .gprices { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

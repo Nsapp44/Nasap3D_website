@@ -191,8 +191,8 @@ export default function QuoteWizard({ showNoFileCards = false, floorLabel = "8,9
                         <p className="qw-ex-price">{floorLabel}</p>
                       </div>
                       <div className="qw-ex-card">
-                        <p className="qw-ex-what">Exemple · cube de 50 mm en PETG, 103 g</p>
-                        <p className="qw-ex-price">31,76 €</p>
+                        <p className="qw-ex-what">Exemple · cube de 60 mm en PETG, 149 g</p>
+                        <p className="qw-ex-price">23,75 €</p>
                       </div>
                       <div className="qw-ex-card qw-ex-card--hl">
                         <p className="qw-ex-title">Pas de fichier STL ?</p>

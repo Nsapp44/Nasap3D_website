@@ -19,11 +19,12 @@ const { items, title = "Sommaire" } = Astro.props;
 <style>
   .gtoc { background: #1a1917; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 14px 16px; margin: 24px 0 8px; }
   .gtoc-title { margin: 0 0 4px; font: 600 13px "Space Grotesk", sans-serif; color: #f3f1ec; }
-  .gtoc ol { margin: 0; padding-left: 20px; font: 400 13.5px/1.4 "Inter", sans-serif; color: rgba(255, 255, 255, 0.78); }
+  .gtoc ol { margin: 0; padding-left: 2.2em; font: 400 13.5px/1.4 "Inter", sans-serif; color: rgba(255, 255, 255, 0.78); }
   .gtoc li { break-inside: avoid; }
   .gtoc li::marker { color: rgba(255, 255, 255, 0.45); }
   .gtoc a { display: flex; align-items: center; min-height: 44px; color: rgba(255, 255, 255, 0.78); text-decoration: none; }
   .gtoc a:hover { color: #ff5a3c; text-decoration: underline; }
   .gtoc a:focus-visible { outline: 2px solid #ff5a3c; outline-offset: -2px; border-radius: 4px; }
+  @media (hover: hover) and (pointer: fine) { .gtoc a { min-height: 32px; } }
   @media (min-width: 620px) { .gtoc ol { columns: 2; column-gap: 28px; } }
 </style>

@@ -36,13 +36,13 @@ const toc = [
 
 const prices = [
   { what: "Petite pièce en PLA · 8\u00A0g · 15\u00A0min d'impression", price: floorLabel, note: "minimum par pièce" },
-  { what: "Cube de 50\u00A0mm en PETG · 103\u00A0g · 5\u00A0h 49 d'impression", price: "31,76\u00A0€" },
+  { what: "Cube de 60\u00A0mm en PETG · 149\u00A0g · 3\u00A0h 59 d'impression", price: "23,75\u00A0€" },
 ];
 
 const exampleHeaders = ["Exemple", "Matière et réglages", "Poids", "Temps d'impression", "Prix d'une pièce"];
 const exampleRows = [
   ["Petite pièce", "PLA, qualité standard", "8 g", "15 min", floorLabel],
-  ["Cube de 50 mm", "PETG, qualité fine (couche de 0,12 mm), remplissage 60 %", "103 g", "5 h 49", "31,76 €"],
+  ["Cube de 60 mm", "PETG, qualité standard (couche de 0,20 mm), remplissage 40 %", "149 g", "3 h 59", "23,75 €"],
 ];
 
 const faq = [
@@ -95,8 +95,8 @@ const faq = [
       <GuideTable label="Deux exemples de prix d'impression 3D avec leurs mesures" headers={exampleHeaders} rows={exampleRows} />
       <h3>Petite pièce en PLA&nbsp;: 8&nbsp;g, 15 minutes</h3>
       <p>Cette pièce consomme très peu de matière et occupe la machine un quart d'heure. Son calcul tombe largement sous le prix minimum&nbsp;: c'est donc le minimum par pièce, {floorLabel}, qui fixe le prix. Vous ne voyez aucune ligne «&nbsp;frais minimum&nbsp;» à part, seulement un prix normal.</p>
-      <h3>Cube de 50&nbsp;mm en PETG&nbsp;: 103&nbsp;g, 5&nbsp;h 49</h3>
-      <p>Ici, le calcul dépasse déjà le prix minimum. La qualité fine demande près de six heures de machine, et c'est ce temps machine qui pèse le plus lourd dans le prix, bien plus que la matière&nbsp;: 31,76&nbsp;€.</p>
+      <h3>Cube de 60&nbsp;mm en PETG&nbsp;: 149&nbsp;g, 3&nbsp;h 59</h3>
+      <p>Ici, le calcul dépasse déjà le prix minimum. Presque quatre heures de machine sont nécessaires, et c'est ce temps machine qui pèse le plus lourd dans le prix, bien plus que la matière&nbsp;: 23,75&nbsp;€.</p>
       <p>Ces deux exemples montrent l'essentiel&nbsp;: le poids seul ne suffit pas à prévoir un prix. Pour connaître celui de votre pièce, le plus simple est de <a href="/devis-instantane">déposer votre fichier</a>.</p>
     </GuideSection>
 

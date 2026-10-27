@@ -269,11 +269,11 @@ html.n3d-quote-paused .n3d-quote-gate {
 .nasap-nav-toggle {
   display: none;
   position: absolute;
-  top: 13px;
-  right: 26px;
+  top: 8px;
+  right: 21px;
   z-index: 1000;
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   align-items: center;
   justify-content: center;
@@ -284,8 +284,8 @@ html.n3d-quote-paused .n3d-quote-gate {
 }
 .nasap-nav-toggle span {
   position: absolute;
-  left: 7px;
-  right: 7px;
+  left: 11px;
+  right: 11px;
   height: 2px;
   background: #f3f1ec;
   transition:
@@ -294,23 +294,23 @@ html.n3d-quote-paused .n3d-quote-gate {
     top 0.2s;
 }
 .nasap-nav-toggle span:nth-child(1) {
-  top: 11px;
+  top: 16px;
 }
 .nasap-nav-toggle span:nth-child(2) {
-  top: 16px;
-}
-.nasap-nav-toggle span:nth-child(3) {
   top: 21px;
 }
+.nasap-nav-toggle span:nth-child(3) {
+  top: 26px;
+}
 .nasap-nav-toggle.is-open span:nth-child(1) {
-  top: 16px;
+  top: 21px;
   transform: rotate(45deg);
 }
 .nasap-nav-toggle.is-open span:nth-child(2) {
   opacity: 0;
 }
 .nasap-nav-toggle.is-open span:nth-child(3) {
-  top: 16px;
+  top: 21px;
   transform: rotate(-45deg);
 }
 /* Burger jusqu'à 1060px : avec « Guides », la rangée de liens ne tient plus

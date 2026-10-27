@@ -277,7 +277,7 @@ export default function HomeHeader() {
           html.nasap-nav-open .nav-links { max-height: 760px; overflow-x: hidden; overflow-y: auto; opacity: 1; transform: scale(1); padding: 8px 16px 14px; }
           .nav-links a { display: block; width: 100%; padding: 12px 4px; border-bottom: 1px solid rgba(255,255,255,.06); transition: none; transform: none; }
           .nav-links a:hover { transform: none; }
-          .nav-current { font-weight: 700; font-size: 15.5px; padding: 14px 4px; border-bottom: 1px solid rgba(255,255,255,.06); text-decoration: underline; text-decoration-color: rgb(255,90,60); text-decoration-thickness: 2px; text-underline-offset: 6px; }
+          .nav-current { font-weight: 700; padding: 12px 4px; border-bottom: 1px solid rgba(255,255,255,.06); text-decoration: underline; text-decoration-color: rgb(255,90,60); text-decoration-thickness: 2px; text-underline-offset: 6px; }
           /* "Guides" sur mobile : pas de déroulant. Intitulé de groupe non cliquable + 4 liens en retrait, toujours visibles dans le burger. */
           .nav-links .nav-guides-btn { display: none; }
           .nav-links .guides-grp { display: block; padding: 14px 4px 6px; font: 600 11px 'Inter',sans-serif; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.42); }
