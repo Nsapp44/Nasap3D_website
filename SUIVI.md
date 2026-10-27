@@ -82,3 +82,4 @@ Note capture : sur machines, la capture pleine page montre le menu Guides ouvert
 - Bloc SEO refait en intro + 3 cartes ; plus de « Canclaux » dans index.astro ; contact-sub = « Retrait gratuit à l'atelier sur rendez-vous. ».
 - Repère concurrent : Abeille 3D cite son atelier (Albert, Somme) ET « livraison partout en France ». Nantes + France ensemble est la norme.
 - Prochain pas : Nolann valide le rendu ; Canclaux encore dans docs Ads/3Dnatives (à retirer si voulu) ; test STL + Plausible.
+- 27/10 soir : accueil nationalisé (h1 « Impression 3D en France », title/description « partout en France », areaServed + « France », intro). Objectif Nolann : clients de toute la France via le devis instantané (comme Abeille 3D) + projets singuliers / maquettage. Page Nantes inchangée. Prochain pas : valider le rendu ; décider d'un bloc « projets singuliers » sur l'accueil.
