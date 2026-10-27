@@ -59,7 +59,7 @@ Plus tard : slogan anglais, ancre « devis instantané impression 3D », PriceBa
 - Règle text-wrap globale abandonnée (configurateur, reparer).
 
 ### Passation 27/10 (compactions en boucle → quota brûlé)
-- **Non commité** (tout est à garder, rien n'est à moitié écrit sauf peut-être E5) : SUIVI.md ; Footer.astro, Header.astro, global.css, HomeHeader.tsx (burger 1060 + E1/E2) ; GuideCta/Faq/Hero/Section/Table.astro (E4) ; index.astro (E2) ; ServicesGrid.tsx, devis-instantane, services, impression-3d-particuliers, impression-3d-en-ligne, materiaux-impression-3d, prix-impression-3d (E5) ; nouveaux : `src/lib/typo.ts`, `docs/controle_visuel_2026-10-27.md`.
+- **Commité localement en WIP `8e83dff`** (27/10, rien de poussé ; ni construit ni vérifié) : SUIVI.md ; Footer.astro, Header.astro, global.css, HomeHeader.tsx (burger 1060 + E1/E2) ; GuideCta/Faq/Hero/Section/Table.astro (E4) ; index.astro (E2) ; ServicesGrid.tsx, devis-instantane, services, impression-3d-particuliers, impression-3d-en-ligne, materiaux-impression-3d, prix-impression-3d (E5) ; nouveaux : `src/lib/typo.ts`, `docs/controle_visuel_2026-10-27.md`.
 - **E5 FINI** (27/10 ~9 h 25, 7 fichiers, typo nbsp/U+202F, text-wrap devis + services, badges prix « 90 € », `.process-badge` nowrap ; JSON-LD/meta non touchés). Proposé non appliqué : `fr()` à l'affichage du FaqAccordion de devis-instantane (`faqs.map(f => ({q: fr(f.q), a: fr(f.a)}))`, sans toucher la chaîne du JSON-LD).
 - **Agent « prix » FINI** (résultats `S\prix-exemple\result.json`, moteur Kiri:Moto client réel, valeurs du seed) :
   - Cube 50 mm, réglages par défaut du configurateur (PLA, Standard 0,20 mm, 40 %) : 86 g, 2 h 22, **13,72 €** (PETG : 14,10 €).
@@ -74,7 +74,7 @@ Plus tard : slogan anglais, ancre « devis instantané impression 3D », PriceBa
 - **Attention avant de la supprimer** : supprimer une conversation peut supprimer son worktree (mémoire « Rien de non commité en worktree »). La nouvelle session travaille dans CE dossier : tout commiter localement d'abord, et vérifier quelle session possède le worktree. S'il appartient à l'ancienne, le dire à Nolann avant la carte.
 
 ### Prochain pas exact
-1. Attendre la fin d'E5 et du prix (message de l'ancienne session ou fichiers stables), puis relire les diffs E1/E2/E4/E5 (`git diff`) ; appliquer les constats « composants du chantier » de `docs/controle_visuel_2026-10-27.md` (pas reparer), via `executant`.
+1. E5 et le prix sont finis. Relire les diffs E1/E2/E4/E5 (`git show 8e83dff`) ; appliquer les constats « composants du chantier » de `docs/controle_visuel_2026-10-27.md` (pas reparer), via `executant`.
 2. Item 26 (a)(b)(c) via `executant`.
 3. `npx astro build` en arrière-plan, relancer l'aperçu 4455 ; corriger `capture.mjs` (souris au coin, blur, attente > 300 ms) ; `testeur` : recaptures toutes pages × 375/768/1024/1280 (pages entières), sw == cw partout, reparer + configurateur identiques à avant.
 4. Captures avant/après côte à côte + liste des écarts à Nolann, galerie republiée (page ville menus fermés). Commit local sur son oui.
