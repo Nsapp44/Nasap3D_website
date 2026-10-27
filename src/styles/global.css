@@ -313,7 +313,9 @@ html.n3d-quote-paused .n3d-quote-gate {
   top: 16px;
   transform: rotate(-45deg);
 }
-@media (max-width: 900px) {
+/* Burger jusqu'à 1060px : avec « Guides », la rangée de liens ne tient plus
+   sur une ligne entre 901 et ~1060px (même seuil dans Header.astro et HomeHeader.tsx). */
+@media (max-width: 1060px) {
   .nasap-nav-toggle {
     display: flex !important;
   }

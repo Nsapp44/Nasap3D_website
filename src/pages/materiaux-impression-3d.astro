@@ -27,20 +27,20 @@ const toc = [
   { label: "TPU", href: "#tpu" },
   { label: "PP", href: "#pp" },
   { label: "Nylon", href: "#nylon" },
-  { label: "Et la résine (SLA) ?", href: "#resine" },
+  { label: "Et la résine (SLA)\u202F?", href: "#resine" },
   { label: "Choisir en 3 questions", href: "#choisir" },
   { label: "Questions fréquentes", href: "#faq" },
 ];
 
 const tableHeaders = ["Matière", "Points forts", "Limites", "Usages typiques", "Chaleur (indicatif)", "Intérieur / extérieur"];
 const tableRows = [
-  ["PLA", "Précis, bel état de surface, beaucoup de couleurs", "Cassant sous le choc, se ramollit vite à la chaleur", "Déco, prototypes visuels, maquettes", "Ramollit vers 55-60 °C", "Intérieur"],
-  ["PETG", "Tenace, ne craint pas l'eau, tient mieux la chaleur que le PLA", "Un peu moins fin que le PLA sur les petits détails", "Pièces d'usage, contact humide, supports", "Ramollit vers 70 °C", "Intérieur et extérieur abrité"],
-  ["ABS", "Tient la chaleur, se ponce et se colle", "Caisson fermé, sensible aux UV", "Pièces techniques, capots, boîtiers", "Ramollit vers 90-100 °C", "Intérieur"],
-  ["ASA", "Les qualités de l'ABS, résiste aux UV", "Caisson fermé, grandes pièces plates délicates", "Pièces au soleil, capots, supports extérieurs", "Ramollit vers 90-100 °C", "Extérieur"],
-  ["TPU", "Flexible, élastique, amortit chocs et vibrations", "Peu adapté aux très petits détails, impression lente", "Joints, amortisseurs, pièces souples", "Ramollit vers 80 °C", "Intérieur ; extérieur selon l'usage"],
-  ["PP", "Résistance chimique, se plie sans casser, léger", "Matière délicate à imprimer, faisabilité vérifiée", "Charnières, contact avec produits chimiques", "Ramollit vers 90 °C", "Intérieur ; extérieur abrité"],
-  ["Nylon", "Résiste à l'usure et aux chocs, glisse bien", "Absorbe l'humidité de l'air", "Engrenages, bagues, pièces qui frottent", "Ramollit vers 100 °C", "Intérieur, humidité à éviter"],
+  ["PLA", "Précis, bel état de surface, beaucoup de couleurs", "Cassant sous le choc, se ramollit vite à la chaleur", "Déco, prototypes visuels, maquettes", "Ramollit vers 55-60\u00A0°C", "Intérieur"],
+  ["PETG", "Tenace, ne craint pas l'eau, tient mieux la chaleur que le PLA", "Un peu moins fin que le PLA sur les petits détails", "Pièces d'usage, contact humide, supports", "Ramollit vers 70\u00A0°C", "Intérieur et extérieur abrité"],
+  ["ABS", "Tient la chaleur, se ponce et se colle", "Caisson fermé, sensible aux UV", "Pièces techniques, capots, boîtiers", "Ramollit vers 90-100\u00A0°C", "Intérieur"],
+  ["ASA", "Les qualités de l'ABS, résiste aux UV", "Caisson fermé, grandes pièces plates délicates", "Pièces au soleil, capots, supports extérieurs", "Ramollit vers 90-100\u00A0°C", "Extérieur"],
+  ["TPU", "Flexible, élastique, amortit chocs et vibrations", "Peu adapté aux très petits détails, impression lente", "Joints, amortisseurs, pièces souples", "Ramollit vers 80\u00A0°C", "Intérieur\u202F; extérieur selon l'usage"],
+  ["PP", "Résistance chimique, se plie sans casser, léger", "Matière délicate à imprimer, faisabilité vérifiée", "Charnières, contact avec produits chimiques", "Ramollit vers 90\u00A0°C", "Intérieur\u202F; extérieur abrité"],
+  ["Nylon", "Résiste à l'usure et aux chocs, glisse bien", "Absorbe l'humidité de l'air", "Engrenages, bagues, pièces qui frottent", "Ramollit vers 100\u00A0°C", "Intérieur, humidité à éviter"],
 ];
 
 const faq = [
@@ -73,17 +73,17 @@ const faq = [
     <GuideToc items={toc} />
 
     <GuideSection id="comparatif" title="Comparatif des 7 matériaux d'impression 3D">
-      <p>Chaque matière a son terrain : certaines tiennent la chaleur, d'autres le soleil, d'autres se plient sans casser. Le tableau résume ce que chacune fait de mieux et où elle montre ses limites. Les sept matières sont proposées dans le <a href="/devis-instantane">devis instantané</a> ; le détail de chacune suit.</p>
+      <p>Chaque matière a son terrain&nbsp;: certaines tiennent la chaleur, d'autres le soleil, d'autres se plient sans casser. Le tableau résume ce que chacune fait de mieux et où elle montre ses limites. Les sept matières sont proposées dans le <a href="/devis-instantane">devis instantané</a>&#8239;; le détail de chacune suit.</p>
       <GuideTable label="Comparatif des sept matériaux d'impression 3D" headers={tableHeaders} rows={tableRows} />
-      <p>Les températures sont des ordres de grandeur. Elles varient selon la qualité de la matière, l'épaisseur de la pièce et l'effort qu'elle supporte : une pièce fine et chargée cède plus tôt qu'un bloc épais au repos. Pour un usage proche de ces limites, parlez-nous-en avant de commander.</p>
+      <p>Les températures sont des ordres de grandeur. Elles varient selon la qualité de la matière, l'épaisseur de la pièce et l'effort qu'elle supporte&nbsp;: une pièce fine et chargée cède plus tôt qu'un bloc épais au repos. Pour un usage proche de ces limites, parlez-nous-en avant de commander.</p>
     </GuideSection>
 
     <GuideSection id="pla" title="PLA : précis, pour les pièces d'intérieur">
       <p>Le PLA est la matière de départ de l'impression 3D. Il s'imprime avec précision, donne un bel état de surface et existe dans beaucoup de couleurs. C'est le bon choix quand la pièce reste à l'intérieur, sans effort important ni chaleur.</p>
       <ul>
-        <li><strong>Points forts :</strong> détails fins, surface propre, rigidité, large choix de couleurs.</li>
-        <li><strong>Limites :</strong> il se ramollit vers 55-60 °C. Une pièce laissée dans une voiture au soleil ou posée sur un radiateur peut se déformer. Il est aussi plus cassant que le PETG : sous un choc, il casse plutôt qu'il ne plie.</li>
-        <li><strong>Exemple :</strong> un prototype visuel pour valider une forme, une maquette, un objet de décoration ou un support posé sur une étagère.</li>
+        <li><strong>Points forts&nbsp;:</strong> détails fins, surface propre, rigidité, large choix de couleurs.</li>
+        <li><strong>Limites&nbsp;:</strong> il se ramollit vers 55-60&nbsp;°C. Une pièce laissée dans une voiture au soleil ou posée sur un radiateur peut se déformer. Il est aussi plus cassant que le PETG&nbsp;: sous un choc, il casse plutôt qu'il ne plie.</li>
+        <li><strong>Exemple&nbsp;:</strong> un prototype visuel pour valider une forme, une maquette, un objet de décoration ou un support posé sur une étagère.</li>
       </ul>
       <p>Pour un usage en extérieur ou sous contrainte, passez au PETG ou à l'ASA.</p>
     </GuideSection>
@@ -91,9 +91,9 @@ const faq = [
     <GuideSection id="petg" title="PETG : tenace, pour l'usage courant et l'humidité">
       <p>Le PETG est un peu moins fin que le PLA sur les détails minuscules, mais bien plus tenace. Il ne craint pas l'eau et pardonne mieux les chocs. C'est un très bon choix par défaut pour une pièce d'usage.</p>
       <ul>
-        <li><strong>Points forts :</strong> ténacité, résistance à l'eau et à l'humidité, un peu de souplesse avant la rupture, meilleure tenue à la chaleur que le PLA.</li>
-        <li><strong>Limites :</strong> il se ramollit vers 70 °C, donc pas dans une voiture en plein été. Moins précis que le PLA sur les très petits détails.</li>
-        <li><strong>Exemple :</strong> un accessoire de salle de bain, un clip de fixation, un support à l'abri sur un balcon ou dans un garage.</li>
+        <li><strong>Points forts&nbsp;:</strong> ténacité, résistance à l'eau et à l'humidité, un peu de souplesse avant la rupture, meilleure tenue à la chaleur que le PLA.</li>
+        <li><strong>Limites&nbsp;:</strong> il se ramollit vers 70&nbsp;°C, donc pas dans une voiture en plein été. Moins précis que le PLA sur les très petits détails.</li>
+        <li><strong>Exemple&nbsp;:</strong> un accessoire de salle de bain, un clip de fixation, un support à l'abri sur un balcon ou dans un garage.</li>
       </ul>
       <p>Pour une pièce qui reçoit le soleil toute la journée, l'ASA reste plus sûr.</p>
     </GuideSection>
@@ -101,9 +101,9 @@ const faq = [
     <GuideSection id="abs" title="ABS : pour la chaleur et les pièces techniques">
       <p>L'ABS est le plastique de nombreux boîtiers industriels. Il tient mieux la chaleur que le PETG, se ponce et se colle facilement, ce qui le rend pratique quand la pièce doit être reprise après l'impression.</p>
       <ul>
-        <li><strong>Points forts :</strong> il se ramollit seulement vers 90-100 °C, ponçage et collage faciles, bonne base pour la peinture.</li>
-        <li><strong>Limites :</strong> il est sensible aux UV : au soleil, il jaunit et se fragilise avec le temps. Il se déforme facilement à l'impression, donc il est imprimé en caisson fermé, sur nos Bambu Lab H2C (<a href="/machines">parc machine</a>).</li>
-        <li><strong>Exemple :</strong> un capot placé près d'un moteur, un support dans un compartiment chaud, un boîtier à poncer puis à peindre.</li>
+        <li><strong>Points forts&nbsp;:</strong> il se ramollit seulement vers 90-100&nbsp;°C, ponçage et collage faciles, bonne base pour la peinture.</li>
+        <li><strong>Limites&nbsp;:</strong> il est sensible aux UV&nbsp;: au soleil, il jaunit et se fragilise avec le temps. Il se déforme facilement à l'impression, donc il est imprimé en caisson fermé, sur nos Bambu Lab H2C (<a href="/machines">parc machine</a>).</li>
+        <li><strong>Exemple&nbsp;:</strong> un capot placé près d'un moteur, un support dans un compartiment chaud, un boîtier à poncer puis à peindre.</li>
       </ul>
       <p>Pour la même tenue à la chaleur avec une pièce exposée au soleil, voyez l'ASA.</p>
     </GuideSection>
@@ -111,60 +111,60 @@ const faq = [
     <GuideSection id="asa" title="ASA : l'ABS pour l'extérieur">
       <p>L'ASA a les qualités de l'ABS, avec en plus une bonne résistance aux UV et aux intempéries. Il jaunit et se fragilise bien moins vite au soleil. C'est la matière que nous recommandons pour une pièce qui vit dehors.</p>
       <ul>
-        <li><strong>Points forts :</strong> résistance aux UV et à la pluie, il se ramollit seulement vers 90-100 °C, ponçage et collage faciles comme l'ABS.</li>
-        <li><strong>Limites :</strong> comme l'ABS, il est imprimé en caisson fermé (Bambu Lab H2C). Les grandes pièces très plates restent délicates, car elles ont tendance à se déformer ; c'est un point que nous regardons à l'expertise.</li>
-        <li><strong>Exemple :</strong> un cache ou un support fixé à l'extérieur d'un véhicule, d'un volet ou d'une façade, une pièce de jardin exposée toute l'année.</li>
+        <li><strong>Points forts&nbsp;:</strong> résistance aux UV et à la pluie, il se ramollit seulement vers 90-100&nbsp;°C, ponçage et collage faciles comme l'ABS.</li>
+        <li><strong>Limites&nbsp;:</strong> comme l'ABS, il est imprimé en caisson fermé (Bambu Lab H2C). Les grandes pièces très plates restent délicates, car elles ont tendance à se déformer&#8239;; c'est un point que nous regardons à l'expertise.</li>
+        <li><strong>Exemple&nbsp;:</strong> un cache ou un support fixé à l'extérieur d'un véhicule, d'un volet ou d'une façade, une pièce de jardin exposée toute l'année.</li>
       </ul>
     </GuideSection>
 
     <GuideSection id="tpu" title="TPU : souple et élastique">
-      <p>Le TPU est un plastique flexible, proche du caoutchouc. Il se plie, s'étire et reprend sa forme. Sa souplesse se mesure en dureté Shore A : plus le chiffre est bas, plus la pièce est molle.</p>
+      <p>Le TPU est un plastique flexible, proche du caoutchouc. Il se plie, s'étire et reprend sa forme. Sa souplesse se mesure en dureté Shore A&nbsp;: plus le chiffre est bas, plus la pièce est molle.</p>
       <ul>
-        <li><strong>Points forts :</strong> flexibilité, élasticité, absorption des chocs et des vibrations, bonne résistance à l'usure.</li>
-        <li><strong>Limites :</strong> il convient moins aux très petits détails, et il s'imprime plus lentement que les matières rigides. Il se ramollit vers 80 °C.</li>
-        <li><strong>Exemple :</strong> un joint, une bague d'amortissement, une protection de coin, un pied antidérapant.</li>
+        <li><strong>Points forts&nbsp;:</strong> flexibilité, élasticité, absorption des chocs et des vibrations, bonne résistance à l'usure.</li>
+        <li><strong>Limites&nbsp;:</strong> il convient moins aux très petits détails, et il s'imprime plus lentement que les matières rigides. Il se ramollit vers 80&nbsp;°C.</li>
+        <li><strong>Exemple&nbsp;:</strong> un joint, une bague d'amortissement, une protection de coin, un pied antidérapant.</li>
       </ul>
-      <p>Exemple réel de l'atelier : une petite série technique de 528 pièces en TPU noir, à découvrir dans nos <a href="/realisations">réalisations</a>. Pour une série, une remise automatique s'applique dès 5 exemplaires (voir le <a href="/prix-impression-3d">guide des prix de l'impression 3D</a>).</p>
+      <p>Exemple réel de l'atelier&nbsp;: une petite série technique de 528&nbsp;pièces en TPU noir, à découvrir dans nos <a href="/realisations">réalisations</a>. Pour une série, une remise automatique s'applique dès 5 exemplaires (voir le <a href="/prix-impression-3d">guide des prix de l'impression 3D</a>).</p>
     </GuideSection>
 
     <GuideSection id="pp" title="PP : résistance chimique et pièces pliables">
       <p>Le polypropylène (PP) est le plastique des charnières intégrées, des bacs et des flacons. Il résiste à beaucoup de produits chimiques et se plie de façon répétée sans casser. Il est aussi léger.</p>
       <ul>
-        <li><strong>Points forts :</strong> résistance chimique, flexibilité sans casse, faible poids.</li>
-        <li><strong>Limites :</strong> c'est une matière délicate à imprimer : elle adhère mal et se déforme, donc la faisabilité est vérifiée à l'expertise. Elle se colle mal et se ramollit vers 90 °C. Elle résiste à beaucoup de produits, pas à tous : indiquez-nous celui qui sera en contact avec la pièce.</li>
-        <li><strong>Exemple :</strong> une charnière intégrée, un petit bac ou un raccord destiné à des produits d'entretien.</li>
+        <li><strong>Points forts&nbsp;:</strong> résistance chimique, flexibilité sans casse, faible poids.</li>
+        <li><strong>Limites&nbsp;:</strong> c'est une matière délicate à imprimer&nbsp;: elle adhère mal et se déforme, donc la faisabilité est vérifiée à l'expertise. Elle se colle mal et se ramollit vers 90&nbsp;°C. Elle résiste à beaucoup de produits, pas à tous&nbsp;: indiquez-nous celui qui sera en contact avec la pièce.</li>
+        <li><strong>Exemple&nbsp;:</strong> une charnière intégrée, un petit bac ou un raccord destiné à des produits d'entretien.</li>
       </ul>
     </GuideSection>
 
     <GuideSection id="nylon" title="Nylon : usure, frottements et pièces mécaniques">
-      <p>Le nylon (polyamide, PA) est la matière des pièces qui travaillent : elles frottent, glissent, tournent ou encaissent des chocs répétés. Il résiste à l'usure et aux chocs, et il glisse bien contre d'autres pièces.</p>
+      <p>Le nylon (polyamide, PA) est la matière des pièces qui travaillent&nbsp;: elles frottent, glissent, tournent ou encaissent des chocs répétés. Il résiste à l'usure et aux chocs, et il glisse bien contre d'autres pièces.</p>
       <ul>
-        <li><strong>Points forts :</strong> résistance à l'usure et aux chocs, bon glissement, solidité mécanique, il se ramollit seulement vers 100 °C.</li>
-        <li><strong>Limites :</strong> il absorbe l'humidité de l'air. Avant impression, un filament humide s'imprime mal ; en service, la pièce peut légèrement varier en dimension et en rigidité dans une ambiance très humide.</li>
-        <li><strong>Exemple :</strong> un pignon, une bague de frottement, un galet de guidage, une pièce de mécanisme qui s'use.</li>
+        <li><strong>Points forts&nbsp;:</strong> résistance à l'usure et aux chocs, bon glissement, solidité mécanique, il se ramollit seulement vers 100&nbsp;°C.</li>
+        <li><strong>Limites&nbsp;:</strong> il absorbe l'humidité de l'air. Avant impression, un filament humide s'imprime mal&#8239;; en service, la pièce peut légèrement varier en dimension et en rigidité dans une ambiance très humide.</li>
+        <li><strong>Exemple&nbsp;:</strong> un pignon, une bague de frottement, un galet de guidage, une pièce de mécanisme qui s'use.</li>
       </ul>
-      <p>Si votre pièce doit s'emboîter avec une autre, signalez-le dans votre commande : l'humidité peut jouer sur l'ajustement.</p>
+      <p>Si votre pièce doit s'emboîter avec une autre, signalez-le dans votre commande&nbsp;: l'humidité peut jouer sur l'ajustement.</p>
     </GuideSection>
 
     <GuideSection id="resine" title="Et la résine (SLA) ?">
-      <p>En plus du filament, l'atelier dispose d'une imprimante à résine (SLA). Elle sert quand le détail prime : détails très fins, surfaces lisses, figurines, modèles réduits, pièces à poncer, apprêter puis peindre.</p>
+      <p>En plus du filament, l'atelier dispose d'une imprimante à résine (SLA). Elle sert quand le détail prime&nbsp;: détails très fins, surfaces lisses, figurines, modèles réduits, pièces à poncer, apprêter puis peindre.</p>
       <ul>
-        <li><strong>Matières résine :</strong> résine standard, ABS-Like et résine transparente.</li>
-        <li><strong>Limites :</strong> les résines sont en général plus cassantes que le TPU, le nylon ou le PETG. Pour une pièce qui travaille ou reçoit des chocs, préférez le filament.</li>
-        <li><strong>Série :</strong> une petite série de 20 à 30 pièces est possible.</li>
-        <li><strong>Exemple réel :</strong> des figurines imprimées en résine haute définition, prêtes pour la peinture, visibles dans nos <a href="/realisations">réalisations</a>.</li>
+        <li><strong>Matières résine&nbsp;:</strong> résine standard, ABS-Like et résine transparente.</li>
+        <li><strong>Limites&nbsp;:</strong> les résines sont en général plus cassantes que le TPU, le nylon ou le PETG. Pour une pièce qui travaille ou reçoit des chocs, préférez le filament.</li>
+        <li><strong>Série&nbsp;:</strong> une petite série de 20 à 30&nbsp;pièces est possible.</li>
+        <li><strong>Exemple réel&nbsp;:</strong> des figurines imprimées en résine haute définition, prêtes pour la peinture, visibles dans nos <a href="/realisations">réalisations</a>.</li>
       </ul>
-      <p><strong>Comment la demander ?</strong> La résine n'est pas disponible dans le devis instantané : elle se commande uniquement sur devis. Passez par le <a href="/contact">formulaire de contact</a> en décrivant la pièce, sa taille et le rendu attendu. Les machines de l'atelier sont présentées sur la page <a href="/machines">machines</a>.</p>
+      <p><strong>Comment la demander&#8239;?</strong> La résine n'est pas disponible dans le devis instantané&nbsp;: elle se commande uniquement sur devis. Passez par le <a href="/contact">formulaire de contact</a> en décrivant la pièce, sa taille et le rendu attendu. Les machines de l'atelier sont présentées sur la page <a href="/machines">machines</a>.</p>
     </GuideSection>
 
     <GuideSection id="choisir" title="Choisir sa matière en 3 questions">
       <ol>
-        <li><strong>Intérieur ou extérieur ?</strong> À l'intérieur, le PLA suffit pour la décoration et les prototypes. Dehors mais à l'abri, ou au contact de l'humidité, choisissez le PETG. En plein soleil et sous la pluie, choisissez l'ASA.</li>
-        <li><strong>Y a-t-il de la chaleur ?</strong> Si la pièce reste sous environ 50 °C, le PLA convient. Jusque vers 60 °C, préférez le PETG, qui se ramollit vers 70 °C. Près d'un moteur, d'un radiateur ou dans une voiture exposée au soleil, visez l'ABS ou l'ASA, qui se ramollissent vers 90-100 °C. Au-delà, décrivez-nous le besoin : le PEEK et le PEKK ne sont pas proposés.</li>
-        <li><strong>La pièce doit-elle être souple, résister aux produits chimiques ou frotter ?</strong> Souple et amortissante : TPU. Pliable et résistante aux produits chimiques : PP. Soumise à l'usure et aux frottements : nylon. Sinon, une pièce rigide se fait très bien en PLA, PETG ou ABS.</li>
+        <li><strong>Intérieur ou extérieur&#8239;?</strong> À l'intérieur, le PLA suffit pour la décoration et les prototypes. Dehors mais à l'abri, ou au contact de l'humidité, choisissez le PETG. En plein soleil et sous la pluie, choisissez l'ASA.</li>
+        <li><strong>Y a-t-il de la chaleur&#8239;?</strong> Si la pièce reste sous environ 50&nbsp;°C, le PLA convient. Jusque vers 60&nbsp;°C, préférez le PETG, qui se ramollit vers 70&nbsp;°C. Près d'un moteur, d'un radiateur ou dans une voiture exposée au soleil, visez l'ABS ou l'ASA, qui se ramollissent vers 90-100&nbsp;°C. Au-delà, décrivez-nous le besoin&nbsp;: le PEEK et le PEKK ne sont pas proposés.</li>
+        <li><strong>La pièce doit-elle être souple, résister aux produits chimiques ou frotter&#8239;?</strong> Souple et amortissante&nbsp;: TPU. Pliable et résistante aux produits chimiques&nbsp;: PP. Soumise à l'usure et aux frottements&nbsp;: nylon. Sinon, une pièce rigide se fait très bien en PLA, PETG ou ABS.</li>
       </ol>
       <p>Si deux réponses se contredisent, par exemple une pièce souple exposée au soleil, c'est justement ce que nous examinons à l'expertise. Vous pouvez aussi nous écrire avant de commander via le <a href="/contact">formulaire de contact</a>.</p>
-      <p>Pour commander, déposez votre fichier dans le <a href="/devis-instantane">devis instantané</a> et choisissez la matière : elle est vérifiée avant toute fabrication. La matière choisie influe sur le prix ; le calcul est détaillé dans le <a href="/prix-impression-3d">guide des prix</a>. Pour le parcours complet, de la commande à la livraison, lisez <a href="/impression-3d-en-ligne">impression 3D en ligne</a> ; une pièce cassée ou introuvable ? Voyez le guide <a href="/impression-3d-particuliers">impression 3D pour particuliers</a>.</p>
+      <p>Pour commander, déposez votre fichier dans le <a href="/devis-instantane">devis instantané</a> et choisissez la matière&nbsp;: elle est vérifiée avant toute fabrication. La matière choisie influe sur le prix&#8239;; le calcul est détaillé dans le <a href="/prix-impression-3d">guide des prix</a>. Pour le parcours complet, de la commande à la livraison, lisez <a href="/impression-3d-en-ligne">impression 3D en ligne</a>&#8239;; une pièce cassée ou introuvable&#8239;? Voyez le guide <a href="/impression-3d-particuliers">impression 3D pour particuliers</a>.</p>
     </GuideSection>
 
     <GuideFaq items={faq} title="Questions fréquentes sur les matériaux d'impression 3D" />

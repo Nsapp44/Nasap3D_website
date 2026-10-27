@@ -329,12 +329,12 @@ const guidesIsCurrent = GUIDES.some((g) => g.href === currentPath);
     text-align: center;
   }
 
-  /* <=900px : la rangée de liens devient un panneau déroulant sous le
+  /* <=1060px (seuil commun avec global.css et HomeHeader.tsx) : la rangée de liens devient un panneau déroulant sous le
      header, ouvert/fermé par MobileNavToggle (voir ce composant) — même
      comportement que l'ancien responsive.css, en classes réelles plutôt
      qu'en sélecteurs d'attribut [style*="..."] (qui n'ont plus de raison
      d'être : ce n'est plus le framework DC qui rend tout en style inline). */
-  @media (max-width: 900px) {
+  @media (max-width: 1060px) {
     .site-header {
       padding: 12px 90px 12px 16px;
       position: relative;
@@ -436,8 +436,11 @@ const guidesIsCurrent = GUIDES.some((g) => g.href === currentPath);
       display: flex;
       flex-direction: row;
       align-items: center;
-      min-height: 44px;
-      padding: 10px 4px 10px 18px;
+      justify-content: flex-start;
+      min-height: 0;
+      box-sizing: border-box;
+      width: calc(100% + 8px);
+      padding: 12px 4px 12px 18px;
       border-radius: 0;
       background: none;
     }

@@ -111,7 +111,7 @@ const jsonLd = {
     <div class="section-inner">
       <a href="/devis-instantane" class="advice-banner">
         <div>
-          <h3 class="advice-title">Besoin d'aide pour choisir vos réglages ?</h3>
+          <h3 class="advice-title">Besoin d'aide pour choisir vos réglages&#8239;?</h3>
           <div class="advice-text">Remplissage, qualité, taille max, matériau — le guide complet + devis détaillé.</div>
         </div>
         <div class="advice-link">Voir les conseils →</div>
@@ -202,11 +202,11 @@ const jsonLd = {
     <div class="section-inner">
       <div class="seo-text">
         <h2 class="seo-title">L'impression 3D à Nantes, à l'unité ou en série</h2>
-        <p>Nasap3D est un atelier d'impression 3D installé à Nantes, dans le quartier Canclaux, depuis 2022. Nous fabriquons des pièces sur mesure pour les particuliers, les artisans, les entreprises et les architectes : pièce de remplacement introuvable, prototype, support technique, petite série ou maquette.</p>
-        <p>Vous avez un fichier 3D ? Déposez-le sur notre <a href="/devis-instantane">devis instantané</a> : le prix est calculé sur votre fichier en quelques minutes, à partir de {pricing.floorLabel} la pièce. Vous n'en avez pas ? Envoyez des photos et les dimensions de la pièce : nous la redessinons en 3D (rétro-conception), puis nous l'imprimons.</p>
-        <p>Chaque commande est expertisée avant fabrication : nous vérifions la faisabilité, la matière et la solidité de la pièce, et vous ne payez qu'une fois la commande acceptée. L'atelier imprime en PLA, PETG, ABS, ASA, TPU, PP et Nylon sur des imprimantes Bambu Lab H2C, X2D et X1C, et en résine pour les détails très fins. Il grave aussi au laser, sur métal comme sur bois, et réalise des maquettes d'architecture.</p>
-        <p>Nos clients nous notent 5,0 sur 54 avis Google : arceau de casque audio réparé et renforcé, engrenage de scie à onglet qui n'était plus fabriqué, pièce complexe pour l'aéronautique de loisir, série de 528 pièces en TPU.</p>
-        <p>Retrait gratuit à l'atelier sur rendez-vous, ou livraison partout en France et en Europe. Particulier ? Lisez notre <a href="/impression-3d-particuliers">guide de l'impression 3D pour particuliers</a>. Pour comparer les matières ou estimer un budget, consultez les guides des <a href="/materiaux-impression-3d">matériaux</a> et des <a href="/prix-impression-3d">prix</a>, ou découvrez l'<a href="/impression-3d-en-ligne">impression 3D en ligne</a>.</p>
+        <p>Nasap3D est un atelier d'impression 3D installé à Nantes, dans le quartier Canclaux, depuis 2022. Nous fabriquons des pièces sur mesure pour les particuliers, les artisans, les entreprises et les architectes&nbsp;: pièce de remplacement introuvable, prototype, support technique, petite série ou maquette.</p>
+        <p>Vous avez un fichier 3D&#8239;? Déposez-le sur notre <a href="/devis-instantane">devis instantané</a>&nbsp;: le prix est calculé sur votre fichier en quelques minutes, à partir de {pricing.floorLabel} la pièce. Vous n'en avez pas&#8239;? Envoyez des photos et les dimensions de la pièce : nous la redessinons en 3D (rétro-conception), puis nous l'imprimons.</p>
+        <p>Chaque commande est expertisée avant fabrication&nbsp;: nous vérifions la faisabilité, la matière et la solidité de la pièce, et vous ne payez qu'une fois la commande acceptée. L'atelier imprime en PLA, PETG, ABS, ASA, TPU, PP et Nylon sur des imprimantes Bambu Lab H2C, X2D et X1C, et en résine pour les détails très fins. Il grave aussi au laser, sur métal comme sur bois, et réalise des maquettes d'architecture.</p>
+        <p>Nos clients nous notent 5,0 sur 54&nbsp;avis Google&nbsp;: arceau de casque audio réparé et renforcé, engrenage de scie à onglet qui n'était plus fabriqué, pièce complexe pour l'aéronautique de loisir, série de 528&nbsp;pièces en TPU.</p>
+        <p>Retrait gratuit à l'atelier sur rendez-vous, ou livraison partout en France et en Europe. Particulier&#8239;? Lisez notre <a href="/impression-3d-particuliers">guide de l'impression 3D pour particuliers</a>. Pour comparer les matières ou estimer un budget, consultez les guides des <a href="/materiaux-impression-3d">matériaux</a> et des <a href="/prix-impression-3d">prix</a>, ou découvrez l'<a href="/impression-3d-en-ligne">impression 3D en ligne</a>.</p>
       </div>
     </div>
   </div>
@@ -269,15 +269,18 @@ const jsonLd = {
     color: rgba(255, 255, 255, 0.55);
     max-width: 520px;
     margin: 0 auto 24px;
+    text-wrap: pretty;
   }
   .hero-ctas {
     display: flex;
+    flex-wrap: wrap;
     gap: 12px;
     justify-content: center;
     margin-bottom: 34px;
   }
   .hero-cta-primary,
   .hero-cta-secondary {
+    white-space: nowrap;
     text-decoration: none;
     font: 600 13px "Inter", sans-serif;
     padding: 12px 22px;
@@ -329,6 +332,7 @@ const jsonLd = {
     text-transform: uppercase;
     letter-spacing: 1px;
     margin-bottom: 4px;
+    text-wrap: balance;
   }
   .eyebrow-sub {
     font: 400 11.5px "Inter", sans-serif;
@@ -360,10 +364,12 @@ const jsonLd = {
     font: 700 14px "Space Grotesk", sans-serif;
     color: #f3f1ec;
     margin-bottom: 3px;
+    text-wrap: balance;
   }
   .advice-text {
     font: 400 11px/1.5 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.55);
+    text-wrap: pretty;
   }
   .advice-link {
     font: 600 11px "Inter", sans-serif;
@@ -392,11 +398,13 @@ const jsonLd = {
     font: 700 19px "Space Grotesk", sans-serif;
     color: #f3f1ec;
     margin-bottom: 8px;
+    text-wrap: balance;
   }
   .about-text {
     font: 400 12px/1.6 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.5);
     max-width: 520px;
+    text-wrap: pretty;
   }
 
   .seo-section {
@@ -406,12 +414,14 @@ const jsonLd = {
     font: 700 22px/1.25 "Space Grotesk", sans-serif;
     color: #f3f1ec;
     margin-bottom: 14px;
+    text-wrap: balance;
   }
   .seo-text p {
     font: 400 13.5px/1.7 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.65);
     max-width: 70ch;
     margin: 0 0 12px;
+    text-wrap: pretty;
   }
   .seo-text a {
     color: #ff5a3c;
@@ -433,6 +443,7 @@ const jsonLd = {
     text-transform: uppercase;
     letter-spacing: 0.6px;
     margin-bottom: 10px;
+    text-wrap: balance;
   }
   .machines-grid-3 {
     display: grid;
@@ -523,6 +534,9 @@ const jsonLd = {
       grid-template-columns: 1fr;
       text-align: center;
     }
+    .about-text {
+      margin-inline: auto;
+    }
     .contact-grid {
       grid-template-columns: 1fr;
     }
@@ -534,8 +548,28 @@ const jsonLd = {
     .machines-grid-5 {
       grid-template-columns: repeat(2, 1fr);
     }
+    .advice-banner {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
   }
   @media (max-width: 480px) {
+    .hero-ctas {
+      flex-direction: column;
+      align-items: center;
+    }
+    .hero-cta-primary,
+    .hero-cta-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      white-space: nowrap;
+      min-width: min(100%, 260px);
+      min-height: 44px;
+      box-sizing: border-box;
+    }
     .hero-title {
       font-size: 28px;
     }

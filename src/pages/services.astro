@@ -35,7 +35,7 @@ const MULTISUPPORT_PROCESSES = [
       },
       { title: "Matériaux souples", text: "Cuir, carton, papier épais — écussons, packaging sur-mesure, carterie." },
     ],
-    note: "Petite série jusqu'à 500 pièces. Modélisation et fichiers de production réalisés si besoin.",
+    note: "Petite série jusqu'à 500\u00A0pièces. Modélisation et fichiers de production réalisés si besoin.",
   },
   {
     title: "Découpe vinyle & stickers",
@@ -56,7 +56,7 @@ const MULTISUPPORT_PROCESSES = [
       },
       {
         title: "Papier & cartonnage léger",
-        text: "Papier épais, kraft, bristol, plastique fin (≤ 1 mm) — packaging, étiquettes volantes, carterie.",
+        text: "Papier épais, kraft, bristol, plastique fin (≤ 1\u00A0mm) — packaging, étiquettes volantes, carterie.",
       },
     ],
     note: "Petite série possible selon le projet.",
@@ -64,7 +64,7 @@ const MULTISUPPORT_PROCESSES = [
   {
     title: "Transfert & sublimation thermique",
     badge: "Presses à plat · mug · mobiles",
-    text: "Marquages couleur haute définition : l'encre est injectée dans la matière, pour un rendu lisse au toucher, ultra-résistant et inaltérable.",
+    text: "Marquages couleur haute définition\u00A0: l'encre est injectée dans la matière, pour un rendu lisse au toucher, ultra-résistant et inaltérable.",
     materials: [
       {
         title: "Textiles (vêtements)",
@@ -90,21 +90,21 @@ const MULTISUPPORT_PROCESSES = [
 const INITIATION_TIERS = [
   {
     level: "Débutant",
-    price: "90€",
+    price: "90\u00A0€",
     duration: "≈ 2h",
     text: "Découverte de la machine et des bases du slicing.",
     highlighted: false,
   },
   {
     level: "Standard",
-    price: "225€",
+    price: "225\u00A0€",
     duration: "≈ 4h — une après-midi",
     text: "Réglages, matériaux et premières impressions autonomes.",
     highlighted: true,
   },
   {
     level: "Advanced",
-    price: "270€",
+    price: "270\u00A0€",
     duration: "≈ 6h — deux après-midis",
     text: "Maintenance de base, dépannage courant et autonomie complète.",
     highlighted: false,
@@ -156,7 +156,7 @@ const INITIATION_TIERS = [
     <div class="section-eyebrow">02 · Impression 3D</div>
     <h2 class="section-title">Prototypage, pièces et petites séries</h2>
     <div class="section-text">
-      Deux technologies complémentaires : le dépôt de filament (FDM) pour les pièces fonctionnelles et les séries,
+      Deux technologies complémentaires&nbsp;: le dépôt de filament (FDM) pour les pièces fonctionnelles et les séries,
       la résine (SLA) pour le détail fin et le post-traitement.
     </div>
 
@@ -170,7 +170,7 @@ const INITIATION_TIERS = [
         mécaniques, thermiques ou chimiques.
       </div>
       <div class="sub-grid">
-        <div class="sub-card"><div class="sub-title">Séries</div><div class="sub-text">Jusqu'à 500 pièces</div></div>
+        <div class="sub-card"><div class="sub-title">Séries</div><div class="sub-text">Jusqu'à 500&nbsp;pièces</div></div>
         <div class="sub-card"><div class="sub-title">Matières</div><div class="sub-text">PLA, PETG, ABS, ASA, TPU, PP, Nylon</div></div>
       </div>
       <QuoteCta className="cta-btn" client:load />
@@ -186,7 +186,7 @@ const INITIATION_TIERS = [
         ou modèles fins où la finesse de surface prime. Non disponible au devis instantané.
       </div>
       <div class="sub-grid">
-        <div class="sub-card"><div class="sub-title">Séries</div><div class="sub-text">Petite série possible, 20 à 30 pièces</div></div>
+        <div class="sub-card"><div class="sub-title">Séries</div><div class="sub-text">Petite série possible, 20 à 30&nbsp;pièces</div></div>
         <div class="sub-card"><div class="sub-title">Matières</div><div class="sub-text">Résine standard, ABS-Like, résine transparente</div></div>
       </div>
       <a href="/contact" class="cta-btn">Demander un devis SLA →</a>
@@ -213,7 +213,7 @@ const INITIATION_TIERS = [
     <div class="section-eyebrow">04 · Customisation Multisupports</div>
     <h2 class="section-title">Laser, vinyle et sublimation, sur presque tous les supports</h2>
     <div class="section-text wide">
-      Au-delà de l'impression 3D, l'atelier personnalise et fabrique sur une large gamme de matières : découpe et
+      Au-delà de l'impression 3D, l'atelier personnalise et fabrique sur une large gamme de matières&nbsp;: découpe et
       gravure laser, découpe vinyle, stickers, transfert textile et sublimation thermique. De l'idée au produit
       fini — on modélise et on génère les fichiers de production si vous ne les avez pas. Ces prestations se font
       sur devis.
@@ -247,7 +247,7 @@ const INITIATION_TIERS = [
     <div class="section-eyebrow">05 · Maintenance machine</div>
     <h2 class="section-title">Diagnostic, réparation, entretien préventif</h2>
     <div class="section-text">
-      Panne électronique ou mécanique sur votre imprimante ? Diagnostic complet, réparation et maintenance
+      Panne électronique ou mécanique sur votre imprimante&#8239;? Diagnostic complet, réparation et maintenance
       préventive pour prolonger la vie de votre machine.
     </div>
     <div class="info-grid">
@@ -303,6 +303,7 @@ const INITIATION_TIERS = [
     font: 700 32px/1.15 "Space Grotesk", sans-serif;
     color: #f3f1ec;
     margin-bottom: 12px;
+    text-wrap: balance;
   }
   .hero-intro-link {
     color: #ff5a3c;
@@ -311,6 +312,7 @@ const INITIATION_TIERS = [
     font: 400 13px/1.6 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.55);
     max-width: 600px;
+    text-wrap: pretty;
   }
   .quick-nav {
     padding: 12px 24px 0;
@@ -356,12 +358,14 @@ const INITIATION_TIERS = [
     font: 700 22px "Space Grotesk", sans-serif;
     color: #f3f1ec;
     margin-bottom: 12px;
+    text-wrap: balance;
   }
   .section-text {
     font: 400 12.5px/1.7 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.55);
     max-width: 620px;
     margin-bottom: 18px;
+    text-wrap: pretty;
   }
   .section-text.wide {
     max-width: 100%;
@@ -433,6 +437,8 @@ const INITIATION_TIERS = [
     background: rgba(255, 90, 60, 0.12);
     border-radius: 20px;
     padding: 4px 10px;
+    white-space: nowrap;
+    flex: none;
   }
   .process-badge.nowrap {
     white-space: nowrap;
@@ -441,11 +447,13 @@ const INITIATION_TIERS = [
     font: 400 11.5px/1.6 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.55);
     margin-bottom: 16px;
+    text-wrap: pretty;
   }
   .process-note {
     font: 400 10px/1.5 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.45);
     margin-top: 12px;
+    text-wrap: pretty;
   }
   .sub-grid {
     display: grid;
@@ -467,6 +475,7 @@ const INITIATION_TIERS = [
   .sub-text {
     font: 400 10px/1.5 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.5);
+    text-wrap: pretty;
   }
   .pricing-grid {
     display: grid;
@@ -518,6 +527,7 @@ const INITIATION_TIERS = [
   .pricing-text {
     font: 400 11px/1.6 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.55);
+    text-wrap: pretty;
   }
 
   @media (max-width: 900px) {

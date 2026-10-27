@@ -265,7 +265,7 @@ export default function HomeHeader() {
           .guides-menu { transform: none; }
         }
 
-        @media (max-width: 900px) {
+        @media (max-width: 1060px) {
           .home-header { padding: 12px 90px 12px 16px; position: relative; }
           .header-account { gap: 22px; }
           .nav-links {
@@ -283,7 +283,7 @@ export default function HomeHeader() {
           .nav-links .guides-grp { display: block; padding: 14px 4px 6px; font: 600 11px 'Inter',sans-serif; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.42); }
           .nav-links .guides-menu { position: static; padding: 0; opacity: 1; visibility: visible; transform: none; transition: none; }
           .nav-links .guides-menu .guides-list { width: auto; max-width: none; padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none; }
-          .nav-links .guides-menu .g-link { display: flex; flex-direction: row; align-items: center; min-height: 44px; padding: 10px 4px 10px 18px; border-radius: 0; background: none; }
+          .nav-links .guides-menu .g-link { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; min-height: 0; box-sizing: border-box; width: calc(100% + 8px); padding: 12px 4px 12px 18px; border-radius: 0; background: none; }
           .nav-links .guides-menu .g-t, .nav-links .guides-menu .g-s { display: none; }
           .nav-links .guides-menu .g-m { display: inline; font-style: normal; }
         }

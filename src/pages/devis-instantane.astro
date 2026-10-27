@@ -58,15 +58,15 @@ const infillLevels = [
 ];
 
 const qualities = [
-  { title: "Rapide — 0,28 mm", text: "Couche épaisse : impression plus rapide et moins chère. Bon pour les pièces brutes ou les gros volumes, lignes de couche visibles." },
-  { title: "Standard — 0,20 mm", text: "Le réglage par défaut : bon compromis détail / délai pour la majorité des pièces fonctionnelles." },
-  { title: "Fine — 0,12 mm", text: "Plus de détails et une surface plus lisse, au prix d'un temps d'impression nettement plus long." },
+  { title: "Rapide — 0,28\u00A0mm", text: "Couche épaisse\u00A0: impression plus rapide et moins chère. Bon pour les pièces brutes ou les gros volumes, lignes de couche visibles." },
+  { title: "Standard — 0,20\u00A0mm", text: "Le réglage par défaut\u00A0: bon compromis détail / délai pour la majorité des pièces fonctionnelles." },
+  { title: "Fine — 0,12\u00A0mm", text: "Plus de détails et une surface plus lisse, au prix d'un temps d'impression nettement plus long." },
 ];
 
 const printers = [
-  { name: "Bambu Lab X1C", dims: "256 × 256 × 256 mm" },
-  { name: "Bambu Lab H2C", dims: "330 × 320 × 325 mm" },
-  { name: "Bambu Lab X2D", dims: "256 × 256 × 256 mm" },
+  { name: "Bambu Lab X1C", dims: "256 × 256 × 256\u00A0mm" },
+  { name: "Bambu Lab H2C", dims: "330 × 320 × 325\u00A0mm" },
+  { name: "Bambu Lab X2D", dims: "256 × 256 × 256\u00A0mm" },
 ];
 
 const materialsAdvice = [
@@ -89,10 +89,10 @@ const materialsAdvice = [
     <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
   </Fragment>
   <div class="di-hero">
-    <div class="di-breadcrumb"><a href="/">Accueil</a> / Devis instantané</div>
+    <div class="di-breadcrumb"><a href="/">Accueil</a> › Devis instantané</div>
     <div class="di-eyebrow">Configurateur &amp; conseils</div>
-    <h1 class="di-title">Devis instantané d'impression 3D : votre prix en ligne en quelques minutes</h1>
-    <div class="di-subtitle">Déposez votre fichier, choisissez vos options, l'analyse automatique calcule le prix. Pas sûr d'un réglage ? Les explications sont juste en dessous.</div>
+    <h1 class="di-title">Devis instantané d'impression 3D&nbsp;: votre prix en ligne en quelques minutes</h1>
+    <div class="di-subtitle">Déposez votre fichier, choisissez vos options, l'analyse automatique calcule le prix. Pas sûr d'un réglage&#8239;? Les explications sont juste en dessous.</div>
     <PriceBadge variant="inline" floorLabel={pricing.floorLabel} minOrderLabel={pricing.minOrderLabel} feeLabel={pricing.feeLabel} feeRule={pricing.hasSmallOrderFee} style="margin-top: 18px" />
     <div class="di-timing-note">Cela peut prendre 1 à 6 minutes selon la complexité de votre pièce — ce délai permet d'obtenir le prix le plus juste pour votre pièce.</div>
     <ExpertiseSteps style="margin-top: 22px" />
@@ -104,8 +104,8 @@ const materialsAdvice = [
 
   <div class="di-section">
     <div class="di-kicker">Sous le capot</div>
-    <div class="di-h2">Taux de remplissage : ce que ça change</div>
-    <div class="di-lead">L'intérieur d'une pièce n'est pas plein : une structure interne la renforce tout en économisant du temps et de la matière.</div>
+    <div class="di-h2">Taux de remplissage&nbsp;: ce que ça change</div>
+    <div class="di-lead">L'intérieur d'une pièce n'est pas plein&nbsp;: une structure interne la renforce tout en économisant du temps et de la matière.</div>
     <div class="di-infill-grid">
       {
         infillLevels.map((lvl) => (
@@ -145,7 +145,7 @@ const materialsAdvice = [
 
   <div class="di-section">
     <div class="di-kicker">Gabarit</div>
-    <div class="di-h2">Quelle taille de pièce est possible ?</div>
+    <div class="di-h2">Quelle taille de pièce est possible&#8239;?</div>
     <div class="di-printers-grid">
       {
         printers.map((p) => (
@@ -156,12 +156,12 @@ const materialsAdvice = [
         ))
       }
     </div>
-    <div class="di-printer-note">Pièce plus grande ? Elle peut être imprimée en plusieurs parties puis assemblée — décrivez votre projet via le <a href="/contact">formulaire de contact</a> pour un devis sur-mesure.</div>
+    <div class="di-printer-note">Pièce plus grande&#8239;? Elle peut être imprimée en plusieurs parties puis assemblée — décrivez votre projet via le <a href="/contact">formulaire de contact</a> pour un devis sur-mesure.</div>
   </div>
 
   <div class="di-section">
     <div class="di-kicker">Bien choisir</div>
-    <div class="di-h2">Quel matériau pour quel usage ?</div>
+    <div class="di-h2">Quel matériau pour quel usage&#8239;?</div>
     <div class="di-materials-grid">
       {
         materialsAdvice.map((m) => (
@@ -182,11 +182,11 @@ const materialsAdvice = [
     <div class="di-kicker">Transparence</div>
     <h2 class="di-h2">Comment est calculé le prix de votre impression 3D</h2>
     <div class="di-prose">
-      <p>Notre devis instantané d'impression 3D ne repose ni sur une grille approximative ni sur un tarif au volume : votre fichier STL, OBJ ou 3MF est réellement tranché, comme avant une vraie impression. Le logiciel de tranchage (Kiri:Moto) simule chaque couche et renvoie deux mesures concrètes : le poids de matière nécessaire et le temps d'impression estimé.</p>
+      <p>Notre devis instantané d'impression 3D ne repose ni sur une grille approximative ni sur un tarif au volume&nbsp;: votre fichier STL, OBJ ou 3MF est réellement tranché, comme avant une vraie impression. Le logiciel de tranchage (Kiri:Moto) simule chaque couche et renvoie deux mesures concrètes&nbsp;: le poids de matière nécessaire et le temps d'impression estimé.</p>
       <p>Le prix se construit ensuite en deux parties. Le coût matière est le poids en grammes multiplié par le prix au kilo du matériau choisi (PLA, PETG, ABS, ASA, TPU, PP ou Nylon). Le coût machine est le temps d'impression multiplié par le taux horaire de l'atelier. Il n'y a ni marge cachée ni frais fixes ajoutés au calcul.</p>
-      <p>Sur une pièce volumineuse ou en qualité fine, c'est le temps machine qui pèse le plus lourd : c'est pourquoi le taux de remplissage et la hauteur de couche changent directement le prix. À l'inverse, une petite pièce rapide tombe sous le prix plancher de {pricing.floorLabel} par pièce, qui s'applique alors tel quel.</p>
-      <p>Le calcul tient aussi compte de l'échelle que vous choisissez, de l'orientation d'impression retenue pour limiter les surplombs et des supports nécessaires : ils sont inclus dans le poids et le temps mesurés, donc dans le prix affiché. Vous commandez plusieurs exemplaires ? Une remise de 5 % à 30 % s'applique selon des paliers de quantité (5, 15, 50, 100 et 500 pièces).</p>
-      <p>Face à un devis manuel, la différence est simple : il n'y a pas de délai de réponse ni d'estimation au jugé. Le prix est calculé sur votre fichier en quelques minutes, puis recalculé côté serveur au moment de l'ajout au panier, si bien que le montant payé correspond exactement à ce qui a été mesuré. Pour une pièce hors gabarit, une série ou un besoin de rétro-conception, le <a href="/contact">devis sur-mesure</a> reste disponible.</p>
+      <p>Sur une pièce volumineuse ou en qualité fine, c'est le temps machine qui pèse le plus lourd&nbsp;: c'est pourquoi le taux de remplissage et la hauteur de couche changent directement le prix. À l'inverse, une petite pièce rapide tombe sous le prix plancher de {pricing.floorLabel} par pièce, qui s'applique alors tel quel.</p>
+      <p>Le calcul tient aussi compte de l'échelle que vous choisissez, de l'orientation d'impression retenue pour limiter les surplombs et des supports nécessaires&nbsp;: ils sont inclus dans le poids et le temps mesurés, donc dans le prix affiché. Vous commandez plusieurs exemplaires&#8239;? Une remise de 5&nbsp;% à 30&nbsp;% s'applique selon des paliers de quantité (5, 15, 50, 100 et 500&nbsp;pièces).</p>
+      <p>Face à un devis manuel, la différence est simple&nbsp;: il n'y a pas de délai de réponse ni d'estimation au jugé. Le prix est calculé sur votre fichier en quelques minutes, puis recalculé côté serveur au moment de l'ajout au panier, si bien que le montant payé correspond exactement à ce qui a été mesuré. Pour une pièce hors gabarit, une série ou un besoin de rétro-conception, le <a href="/contact">devis sur-mesure</a> reste disponible.</p>
     </div>
   </div>
 
@@ -198,7 +198,7 @@ const materialsAdvice = [
 
   <div class="di-section di-cta-final-wrap">
     <div class="di-cta-final">
-      <h2 class="di-cta-title">Une pièce complexe ou un besoin sur-mesure ?</h2>
+      <h2 class="di-cta-title">Une pièce complexe ou un besoin sur-mesure&#8239;?</h2>
       <div class="di-cta-text">Le configurateur ne couvre pas tout — écrivez-nous directement pour la rétro-conception, les séries ou la maintenance.</div>
       <a href="/contact" class="di-cta-btn">Contacter Nasap3D</a>
     </div>
@@ -232,17 +232,20 @@ const materialsAdvice = [
     color: #f3f1ec;
     margin-bottom: 12px;
     max-width: 600px;
+    text-wrap: balance;
   }
   .di-subtitle {
     font: 400 13px/1.6 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.55);
     max-width: 560px;
+    text-wrap: pretty;
   }
   .di-timing-note {
     font: 500 12.5px/1.6 "Inter", sans-serif;
     color: #f3f1ec;
     max-width: 560px;
     margin-top: 14px;
+    text-wrap: pretty;
   }
 
   .di-section {
@@ -264,12 +267,14 @@ const materialsAdvice = [
     font: 700 20px "Space Grotesk", sans-serif;
     color: #f3f1ec;
     margin-bottom: 16px;
+    text-wrap: balance;
   }
   .di-prose p {
     font: 400 12.5px/1.7 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.55);
     max-width: 700px;
     margin-bottom: 12px;
+    text-wrap: pretty;
   }
   .di-prose a {
     color: #ff5a3c;
@@ -279,6 +284,7 @@ const materialsAdvice = [
     color: rgba(255, 255, 255, 0.55);
     max-width: 640px;
     margin-bottom: 20px;
+    text-wrap: pretty;
   }
 
   .di-infill-grid {
@@ -339,6 +345,7 @@ const materialsAdvice = [
   .di-card-text {
     font: 400 10.5px/1.6 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.5);
+    text-wrap: pretty;
   }
   .di-quality-grid {
     display: grid;
@@ -361,6 +368,7 @@ const materialsAdvice = [
     max-width: 600px;
     font: 400 12px/1.6 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.6);
+    text-wrap: pretty;
   }
   .di-multicolor-cta {
     text-decoration: none;
@@ -393,6 +401,7 @@ const materialsAdvice = [
   .di-printer-note {
     font: 400 11.5px/1.6 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.45);
+    text-wrap: pretty;
   }
   .di-printer-note a {
     color: #ff5a3c;
@@ -441,11 +450,13 @@ const materialsAdvice = [
     font: 700 18px "Space Grotesk", sans-serif;
     color: #f3f1ec;
     margin-bottom: 8px;
+    text-wrap: balance;
   }
   .di-cta-text {
     font: 400 11.5px/1.6 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.55);
     margin-bottom: 16px;
+    text-wrap: pretty;
   }
   .di-cta-btn {
     text-decoration: none;

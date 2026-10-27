@@ -36,13 +36,13 @@ const toc = [
 ];
 
 const prices = [
-  { what: "Petite pièce en PLA · 8 g · 15 min d'impression", price: floorLabel, note: "prix minimum par pièce" },
-  { what: "Cube de 50 mm en PETG · 103 g · 5 h 49 d'impression", price: "31,76 €" },
+  { what: "Petite pièce en PLA · 8\u00A0g · 15\u00A0min d'impression", price: floorLabel, note: "prix minimum par pièce" },
+  { what: "Cube de 50\u00A0mm en PETG · 103\u00A0g · 5\u00A0h 49 d'impression", price: "31,76\u00A0€" },
 ];
 
 const materialHeaders = ["Matière", "Pour quoi", "Points forts", "À savoir"];
 const materialRows = [
-  ["PLA", "Déco, prototypes visuels, usage intérieur", "Précis, bel état de surface, beaucoup de couleurs", "Se ramollit vers 55-60 °C : pas en plein soleil ni dans une voiture"],
+  ["PLA", "Déco, prototypes visuels, usage intérieur", "Précis, bel état de surface, beaucoup de couleurs", "Se ramollit vers 55-60\u00A0°C : pas en plein soleil ni dans une voiture"],
   ["PETG", "Pièces d'usage, extérieur, contact humide", "Plus tenace que le PLA, ne craint pas l'eau", "Tient mieux la chaleur que le PLA"],
   ["ABS", "Pièces techniques exposées à la chaleur", "Tient la chaleur, se ponce et se colle", "Imprimé en caisson fermé (H2C)"],
   ["ASA", "Extérieur, pièces au soleil", "Les qualités de l'ABS, en plus résistant aux UV", "Imprimé en caisson fermé (H2C)"],
@@ -58,7 +58,7 @@ const shots = [
 ];
 
 const reviews = [
-  { text: "Réparation de l'arceau de mon casque audio impeccable! Nolann a même renforcé la pièce pour une meilleure résistance.\nMerci !", who: "Kevin Attm" },
+  { text: "Réparation de l'arceau de mon casque audio impeccable! Nolann a même renforcé la pièce pour une meilleure résistance.\nMerci\u202F!", who: "Kevin Attm" },
   { text: "merci à nolann pour la fabrication à l'identique d'un engrenage d'une scie à onglet que la société métabo ne fabriquait plus", who: "Guy André" },
   { text: "Parfaite réalisation d'une pièce complexe pour l'aéronautique de loisir. Délai tenu et prix raisonnable. Je recommande vivement cette entreprise", who: "Jean Tramalloni" },
 ];
@@ -97,35 +97,35 @@ const faq = [
     <GuideSection id="fonctionnement" title="Comment fonctionne l'impression 3D en ligne chez Nasap3D ?">
       <ol>
         <li><strong>Vous déposez votre fichier</strong> sur la page Devis instantané, puis vous choisissez la matière, la couleur et la quantité.</li>
-        <li><strong>Le prix est calculé sur votre pièce.</strong> Notre logiciel tranche réellement votre fichier, comme le fera l'imprimante : il mesure le poids de matière et le temps d'impression, puis en déduit le prix. Comptez quelques minutes.</li>
-        <li><strong>Vous envoyez la commande, sans payer.</strong> Nous ouvrons votre fichier et vérifions l'épaisseur des parois, l'orientation, les supports et la matière choisie. Si quelque chose cloche, nous vous le disons avant de fabriquer. Réponse sous 24 à 48 h.</li>
+        <li><strong>Le prix est calculé sur votre pièce.</strong> Notre logiciel tranche réellement votre fichier, comme le fera l'imprimante&nbsp;: il mesure le poids de matière et le temps d'impression, puis en déduit le prix. Comptez quelques minutes.</li>
+        <li><strong>Vous envoyez la commande, sans payer.</strong> Nous ouvrons votre fichier et vérifions l'épaisseur des parois, l'orientation, les supports et la matière choisie. Si quelque chose cloche, nous vous le disons avant de fabriquer. Réponse sous 24 à 48&nbsp;h.</li>
         <li><strong>Vous payez une fois la commande acceptée</strong>, en ligne et de façon sécurisée (Stripe), depuis votre compte. L'impression est lancée, puis la pièce part en point relais ou à domicile, ou vous la retirez à l'atelier.</li>
       </ol>
-      <p>Ce fonctionnement évite la mauvaise surprise classique de l'impression 3D en ligne : payer une pièce qui ne peut pas être imprimée telle quelle, ou qui ne tiendra pas à l'usage.</p>
+      <p>Ce fonctionnement évite la mauvaise surprise classique de l'impression 3D en ligne&nbsp;: payer une pièce qui ne peut pas être imprimée telle quelle, ou qui ne tiendra pas à l'usage.</p>
     </GuideSection>
 
     <GuideSection id="cout" title="Combien coûte une impression 3D en ligne ?">
-      <p>Le prix dépend de deux mesures faites sur votre fichier : la <strong>matière utilisée</strong> (le poids en grammes) et le <strong>temps machine</strong>. Pas de forfait au jugé ni de marge cachée : le calcul est refait sur notre serveur à chaque devis.</p>
+      <p>Le prix dépend de deux mesures faites sur votre fichier&nbsp;: la <strong>matière utilisée</strong> (le poids en grammes) et le <strong>temps machine</strong>. Pas de forfait au jugé ni de marge cachée&nbsp;: le calcul est refait sur notre serveur à chaque devis.</p>
       <GuidePriceCards items={prices} />
       <ul>
         <li><strong>À partir de {floorLabel} la pièce</strong>, hors livraison.</li>
-        {hasSmallOrderFee && <li><strong>Commande minimum {minOrderLabel}</strong> : en dessous, {feeLabel} de frais de petite commande s'ajoutent.</li>}
+        {hasSmallOrderFee && <li><strong>Commande minimum {minOrderLabel}</strong>&nbsp;: en dessous, {feeLabel} de frais de petite commande s'ajoutent.</li>}
         <li><strong>Remise automatique dès 5 exemplaires</strong>, de plus en plus forte avec la quantité.</li>
-        <li><strong>Prix TTC</strong> : le prix affiché est le prix que vous payez.</li>
+        <li><strong>Prix TTC</strong>&nbsp;: le prix affiché est le prix que vous payez.</li>
       </ul>
       <p>Tous les détails et d'autres exemples dans notre <a href="/prix-impression-3d">guide des prix de l'impression 3D</a>.</p>
     </GuideSection>
 
     <GuideSection id="fichiers" title="Quels fichiers envoyer, et que faire sans fichier 3D ?">
       <ul>
-        <li><strong>Formats acceptés : STL, OBJ et 3MF.</strong> Un fichier de CAO (STEP, SolidWorks, Fusion 360, FreeCAD…) s'exporte en STL ou en 3MF depuis votre logiciel.</li>
-        <li><strong>Taille maximale : 330 × 320 × 325 mm</strong> sur nos Bambu Lab H2C. Pour une pièce plus grande, contactez-nous : nous étudions la solution avec vous.</li>
-        <li><strong>Pas de fichier ?</strong> Envoyez des photos de la pièce, même cassée, avec ses dimensions principales. Nous la redessinons en 3D (rétro-conception), sur devis, avant de l'imprimer.</li>
+        <li><strong>Formats acceptés&nbsp;: STL, OBJ et 3MF.</strong> Un fichier de CAO (STEP, SolidWorks, Fusion 360, FreeCAD…) s'exporte en STL ou en 3MF depuis votre logiciel.</li>
+        <li><strong>Taille maximale&nbsp;: 330 × 320 × 325&nbsp;mm</strong> sur nos Bambu Lab H2C. Pour une pièce plus grande, contactez-nous&nbsp;: nous étudions la solution avec vous.</li>
+        <li><strong>Pas de fichier&#8239;?</strong> Envoyez des photos de la pièce, même cassée, avec ses dimensions principales. Nous la redessinons en 3D (rétro-conception), sur devis, avant de l'imprimer.</li>
       </ul>
     </GuideSection>
 
     <GuideSection id="matieres" title="Quelle matière choisir pour votre pièce ?">
-      <p>Sept matières sont proposées dans le configurateur. Le tableau ci-dessous vous aide à choisir ; en cas de doute, nous vérifions votre choix pendant l'expertise.</p>
+      <p>Sept matières sont proposées dans le configurateur. Le tableau ci-dessous vous aide à choisir&#8239;; en cas de doute, nous vérifions votre choix pendant l'expertise.</p>
       <GuideTable label="Comparatif des sept matières proposées" headers={materialHeaders} rows={materialRows} />
       <p>Comparatif complet dans le <a href="/materiaux-impression-3d">guide des matériaux d'impression 3D</a>.</p>
     </GuideSection>
@@ -134,10 +134,10 @@ const faq = [
       <div class="machine">
         <div>
           <ul>
-            <li><strong>Deux Bambu Lab H2C</strong> : grand format (330 × 320 × 325 mm), plusieurs matières sur une même pièce, caisson fermé pour l'ABS et l'ASA.</li>
-            <li><strong>Une Bambu Lab X2D</strong> : la vitesse, pour les petites séries.</li>
-            <li><strong>Une Bambu Lab X1C</strong> : la polyvalente de l'atelier.</li>
-            <li><strong>Une imprimante résine (SLA)</strong> : pour les détails très fins et les surfaces lisses.</li>
+            <li><strong>Deux Bambu Lab H2C</strong>&nbsp;: grand format (330 × 320 × 325&nbsp;mm), plusieurs matières sur une même pièce, caisson fermé pour l'ABS et l'ASA.</li>
+            <li><strong>Une Bambu Lab X2D</strong>&nbsp;: la vitesse, pour les petites séries.</li>
+            <li><strong>Une Bambu Lab X1C</strong>&nbsp;: la polyvalente de l'atelier.</li>
+            <li><strong>Une imprimante résine (SLA)</strong>&nbsp;: pour les détails très fins et les surfaces lisses.</li>
           </ul>
           <p class="gmore">Voir tout le <a href="/machines">parc machine</a>.</p>
         </div>
@@ -155,9 +155,9 @@ const faq = [
 
     <GuideSection id="livraison" title="Livraison partout en France et en Europe">
       <ul>
-        <li><strong>Expédition en point relais (Mondial Relay) ou à domicile (Colissimo)</strong>, en France et dans les pays de l'Union européenne. Les frais de port sont calculés dans le panier, avec un forfait d'emballage de 1,50 €.</li>
-        <li><strong>Vous êtes près de Nantes ?</strong> Retrait gratuit à l'atelier, 29 rue Mellier (quartier Canclaux), sur rendez-vous.</li>
-        <li><strong>Délai :</strong> l'expertise prend 24 à 48 h. Le délai de fabrication dépend de la pièce et de la quantité ; il vous est indiqué à la validation de la commande.</li>
+        <li><strong>Expédition en point relais (Mondial Relay) ou à domicile (Colissimo)</strong>, en France et dans les pays de l'Union européenne. Les frais de port sont calculés dans le panier, avec un forfait d'emballage de 1,50&nbsp;€.</li>
+        <li><strong>Vous êtes près de Nantes&#8239;?</strong> Retrait gratuit à l'atelier, 29 rue Mellier (quartier Canclaux), sur rendez-vous.</li>
+        <li><strong>Délai&nbsp;:</strong> l'expertise prend 24 à 48&nbsp;h. Le délai de fabrication dépend de la pièce et de la quantité&#8239;; il vous est indiqué à la validation de la commande.</li>
       </ul>
     </GuideSection>
 

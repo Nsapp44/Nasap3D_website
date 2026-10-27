@@ -8,27 +8,50 @@
  *  - rows: string[][]     lignes ; la 1re cellule de chaque ligne est l'en-tête de ligne (en gras)
  *  - label: string        nom accessible du tableau (lu par les lecteurs d'écran), ex. "Comparatif des matières"
  */
+import { fr } from "../../lib/typo";
+
 interface Props { headers: string[]; rows: string[][]; label: string }
 const { headers, rows, label } = Astro.props;
 ---
-<div class="gtbl" role="region" aria-label={label} tabindex="0">
-  <table>
-    <caption class="gtbl-cap">{label}</caption>
-    <thead>
-      <tr>{headers.map((h) => <th scope="col">{h}</th>)}</tr>
-    </thead>
-    <tbody>
-      {rows.map((row) => (
-        <tr>
-          <th scope="row">{row[0]}</th>
-          {row.slice(1).map((cell) => <td>{cell}</td>)}
-        </tr>
-      ))}
-    </tbody>
-  </table>
+<div class="gtbl-wrap">
+  <div class="gtbl-frame">
+    <div class="gtbl" role="region" aria-label={label} tabindex="0">
+      <table>
+        <caption class="gtbl-cap">{label}</caption>
+        <thead>
+          <tr>{headers.map((h) => <th scope="col">{fr(h)}</th>)}</tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr>
+              <th scope="row">{fr(row[0])}</th>
+              {row.slice(1).map((cell) => <td>{fr(cell)}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <p class="gtbl-hint" aria-hidden="true">Faites défiler le tableau →</p>
 </div>
 <style>
-  .gtbl { max-width: 100%; overflow-x: auto; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; margin: 12px 0; background: #1a1917; }
+  .gtbl-wrap { margin: 12px 0; }
+  .gtbl-frame { position: relative; }
+  .gtbl-hint { display: none; margin: 6px 0 0; font: 400 12px "Inter", sans-serif; color: rgba(255, 255, 255, 0.5); }
+  @media (max-width: 640px) {
+    .gtbl-hint { display: block; }
+    .gtbl-frame::after { content: ""; position: absolute; top: 1px; right: 1px; bottom: 1px; width: 28px; border-radius: 0 11px 11px 0; background: linear-gradient(to right, rgba(26, 25, 23, 0), #1a1917); pointer-events: none; }
+  }
+  /* Le dégradé s'efface en fin de défilement (navigateurs avec animations liées au scroll) ; sinon il reste en simple indice. */
+  @keyframes gtbl-fade { 0%, 88% { opacity: 1; } 100% { opacity: 0; } }
+  @supports (animation-timeline: scroll()) and (timeline-scope: --gtbl) {
+    .gtbl-frame { timeline-scope: --gtbl; }
+    .gtbl { scroll-timeline: --gtbl x; }
+    @media (max-width: 640px) {
+      .gtbl-frame::after { animation: gtbl-fade linear both; animation-timeline: --gtbl; }
+    }
+  }
+  .gtbl { max-width: 100%; overflow-x: auto; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; background: #1a1917; }
   .gtbl:focus-visible { outline: 2px solid #ff5a3c; outline-offset: 2px; }
   .gtbl-cap { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   table { border-collapse: collapse; width: 100%; min-width: 620px; font: 400 13.5px/1.5 "Inter", sans-serif; }

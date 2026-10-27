@@ -5,52 +5,77 @@ Archives (maquettes 3D, Protection 3D, shop, passation 25/10) : `docs/SUIVI_arch
 ## CHANTIER : SEO national + conversion /devis-instantane
 Branche `claude/seo-conversion-de1652` (worktree `nasap3d-social-media-folders-171abf`), partie de master 614f30d. Brief : `reseaux-sociaux/docs/brief_opus_seo_site.md` (dépôt principal). Coordination shop : `Nasap3D website/SEO-COMMUN.md` (hors dépôt, n'éditer que la section « Session SEO site »).
 Règles : **commits LOCAUX autorisés sur cette branche (oui de Nolann 26/10), JAMAIS de push sans son oui** ; URLs, JSON-LD, ads intacts. Fin = Docker local, tout vérifié, Nolann teste, push seulement quand on est sûrs.
-Maquette validée (26/10) : https://claude.ai/artifact/P3GfWv2y1AFENNK3JTyvDF (source : scratchpad `maquette-seo.html`, ne pas modifier).
+Maquette validée (26/10) : https://claude.ai/artifact/P3GfWv2y1AFENNK3JTyvDF (source : scratchpad `maquette-seo.html`, ne pas modifier). Galerie côte à côte : https://claude.ai/artifact/EC6H2W9afGKFUNJCdTpqHD (source scratchpad `galerie/index.html`, republier le même fichier).
+**Modèle : la suite se fait en Sonnet medium** (Nolann 27/10 : le code ne se fait pas en Opus).
 
 ### Décisions en vigueur
 - Accueil variante B (h1 « Impression 3D à Nantes »), title Nantes inchangé ; /impression-3d-en-ligne = page nationale. 5,0 sur 54 avis.
-- En-tête IDENTIQUE à avant, seul ajout « Guides » (menu déroulant) avant Contact : **validé 27/10 (burger + menu normal)**. Tout écart d'en-tête = décision de Nolann.
-- og:image = real-17 (objets liturgiques) 1200×630 : **OK 27/10**. La remplacer par sa grande maquette **seulement quand il confirme l'accord de son client**.
-- **Devis : zone de dépôt, options et design du configurateur INCHANGÉS.** Ajouts seulement : cartes exemples + « Pas de fichier STL ? » (/devis-instantane), erreur panier à l'étape 4, événements Plausible, textes FAQ/meta. « Besoin d'aide pour choisir vos réglages ? » reste.
+- En-tête IDENTIQUE à avant, seul ajout « Guides » (menu déroulant) avant Contact ; burger jusqu'à 1060 px (27/10). Tout autre écart d'en-tête = décision de Nolann.
+- og:image = real-17 1200×630 ; la remplacer par sa grande maquette **seulement quand il confirme l'accord de son client**.
+- **Devis : zone de dépôt, options et design du configurateur INCHANGÉS.** Ajouts seulement (cartes exemples, « Pas de fichier STL ? », erreur panier étape 4, Plausible, textes).
 - **Phrase A** : « Aucun paiement à la commande. Expertise et validation de votre pièce en amont. » Jamais « humain » ni « sans IA ».
-- Prix via `getPublicPricing()` (réglages admin), jamais en dur ; exemples plancher (PLA 8 g) et 31,76 € (cube PETG 50 mm) ; « remise dès 5 pièces » sans % ; jamais de €/kg.
-- **Site en TTC** (27/10 : « je dois afficher TTC, on laisse les factures avec l'article »). Factures, PDF devis, panier GARDENT « TVA non applicable, art. 293 B du CGI ».
-- Matériaux : températures gardées, phrase contact alimentaire OK, puces des héros + un seul bouton gardés ; photos particuliers real-18/5/16 OK (pop-ups 27/10).
-- Ne pas toucher : fichiers du shop (cgu, maquette-impression-3d, OrdersTab/OrderCard/Dashboard, api/orders/[id], lib/server/orders, middleware, session), reparer-piece-3d.astro, conteneurs `refontenasap3d-*` (ni migration de leur base sans oui). Pas de « Boutique » ni d'URL shop au sitemap.
+- Prix via `getPublicPricing()`, jamais en dur ; « remise dès 5 pièces » sans % ; jamais de €/kg. **Site en TTC** ; factures, PDF devis, panier GARDENT « TVA non applicable, art. 293 B du CGI ».
+- Typo FR : `fr()` (`src/lib/typo.ts`) sur le HTML visible seulement, jamais JSON-LD/meta/title. `text-wrap` par page/composant, **pas de règle globale** (toucherait configurateur et reparer).
+- Ne pas toucher : fichiers du shop (cgu, maquette-impression-3d, OrdersTab/OrderCard/Dashboard, api/orders/[id], lib/server/orders, middleware, session), reparer-piece-3d.astro, conteneurs `refontenasap3d-*` (sauf migration locale validée, item 19). Pas de « Boutique » ni d'URL shop au sitemap.
 
 ### File des demandes
-1. [x] État des lieux + benchmark. 2. [x] Maquette validée.
-3. [x] Accueil (9e98e98) — capturé ; écarts listés dans la galerie.
-4. [~] Devis (d43a030) — capturé ; tunnel testé jusqu'à « analyse » ; panier bloqué par la base locale (voir plus bas).
-5. [x] Guides : en ligne (f3f3c83) + particuliers, prix, matériaux (1aeeb76), TTC — capturés.
-6. [x] Menu + pied Guides, sitemap lastmod (19 URL), og:image (902fb2f) — menu clavier, burger 375/768 vérifiés.
-7. [~] Pages villes : JSON-LD + h2/h3 faits ; enrichissement visible = question à Nolann.
-8. [~] Plausible : vérifiés « clic pas de STL », « Clic contact », « fichier chargé », « étape » 2/3, « analyse lancée », « erreur analyse » ; restent « prix affiché », « ajout panier », « erreur panier » (base) ; envoi réel /m/e vérifiable seulement en prod.
+1-6, 17, 21. [x] État des lieux, maquette, accueil, guides, menu/pied Guides, sitemap, og:image, 8,90 € alignés, écarts revus (commits plus bas).
+4. [~] Devis — tunnel testé jusqu'à « analyse » ; panier bloqué par la base locale (item 19).
+7/20. [ ] **Pages villes enrichies DANS ce chantier** : texte unique par ville, rien d'inventé ; Angers d'abord, capture à Nolann, puis les autres.
+8. [~] Plausible : restent « prix affiché », « ajout panier », « erreur panier » (après item 19).
 9. [ ] Bing (Webmaster Tools, IndexNow, Places).
-10. [~] Fin : captures faites (7 pages × 375/768/901/1024/1280/1440, sombre) ; galerie côte à côte maquette/site en cours ; puis Docker complet, Nolann teste, push sur son oui.
-11-15. [ ] Après ce chantier : machines « Trois imprimantes »/REAL_MAX/real-17 ; hors site (3Dnatives, avis) ; réponses Ads 5 €/j et 500 € ; SEO /maquette-impression-3d ; campagne Ads maquettes (aucune dépense sans OK).
-16. [ ] Plus tard, sur confirmation : og:image → sa grande maquette.
-17. [x] 8,90 € en dur alignés sur le plancher admin (706a322).
-18. [ ] **En-tête entre 901 et ~1060 px** (voir ci-dessous) : choix de Nolann, puis correctif + recaptures 901/1024/1060.
+10. [~] Fin : Docker complet, Nolann teste, push sur son oui.
+11-16. [ ] Après ce chantier : machines/REAL_MAX/real-17 ; hors site ; réponses Ads ; SEO /maquette-impression-3d ; campagne Ads maquettes (aucune dépense sans OK) ; og:image → sa maquette sur confirmation.
+18. [x] Burger ≤ 1060 px (global.css:316, Header.astro ~337, HomeHeader.tsx:268) — **non construit, non commité**.
+19. [ ] Migration locale OK (27/10) : `npx prisma migrate deploy` sur `refontenasap3d-db-1` SEULEMENT (vérifier DATABASE_URL = localhost:5432/nasap3d), puis tunnel → panier + Plausible.
+22. [~] **Contrôle visuel complet** (Nolann : « plein de trucs chelou », texte mal aligné). Corrections faites, **NON construites, NON vérifiées** :
+   - E1 : burger, lignes Guides alignées sur les autres liens (Header.astro ~435, HomeHeader.tsx:286).
+   - E2 : accueil (boutons héros en colonne ≤ 480, `.advice-banner` en colonne ≤ 640, `.about-text` centré ≤ 900, text-wrap, typo FR) + pied `white-space:nowrap` sur villes/guides.
+   - E4 : `typo.ts` + `fr()` dans GuideFaq/Cta/Hero/Section/Table ; GuideTable : « Faites défiler le tableau → » + dégradé bord droit ≤ 640.
+   - E5 (en cours à l'écriture) : typo + badges devis-instantane, services, ServicesGrid, particuliers, en-ligne, materiaux, prix.
+   - lecteur (fini) : constats restants dans **`docs/controle_visuel_2026-10-27.md`** (composants du chantier à corriger ; pied de page, machines, réalisations = décision de Nolann).
+   - Constat machines@375 : `@media (max-width:420px)` (index.astro, fin du `<style>`) force 1 colonne ; à vérifier en capture, ne rien changer sans raison.
+23. [~] Capture ville avec menu ouvert : cause = survol souris de la capture précédente → corriger `capture.mjs`.
+24. [~] **Exemple de prix** (Nolann : « fait peur », « ultra chère ») : cube PETG fin 0,12 mm 60 % = 103 g 5 h 49 = 31,76 € (vrai, temps machine 5 €/h domine) → **choix 27/10 : pièce typique chiffrée par le vrai moteur** (kiriSlicer + `computePrice`, seed : 5 €/h, plancher 8,90 €). Agent executant en cours (cube 50 mm et plaque 60×40×5 réglages par défaut, PLA/PETG). **Montrer le chiffre à Nolann AVANT de l'écrire.** Emplacements : QuoteWizard.tsx:194-195, particuliers :40 :57, en-ligne :40 :67, prix :39 :45 :98-99 (tableau + paragraphe).
+25. [x] Retour envoyé à « Tests BO et jauge OpenAI » (27/10, confirmé par pop-up).
+26. [ ] **Design existant, validé par pop-up 27/10** : (a) pied de page : TOUT centré (lignes 1-3) ; (b) page machines : photos même hauteur, « autres machines » mieux réparties, textes 9,5 px agrandis ; (c) bouton burger 44 px + lien actif réaligné (décalé 3 px). **Refusé : pied 12 px / contraste / gouttières** (ne pas faire).
 
-### Questions à poser (un seul pop-up, après la galerie)
-- **En-tête 901–1060 px** : avec « Guides », « Devis instantané » / « À propos » passent sur 2 lignes et le panier sort de l'écran à 901. (A, recommandé) burger jusqu'à ~1060 px (3 points : `global.css:316`, `Header.astro:337`, `HomeHeader.tsx:268/277`) ; (B) resserrer marges/espaces entre 901 et 1100 px (panier visible, retours à la ligne comme sur le site en ligne).
-- **Base locale** : OK pour `npx prisma migrate deploy` (colonne `scale`, migration 20261022120000) sur la base du conteneur `refontenasap3d-db-1`, pour finir le test panier ?
-- Pages villes : enrichissement visible ou non.
-- Écarts : pied « Guides » en ligne ; guide en ligne (800 px vs 860, 15/38/25 px, bloc « Nos autres guides », ~1 250 mots vs ~2 000) ; liste des guides dupliquée (Header, HomeHeader, Footer, GuideRelated).
+### Questions à poser (pop-up)
+Plus tard : slogan anglais, ancre « devis instantané impression 3D », PriceBadge Angers/Cholet, réalisations sans majuscule.
 
 ### État technique
-- `astro build` vert (27/10, lot E compris ; avertissement Vite « chunk > 500 kB » déjà là). `astro check` : manque de mémoire (exit 134) même à 8 Go → piste tsconfig include/exclude.
-- Commits locaux (rien de poussé) : 3fec742, 9e98e98, d43a030, 902fb2f, f3f3c83, 706a322, 1aeeb76.
-- Aperçu = dist construit servi par `server-entry.mjs` port 4455 (`.claude/launch.json` « nasap-seo-build », non commité). Base = conteneur `refontenasap3d-db-1` (5432).
-- Captures : scratchpad `captures/` (`capture.mjs`, `out/`, `mk/` = maquette). 42/42 sans scroll horizontal, îlots hydratés, aucune erreur console. 375 : Leaflet + hCaptcha (/contact), carrousel accueil OK.
-- Port 4400 = `astro dev` du dépôt principal (autre session, PID 5384) : ne pas toucher.
+- Commits locaux (rien de poussé) : 3fec742, 9e98e98, d43a030, 902fb2f, f3f3c83, 706a322, 1aeeb76, 192d86a.
+- Aperçu = dist construit servi par `server-entry.mjs` port 4455 (`.claude/launch.json` « nasap-seo-build », non commité). Après chaque modif : `npx astro build` (arrière-plan) puis relancer l'aperçu.
+- Scratchpad de cette session (S) : `C:\Users\Nolann\AppData\Local\Temp\claude\C--Users-Nolann-Desktop-Nasap3D-website-Code-html-Refonte-Nasap3D--claude-worktrees-nasap3d-social-media-folders-171abf\f6be8915-5525-4f3b-b5c9-efb355497a3f\scratchpad` (maquette, galerie, captures).
+- Captures : `S\captures\capture.mjs` (Chrome headless port 9333, `--all` → `out-all/`), `captures/liens.mjs` (liens internes : 67/67 en 200). CDP suffit (Nolann OK 27/10) ; Playwright = proposition pour plus tard.
+- Port 4400 = autre session (PID 5384) : ne pas toucher.
 
 ### Ce qui n'a pas marché et pourquoi
-- `astro check` à court de mémoire avec les réglages par défaut.
+- `astro check` : manque de mémoire (exit 134) même à 8 Go → piste tsconfig include/exclude.
 - Dev local : hydratation React cassée via jonction node_modules (403 `@fs`) → on sert le dist construit.
-- POST /api/quotes en 500 (P2022, colonne `scale`) : la base locale n'a pas la migration 20261022120000 ; pas lancée sans le oui de Nolann.
-- **Docker Desktop plantait au démarrage** : sockets Unix périmés (`%LOCALAPPDATA%\Docker\run\*`, `%LOCALAPPDATA%\docker-secrets-engine\engine.sock`). **À chaque redémarrage** : fermer Docker, renommer ces deux dossiers en `.stale-*` (rien supprimé), relancer. Jamais « Reset to factory defaults » (efface les volumes).
+- POST /api/quotes 500 (P2022, colonne `scale`) : migration 20261022120000 absente de la base locale (item 19).
+- Docker Desktop plantait : sockets périmés. **À chaque redémarrage** : fermer Docker, renommer `%LOCALAPPDATA%\Docker\run` et `%LOCALAPPDATA%\docker-secrets-engine` en `.stale-*`, relancer. Jamais « Reset to factory defaults ».
+- Captures : animations d'entrée = faux trous (attendre ≥ 2 s) ; menu Guides resté ouvert = survol (souris au coin + blur + attente > 300 ms avant chaque capture).
+- Règle text-wrap globale abandonnée (configurateur, reparer).
+
+### Passation 27/10 (compactions en boucle → quota brûlé)
+- **Non commité** (tout est à garder, rien n'est à moitié écrit sauf peut-être E5) : SUIVI.md ; Footer.astro, Header.astro, global.css, HomeHeader.tsx (burger 1060 + E1/E2) ; GuideCta/Faq/Hero/Section/Table.astro (E4) ; index.astro (E2) ; ServicesGrid.tsx, devis-instantane, services, impression-3d-particuliers, impression-3d-en-ligne, materiaux-impression-3d, prix-impression-3d (E5) ; nouveaux : `src/lib/typo.ts`, `docs/controle_visuel_2026-10-27.md`.
+- **E5 FINI** (27/10 ~9 h 25, 7 fichiers, typo nbsp/U+202F, text-wrap devis + services, badges prix « 90 € », `.process-badge` nowrap ; JSON-LD/meta non touchés). Proposé non appliqué : `fr()` à l'affichage du FaqAccordion de devis-instantane (`faqs.map(f => ({q: fr(f.q), a: fr(f.a)}))`, sans toucher la chaîne du JSON-LD).
+- **Agent « prix » FINI** (résultats `S\prix-exemple\result.json`, moteur Kiri:Moto client réel, valeurs du seed) :
+  - Cube 50 mm, réglages par défaut du configurateur (PLA, Standard 0,20 mm, 40 %) : 86 g, 2 h 22, **13,72 €** (PETG : 14,10 €).
+  - Cube PETG fin 0,12 mm 60 % : 26,72 € (et non 31,76 € : le temps de PRICING.md, 5 h 49, est 18 % au-dessus du moteur actuel).
+  - Plaque 60×40×5 : prix plancher 8,90 € (pas un prix calculé).
+  - Panier < 18 € : + 5 € de frais petite commande (`cart.ts:67-69`), donc un cube seul à 13,72 € revient à 18,72 €.
+  - À vérifier avant d'écrire : le prix final vient-il du tranchage client (Kiri) ou serveur (`kiriSlicer.ts`, grid-apps Linux) ? S'ils diffèrent, l'exemple doit suivre celui qui facture.
+  - Suivi mineur : gcode exporté avec `G1 XNaN YNaN` (`extOffset` absent de `kiriProfiles.ts`), sans effet sur poids, temps ou prix.
+  - **CHOIX DE NOLANN (pop-up 27/10) : cube 50 mm PETG, Standard 0,20 mm, 40 %, 88 g, 2 h 22 = 14,10 €.** Seul au panier : 19,10 € (frais petite commande 5 € sous 18 €). Le texte ne doit pas cacher ces frais : proposer une formulation à Nolann (ex. « 14,10 € la pièce ; frais de 5 € sous 18 € de commande »).
+  - Copie des résultats hors scratchpad : `docs/prix_exemple_2026-10-27.md` + dossier de notes partagé (`result.json`, `price.mjs`).
+- Ancienne session = celle qui a lancé la nouvelle (`list_sessions {linked:true}`, champ `startedBy`) : **la supprimer seulement quand Nolann dit OK** (carte d'approbation). Ne rien supprimer ni archiver d'autre.
+- **Attention avant de la supprimer** : supprimer une conversation peut supprimer son worktree (mémoire « Rien de non commité en worktree »). La nouvelle session travaille dans CE dossier : tout commiter localement d'abord, et vérifier quelle session possède le worktree. S'il appartient à l'ancienne, le dire à Nolann avant la carte.
 
 ### Prochain pas exact
-Galerie côte à côte (executant, scratchpad `galerie/`) → relire → publier en Artifact → pop-up groupé (en-tête, migration, villes, écarts). Puis correctif d'en-tête choisi + rebuild + recaptures, `astro check` (OOM), Docker complet, Nolann teste, push sur son oui.
+1. Attendre la fin d'E5 et du prix (message de l'ancienne session ou fichiers stables), puis relire les diffs E1/E2/E4/E5 (`git diff`) ; appliquer les constats « composants du chantier » de `docs/controle_visuel_2026-10-27.md` (pas reparer), via `executant`.
+2. Item 26 (a)(b)(c) via `executant`.
+3. `npx astro build` en arrière-plan, relancer l'aperçu 4455 ; corriger `capture.mjs` (souris au coin, blur, attente > 300 ms) ; `testeur` : recaptures toutes pages × 375/768/1024/1280 (pages entières), sw == cw partout, reparer + configurateur identiques à avant.
+4. Captures avant/après côte à côte + liste des écarts à Nolann, galerie republiée (page ville menus fermés). Commit local sur son oui.
+5. Item 24 : chiffre CHOISI (14,10 €, PETG, voir plus haut). Vérifier d'abord que le prix facturé vient du même moteur (client Kiri ou serveur), puis remplacer 31,76 € et sa ligne de réglages aux emplacements : `QuoteWizard.tsx:194-195`, `impression-3d-particuliers.astro:40,57`, `impression-3d-en-ligne.astro:40,67`, `prix-impression-3d.astro:38-39,45,98-99`, `PRICING.md` L159-176. Montrer la formulation des frais avant de l'écrire. Ensuite item 19, villes (item 20), Bing, push sur son oui. `resize_window` preset desktop à la fin.

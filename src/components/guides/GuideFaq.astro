@@ -11,6 +11,7 @@
  *  - openFirst?: boolean                 1re question ouverte au chargement (défaut true)
  */
 import GuideSection from "./GuideSection.astro";
+import { fr } from "../../lib/typo";
 
 interface Item { q: string; a: string }
 interface Props { items: Item[]; title?: string; id?: string; openFirst?: boolean }
@@ -31,8 +32,8 @@ const jsonLd = {
   <div class="gfaq">
     {items.map((it, i) => (
       <details open={openFirst && i === 0}>
-        <summary><h3 class="gfaq-q">{it.q}</h3></summary>
-        <p class="gfaq-a">{it.a}</p>
+        <summary><h3 class="gfaq-q">{fr(it.q)}</h3></summary>
+        <p class="gfaq-a">{fr(it.a)}</p>
       </details>
     ))}
   </div>
@@ -44,6 +45,6 @@ const jsonLd = {
   .gfaq details summary::after { content: "+"; flex: none; color: #ff5a3c; font: 500 20px "Inter", sans-serif; }
   .gfaq details[open] summary::after { content: "–"; }
   .gfaq details summary:focus-visible { outline: 2px solid #ff5a3c; outline-offset: 2px; border-radius: 4px; }
-  .gfaq details summary .gfaq-q { margin: 0; font: 600 15.5px/1.3 "Space Grotesk", sans-serif; color: #f3f1ec; }
-  .gfaq details .gfaq-a { margin: 2px 0 12px; }
+  .gfaq details summary .gfaq-q { margin: 0; font: 600 15.5px/1.3 "Space Grotesk", sans-serif; color: #f3f1ec; text-wrap: balance; }
+  .gfaq details .gfaq-a { margin: 2px 0 12px; text-wrap: pretty; }
 </style>

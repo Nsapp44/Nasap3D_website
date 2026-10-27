@@ -35,8 +35,8 @@ const toc = [
 ];
 
 const prices = [
-  { what: "Petite pièce en PLA · 8 g · 15 min d'impression", price: floorLabel, note: "minimum par pièce" },
-  { what: "Cube de 50 mm en PETG · 103 g · 5 h 49 d'impression", price: "31,76 €" },
+  { what: "Petite pièce en PLA · 8\u00A0g · 15\u00A0min d'impression", price: floorLabel, note: "minimum par pièce" },
+  { what: "Cube de 50\u00A0mm en PETG · 103\u00A0g · 5\u00A0h 49 d'impression", price: "31,76\u00A0€" },
 ];
 
 const exampleHeaders = ["Exemple", "Matière et réglages", "Poids", "Temps d'impression", "Prix d'une pièce"];
@@ -77,9 +77,9 @@ const faq = [
     <GuideToc items={toc} />
 
     <GuideSection id="calcul" title="Comment le prix d'une impression 3D est calculé">
-      <p>Le prix d'une impression 3D n'est ni une grille au volume ni un forfait au jugé. Chez Nasap3D, il repose sur deux mesures prises sur votre fichier : la <strong>matière</strong> que la pièce consomme et le <strong>temps</strong> pendant lequel la machine travaille.</p>
+      <p>Le prix d'une impression 3D n'est ni une grille au volume ni un forfait au jugé. Chez Nasap3D, il repose sur deux mesures prises sur votre fichier&nbsp;: la <strong>matière</strong> que la pièce consomme et le <strong>temps</strong> pendant lequel la machine travaille.</p>
       <ol>
-        <li><strong>Votre fichier est tranché.</strong> Notre logiciel découpe votre pièce en couches, exactement comme avant une vraie impression. Il ne devine pas le résultat : il le simule.</li>
+        <li><strong>Votre fichier est tranché.</strong> Notre logiciel découpe votre pièce en couches, exactement comme avant une vraie impression. Il ne devine pas le résultat&nbsp;: il le simule.</li>
         <li><strong>Il mesure le poids de matière.</strong> Plus la pièce est volumineuse ou dense, plus elle consomme de matière. Chaque matière (PLA, PETG, ABS, ASA, TPU, PP, Nylon) a son propre coût.</li>
         <li><strong>Il mesure le temps machine.</strong> Chaque heure d'impression occupe une imprimante de l'atelier. Sur une grosse pièce ou en qualité fine, c'est souvent cette partie qui pèse le plus lourd dans le prix.</li>
         <li><strong>Le prix minimum s'applique si besoin.</strong> Une très petite pièce, légère et rapide, donne un total très faible. C'est alors le minimum par pièce, {floorLabel}, qui s'applique tel quel.</li>
@@ -93,45 +93,45 @@ const faq = [
       <p>Voici deux calculs réels de notre devis instantané, avec les mesures prises sur chaque pièce. Les prix s'entendent pour une pièce, hors livraison.</p>
       <GuidePriceCards items={prices} />
       <GuideTable label="Deux exemples de prix d'impression 3D avec leurs mesures" headers={exampleHeaders} rows={exampleRows} />
-      <h3>Petite pièce en PLA : 8 g, 15 minutes</h3>
-      <p>Cette pièce consomme très peu de matière et occupe la machine un quart d'heure. Son calcul tombe largement sous le prix minimum : c'est donc le minimum par pièce, {floorLabel}, qui fixe le prix. Vous ne voyez aucune ligne « frais minimum » à part, seulement un prix normal.</p>
-      <h3>Cube de 50 mm en PETG : 103 g, 5 h 49</h3>
-      <p>Ici, le calcul dépasse déjà le prix minimum. La qualité fine demande près de six heures de machine, et c'est ce temps machine qui pèse le plus lourd dans le prix, bien plus que la matière : 31,76 €.</p>
-      <p>Ces deux exemples montrent l'essentiel : le poids seul ne suffit pas à prévoir un prix. Pour connaître celui de votre pièce, le plus simple est de <a href="/devis-instantane">déposer votre fichier</a>.</p>
+      <h3>Petite pièce en PLA&nbsp;: 8&nbsp;g, 15 minutes</h3>
+      <p>Cette pièce consomme très peu de matière et occupe la machine un quart d'heure. Son calcul tombe largement sous le prix minimum&nbsp;: c'est donc le minimum par pièce, {floorLabel}, qui fixe le prix. Vous ne voyez aucune ligne «&nbsp;frais minimum&nbsp;» à part, seulement un prix normal.</p>
+      <h3>Cube de 50&nbsp;mm en PETG&nbsp;: 103&nbsp;g, 5&nbsp;h 49</h3>
+      <p>Ici, le calcul dépasse déjà le prix minimum. La qualité fine demande près de six heures de machine, et c'est ce temps machine qui pèse le plus lourd dans le prix, bien plus que la matière&nbsp;: 31,76&nbsp;€.</p>
+      <p>Ces deux exemples montrent l'essentiel&nbsp;: le poids seul ne suffit pas à prévoir un prix. Pour connaître celui de votre pièce, le plus simple est de <a href="/devis-instantane">déposer votre fichier</a>.</p>
     </GuideSection>
 
     <GuideSection id="variations" title="Ce qui fait monter ou baisser le prix">
       <p>Deux pièces du même poids peuvent coûter un prix différent. Voici ce qui change le prix, et ce que vous pouvez ajuster dans le devis instantané.</p>
       <ul>
-        <li><strong>La taille de la pièce.</strong> Une pièce plus grande consomme plus de matière et demande plus de temps. Vérifiez aussi l'unité de votre fichier (millimètres, centimètres, pouces) : une unité mal exportée change complètement la taille, donc le prix. Le configurateur permet de la corriger.</li>
+        <li><strong>La taille de la pièce.</strong> Une pièce plus grande consomme plus de matière et demande plus de temps. Vérifiez aussi l'unité de votre fichier (millimètres, centimètres, pouces)&nbsp;: une unité mal exportée change complètement la taille, donc le prix. Le configurateur permet de la corriger.</li>
         <li><strong>Le remplissage.</strong> Une pièce pleine ou renforcée consomme plus de matière et s'imprime plus longtemps qu'une pièce décorative. Le configurateur propose plusieurs niveaux, du plus léger au quasi plein.</li>
-        <li><strong>La qualité d'impression.</strong> Une couche épaisse (0,28 mm, qualité rapide) est plus rapide et moins chère. La qualité standard (0,20 mm) est le réglage par défaut. La qualité fine (0,12 mm) donne plus de détails et une surface plus lisse, mais le temps d'impression est nettement plus long.</li>
-        <li><strong>La matière.</strong> Chaque matière a son propre coût. Choisissez d'abord selon l'usage (chaleur, extérieur, souplesse), le prix vient ensuite : le <a href="/materiaux-impression-3d">guide des matériaux</a> compare les sept matières proposées.</li>
+        <li><strong>La qualité d'impression.</strong> Une couche épaisse (0,28&nbsp;mm, qualité rapide) est plus rapide et moins chère. La qualité standard (0,20&nbsp;mm) est le réglage par défaut. La qualité fine (0,12&nbsp;mm) donne plus de détails et une surface plus lisse, mais le temps d'impression est nettement plus long.</li>
+        <li><strong>La matière.</strong> Chaque matière a son propre coût. Choisissez d'abord selon l'usage (chaleur, extérieur, souplesse), le prix vient ensuite&nbsp;: le <a href="/materiaux-impression-3d">guide des matériaux</a> compare les sept matières proposées.</li>
         <li><strong>Les supports et l'orientation.</strong> Une pièce avec des surplombs peut demander des supports, qui consomment de la matière et du temps. Notre logiciel teste plusieurs orientations et retient celle qui limite les surplombs.</li>
         <li><strong>La quantité.</strong> Commander plusieurs exemplaires d'une même pièce déclenche une remise automatique dès 5 exemplaires (détail plus bas).</li>
       </ul>
       <p>Pour faire baisser le prix sans perdre en qualité, adaptez les réglages à l'usage. Une pièce décorative n'a pas besoin du même remplissage qu'une pièce soumise à des efforts. Une pièce brute ou de gros volume peut se contenter de la qualité rapide, avec des lignes de couche visibles.</p>
-      <p>Un doute sur un réglage ? Gardez les valeurs par défaut : nous vérifions votre choix pendant l'expertise, et nous vous prévenons avant de fabriquer si quelque chose cloche.</p>
+      <p>Un doute sur un réglage&#8239;? Gardez les valeurs par défaut&nbsp;: nous vérifions votre choix pendant l'expertise, et nous vous prévenons avant de fabriquer si quelque chose cloche.</p>
     </GuideSection>
 
     <GuideSection id="minimum-livraison" title="Minimum de commande, remise dès 5 exemplaires, livraison et emballage">
       <ul>
-        <li><strong>Prix minimum par pièce : {floorLabel}.</strong> Aucune pièce n'est facturée en dessous, même la plus petite.</li>
+        <li><strong>Prix minimum par pièce&nbsp;: {floorLabel}.</strong> Aucune pièce n'est facturée en dessous, même la plus petite.</li>
         {hasSmallOrderFee && <li><strong>Commande minimum de {minOrderLabel}.</strong> En dessous, {feeLabel} de frais de petite commande s'ajoutent. Ils sont affichés dans le panier avec une explication.</li>}
-        <li><strong>Remise automatique dès 5 exemplaires.</strong> Pour une même pièce, la remise augmente par paliers avec la quantité. Elle apparaît dans le configurateur et sur la ligne « Remise quantité » du panier.</li>
-        <li><strong>Livraison en point relais ou à domicile.</strong> Vous saisissez votre adresse dans le panier : deux tarifs réels sont alors calculés, Mondial Relay (point relais) et Colissimo (domicile), en France et dans l'Union européenne. Pour le point relais, une carte vous permet de choisir le vôtre. Une date de livraison estimée s'affiche aussi dans le panier.</li>
-        <li><strong>Emballage : 1,50 €.</strong> Ce forfait s'ajoute au tarif du transporteur. Votre commande part dans un seul carton, choisi à la bonne taille pour protéger vos pièces.</li>
-        <li><strong>Retrait à l'atelier.</strong> Vous êtes près de Nantes ? Le retrait est gratuit à l'atelier, sur rendez-vous.</li>
+        <li><strong>Remise automatique dès 5 exemplaires.</strong> Pour une même pièce, la remise augmente par paliers avec la quantité. Elle apparaît dans le configurateur et sur la ligne «&nbsp;Remise quantité&nbsp;» du panier.</li>
+        <li><strong>Livraison en point relais ou à domicile.</strong> Vous saisissez votre adresse dans le panier&nbsp;: deux tarifs réels sont alors calculés, Mondial Relay (point relais) et Colissimo (domicile), en France et dans l'Union européenne. Pour le point relais, une carte vous permet de choisir le vôtre. Une date de livraison estimée s'affiche aussi dans le panier.</li>
+        <li><strong>Emballage&nbsp;: 1,50&nbsp;€.</strong> Ce forfait s'ajoute au tarif du transporteur. Votre commande part dans un seul carton, choisi à la bonne taille pour protéger vos pièces.</li>
+        <li><strong>Retrait à l'atelier.</strong> Vous êtes près de Nantes&#8239;? Le retrait est gratuit à l'atelier, sur rendez-vous.</li>
       </ul>
-      <p>Le prix de la pièce et celui de la livraison restent distincts : le prix affiché dans le devis est hors livraison, et les frais de port sont calculés séparément, à partir de votre adresse.</p>
+      <p>Le prix de la pièce et celui de la livraison restent distincts&nbsp;: le prix affiché dans le devis est hors livraison, et les frais de port sont calculés séparément, à partir de votre adresse.</p>
     </GuideSection>
 
     <GuideSection id="prix-paye" title="Prix affiché = prix payé">
-      <p>Le prix que vous voyez est celui que vous payez pour la pièce. Les prix sont affichés <strong>TTC</strong> : pas de prix hors taxe qui augmente au moment de payer. Seule la livraison s'ajoute, calculée dans le panier selon votre adresse, et elle est gratuite si vous retirez la pièce à l'atelier.</p>
+      <p>Le prix que vous voyez est celui que vous payez pour la pièce. Les prix sont affichés <strong>TTC</strong>&nbsp;: pas de prix hors taxe qui augmente au moment de payer. Seule la livraison s'ajoute, calculée dans le panier selon votre adresse, et elle est gratuite si vous retirez la pièce à l'atelier.</p>
       <p>Le paiement, lui, vient après l'expertise. <strong>Aucun paiement à la commande. Expertise et validation de votre pièce en amont.</strong></p>
       <ul>
         <li>Vous envoyez votre commande sans payer.</li>
-        <li>Nous ouvrons votre fichier et vérifions l'épaisseur des parois, l'orientation, les supports et la matière choisie. Réponse sous 24 à 48 h.</li>
+        <li>Nous ouvrons votre fichier et vérifions l'épaisseur des parois, l'orientation, les supports et la matière choisie. Réponse sous 24 à 48&nbsp;h.</li>
         <li>Une fois la commande acceptée, vous payez en ligne depuis votre compte client, de façon sécurisée (Stripe).</li>
       </ul>
       <p>Si votre pièce ne peut pas être imprimée telle quelle, nous vous le disons avant de fabriquer. Vous n'avez alors rien payé.</p>
@@ -142,9 +142,9 @@ const faq = [
         <li><strong>Ouvrez le <a href="/devis-instantane">devis instantané</a></strong> et déposez votre fichier STL, OBJ ou 3MF. Un fichier de CAO (STEP, SolidWorks, Fusion 360, FreeCAD…) s'exporte en STL ou en 3MF depuis votre logiciel.</li>
         <li><strong>Choisissez la matière, la couleur et la quantité</strong>, puis réglez la qualité et le remplissage si vous le souhaitez.</li>
         <li><strong>Patientez quelques minutes.</strong> Votre fichier est réellement tranché et le prix s'affiche, calculé sur votre pièce.</li>
-        <li><strong>Ajoutez la pièce au panier et envoyez la commande, sans payer.</strong> Nous l'expertisons sous 24 à 48 h, puis vous payez une fois la commande acceptée.</li>
+        <li><strong>Ajoutez la pièce au panier et envoyez la commande, sans payer.</strong> Nous l'expertisons sous 24 à 48&nbsp;h, puis vous payez une fois la commande acceptée.</li>
       </ol>
-      <p><strong>Vous n'avez pas de fichier 3D ?</strong> Envoyez-nous des photos de la pièce, même cassée, avec ses dimensions principales via le <a href="/contact">formulaire de contact</a> : nous la redessinons en 3D, sur devis, avant de l'imprimer. Le guide <a href="/impression-3d-particuliers">impression 3D pour particuliers</a> détaille ce cas.</p>
+      <p><strong>Vous n'avez pas de fichier 3D&#8239;?</strong> Envoyez-nous des photos de la pièce, même cassée, avec ses dimensions principales via le <a href="/contact">formulaire de contact</a>&nbsp;: nous la redessinons en 3D, sur devis, avant de l'imprimer. Le guide <a href="/impression-3d-particuliers">impression 3D pour particuliers</a> détaille ce cas.</p>
       <p>Pour le parcours complet, de la commande à la livraison, voir le guide <a href="/impression-3d-en-ligne">impression 3D en ligne</a>.</p>
     </GuideSection>
 

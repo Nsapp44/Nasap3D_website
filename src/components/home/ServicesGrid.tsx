@@ -6,7 +6,7 @@ const SERVICES = [
   { title: "Maquettage", desc: "Maquettage de produit, d'outil pédagogique, de bâtiment...", href: "/maquette-impression-3d" },
   { title: "Customisation Multisupports", desc: "Laser, vinyle, stickers, sublimation", href: "/services#customisation" },
   { title: "Maintenance machine", desc: "Diagnostic, réparation, garantie 3j", href: "/services#maintenance" },
-  { title: "Initiation", desc: "Formules dès 90€", href: "/services#initiation" },
+  { title: "Initiation", desc: "Formules dès 90\u00A0€", href: "/services#initiation" },
 ];
 
 export default function ServicesGrid() {

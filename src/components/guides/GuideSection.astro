@@ -9,18 +9,20 @@
  *
  * Classes utilitaires utilisables dans le slot : .gmore (paragraphe d'un lien isolé, cible tactile 44 px).
  */
+import { fr } from "../../lib/typo";
+
 interface Props { id: string; title: string }
 const { id, title } = Astro.props;
 ---
 <section class="gsec" id={id} aria-labelledby={`${id}-titre`}>
-  <h2 id={`${id}-titre`}>{title}</h2>
+  <h2 id={`${id}-titre`}>{fr(title)}</h2>
   <slot />
 </section>
 <style>
   .gsec { margin-top: 38px; scroll-margin-top: 72px; animation: gsec-in 0.5s ease-out both; }
-  .gsec > h2 { margin: 0 0 14px; font: 600 21px/1.2 "Space Grotesk", sans-serif; letter-spacing: -0.01em; color: #f3f1ec; }
-  .gsec :global(h3) { margin: 18px 0 6px; font: 600 16.5px/1.25 "Space Grotesk", sans-serif; color: #f3f1ec; }
-  .gsec :global(p) { margin: 0 0 12px; max-width: 70ch; color: rgba(255, 255, 255, 0.78); }
+  .gsec > h2 { margin: 0 0 14px; font: 600 21px/1.2 "Space Grotesk", sans-serif; letter-spacing: -0.01em; color: #f3f1ec; text-wrap: balance; }
+  .gsec :global(h3) { margin: 18px 0 6px; font: 600 16.5px/1.25 "Space Grotesk", sans-serif; color: #f3f1ec; text-wrap: balance; }
+  .gsec :global(p) { margin: 0 0 12px; max-width: 70ch; color: rgba(255, 255, 255, 0.78); text-wrap: pretty; }
   .gsec :global(ul),
   .gsec :global(ol) { margin: 0 0 12px; padding-left: 20px; max-width: 70ch; color: rgba(255, 255, 255, 0.78); }
   .gsec :global(li) { margin: 6px 0; }

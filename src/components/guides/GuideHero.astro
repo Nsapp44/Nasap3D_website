@@ -17,6 +17,7 @@
  * Le contenu du slot par défaut (ex. <ExpertiseSteps/>) s'affiche sous les puces.
  */
 import GuideButtons from "./GuideButtons.astro";
+import { fr } from "../../lib/typo";
 
 interface Chip { text: string; star?: boolean }
 interface Props {
@@ -72,8 +73,8 @@ const jsonLd = [
     </ol>
   </nav>
   <p class="geyebrow">{eyebrow}</p>
-  <h1 class="gtitle">{title}</h1>
-  <p class="glead">{lead}</p>
+  <h1 class="gtitle">{fr(title)}</h1>
+  <p class="glead">{fr(lead)}</p>
   <GuideButtons class="ghero-btns" {primaryLabel} {secondaryLabel} {secondaryHref} {showSecondary} />
   {chips.length > 0 && (
     <ul class="gchips" role="list">
@@ -92,8 +93,8 @@ const jsonLd = [
   .gcrumb a:hover { color: #ff5a3c; text-decoration: underline; }
   .gcrumb a:focus-visible { outline: 2px solid #ff5a3c; outline-offset: 2px; border-radius: 3px; }
   .geyebrow { margin: 0 0 10px; font: 600 11.5px "Inter", sans-serif; text-transform: uppercase; letter-spacing: 0.12em; color: #ff5a3c; }
-  .gtitle { margin: 0 0 14px; font: 700 28px/1.2 "Space Grotesk", sans-serif; letter-spacing: -0.01em; color: #f3f1ec; }
-  .glead { margin: 0 0 18px; max-width: 680px; font: 400 16.5px/1.6 "Inter", sans-serif; color: rgba(255, 255, 255, 0.78); }
+  .gtitle { margin: 0 0 14px; font: 700 28px/1.2 "Space Grotesk", sans-serif; letter-spacing: -0.01em; color: #f3f1ec; text-wrap: balance; }
+  .glead { margin: 0 0 18px; max-width: 680px; font: 400 16.5px/1.6 "Inter", sans-serif; color: rgba(255, 255, 255, 0.78); text-wrap: pretty; }
   .ghero :global(.ghero-btns) { margin: 0 0 14px; }
   .gchips { list-style: none; margin: 0 0 20px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
   .gchip { font: 500 12.5px/1.4 "Inter", sans-serif; color: rgba(255, 255, 255, 0.78); background: #1a1917; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 999px; padding: 5px 11px; }

@@ -10,6 +10,7 @@
  *  - primaryLabel?, secondaryLabel?, secondaryHref?, showSecondary?   transmis à GuideButtons
  */
 import GuideButtons from "./GuideButtons.astro";
+import { fr } from "../../lib/typo";
 
 interface Props {
   title?: string;
@@ -28,10 +29,10 @@ const {
 } = Astro.props;
 ---
 <section class="gcta" aria-labelledby="gcta-titre">
-  <h2 id="gcta-titre">{title}</h2>
-  <p class="gcta-text">{text}</p>
+  <h2 id="gcta-titre">{fr(title)}</h2>
+  <p class="gcta-text">{fr(text)}</p>
   <GuideButtons {primaryLabel} {secondaryLabel} {secondaryHref} {showSecondary} />
-  <p class="gcta-note">{note}</p>
+  <p class="gcta-note">{fr(note)}</p>
 </section>
 <style>
   .gcta {
@@ -44,9 +45,9 @@ const {
     color: #f3f1ec;
     animation: gcta-in 0.5s ease-out both;
   }
-  .gcta h2 { margin: 0 0 6px; font: 600 22px/1.2 "Space Grotesk", sans-serif; letter-spacing: -0.01em; color: #f3f1ec; }
-  .gcta .gcta-text { margin: 0 0 16px; font: 400 15px/1.6 "Inter", sans-serif; color: rgba(255, 255, 255, 0.78); }
-  .gcta .gcta-note { margin: 12px 0 0; font: 400 12.5px/1.5 "Inter", sans-serif; color: rgba(255, 255, 255, 0.62); }
+  .gcta h2 { margin: 0 0 6px; font: 600 22px/1.2 "Space Grotesk", sans-serif; letter-spacing: -0.01em; color: #f3f1ec; text-wrap: balance; }
+  .gcta .gcta-text { margin: 0 0 16px; font: 400 15px/1.6 "Inter", sans-serif; color: rgba(255, 255, 255, 0.78); text-wrap: pretty; }
+  .gcta .gcta-note { margin: 12px 0 0; font: 400 12.5px/1.5 "Inter", sans-serif; color: rgba(255, 255, 255, 0.62); text-wrap: pretty; }
   @keyframes gcta-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { .gcta { animation: none; } }
 </style>
