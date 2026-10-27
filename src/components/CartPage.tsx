@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { api } from "../lib/api-client";
 import { useAuth } from "../hooks/useAuth";
 import { useCart, MAX_LINE_QTY, type CartLine } from "../hooks/useCart";
@@ -57,6 +57,26 @@ function eur(cents: number) {
   return (cents / 100).toFixed(2);
 }
 
+// Note d'information calme (pas d'erreur rouge), annoncée aux lecteurs d'écran.
+function ShipNote({ icon, children }: { icon: "info" | "box"; children: ReactNode }) {
+  return (
+    <div className="ship-note" role="status">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+        {icon === "info" ? (
+          <>
+            <circle cx="8" cy="8" r="7" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth="1.4" />
+            <rect x="7.3" y="6.8" width="1.4" height="5" rx=".7" fill="rgba(255,255,255,.6)" />
+            <circle cx="8" cy="4.6" r=".9" fill="rgba(255,255,255,.6)" />
+          </>
+        ) : (
+          <path d="M2 5l6-3 6 3v6l-6 3-6-3z M2 5l6 3 6-3 M8 8v6" fill="none" stroke="rgba(255,255,255,.55)" strokeWidth="1.3" strokeLinejoin="round" />
+        )}
+      </svg>
+      <span>{children}</span>
+    </div>
+  );
+}
+
 export default function CartPage() {
   const { isLoggedIn, loading: authLoading } = useAuth();
   const { cart, loaded, incQty, decQty, removeItem } = useCart();
@@ -72,6 +92,11 @@ export default function CartPage() {
   const [ratesState, setRatesState] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [rates, setRates] = useState<{ relay?: { cents: number; estimatedDeliveryDate?: string }; home?: { cents: number; estimatedDeliveryDate?: string } } | null>(null);
   const [shippingError, setShippingError] = useState<string | null>(null);
+  // Pièce du panier trop grande pour tous nos cartons (409 order_too_big) : commande bloquée.
+  const [tooBigPiece, setTooBigPiece] = useState<string | null>(null);
+  const [parcelCount, setParcelCount] = useState(1);
+  const [relayOk, setRelayOk] = useState(true);
+  const [lockerOk, setLockerOk] = useState(true);
   const [shipMode, setShipMode] = useState<"RELAY" | "HOME" | null>(null);
   const [relayPoint, setRelayPoint] = useState<RelayPoint | null>(null);
   const [relayMapNotice, setRelayMapNotice] = useState<string | null>(null);
@@ -103,6 +128,32 @@ export default function CartPage() {
     setStep("checkout");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn, loaded, cart.lines.length]);
+  // Pièce trop grande pour nos cartons : lue dans GET /api/cart à chaque (re)chargement
+  // ou modification du panier (les réponses de mutation ne la portent pas).
+  useEffect(() => {
+    if (!loaded) return;
+    let cancelled = false;
+    api.getCart().then((res) => {
+      if (cancelled || !res.ok || !res.data) return;
+      const piece = (res.data as { tooBigPiece?: string | null }).tooBigPiece;
+      setTooBigPiece(typeof piece === "string" ? piece : null);
+      const d = res.data as { parcelCount?: number; relayOk?: boolean; lockerOk?: boolean };
+      setParcelCount(typeof d.parcelCount === "number" && d.parcelCount >= 1 ? d.parcelCount : 1);
+      setRelayOk(d.relayOk !== false);
+      setLockerOk(d.lockerOk !== false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [loaded, cart]);
+  // Expédition impossible : on ne reste pas sur ce mode.
+  useEffect(() => {
+    if (tooBigPiece !== null && deliveryMode === "SHIPPING") {
+      setDeliveryMode(null);
+      invalidateRates();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tooBigPiece, deliveryMode]);
   function backToCart() {
     setStep("cart");
   }
@@ -186,9 +237,15 @@ export default function CartPage() {
     }
     setRatesState("loading");
     setShippingError(null);
+    setTooBigPiece(null);
     setShipMode(null);
     setRelayPoint(null);
     const res = await api.getShippingRates({ address: shipAddress, city: shipCity, zipcode: shipZipcode, country: shipCountry });
+    if (res.status === 409 && (res.data as { error?: string } | null)?.error === "order_too_big") {
+      setRatesState("error");
+      setTooBigPiece((res.data as { piece?: string }).piece || "");
+      return;
+    }
     if (!res.ok || !res.data) {
       const messages: Record<string, string> = {
         empty_cart: "Votre panier est vide.",
@@ -236,8 +293,13 @@ export default function CartPage() {
             relayPoint: shipMode === "RELAY" ? relayPoint : undefined,
           };
     const res = await api.checkout(shipping);
-    const data = res.data as { ok?: boolean; error?: string } | null;
+    const data = res.data as { ok?: boolean; error?: string; piece?: string } | null;
     if (!res.ok || !data || !data.ok) {
+      if (res.status === 409 && data?.error === "order_too_big") {
+        setCheckoutState("idle");
+        setTooBigPiece(data.piece || "");
+        return;
+      }
       if (data?.error === "daily_limit_reached") {
         setCheckoutState("idle");
         setDailyLimitPopup(true);
@@ -270,7 +332,8 @@ export default function CartPage() {
   const phoneValid = phoneRef.current?.isValidNumber() ?? false;
   void phoneActivityTick; // forces a re-render on widget input/countrychange so phoneValid above is re-read
   const shippingReady = isPickup ? !!shipName.trim() && phoneValid : phoneValid && !!shipMode && (shipMode !== "RELAY" || !!relayPoint);
-  const canCheckout = isLoggedIn && cart.lines.length > 0 && !!deliveryMode && shippingReady;
+  const canCheckout = isLoggedIn && cart.lines.length > 0 && !!deliveryMode && shippingReady && !(isShipping && tooBigPiece !== null);
+  const shippingBlocked = tooBigPiece !== null;
   const hasItems = cart.lines.length > 0;
   const isStepCart = hasItems && step === "cart";
   const isStepCheckout = hasItems && step === "checkout";
@@ -426,11 +489,29 @@ export default function CartPage() {
                 <span>Retrait à l'atelier</span>
                 <span>Gratuit</span>
               </div>
-              <div onClick={selectShipping} style={optionStyle(isShipping)}>
+              <button
+                type="button"
+                onClick={shippingBlocked ? undefined : selectShipping}
+                disabled={shippingBlocked}
+                aria-disabled={shippingBlocked}
+                style={{
+                  ...optionStyle(isShipping && !shippingBlocked),
+                  width: "100%",
+                  boxSizing: "border-box",
+                  textAlign: "left",
+                  ...(shippingBlocked ? { opacity: 0.4, cursor: "not-allowed" } : {}),
+                }}
+              >
                 <span>Expédition</span>
-                <span>À calculer</span>
-              </div>
+                <span>{shippingBlocked ? "Indisponible" : "À calculer"}</span>
+              </button>
             </div>
+
+            {tooBigPiece !== null && (
+              <ShipNote icon="info">
+                <b>Expédition impossible</b> : la pièce « {tooBigPiece} » est trop grande pour nos cartons. Vous pouvez la récupérer gratuitement à l'atelier, à Nantes. Vous préférez une livraison ? <a href="/contact">Contactez-nous</a>, on trouve une solution.
+              </ShipNote>
+            )}
 
             {isPickup && (
               <>
@@ -541,19 +622,39 @@ export default function CartPage() {
                         {rates.home.estimatedDeliveryDate && <div className="delivery-date">Livraison estimée le {fmtDeliveryDate(rates.home.estimatedDeliveryDate)}</div>}
                       </>
                     )}
+                    {parcelCount > 1 && relayOk && (
+                      <ShipNote icon="box">
+                        Votre commande partira en <b>{parcelCount} colis</b>. Le prix affiché comprend les {parcelCount}. Une question ? <a href="/contact">Contactez-nous</a>
+                      </ShipNote>
+                    )}
+                    {!relayOk && parcelCount <= 1 && (
+                      <ShipNote icon="info">
+                        <b>Colissimo seulement</b> : votre colis est trop grand pour les Points Relais, il sera livré à votre adresse. Un doute ? <a href="/contact">Contactez-nous</a>
+                      </ShipNote>
+                    )}
+                    {!relayOk && parcelCount > 1 && (
+                      <ShipNote icon="box">
+                        Votre commande partira en <b>{parcelCount} colis</b>, livrés à votre adresse par <b>Colissimo</b> : l'un d'eux est trop grand pour les Points Relais. Le prix affiché comprend les {parcelCount}. Un doute ? <a href="/contact">Contactez-nous</a>
+                      </ShipNote>
+                    )}
                   </div>
                 )}
 
                 {ratesState === "ready" && rates && (
                   <div style={{ height: shipMode === "RELAY" ? "auto" : "0px", overflow: shipMode === "RELAY" ? "visible" : "hidden" }}>
                     <div className="relay-picker-title">Choisissez votre point relais</div>
+                    {relayOk && !lockerOk && (
+                      <ShipNote icon="info">
+                        <b>Locker impossible pour cette commande</b> : votre colis est trop grand pour les consignes automatiques. Choisissez un Point Relais en magasin. Un doute ? <a href="/contact">Contactez-nous</a>
+                      </ShipNote>
+                    )}
                     {relayPoint && (
                       <div className="relay-summary">
                         {relayPoint.name} — {relayPoint.address}, {relayPoint.zipcode} {relayPoint.city}
                       </div>
                     )}
                     {relayMapNotice && <div className="relay-notice">{relayMapNotice}</div>}
-                    <BoxtalRelayMap searchParams={relaySearchParams} onPointSelected={setRelayPoint} onNotice={setRelayMapNotice} />
+                    <BoxtalRelayMap searchParams={relaySearchParams} onPointSelected={setRelayPoint} onNotice={setRelayMapNotice} hideLockers={!lockerOk} />
                   </div>
                 )}
               </>
@@ -580,7 +681,7 @@ export default function CartPage() {
             )}
             {(!!selectedRate || isPickup) && (
               <div className="summary-row">
-                <span>Livraison</span>
+                <span>{!isPickup && parcelCount > 1 ? `Livraison (${parcelCount} colis)` : "Livraison"}</span>
                 <span>{isPickup ? "Gratuit" : selectedRate ? "+" + eur(selectedRate.cents) + " €" : ""}</span>
               </div>
             )}
@@ -697,6 +798,13 @@ export default function CartPage() {
         .quote-shipping-btn { background: #ff5a3c; color: #161514; border: none; border-radius: 7px; padding: 10px; text-align: center; font: 600 11.5px 'Inter',sans-serif; cursor: pointer; transition: transform .2s ease; margin-top: 8px; }
         .quote-shipping-btn:hover { transform: scale(1.02); }
         .error-msg { font: 600 11px 'Inter',sans-serif; color: #ff8a70; }
+        .ship-note { display: grid; grid-template-columns: 16px 1fr; gap: 9px; align-items: start; border: 1px solid rgba(255,255,255,.15); background: #201d1b; border-radius: 8px; padding: 10px 12px; font: 400 11px/1.55 'Inter',sans-serif; color: rgba(255,255,255,.75); margin-top: 12px; }
+        .ship-note svg { margin-top: 1px; }
+        .ship-note b { color: #f3f1ec; font-weight: 600; }
+        .ship-note a { color: #ff8a70; text-decoration: underline; text-underline-offset: 2px; }
+        .ship-note a:focus-visible { outline: 2px solid #ff5a3c; outline-offset: 2px; border-radius: 3px; }
+        .rate-options .ship-note, .relay-picker-title + .ship-note { margin-top: 0; }
+        .relay-picker-title + .ship-note { margin-bottom: 10px; }
         .rate-options { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
         .delivery-date { font: 400 10px 'Inter',sans-serif; color: rgba(255,255,255,.4); margin: -2px 2px 2px; }
         .relay-picker-title { font: 600 11px 'Inter',sans-serif; color: rgba(255,255,255,.6); margin: 14px 0 8px; }

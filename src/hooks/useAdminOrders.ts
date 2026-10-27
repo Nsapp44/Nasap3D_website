@@ -29,6 +29,7 @@ export interface AdminOrder {
   canBuyLabel: boolean;
   shippingLabelUrl: string | null;
   shippingOversized: boolean;
+  shippingParcels: { box: string; outerCm: [number, number, number]; weightG: number; pieces: string[] }[] | null;
   boxtalOrderRef: string | null;
   shippingMode: string | null;
   shippingLabel: string;

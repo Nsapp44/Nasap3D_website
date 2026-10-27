@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { api } from "../../lib/api-client";
+import { api, type ShippingBoxStock } from "../../lib/api-client";
 import type { AdminOrder } from "../../hooks/useAdminOrders";
 import Loader from "../Loader";
 
@@ -44,7 +44,7 @@ function fmtDate(iso: string) {
 // details, label purchase, tracking number. Kept as a single component
 // (not split further) since the original's own structure is already one
 // cohesive unit per order, not several independently-reusable pieces.
-export default function OrderCard({ order, onChanged }: { order: AdminOrder; onChanged: () => void }) {
+export default function OrderCard({ order, onChanged, boxStock }: { order: AdminOrder; onChanged: () => void; boxStock?: ShippingBoxStock[] }) {
   const [labelBusy, setLabelBusy] = useState(false);
   const [trackingBusy, setTrackingBusy] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -87,7 +87,8 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
   // order: its material/quality/color snapshots are all empty strings,
   // which rendered as an empty, confusing row here before this filter.
   const printableItems = order.items.filter((i) => i.qualitySnapshot);
-  const canBuyLabel = order.status === "PRINTING" && order.canBuyLabel && !order.shippingLabelUrl && !order.shippingOversized;
+  const canBuyLabel = order.status === "PRINTING" && order.canBuyLabel && !order.shippingLabelUrl;
+  const parcels = order.shippingParcels;
   const hasLabel = !!order.shippingLabelUrl;
   const labelPending = !!order.boxtalOrderRef && !order.shippingLabelUrl;
   const isPickup = order.shippingMode === "PICKUP" && order.status !== "DELIVERED";
@@ -177,7 +178,6 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
         label_already_purchased: "Une étiquette a déjà été achetée pour cette commande.",
         missing_shipping_info: "Informations de livraison incomplètes pour cette commande.",
         missing_relay_point: "Aucun point relais enregistré pour cette commande.",
-        parcel_oversized: "Pièce hors gabarit (aucun des cartons habituels ne convient) — vérifiez l'emballage et achetez l'étiquette manuellement sur le site Boxtal pour cette commande.",
         boxtal_not_configured: "Boxtal non configuré côté serveur.",
       };
       const data = res.data as { error?: string; reason?: string } | null;
@@ -421,13 +421,39 @@ export default function OrderCard({ order, onChanged }: { order: AdminOrder; onC
               Point relais : {order.relayPointName} — {order.relayPointAddress}, {order.relayPointZipcode} {order.relayPointCity}
             </div>
           )}
-          {hasParcelDims && (
-            <div className="parcel-dims">
-              Carton : {order.shippingParcelLengthCm} × {order.shippingParcelWidthCm} × {order.shippingParcelHeightCm} cm
-              {order.shippingWeightG ? ` · ${(order.shippingWeightG / 1000).toFixed(2)} kg` : ""}
+          {parcels && parcels.length > 0 ? (
+            <div className="parcel-block">
+              <div className="parcel-block-title">
+                {parcels.length} colis
+              </div>
+              {parcels.map((p, i) => {
+                const box = boxStock?.find((b) => b.code === p.box);
+                const outOfStock = !!box && box.qty <= 0;
+                return (
+                  <div key={i} className="parcel-item">
+                    <div className="parcel-item-head">
+                      Colis {i + 1} — Carton {p.box} {p.outerCm.join("×")} cm, format maximum
+                    </div>
+                    <div className="parcel-item-pieces">{p.pieces.join(", ")}</div>
+                    <div className="parcel-item-weight">Poids estimé : {(p.weightG / 1000).toFixed(1)} kg</div>
+                    {outOfStock && box && (
+                      <a className="parcel-buy-link" href={box.karton.url} target="_blank" rel="noopener noreferrer">
+                        Stock à 0 : acheter ce carton
+                      </a>
+                    )}
+                  </div>
+                );
+              })}
+              <div className="parcel-note">Format maximum : un carton plus petit convient si les pièces y rentrent.</div>
             </div>
+          ) : (
+            hasParcelDims && (
+              <div className="parcel-dims">
+                Carton : {order.shippingParcelLengthCm} × {order.shippingParcelWidthCm} × {order.shippingParcelHeightCm} cm
+                {order.shippingWeightG ? ` · ${(order.shippingWeightG / 1000).toFixed(2)} kg` : ""}
+              </div>
+            )
           )}
-          {order.shippingOversized && <div className="oversized-warning">⚠ Hors gabarit — carton à vérifier, étiquette à acheter manuellement sur Boxtal</div>}
         </div>
       )}
 

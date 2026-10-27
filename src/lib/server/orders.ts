@@ -1,7 +1,9 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { nextCounter } from "./counter";
 import { getCartSummary, type CartSummary } from "./cart";
-import type { ShippingRate, ParcelCm } from "./boxtal";
+import type { ShippingRate } from "./boxtal";
+import type { Parcel } from "./packing";
 
 export async function nextOrderRef(): Promise<string> {
   const seq = await nextCounter("orderRef");
@@ -14,8 +16,8 @@ export interface ShippingSelection {
   mode: "PICKUP" | "RELAY" | "HOME";
   rate: ShippingRate;
   weightG: number;
-  parcelCm: ParcelCm;
-  oversized: boolean;
+  // Colis calculés par packPieces() ; vide pour un retrait atelier.
+  parcels: Parcel[];
   recipient: { name: string; phone: string; address: string; city: string; zipcode: string; country: string };
   relayPoint?: { code: string; name: string; address: string; city: string; zipcode: string };
 }
@@ -57,10 +59,13 @@ export async function createOrderFromCart(
         shippingServiceCode: shipping?.rate.serviceCode,
         shippingLabel: shipping?.rate.label,
         shippingWeightG: shipping?.weightG,
-        shippingParcelLengthCm: shipping?.parcelCm.length,
-        shippingParcelWidthCm: shipping?.parcelCm.width,
-        shippingParcelHeightCm: shipping?.parcelCm.height,
-        shippingOversized: shipping?.oversized ?? false,
+        // Colis complets (JSON) ; les champs hérités gardent le 1er colis
+        // pour les commandes lues par l'ancien code.
+        shippingParcels: shipping && shipping.parcels.length > 0 ? (shipping.parcels as unknown as Prisma.InputJsonValue) : undefined,
+        shippingParcelLengthCm: shipping ? (shipping.parcels[0]?.outerCm[0] ?? 0) : undefined,
+        shippingParcelWidthCm: shipping ? (shipping.parcels[0]?.outerCm[1] ?? 0) : undefined,
+        shippingParcelHeightCm: shipping ? (shipping.parcels[0]?.outerCm[2] ?? 0) : undefined,
+        shippingOversized: false,
         recipientName: shipping?.recipient.name,
         recipientPhone: shipping?.recipient.phone,
         recipientAddress: shipping?.recipient.address,

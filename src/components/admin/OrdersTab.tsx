@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { api, type ShippingBoxStock } from "../../lib/api-client";
 import { useAdminOrders, type AdminOrder } from "../../hooks/useAdminOrders";
 import OrderCard from "./OrderCard";
 
@@ -45,6 +46,13 @@ function groupOrdersByClient(orders: AdminOrder[]): ClientGroup[] {
 export default function OrdersTab() {
   const { orders, counts, filter, search, onSearchChange, setOrderFilter, reload } = useAdminOrders(true);
   const clientGroups = groupOrdersByClient(orders);
+  // Stock de cartons chargé une seule fois pour toute la liste (pas un fetch par carte).
+  const [boxStock, setBoxStock] = useState<ShippingBoxStock[]>([]);
+  useEffect(() => {
+    api.adminGetShippingBoxes().then((res) => {
+      if (res.ok && res.data) setBoxStock(res.data);
+    });
+  }, []);
   // Which client groups have their full delivered history unfolded — starts
   // empty (collapsed) every time the tab loads, not persisted across
   // reloads/navigations; a purely local browsing convenience, not state
@@ -110,10 +118,10 @@ export default function OrdersTab() {
               </div>
               <div className="order-list">
                 {activeOrders.map((order) => (
-                  <OrderCard key={order.id} order={order} onChanged={reload} />
+                  <OrderCard key={order.id} order={order} onChanged={reload} boxStock={boxStock} />
                 ))}
                 {visibleDelivered.map((order) => (
-                  <OrderCard key={order.id} order={order} onChanged={reload} />
+                  <OrderCard key={order.id} order={order} onChanged={reload} boxStock={boxStock} />
                 ))}
               </div>
               {collapsible && (
@@ -186,7 +194,16 @@ export default function OrdersTab() {
         .section-label { font: 600 10px 'Inter',sans-serif; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
         .section-text { font: 400 11px/1.6 'Inter',sans-serif; color: #e8e6e1; }
         .parcel-dims { margin-top: 8px; font: 600 10.5px ui-monospace,monospace; color: #f3f1ec; }
-        .oversized-warning { margin-top: 8px; font: 600 10.5px 'Inter',sans-serif; color: #ff8a70; }
+        .parcel-block { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .parcel-block-title { font: 600 11px 'Space Grotesk',sans-serif; color: #f3f1ec; }
+        .parcel-item { border: 1px solid rgba(255,255,255,.1); border-radius: 8px; background: #161514; padding: 10px 12px; font: 400 11px/1.5 'Inter',sans-serif; color: rgba(255,255,255,.7); }
+        .parcel-item-head { font-weight: 600; color: #f3f1ec; }
+        .parcel-item-pieces { overflow-wrap: anywhere; }
+        .parcel-item-weight { font-variant-numeric: tabular-nums; color: rgba(255,255,255,.55); }
+        .parcel-buy-link { display: inline-flex; align-items: center; min-height: 32px; margin-top: 4px; font: 600 11px 'Inter',sans-serif; color: #ff8a70; text-decoration: underline; }
+        .parcel-buy-link:focus-visible { outline: 2px solid #ff5a3c; outline-offset: 2px; border-radius: 3px; }
+        .parcel-note { font: 400 10px/1.5 'Inter',sans-serif; color: rgba(255,255,255,.45); }
+        @media (max-width: 640px) { .parcel-buy-link { min-height: 40px; } }
         .btn-label, .btn-label:hover { text-decoration: none; color: #ff5a3c; }
         .btn-label { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,90,60,.35); font: 600 10.5px 'Inter',sans-serif; padding: 6px 12px; border-radius: 5px; }
         .tracking-number { font: 600 10.5px ui-monospace,monospace; color: #e8e6e1; }

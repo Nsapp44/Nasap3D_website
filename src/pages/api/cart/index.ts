@@ -4,7 +4,8 @@ import { getSessionUser } from "../../../lib/api/auth";
 import { getOrCreateGuestSessionId } from "../../../lib/api/cookies";
 import { identityFor } from "../../../lib/api/identity";
 import { prisma } from "../../../lib/server/prisma";
-import { getCartSummary } from "../../../lib/server/cart";
+import { getCartSummary, getCartPieces } from "../../../lib/server/cart";
+import { packPieces, parcelsRelayOk, parcelsLockerOk } from "../../../lib/server/packing";
 import { enforceRateLimit, clientIp } from "../../../lib/api/rateLimit";
 
 // Direct port of GET /cart — no rate limit, matches the original (every
@@ -12,7 +13,19 @@ import { enforceRateLimit, clientIp } from "../../../lib/api/rateLimit";
 export const GET = apiHandler(async (context) => {
   const identity = await identityFor(context);
   const summary = await getCartSummary(identity);
-  return json(summary);
+  // Pièce trop grande pour tous nos cartons : le panier grise « Expédition »
+  // (seul le retrait atelier reste possible). null = tout rentre.
+  const packed = packPieces(await getCartPieces(identity));
+  return json({
+    ...summary,
+    tooBigPiece: packed.ok ? null : packed.piece,
+    // Nombre de colis prévus (expédition) : le panier prévient le client au-delà d'un colis.
+    parcelCount: packed.ok ? packed.parcels.length : 0,
+    // Point Relais : S/M/L/XL ; Colissimo seul dès un XXL.
+    relayOk: packed.ok ? parcelsRelayOk(packed.parcels) : false,
+    // Locker : S/M/L seulement (pas de XL ni XXL).
+    lockerOk: packed.ok ? parcelsLockerOk(packed.parcels) : false,
+  });
 });
 
 const postSchema = z.object({ quoteJobId: z.string(), qty: z.number().int().positive().max(2000).optional() });
