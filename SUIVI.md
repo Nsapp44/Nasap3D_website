@@ -45,6 +45,8 @@ Maquette validée (26/10) : https://claude.ai/artifact/P3GfWv2y1AFENNK3JTyvDF (s
 
 28. [~] **Nolann 27/10 soir** : relancer le local (FAIT : Docker db/api OK, aperçu 4455 relancé, 200) ; Search Console accessible (compte u/2, `sc-domain:nasap3d.com`) : 28 j = 55 clics, 2,43 k impressions, position moy. 12 ; « impression 3d nantes » 8 clics / 253 impr. ; 15 pages indexées, 17 non (à examiner) ; « imprimante 3d » 529 impr. 0 clic, « service impression 3d » 109 impr. 0 clic. Reste : test STL jusqu'au panier + Plausible, titre accueil (proposé : « Impression 3D sur mesure — Devis instantané en ligne | Atelier à Nantes », en attente de son oui), pages non indexées, passation (nouvelle conversation Sonnet medium).
 
+29. [x] **Accueil, texte SEO + contact (27/10, retour Nolann : mal aligné)** : skills web-design-guidelines / design-critique / ux-copy passés. Texte SEO passé sur 2 colonnes alignées sur la grille du contact (avant : colonne étroite à gauche, 40 % vide) ; contact : vrai titre h2 « Contacter l'atelier à Nantes » + sous-titre (avant : petit label rouge « CONTACT ET ATELIER À NANTES (CANCLAUX) » collé au formulaire), téléphone et email cliquables, texte 14 px. Captures 1280 et 375 OK, aucun scroll horizontal. Même passe à faire sur les autres pages (à demander).
+
 ### Questions à poser (pop-up)
 Plus tard : slogan anglais, ancre « devis instantané impression 3D », PriceBadge Angers/Cholet, réalisations sans majuscule.
 
