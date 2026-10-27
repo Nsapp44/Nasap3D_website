@@ -77,3 +77,8 @@ Fait (27/10) : corrections composants guides, item 26 (pied centré, machines 4/
 2. [x] Commit local 4602079 (oui Nolann 27/10). Item 19 fait : migration appliquée sur la base locale, dist reconstruit, aperçu 4455 relancé. Reste : tunnel avec un STL de test jusqu'au panier + Plausible ; nouvelle passe maquette ; concurrents : `docs/concurrents_tech3d_abeille3d_2026-10-27.md` (pages villes = levier n°1 : Nantes/Angers uniques, GBP, avis).
 3. Ensuite item 19 (migration locale `prisma migrate deploy` sur refontenasap3d-db-1 seulement), villes (item 20), Bing, push sur son oui. `resize_window` preset desktop à la fin.
 Note capture : sur machines, la capture pleine page montre le menu Guides ouvert (artefact de capture ; le haut de page est fermé).
+
+## 30. Accueil : texte en cartes, ton « France » (27/10, local, non poussé)
+- Bloc SEO refait en intro + 3 cartes ; plus de « Canclaux » dans index.astro ; contact-sub = « Retrait gratuit à l'atelier sur rendez-vous. ».
+- Repère concurrent : Abeille 3D cite son atelier (Albert, Somme) ET « livraison partout en France ». Nantes + France ensemble est la norme.
+- Prochain pas : Nolann valide le rendu ; Canclaux encore dans docs Ads/3Dnatives (à retirer si voulu) ; test STL + Plausible.

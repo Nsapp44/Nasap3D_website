@@ -201,12 +201,24 @@ const jsonLd = {
   <div class="section seo-section">
     <div class="section-inner">
       <div class="seo-text">
-        <h2 class="seo-title">L'impression 3D à Nantes, à l'unité ou en série</h2>
-        <p>Nasap3D est un atelier d'impression 3D installé à Nantes, dans le quartier Canclaux, depuis 2022. Nous fabriquons des pièces sur mesure pour les particuliers, les artisans, les entreprises et les architectes&nbsp;: pièce de remplacement introuvable, prototype, support technique, petite série ou maquette.</p>
-        <p>Vous avez un fichier 3D&#8239;? Déposez-le sur notre <a href="/devis-instantane">devis instantané</a>&nbsp;: le prix est calculé sur votre fichier en quelques minutes, à partir de {pricing.floorLabel} la pièce. Vous n'en avez pas&#8239;? Envoyez des photos et les dimensions de la pièce : nous la redessinons en 3D (rétro-conception), puis nous l'imprimons.</p>
-        <p>Chaque commande est expertisée avant fabrication&nbsp;: nous vérifions la faisabilité, la matière et la solidité de la pièce, et vous ne payez qu'une fois la commande acceptée. L'atelier imprime en PLA, PETG, ABS, ASA, TPU, PP et Nylon sur des imprimantes Bambu Lab H2C, X2D et X1C, et en résine pour les détails très fins. Il grave aussi au laser, sur métal comme sur bois, et réalise des maquettes d'architecture.</p>
+        <h2 class="seo-title">Impression 3D sur mesure, à l'unité ou en série</h2>
+        <p class="seo-intro">Nasap3D est un atelier d'impression 3D à Nantes, ouvert depuis 2022. Nous fabriquons des pièces sur mesure pour les particuliers, les artisans, les entreprises et les architectes, partout en France&nbsp;: pièce de remplacement introuvable, prototype, support technique, petite série ou maquette.</p>
+        <div class="seo-grid">
+          <div class="seo-card">
+            <h3>Vous avez un fichier 3D&#8239;?</h3>
+            <p>Déposez-le sur notre <a href="/devis-instantane">devis instantané</a>&nbsp;: le prix est calculé sur votre fichier en quelques minutes, à partir de {pricing.floorLabel} la pièce. Sans fichier, envoyez des photos et les dimensions&nbsp;: nous redessinons la pièce en 3D (rétro-conception), puis nous l'imprimons.</p>
+          </div>
+          <div class="seo-card">
+            <h3>Expertise avant fabrication</h3>
+            <p>Nous vérifions la faisabilité, la matière et la solidité de la pièce, et vous ne payez qu'une fois la commande acceptée. Matières&nbsp;: PLA, PETG, ABS, ASA, TPU, PP et Nylon sur imprimantes Bambu Lab H2C, X2D et X1C, résine pour les détails très fins. Gravure laser sur métal et sur bois, maquettes d'architecture.</p>
+          </div>
+          <div class="seo-card">
+            <h3>Livraison en France et en Europe</h3>
+            <p>Livraison partout en France et en Europe, ou retrait gratuit à l'atelier de Nantes sur rendez-vous.</p>
+          </div>
+        </div>
         <p>Nos clients nous notent 5,0 sur 54&nbsp;avis Google&nbsp;: arceau de casque audio réparé et renforcé, engrenage de scie à onglet qui n'était plus fabriqué, pièce complexe pour l'aéronautique de loisir, série de 528&nbsp;pièces en TPU.</p>
-        <p>Retrait gratuit à l'atelier sur rendez-vous, ou livraison partout en France et en Europe. Particulier&#8239;? Lisez notre <a href="/impression-3d-particuliers">guide de l'impression 3D pour particuliers</a>. Pour comparer les matières ou estimer un budget, consultez les guides des <a href="/materiaux-impression-3d">matériaux</a> et des <a href="/prix-impression-3d">prix</a>, ou découvrez l'<a href="/impression-3d-en-ligne">impression 3D en ligne</a>.</p>
+        <p>Particulier&#8239;? Lisez notre <a href="/impression-3d-particuliers">guide de l'impression 3D pour particuliers</a>. Pour comparer les matières ou estimer un budget, consultez les guides des <a href="/materiaux-impression-3d">matériaux</a> et des <a href="/prix-impression-3d">prix</a>, ou découvrez l'<a href="/impression-3d-en-ligne">impression 3D en ligne</a>.</p>
       </div>
     </div>
   </div>
@@ -214,7 +226,7 @@ const jsonLd = {
   <div id="sec-contact" class="section section-alt">
     <div class="section-inner">
       <h2 class="contact-title">Contacter l'atelier à Nantes</h2>
-      <p class="contact-sub">Quartier Canclaux. Retrait gratuit sur rendez-vous.</p>
+      <p class="contact-sub">Retrait gratuit à l'atelier sur rendez-vous.</p>
       <div class="contact-grid">
         <ContactForm client:visible={{ rootMargin: "600px" }} />
         <div class="contact-info">
@@ -422,18 +434,37 @@ const jsonLd = {
     text-wrap: balance;
   }
   .seo-text {
-    column-count: 2;
-    column-gap: 40px;
-  }
-  .seo-title {
-    column-span: all;
+    text-align: left;
   }
   .seo-text p {
-    font: 400 14px/1.7 "Inter", sans-serif;
+    font: 400 14px/1.65 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.7);
     margin: 0 0 14px;
     text-wrap: pretty;
-    break-inside: avoid;
+  }
+  .seo-text .seo-intro {
+    max-width: 75ch;
+    margin-bottom: 22px;
+  }
+  .seo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    margin-bottom: 22px;
+  }
+  .seo-card {
+    background: #1a1917;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 20px;
+  }
+  .seo-card h3 {
+    font: 600 16px/1.3 "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin: 0 0 10px;
+  }
+  .seo-card p {
+    margin: 0;
   }
   .seo-text a {
     color: #ff5a3c;
@@ -581,8 +612,8 @@ const jsonLd = {
     .contact-grid {
       grid-template-columns: 1fr;
     }
-    .seo-text {
-      column-count: 1;
+    .seo-grid {
+      grid-template-columns: 1fr;
     }
   }
   @media (max-width: 640px) {
