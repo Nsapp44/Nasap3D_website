@@ -169,7 +169,7 @@ const guidesIsCurrent = GUIDES.some((g) => g.href === currentPath);
   }
   .nav-links {
     display: flex;
-    gap: 26px;
+    gap: clamp(16px, calc((100vw - 920px) / 8), 26px);
     font: 500 13px "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.62);
   }

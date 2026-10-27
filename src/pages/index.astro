@@ -150,6 +150,17 @@ const jsonLd = {
     <div class="section-inner">
       <h2 class="eyebrow">Nos réalisations en impression 3D</h2>
       <RealisationsCarousel client:visible={{ rootMargin: "600px" }} />
+      <div class="projet-cta-wrap">
+        <div class="projet-cta-box">
+          <h2 class="projet-cta-title">Un projet singulier ou original&#8239;?</h2>
+          <div class="projet-cta-text">Maquette, rétro-conception d'une pièce existante, objet unique&nbsp;: décrivez-nous votre idée, même sans fichier 3D. Nous étudions sa faisabilité avant tout paiement.</div>
+          <div class="projet-cta-actions">
+            <a href="/contact" class="projet-cta-link">Parler de mon projet</a>
+            <a href="/maquette-impression-3d" class="projet-cta-secondary">Voir le maquettage</a>
+          </div>
+          <a href="/realisations" class="projet-cta-more">Voir toutes nos réalisations</a>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -595,6 +606,93 @@ const jsonLd = {
     box-sizing: border-box;
   }
 
+  .projet-cta-wrap {
+    margin-top: 26px;
+    text-align: center;
+  }
+  .projet-cta-box {
+    border: 1px solid rgba(255, 90, 60, 0.3);
+    background: rgba(255, 90, 60, 0.08);
+    border-radius: 12px;
+    padding: 28px;
+    transition:
+      transform 0.25s ease,
+      box-shadow 0.25s ease,
+      border-color 0.25s ease;
+  }
+  .projet-cta-box:hover {
+    border-color: #ff5a3c;
+    transform: scale(1.02);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
+  }
+  .projet-cta-title {
+    font: 700 17px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 6px;
+  }
+  .projet-cta-text {
+    font: 400 11.5px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 14px;
+  }
+  .projet-cta-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+  .projet-cta-link {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    width: fit-content;
+    font: 600 11px "Inter", sans-serif;
+    color: #ff5a3c;
+    padding: 6px 12px;
+    border: 1px solid #ff5a3c;
+    border-radius: 6px;
+    background: rgba(255, 90, 60, 0.1);
+    transition: background 0.25s ease;
+  }
+  .projet-cta-link:hover {
+    background: rgba(255, 90, 60, 0.18);
+  }
+  .projet-cta-secondary {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    width: fit-content;
+    font: 500 11px "Inter", sans-serif;
+    color: #f3f1ec;
+    padding: 6px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+    background: #1e1c1a;
+    transition: border-color 0.25s ease;
+  }
+  .projet-cta-secondary:hover {
+    border-color: #ff5a3c;
+  }
+  .projet-cta-more {
+    display: inline-block;
+    margin-top: 14px;
+    font: 400 11.5px "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+    text-decoration: none;
+  }
+  .projet-cta-more:hover {
+    text-decoration: underline;
+  }
+  .projet-cta-link:focus-visible,
+  .projet-cta-secondary:focus-visible,
+  .projet-cta-more:focus-visible {
+    outline: 2px solid #ff5a3c;
+    outline-offset: 2px;
+  }
+
   @media (max-width: 900px) {
     .machines-grid-3 {
       grid-template-columns: repeat(3, 1fr);
@@ -645,6 +743,23 @@ const jsonLd = {
       min-height: 44px;
       box-sizing: border-box;
     }
+    .projet-cta-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .projet-cta-link,
+    .projet-cta-secondary {
+      display: inline-flex;
+      justify-content: center;
+      width: 100%;
+      min-height: 44px;
+      box-sizing: border-box;
+    }
+    .projet-cta-more {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+    }
     .hero-title {
       font-size: 28px;
     }
@@ -659,6 +774,16 @@ const jsonLd = {
     .machines-grid-3,
     .machines-grid-5 {
       grid-template-columns: 1fr;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .projet-cta-box,
+    .projet-cta-link,
+    .projet-cta-secondary {
+      transition: none;
+    }
+    .projet-cta-box:hover {
+      transform: none;
     }
   }
 </style>

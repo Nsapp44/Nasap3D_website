@@ -236,7 +236,7 @@ export default function HomeHeader() {
         .home-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 40px; border-bottom: 1px solid rgba(255,255,255,.08); }
         .logo-link { display: flex; align-items: center; gap: 10px; text-decoration: none; }
         .logo-img { height: 34px; width: auto; }
-        .nav-links { display: flex; gap: 26px; font: 500 13px 'Inter',sans-serif; color: rgba(255,255,255,.62); }
+        .nav-links { display: flex; gap: clamp(16px, calc((100vw - 920px) / 8), 26px); font: 500 13px 'Inter',sans-serif; color: rgba(255,255,255,.62); }
         .nav-links a { text-decoration: none; color: inherit; }
         .nav-current { color: #f3f1ec; border-bottom: 2px solid #ff5a3c; padding-bottom: 4px; font-weight: 600; }
         .header-account { display: flex; align-items: center; gap: 18px; font: 500 12px 'Inter',sans-serif; color: rgba(255,255,255,.75); }
