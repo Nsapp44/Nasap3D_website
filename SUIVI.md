@@ -3,9 +3,10 @@
 Archives (maquettes 3D, Protection 3D, shop, passation 25/10) : `docs/SUIVI_archive_2026-10-25.md`.
 
 ## CHANTIER : SEO national + conversion /devis-instantane
-Branche `claude/seo-conversion-de1652` (worktree `nasap3d-social-media-folders-171abf`), partie de master 614f30d. Brief : `reseaux-sociaux/docs/brief_opus_seo_site.md` (dépôt principal). Coordination shop : `Nasap3D website/SEO-COMMUN.md` (hors dépôt, n'éditer que la section « Session SEO site »).
+Branche de travail : celle de la session en cours, partie de `claude/seo-conversion-de1652` @ commit de passation (27/10) ; à l'origine partie de master 614f30d. Brief : `reseaux-sociaux/docs/brief_opus_seo_site.md` (dépôt principal). Coordination shop : `Nasap3D website/SEO-COMMUN.md` (hors dépôt, n'éditer que la section « Session SEO site »).
 Règles : **commits LOCAUX autorisés sur cette branche (oui de Nolann 26/10), JAMAIS de push sans son oui** ; URLs, JSON-LD, ads intacts. Fin = Docker local, tout vérifié, Nolann teste, push seulement quand on est sûrs.
-Maquette validée (26/10) : https://claude.ai/artifact/P3GfWv2y1AFENNK3JTyvDF (source : scratchpad `maquette-seo.html`, ne pas modifier). Galerie côte à côte : https://claude.ai/artifact/EC6H2W9afGKFUNJCdTpqHD (source scratchpad `galerie/index.html`, republier le même fichier).
+Maquette validée (26/10) : https://claude.ai/artifact/P3GfWv2y1AFENNK3JTyvDF (source : `N\maquette-seo.html`, ne pas modifier). Galerie côte à côte : https://claude.ai/artifact/EC6H2W9afGKFUNJCdTpqHD (source `N\galerie\index.html` ; republier avec `url` = ce lien après `Artifact read`).
+**N** = dossier durable hors dépôt : `C:\Users\Nolann\AppData\Roaming\Claude\side-session-notes\local_fd5f6327-4589-40c3-8f1d-ce3eb0044621`.
 **Modèle : la suite se fait en Sonnet medium** (Nolann 27/10 : le code ne se fait pas en Opus).
 
 ### Décisions en vigueur
@@ -26,7 +27,7 @@ Maquette validée (26/10) : https://claude.ai/artifact/P3GfWv2y1AFENNK3JTyvDF (s
 9. [ ] Bing (Webmaster Tools, IndexNow, Places).
 10. [~] Fin : Docker complet, Nolann teste, push sur son oui.
 11-16. [ ] Après ce chantier : machines/REAL_MAX/real-17 ; hors site ; réponses Ads ; SEO /maquette-impression-3d ; campagne Ads maquettes (aucune dépense sans OK) ; og:image → sa maquette sur confirmation.
-18. [x] Burger ≤ 1060 px (global.css:316, Header.astro ~337, HomeHeader.tsx:268) — **non construit, non commité**.
+18. [x] Burger ≤ 1060 px (global.css:316, Header.astro ~337, HomeHeader.tsx:268) — commité (8e83dff), **non construit, non vérifié**.
 19. [ ] Migration locale OK (27/10) : `npx prisma migrate deploy` sur `refontenasap3d-db-1` SEULEMENT (vérifier DATABASE_URL = localhost:5432/nasap3d), puis tunnel → panier + Plausible.
 22. [~] **Contrôle visuel complet** (Nolann : « plein de trucs chelou », texte mal aligné). Corrections faites, **NON construites, NON vérifiées** :
    - E1 : burger, lignes Guides alignées sur les autres liens (Header.astro ~435, HomeHeader.tsx:286).
@@ -36,7 +37,7 @@ Maquette validée (26/10) : https://claude.ai/artifact/P3GfWv2y1AFENNK3JTyvDF (s
    - lecteur (fini) : constats restants dans **`docs/controle_visuel_2026-10-27.md`** (composants du chantier à corriger ; pied de page, machines, réalisations = décision de Nolann).
    - Constat machines@375 : `@media (max-width:420px)` (index.astro, fin du `<style>`) force 1 colonne ; à vérifier en capture, ne rien changer sans raison.
 23. [~] Capture ville avec menu ouvert : cause = survol souris de la capture précédente → corriger `capture.mjs`.
-24. [~] **Exemple de prix** (Nolann : « fait peur », « ultra chère ») : cube PETG fin 0,12 mm 60 % = 103 g 5 h 49 = 31,76 € (vrai, temps machine 5 €/h domine) → **choix 27/10 : pièce typique chiffrée par le vrai moteur** (kiriSlicer + `computePrice`, seed : 5 €/h, plancher 8,90 €). Agent executant en cours (cube 50 mm et plaque 60×40×5 réglages par défaut, PLA/PETG). **Montrer le chiffre à Nolann AVANT de l'écrire.** Emplacements : QuoteWizard.tsx:194-195, particuliers :40 :57, en-ligne :40 :67, prix :39 :45 :98-99 (tableau + paragraphe).
+24. [~] **Exemple de prix** (Nolann : « fait peur », « ultra chère », l'ancien 31,76 € venait d'un cube PETG fin 60 %) → **chiffre CHOISI (pop-up 27/10) : cube 50 mm PETG, Standard 0,20 mm, 40 % = 14,10 €** (vrai moteur, détail `docs/prix_exemple_2026-10-27.md`). Reste : vérifier le moteur qui facture, montrer la formulation des frais 5 € sous 18 €, puis remplacer (Prochain pas 5).
 25. [x] Retour envoyé à « Tests BO et jauge OpenAI » (27/10, confirmé par pop-up).
 26. [ ] **Design existant, validé par pop-up 27/10** : (a) pied de page : TOUT centré (lignes 1-3) ; (b) page machines : photos même hauteur, « autres machines » mieux réparties, textes 9,5 px agrandis ; (c) bouton burger 44 px + lien actif réaligné (décalé 3 px). **Refusé : pied 12 px / contraste / gouttières** (ne pas faire).
 
@@ -44,10 +45,11 @@ Maquette validée (26/10) : https://claude.ai/artifact/P3GfWv2y1AFENNK3JTyvDF (s
 Plus tard : slogan anglais, ancre « devis instantané impression 3D », PriceBadge Angers/Cholet, réalisations sans majuscule.
 
 ### État technique
-- Commits locaux (rien de poussé) : 3fec742, 9e98e98, d43a030, 902fb2f, f3f3c83, 706a322, 1aeeb76, 192d86a.
-- Aperçu = dist construit servi par `server-entry.mjs` port 4455 (`.claude/launch.json` « nasap-seo-build », non commité). Après chaque modif : `npx astro build` (arrière-plan) puis relancer l'aperçu.
-- Scratchpad de cette session (S) : `C:\Users\Nolann\AppData\Local\Temp\claude\C--Users-Nolann-Desktop-Nasap3D-website-Code-html-Refonte-Nasap3D--claude-worktrees-nasap3d-social-media-folders-171abf\f6be8915-5525-4f3b-b5c9-efb355497a3f\scratchpad` (maquette, galerie, captures).
-- Captures : `S\captures\capture.mjs` (Chrome headless port 9333, `--all` → `out-all/`), `captures/liens.mjs` (liens internes : 67/67 en 200). CDP suffit (Nolann OK 27/10) ; Playwright = proposition pour plus tard.
+- Commits locaux (rien de poussé) : 3fec742, 9e98e98, d43a030, 902fb2f, f3f3c83, 706a322, 1aeeb76, 192d86a, 8e83dff (WIP E1-E5 + burger, non construit), 19442dc + commit de passation.
+- **Nouveau worktree à préparer** (ignorés par git, jamais commités) : jonction `node_modules` vers le dépôt principal, copie de `.env` du dépôt principal, `.claude/launch.json` recopié depuis `N\launch.json.modele` (« nasap-seo-build », `server-entry.mjs` port 4455).
+- Aperçu = dist construit servi par `server-entry.mjs` port 4455. Après chaque modif : `npx astro build` (arrière-plan) puis relancer l'aperçu.
+- Outils de capture : `N\outils-captures\` (`capture.mjs` Chrome headless CDP port 9333, `--all` → dossier de sortie ; `liens.mjs` liens internes, 67/67 en 200 le 27/10 ; `verify.mjs`, `gen.mjs` = galerie). Chemins internes à adapter (ils visaient l'ancien scratchpad). CDP suffit (Nolann OK 27/10).
+- **Captures « avant »** (avant E1-E5 et item 26, 157 fichiers) : `N\captures-avant\` (+ `report.md`). Les captures « après » vont dans le scratchpad de la session.
 - Port 4400 = autre session (PID 5384) : ne pas toucher.
 
 ### Ce qui n'a pas marché et pourquoi
@@ -58,24 +60,15 @@ Plus tard : slogan anglais, ancre « devis instantané impression 3D », PriceBa
 - Captures : animations d'entrée = faux trous (attendre ≥ 2 s) ; menu Guides resté ouvert = survol (souris au coin + blur + attente > 300 ms avant chaque capture).
 - Règle text-wrap globale abandonnée (configurateur, reparer).
 
-### Passation 27/10 (compactions en boucle → quota brûlé)
-- **Commité localement en WIP `8e83dff`** (27/10, rien de poussé ; ni construit ni vérifié) : SUIVI.md ; Footer.astro, Header.astro, global.css, HomeHeader.tsx (burger 1060 + E1/E2) ; GuideCta/Faq/Hero/Section/Table.astro (E4) ; index.astro (E2) ; ServicesGrid.tsx, devis-instantane, services, impression-3d-particuliers, impression-3d-en-ligne, materiaux-impression-3d, prix-impression-3d (E5) ; nouveaux : `src/lib/typo.ts`, `docs/controle_visuel_2026-10-27.md`.
-- **E5 FINI** (27/10 ~9 h 25, 7 fichiers, typo nbsp/U+202F, text-wrap devis + services, badges prix « 90 € », `.process-badge` nowrap ; JSON-LD/meta non touchés). Proposé non appliqué : `fr()` à l'affichage du FaqAccordion de devis-instantane (`faqs.map(f => ({q: fr(f.q), a: fr(f.a)}))`, sans toucher la chaîne du JSON-LD).
-- **Agent « prix » FINI** (résultats `S\prix-exemple\result.json`, moteur Kiri:Moto client réel, valeurs du seed) :
-  - Cube 50 mm, réglages par défaut du configurateur (PLA, Standard 0,20 mm, 40 %) : 86 g, 2 h 22, **13,72 €** (PETG : 14,10 €).
-  - Cube PETG fin 0,12 mm 60 % : 26,72 € (et non 31,76 € : le temps de PRICING.md, 5 h 49, est 18 % au-dessus du moteur actuel).
-  - Plaque 60×40×5 : prix plancher 8,90 € (pas un prix calculé).
-  - Panier < 18 € : + 5 € de frais petite commande (`cart.ts:67-69`), donc un cube seul à 13,72 € revient à 18,72 €.
-  - À vérifier avant d'écrire : le prix final vient-il du tranchage client (Kiri) ou serveur (`kiriSlicer.ts`, grid-apps Linux) ? S'ils diffèrent, l'exemple doit suivre celui qui facture.
-  - Suivi mineur : gcode exporté avec `G1 XNaN YNaN` (`extOffset` absent de `kiriProfiles.ts`), sans effet sur poids, temps ou prix.
-  - **CHOIX DE NOLANN (pop-up 27/10) : cube 50 mm PETG, Standard 0,20 mm, 40 %, 88 g, 2 h 22 = 14,10 €.** Seul au panier : 19,10 € (frais petite commande 5 € sous 18 €). Le texte ne doit pas cacher ces frais : proposer une formulation à Nolann (ex. « 14,10 € la pièce ; frais de 5 € sous 18 € de commande »).
-  - Copie des résultats hors scratchpad : `docs/prix_exemple_2026-10-27.md` + dossier de notes partagé (`result.json`, `price.mjs`).
-- Ancienne session = celle qui a lancé la nouvelle (`list_sessions {linked:true}`, champ `startedBy`) : **la supprimer seulement quand Nolann dit OK** (carte d'approbation). Ne rien supprimer ni archiver d'autre.
-- **Attention avant de la supprimer** : supprimer une conversation peut supprimer son worktree (mémoire « Rien de non commité en worktree »). La nouvelle session travaille dans CE dossier : tout commiter localement d'abord, et vérifier quelle session possède le worktree. S'il appartient à l'ancienne, le dire à Nolann avant la carte.
+### Passation 27/10 (après-midi)
+- Tout est commité (WIP `8e83dff` = E1/E2/E4/E5 + burger, ni construit ni vérifié ; puis SUIVI). E5 fini ; proposé non appliqué : `fr()` à l'affichage du FaqAccordion de devis-instantane (`faqs.map(f => ({q: fr(f.q), a: fr(f.a)}))`, sans toucher la chaîne du JSON-LD).
+- Prix : tout est dans `docs/prix_exemple_2026-10-27.md` (+ `N\prix-exemple\`). À vérifier avant d'écrire : le prix facturé vient-il du tranchage client (Kiri) ou serveur (`kiriSlicer.ts`, grid-apps Linux) ? Le texte ne cache pas les 5 € de frais sous 18 € : proposer la formulation à Nolann (ex. « 14,10 € la pièce ; frais de 5 € sous 18 € de commande »).
+- Nolann (27/10) : je crée moi-même la nouvelle conversation et je supprime l'ancienne. L'ancienne (`local_3fc6639f-ded6-4b4a-a5be-d76929843ca4`) possède l'ancien worktree `nasap3d-social-media-folders-171abf` : la nouvelle a son PROPRE worktree, donc la suppression de l'ancienne ne touche pas au travail en cours.
 
 ### Prochain pas exact
-1. E5 et le prix sont finis. Relire les diffs E1/E2/E4/E5 (`git show 8e83dff`) ; appliquer les constats « composants du chantier » de `docs/controle_visuel_2026-10-27.md` (pas reparer), via `executant`.
+0. Dès que Nolann écrit dans la nouvelle conversation : supprimer l'ancienne `local_3fc6639f-ded6-4b4a-a5be-d76929843ca4` (`delete_session`, la carte d'approbation = son oui). Préparer le worktree (node_modules, .env, launch.json : voir État technique), mettre à jour la ligne « Branche de travail » ci-dessus.
+1. Relire les diffs E1/E2/E4/E5 (`git show 8e83dff`) ; appliquer les constats « composants du chantier » de `docs/controle_visuel_2026-10-27.md` (pas reparer), via `executant`.
 2. Item 26 (a)(b)(c) via `executant`.
-3. `npx astro build` en arrière-plan, relancer l'aperçu 4455 ; corriger `capture.mjs` (souris au coin, blur, attente > 300 ms) ; `testeur` : recaptures toutes pages × 375/768/1024/1280 (pages entières), sw == cw partout, reparer + configurateur identiques à avant.
+3. `npx astro build` en arrière-plan, relancer l'aperçu 4455 ; copier `N\outils-captures\` dans le scratchpad et corriger `capture.mjs` (chemins ; souris au coin, blur, attente > 300 ms) ; `testeur` : recaptures toutes pages × 375/768/1024/1280 (pages entières), sw == cw partout, reparer + configurateur identiques à avant.
 4. Captures avant/après côte à côte + liste des écarts à Nolann, galerie republiée (page ville menus fermés). Commit local sur son oui.
 5. Item 24 : chiffre CHOISI (14,10 €, PETG, voir plus haut). Vérifier d'abord que le prix facturé vient du même moteur (client Kiri ou serveur), puis remplacer 31,76 € et sa ligne de réglages aux emplacements : `QuoteWizard.tsx:194-195`, `impression-3d-particuliers.astro:40,57`, `impression-3d-en-ligne.astro:40,67`, `prix-impression-3d.astro:38-39,45,98-99`, `PRICING.md` L159-176. Montrer la formulation des frais avant de l'écrire. Ensuite item 19, villes (item 20), Bing, push sur son oui. `resize_window` preset desktop à la fin.
