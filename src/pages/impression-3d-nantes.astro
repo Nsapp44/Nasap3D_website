@@ -1,5 +1,7 @@
 ---
 import LocalSeoLayout from "../layouts/LocalSeoLayout.astro";
+import ExpertiseSteps from "../components/ExpertiseSteps.astro";
+import { fr } from "../lib/typo";
 ---
 
 <LocalSeoLayout
@@ -25,8 +27,47 @@ import LocalSeoLayout from "../layouts/LocalSeoLayout.astro";
       a: "L'atelier n'est pas ouvert à la visite libre, mais contactez-nous pour convenir d'un créneau de remise en main propre à Nantes.",
     },
     {
+      q: "Dois-je payer en commandant ?",
+      a: "Non. Votre pièce est d'abord vérifiée par l'atelier (sous 24 à 48 h). Vous ne payez qu'une fois la commande acceptée.",
+    },
+    {
+      q: "Le retrait à l'atelier est-il payant ?",
+      a: "Non, le retrait à l'atelier est gratuit, sur rendez-vous. La livraison est aussi possible partout en France et en Europe.",
+    },
+    {
+      q: "Faites-vous des maquettes et des réparations de pièces à Nantes ?",
+      a: "Oui. Nous réalisons des maquettes sur mesure et nous refaisons des pièces cassées ou introuvables, par modélisation puis impression.",
+    },
+    {
       q: "Quels sont les délais pour une pièce à Nantes ?",
       a: "Le délai dépend surtout du temps d'impression et de la charge de l'atelier — la pièce étant produite sur place, il n'y a pas de délai de transport entre atelier et transporteur.",
     },
   ]}
-/>
+>
+  <section class="nx">
+    <h2 class="nx-kicker">Comment ça se passe à Nantes</h2>
+    <p class="nx-p">{fr("Vous déposez votre fichier 3D (STL) sur le devis instantané et le prix est calculé sur votre pièce. Avant tout paiement, nous vérifions la pièce : faisabilité, matière, orientation. Si un point pose problème, nous vous écrivons ou vous appelons. Une fois la commande acceptée, vous payez depuis votre compte, puis la pièce est imprimée à l'atelier.")}</p>
+    <ExpertiseSteps style="margin: 0 0 18px" />
+    <h2 class="nx-kicker">Retrait à Nantes ou livraison</h2>
+    <p class="nx-p">{fr("Le retrait à l'atelier est gratuit, sur rendez-vous. Vous pouvez aussi être livré partout en France et en Europe. Pour un prototype à ajuster plusieurs fois, la remise en main propre à Nantes évite les délais d'envoi.")}</p>
+    <h2 class="nx-kicker">Ce que nous imprimons pour les Nantais</h2>
+    <ul class="nx-list">
+      <li><a href="/maquette-impression-3d">Maquettes sur mesure</a> : architecture, produit, présentation.</li>
+      <li><a href="/reparer-piece-3d">Pièces cassées ou introuvables à refaire</a> : nous modélisons puis imprimons.</li>
+      <li><a href="/prix-impression-3d">Prototypes et petites séries</a> : prix détaillés et exemple chiffré (cube de 60&nbsp;mm en PETG, 23,75&nbsp;€).</li>
+      <li><a href="/materiaux-impression-3d">Choix de la matière</a> : PLA, PETG, ABS, ASA, TPU, nylon, résine.</li>
+      <li><a href="/machines">Nos machines</a> : le parc utilisé à l'atelier.</li>
+    </ul>
+    <p class="nx-p">{fr("Vous êtes à Angers ou à Cholet ? Nous avons aussi une page pour ")}<a href="/impression-3d-angers">Angers</a> {fr("et une pour ")}<a href="/impression-3d-cholet">Cholet</a>.</p>
+  </section>
+</LocalSeoLayout>
+
+<style>
+  .nx { max-width: 800px; margin: 0 auto; padding: 0 24px 40px; }
+  .nx-kicker { font: 600 11.5px "Inter", sans-serif; letter-spacing: 1px; color: #ff5a3c; text-transform: uppercase; margin: 22px 0 8px; }
+  .nx-p { font: 400 12.5px/1.8 "Inter", sans-serif; color: rgba(255,255,255,0.55); max-width: 640px; margin-bottom: 14px; }
+  .nx-list { list-style: none; padding: 0; margin: 0 0 16px; display: grid; gap: 8px; max-width: 640px; }
+  .nx-list li { border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: #1a1917; padding: 10px 14px; font: 400 12px/1.6 "Inter", sans-serif; color: rgba(255,255,255,0.55); }
+  .nx a { color: #ff5a3c; text-decoration: none; }
+  .nx a:hover { text-decoration: underline; }
+</style>
