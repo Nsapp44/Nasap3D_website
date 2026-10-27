@@ -24,6 +24,7 @@ Maquette validée (26/10) : https://claude.ai/artifact/P3GfWv2y1AFENNK3JTyvDF (s
 4. [~] Devis — tunnel testé jusqu'à « analyse » ; panier bloqué par la base locale (item 19).
 7/20. [ ] **Pages villes enrichies DANS ce chantier** : texte unique par ville, rien d'inventé ; Angers d'abord, capture à Nolann, puis les autres.
 8. [~] Plausible : restent « prix affiché », « ajout panier », « erreur panier » (après item 19).
+9b. [ ] Passer devant Tech3D/Abeille (demande Nolann 27/10) : guides utiles (10-15 de plus, qualité, jamais en lot), pages villes uniques, fiche 3Dnatives (inscription + contenu), French Tech/CCI Nantes (à vérifier : conditions), Google Business Profile + avis Google, avis visibles sur le site. Voir docs/concurrents_tech3d_abeille3d_2026-10-27.md.
 9. [ ] Bing (Webmaster Tools, IndexNow, Places).
 10. [~] Fin : Docker complet, Nolann teste, push sur son oui.
 11-16. [ ] Après ce chantier : machines/REAL_MAX/real-17 ; hors site ; réponses Ads ; SEO /maquette-impression-3d ; campagne Ads maquettes (aucune dépense sans OK) ; og:image → sa maquette sur confirmation.
