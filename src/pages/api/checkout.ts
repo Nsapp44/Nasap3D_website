@@ -2,7 +2,8 @@ import { z } from "zod";
 import { apiHandler, json, jsonError } from "../../lib/api/handler";
 import { requireAuth } from "../../lib/api/auth";
 import { prisma } from "../../lib/server/prisma";
-import { getCartSummary, getCartTotalWeightG, getCartParcelRequirement, getCartTotalPrintMinutes } from "../../lib/server/cart";
+import { getCartSummary, getCartPieces, getCartTotalPrintMinutes } from "../../lib/server/cart";
+import { packPieces } from "../../lib/server/packing";
 import { createOrderFromCart, EmptyCartError, type ShippingSelection } from "../../lib/server/orders";
 import { quoteShippingRates, BoxtalConfigError, BoxtalApiError } from "../../lib/server/boxtal";
 import { sendOrderPlacedEmail, notifyAdminOrderToReview } from "../../lib/server/orderEmails";
@@ -105,21 +106,27 @@ export const POST = apiHandler(async (context) => {
       mode: "PICKUP",
       rate: { operatorCode: "PICKUP", serviceCode: "PICKUP", label: "Retrait à l'atelier", cents: 0, estimatedDeliveryDate: null },
       weightG: 0,
-      parcelCm: { length: 0, width: 0, height: 0 },
-      oversized: false,
+      parcels: [],
       recipient: { ...requested.recipient, address: "", city: "", zipcode: "", country: "FR" },
     };
   } else {
+    // Rangement en colis : une pièce trop grande pour nos cartons ne peut pas
+    // être expédiée (le retrait atelier, lui, reste possible).
+    const packed = packPieces(await getCartPieces({ userId: user.id }));
+    if (!packed.ok) {
+      return json(
+        { error: "order_too_big", message: "Expédition impossible : une pièce est trop grande pour nos colis. Choisissez le retrait à l'atelier ou contactez-nous.", piece: packed.piece },
+        { status: 409 },
+      );
+    }
     // The shipping price is NEVER trusted from the client — same principle
     // as the print quote itself. We re-run the real Boxtal rate simulation
     // server-side, right here, and only ever charge the cents it just
     // returned for the requested carrier.
-    const weightG = await getCartTotalWeightG({ userId: user.id });
-    const parcelRequirement = await getCartParcelRequirement({ userId: user.id });
     const printMinutes = await getCartTotalPrintMinutes({ userId: user.id });
     let rates;
     try {
-      rates = await quoteShippingRates(requested.recipient, weightG, parcelRequirement, printMinutes);
+      rates = await quoteShippingRates(requested.recipient, packed.parcels, printMinutes);
     } catch (err) {
       if (err instanceof BoxtalConfigError) return jsonError(503, "shipping_not_configured");
       if (err instanceof BoxtalApiError) return jsonError(502, "shipping_provider_error");
@@ -132,8 +139,7 @@ export const POST = apiHandler(async (context) => {
       mode: requested.mode,
       rate,
       weightG: rates.weightUsedG,
-      parcelCm: rates.parcelCm,
-      oversized: rates.oversized,
+      parcels: rates.parcels,
       recipient: requested.recipient,
       relayPoint: requested.mode === "RELAY" ? requested.relayPoint : undefined,
     };

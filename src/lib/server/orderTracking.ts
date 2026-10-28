@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { checkLabelStatus, BoxtalApiError, BoxtalConfigError } from "./boxtal";
 import { deleteFile } from "./storage";
@@ -30,6 +31,7 @@ export const SHIPPING_DATA_PURGE = {
   shippingParcelWidthCm: null,
   shippingParcelHeightCm: null,
   shippingOversized: false,
+  shippingParcels: Prisma.DbNull,
   boxtalOrderRef: null,
   trackingNumber: null,
   labelPurchasedAt: null,

@@ -4,6 +4,7 @@ import { useAdminAuth } from "../../hooks/useAdminAuth";
 import NavAuthIcon from "../NavAuthIcon";
 import OrdersTab from "./OrdersTab";
 import StockTab from "./StockTab";
+import ShippingTab from "./ShippingTab";
 import QuoteBuilderTab from "./QuoteBuilderTab";
 
 interface Settings {
@@ -17,11 +18,11 @@ interface Settings {
 
 export default function AdminPage() {
   const authStatus = useAdminAuth();
-  const [tab, setTab] = useState<"orders" | "stock" | "quote">("orders");
+  const [tab, setTab] = useState<"orders" | "stock" | "shipping" | "quote">("orders");
   const [settings, setSettings] = useState<Settings | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  function selectTab(next: "orders" | "stock" | "quote") {
+  function selectTab(next: "orders" | "stock" | "shipping" | "quote") {
     setTab(next);
     setMobileNavOpen(false);
   }
@@ -82,6 +83,9 @@ export default function AdminPage() {
                 <span onClick={() => selectTab("stock")} className={`admin-tab${tab === "stock" ? " active" : ""}`}>
                   Stock filament
                 </span>
+                <span onClick={() => selectTab("shipping")} className={`admin-tab${tab === "shipping" ? " active" : ""}`}>
+                  Expédition
+                </span>
                 <span onClick={() => selectTab("quote")} className={`admin-tab${tab === "quote" ? " active" : ""}`}>
                   Devis
                 </span>
@@ -131,6 +135,7 @@ export default function AdminPage() {
 
           {tab === "orders" && <OrdersTab />}
           {tab === "stock" && <StockTab settings={settings} onSettingsSaved={loadSettings} />}
+          {tab === "shipping" && <ShippingTab />}
           {tab === "quote" && <QuoteBuilderTab />}
         </>
       )}
@@ -148,7 +153,7 @@ export default function AdminPage() {
         .nav-hover-scale:hover { transform: scale(1.08); color: #ff5a3c; }
         .admin-nav { display: flex; align-items: center; gap: 32px; }
         .admin-tabs { display: flex; gap: 26px; font: 500 13px 'Inter',sans-serif; color: rgba(255,255,255,.62); }
-        .admin-tab { cursor: pointer; padding-bottom: 4px; color: rgba(255,255,255,.5); font-weight: 500; border-bottom: 2px solid transparent; }
+        .admin-tab { cursor: pointer; padding-bottom: 4px; white-space: nowrap; color: rgba(255,255,255,.5); font-weight: 500; border-bottom: 2px solid transparent; }
         .admin-tab.active { color: #f3f1ec; font-weight: 600; border-bottom: 2px solid #ff5a3c; }
         .admin-account { display: flex; align-items: center; gap: 18px; font: 500 12px 'Inter',sans-serif; color: rgba(255,255,255,.75); }
         .logout-link { cursor: pointer; color: rgba(255,255,255,.6); font: 500 12px 'Inter',sans-serif; transition: color .2s ease; }
@@ -158,7 +163,7 @@ export default function AdminPage() {
         .admin-burger.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
         .admin-burger.is-open span:nth-child(2) { opacity: 0; }
         .admin-burger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-        @media (max-width: 720px) {
+        @media (max-width: 900px) {
           .admin-header { padding: 14px 20px; }
           .admin-header-right { gap: 14px; }
           .admin-quick-account { gap: 10px; }

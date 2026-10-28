@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { apiHandler, json, jsonError } from "../../../lib/api/handler";
 import { requireAuth } from "../../../lib/api/auth";
-import { getCartTotalWeightG, getCartParcelRequirement, getCartTotalPrintMinutes } from "../../../lib/server/cart";
+import { getCartPieces, getCartTotalPrintMinutes } from "../../../lib/server/cart";
+import { packPieces } from "../../../lib/server/packing";
 import { quoteShippingRates, BoxtalConfigError, BoxtalApiError } from "../../../lib/server/boxtal";
 import { enforceRateLimit, clientIp } from "../../../lib/api/rateLimit";
 
@@ -23,13 +24,19 @@ export const POST = apiHandler(async (context) => {
   const body = recipientSchema.safeParse(await context.request.json().catch(() => null));
   if (!body.success) return jsonError(400, "invalid_body");
 
-  const weightG = await getCartTotalWeightG({ userId: user.id });
-  if (weightG <= 0) return jsonError(400, "empty_cart");
-  const parcelRequirement = await getCartParcelRequirement({ userId: user.id });
+  const pieces = await getCartPieces({ userId: user.id });
+  if (pieces.length === 0) return jsonError(400, "empty_cart");
+  const packed = packPieces(pieces);
+  if (!packed.ok) {
+    return json(
+      { error: "order_too_big", message: "Expédition impossible : une pièce est trop grande pour nos colis. Choisissez le retrait à l'atelier ou contactez-nous.", piece: packed.piece },
+      { status: 409 },
+    );
+  }
   const printMinutes = await getCartTotalPrintMinutes({ userId: user.id });
 
   try {
-    const rates = await quoteShippingRates(body.data, weightG, parcelRequirement, printMinutes);
+    const rates = await quoteShippingRates(body.data, packed.parcels, printMinutes);
     if (!rates.relay && !rates.home) return jsonError(502, "no_offer_available");
     return json(rates);
   } catch (err) {

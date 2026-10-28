@@ -2,6 +2,7 @@ import { apiHandler, json, jsonError } from "../../../../../lib/api/handler";
 import { requireAdmin } from "../../../../../lib/api/auth";
 import { prisma } from "../../../../../lib/server/prisma";
 import { purchaseShippingLabel, BoxtalConfigError, BoxtalApiError } from "../../../../../lib/server/boxtal";
+import type { Parcel } from "../../../../../lib/server/packing";
 import { refreshOrderTrackingStatus } from "../../../../../lib/server/orderTracking";
 
 // Direct port of POST /admin/orders/:id/shipping-label — achat RÉEL de
@@ -38,14 +39,19 @@ export const POST = apiHandler(async (context) => {
   if (order.shippingMode === "RELAY" && !order.relayPointCode) {
     return jsonError(409, "missing_relay_point");
   }
-  // La pièce ne rentrait dans aucun des 3 formats de carton connus au
-  // moment du paiement (voir PARCEL_BOXES_CM dans boxtal.ts) — le client a
-  // quand même payé un tarif estimé avec le plus grand carton, mais on
-  // n'achète jamais une étiquette automatiquement sur cette base : il faut
-  // vérifier l'emballage réel et le faire manuellement sur Boxtal.
-  if (order.shippingOversized) {
-    return jsonError(409, "parcel_oversized");
-  }
+  // Colis figés au paiement (shippingParcels, voir packing.ts). Commandes
+  // anciennes (avant le multi-colis) : un seul colis reconstruit depuis les
+  // champs hérités.
+  const parcels: Parcel[] = Array.isArray(order.shippingParcels)
+    ? (order.shippingParcels as unknown as Parcel[])
+    : [
+        {
+          box: "S",
+          outerCm: [order.shippingParcelLengthCm, order.shippingParcelWidthCm, order.shippingParcelHeightCm],
+          weightG: order.shippingWeightG,
+          pieces: [],
+        },
+      ];
 
   try {
     const result = await purchaseShippingLabel({
@@ -58,12 +64,7 @@ export const POST = apiHandler(async (context) => {
         zipcode: order.recipientZipcode,
         country: order.recipientCountry,
       },
-      weightG: order.shippingWeightG,
-      parcelCm: {
-        length: order.shippingParcelLengthCm,
-        width: order.shippingParcelWidthCm,
-        height: order.shippingParcelHeightCm,
-      },
+      parcels,
       operatorCode: order.shippingCarrierCode,
       serviceCode: order.shippingServiceCode,
       mode: order.shippingMode as "RELAY" | "HOME",

@@ -31,6 +31,8 @@ compte Boxtal). Ça appelle `POST /admin/orders/:id/shipping-label`, qui :
    que ceux figés au moment du paiement (jamais recalculés) ;
 3. stocke la référence Boxtal et l'URL de l'étiquette sur la commande.
 
+**Plusieurs colis** : un seul achat Boxtal par commande (`colis_1…colis_N` repris de `Order.shippingParcels`), un seul bordereau PDF qui contient les étiquettes de tous les colis, et un numéro de suivi par colis, stockés séparés par des virgules dans `trackingNumber`. Vérifié en bac à sable le 27/10/2026 (`scripts/boxtal-sandbox-multi-label.mjs`, qui refuse de tourner hors de `test.envoimoinscher.com`).
+
 Certains transporteurs génèrent l'étiquette de façon asynchrone : si
 `labels/label` est vide dans la réponse de `api/v1/order`, l'admin voit
 "Étiquette en cours de génération…" avec un bouton "Vérifier" qui appelle
@@ -80,56 +82,76 @@ offres renvoyées, celle Mondial Relay "CpourToi" (point relais) et celle
 Colissimo "ColissimoAccess" (domicile, sans signature) — les moins chères
 de chaque catégorie.
 
-## Poids et emballage
+## Poids, cartons et rangement en plusieurs colis (depuis le 27/10/2026)
 
-- Poids facturé = poids réel des pièces (issu du calcul de devis) **+ 20%**
-  pour l'emballage, avec un plancher de 50g (même une pièce très légère
-  part dans un vrai carton).
-- **Un seul carton par commande.** Le carton est choisi parmi 3 formats
-  réels (`PARCEL_BOXES_CM` dans `boxtal.ts`, en cm) :
-  12×12×10, 20×20×20, 40×35×30. `pickParcelCm()` prend le plus petit qui
-  satisfait à la fois :
-  - l'encombrement réel (longueur/largeur/hauteur, avec rotation autorisée)
-    de la pièce la plus grosse du panier, plus **1cm de marge de chaque
-    côté** sur chaque dimension (`PARCEL_MARGIN_MM`) ;
-  - le volume total de **toutes** les pièces du panier (somme, quantités
-    incluses) qui doit rester sous 95% du volume **utile** du carton — le
-    carton une fois qu'on lui retire les mêmes 1cm de marge par face que
-    ci-dessus (donc 2cm de moins sur chaque dimension), pas son volume brut.
-    Marge des 5% volontairement petite : la marge de 1cm par face est déjà
-    retirée du volume, pas besoin d'en rajouter une deuxième par-dessus.
-    Sert surtout à éviter qu'une commande avec par exemple 2 grosses pièces
-    - 1 petite tienne "sur le papier" pièce par pièce mais pas une fois
-      regroupées dans le même carton (pas de vrai bin-packing 3D ici, ce sont
-      des pièces imprimées irrégulières, pas des blocs).
-      Si aucun des 3 formats ne convient (`pickParcelCm()` renvoie `null`), voir
-      "Pièces hors gabarit" plus bas.
-- **1,50 € de frais d'emballage** (`PACKAGING_FEE_CENTS` dans `boxtal.ts`)
-  ajoutés au prix brut du transporteur dans `quoteShippingRates()` — donc
-  répercutés à la fois sur l'aperçu affiché en panier et sur le montant
-  réellement facturé au checkout (même fonction pour les deux). Il n'y a
-  actuellement aucune option "retrait à l'atelier" dans le tunnel de
-  commande en ligne (seulement RELAY/HOME, tous deux de la vraie
-  expédition) — ce frais s'applique donc à toute commande passée en ligne.
+Code : `src/lib/server/packing.ts` (`packPieces()`, testé dans `test/packing.test.ts`).
 
-## Pièces hors gabarit (aucun des 3 cartons ne convient)
+**5 cartons karton.eu** (`BOXES`, intérieur en mm, extérieur en cm envoyé à Boxtal) :
 
-Rare en pratique (`pickPrinter()` dans `slicer.ts` refuse déjà la plupart
-des pièces trop grandes pour le plateau H2C), mais possible pour une pièce
-volumineuse presque cubique, ou plusieurs grosses pièces dans la même
-commande. Le client n'est **jamais** bloqué : `quoteShippingRates()` utilise
-quand même le plus grand carton (40×35×30cm) comme estimation raisonnable —
-le prix Boxtal dépend surtout du poids, donc l'écart reste faible — et
-marque `oversized: true`, figé sur la commande (`Order.shippingOversized`)
-au moment du paiement.
+| Carton | Intérieur (mm) | Extérieur (cm) | Charge max | Relais | Locker |
+|---|---|---|---|---|---|
+| S | 140×140×100 | 15×15×11 | 6 kg | oui | oui |
+| M | 200×200×200 | 21×21×21 | 6 kg | oui | oui |
+| L | 400×350×300 | 41×36×31 | 6 kg | oui | oui |
+| XL | 600×400×300 | 62×42×33 | 25 kg (double cannelure) | oui | non |
+| XXL | 786×386×378 | 80×40×40 | 25 kg (double cannelure) | non (Colissimo seul) | non |
 
-C'est seulement à l'achat réel de l'étiquette (`POST
-/admin/orders/:id/shipping-label`, argent réel) que ce flag bloque l'appel
-automatique : la route renvoie `409 { error: "parcel_oversized" }` au lieu
-d'appeler `purchaseShippingLabel()`. Dans `Admin.dc.html`, ça affiche une
-alerte "Hors gabarit" au clic sur "Créer l'étiquette" — à cette commande
-précise, il faut alors passer par le site Boxtal directement (choisir soi-
-même le vrai emballage) plutôt que par ce bouton.
+**Rangement** : chaque quantité du panier devient une pièce (`getCartPieces()` dans `cart.ts`, bbox mise à l'échelle + poids). `packPieces()` :
+- une pièce rentre dans un carton si sa bbox + 1 cm de marge par face (`PARCEL_MARGIN_MM`) tient dans l'intérieur, rotation autorisée ;
+- le volume cumulé des pièces d'un colis reste sous 95 % du volume utile (`PACKING_EFFICIENCY`) ; pas de vrai rangement 3D (pièces irrégulières) ;
+- poids d'un colis = (pièces + carton vide) × 1,1, arrondi au gramme (pas au 0,5 kg), plancher 300 g ; c'est ce même poids qui sert à la limite 25 kg, au devis et à l'étiquette. Cartons vides (karton.eu) : S 50 g, M 130, L 380, XL 950, XXL 1140 ;
+- tri par volume décroissant, premier colis ouvert où la pièce tient, sinon nouveau colis ; à la fin chaque colis est ramené au plus petit carton qui le contient. Résultat : le moins de colis possible, puis les plus petits cartons.
+- le carton indiqué est un **format maximum** : à l'atelier, un carton plus petit convient si les pièces y rentrent.
+
+**Prix client** : un seul prix = somme des tarifs Boxtal des colis (devis `colis_1…colis_N` en une requête) + **1,50 € d'emballage par colis** (`PACKAGING_FEE_CENTS`). Mondial Relay (point relais) n'est proposé que si **aucun** colis n'est XXL (S, M, L, XL passent) ; sinon Colissimo seul. Locker : seulement si **tous** les colis sont S, M ou L.
+
+**Plafond 25 kg par colis** (plus petite limite transporteurs : Mondial Relay et locker 25 kg ; Colissimo 30 kg). XL et XXL sont prévus pour 30 kg mais plafonnés à 25 kg (`maxWeightG`). Règles : XL = relais oui, locker non ; XXL (L+l+h = 160 > 150) = Colissimo seul.
+
+**Messages du panier** (`GET /api/cart` renvoie `parcelCount`, `relayOk`, `lockerOk`) : « N colis » au-delà d'un colis, « Locker impossible pour cette commande », « Colissimo seulement ». Chaque message finit par « contactez-nous ».
+
+**Stockage** : `Order.shippingParcels` (JSON : carton, extérieur, poids, pièces de chaque colis), figé à la commande. `shippingWeightG` = total, `shippingParcel*Cm` = 1er colis (compatibilité). Les anciennes commandes (`shippingParcels` vide) gardent l'affichage d'avant.
+
+**Stock de cartons** : table `ShippingBoxStock`, onglet admin « Expédition » (`ShippingTab.tsx`, `GET/PATCH /api/admin/shipping-boxes`). Stock **manuel** uniquement (+/−, jamais sous 0, aucune baisse automatique) ; à 0, la carte commande affiche « Stock à 0 : acheter ce carton » avec le lien karton.eu.
+
+## Commande impossible (pièce trop grande)
+
+Si une seule pièce ne rentre dans aucun carton (même le XXL), `packPieces()` renvoie `piece_too_big`. Cas rare (les machines impriment 30×30 cm au maximum), gardé au cas où. `GET /api/cart` renvoie alors `tooBigPiece` et le panier **grise « Expédition »** : seul le **retrait à l'atelier** reste possible, avec le message « Expédition impossible pour cette commande : la pièce « … » est trop grande pour nos colis. Retrait à l'atelier possible, ou contactez-nous ». Côté serveur, `POST /api/shipping/rates` et `POST /api/checkout` en mode RELAY/HOME répondent `409 { error: "order_too_big" }` ; PICKUP passe (décision de Nolann, 27/10, qui remplace « bloqué même en retrait »). Il n'y a plus de commande « hors gabarit » : `Order.shippingOversized` reste en base mais n'est plus écrit à `true`.
+
+**Remise en main propre** : après paiement, passer la commande en « En impression » puis « Livré » (pas de numéro de suivi).
+
+### Taille du carton et prix : test du 27/10/2026
+
+Appels de devis uniquement (`api/v1/cotation`, hôte bac à sable
+`test.envoimoinscher.com`), Nantes → Paris, même poids, seules les
+dimensions changent. Prix TTC transporteur, sans les 1,50 € d'emballage :
+
+| Carton (cm) | L+l+h | Mondial Relay point relais (8,4 kg) | Colissimo domicile (8,4 kg) | Colissimo (2 kg) |
+|---|---|---|---|---|
+| 40×35×30 | 105 | 14,36 | 17,90 | 10,92 |
+| 60×40×40 | 140 | 14,36 | 17,90 | 10,92 |
+| 100×25×20 | 145 | 14,36 | 17,90 | |
+| 101×25×20 (côté > 100) | 146 | 14,36 | 25,10 | |
+| 121×15×10 (côté > 120) | 146 | aucune offre | 25,10 | |
+| 70×45×35 | 150 | 14,36 | 25,10 | |
+| 70×45×36 | 151 | aucune offre | 25,10 | |
+| 80×50×50 | 180 | aucune offre | 25,10 | 18,12 |
+| 100×50×50 | 200 | aucune offre | 25,10 | |
+| 100×51×50 | 201 | aucune offre | aucune offre | |
+| 100×60×50 | 210 | aucune offre | aucune offre | |
+
+Conclusions :
+- **La taille exacte ne change pas le prix** : seul le poids compte, plus un
+  palier de taille (pas de poids volumétrique chez ces deux transporteurs).
+- Mondial Relay point relais : proposé tant que L+l+h ≤ 150 et côté ≤ 120.
+- Colissimo : prix normal si L+l+h ≤ 150 et côté ≤ 100 ; **+7,20 € TTC**
+  sinon, jusqu'à L+l+h = 200 ; refusé au-delà de 200.
+- Bizarrerie notée : avec un côté > 100 et une somme ≤ 150, le bac à sable
+  applique déjà le supplément Colissimo (cohérent avec La Poste).
+- Limite : bac à sable, à recouper avec un vrai devis de production.
+
+### Plusieurs colis : test du 27/10/2026 (bac à sable, cotation seule)
+
+L'API v1 `cotation` accepte `colis_1.*`, `colis_2.*`, `colis_3.*` dans une même requête et renvoie un prix total. Nantes → Paris, Colissimo Access TTC : 61×41×32 4 kg = 13,07 € ; 80×40×40 4 kg = 20,27 € ; les deux ensemble = 33,34 € (somme exacte). 3 × (61×41×32, 3 kg) = 35,93 € Colissimo, 20,59 € Mondial Relay. Mondial Relay reste proposé en multi-colis si chaque colis respecte ses limites. À recouper avec un devis de production.
 
 ## Délai de production
 

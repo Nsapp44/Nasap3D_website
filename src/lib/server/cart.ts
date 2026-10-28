@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { discountForQty } from "./pricing";
+import type { PackPiece } from "./packing";
 
 export interface CartLine {
   id: string;
@@ -79,8 +80,8 @@ export async function getCartSummary(identity: { userId: string } | { sessionId:
 }
 
 // Total physical weight of everything currently in the cart — the input to
-// the shipping rate simulation (boxtal.ts adds the 20% packaging margin on
-// top of this).
+// the shipping rate simulation (the per-parcel weight, with carton and +10%,
+// is computed by packing.ts).
 export async function getCartTotalWeightG(identity: { userId: string } | { sessionId: string }): Promise<number> {
   const items = await prisma.cartItem.findMany({
     where: identity,
@@ -100,46 +101,28 @@ export async function getCartTotalPrintMinutes(identity: { userId: string } | { 
   return items.reduce((sum, item) => sum + (item.quoteJob.estimatedTimeMin ?? 0) * item.qty, 0);
 }
 
-export interface BboxMm {
-  xMm: number;
-  yMm: number;
-  zMm: number;
-}
-
-export interface CartParcelRequirement {
-  // Bounding box of the single biggest item in the cart, by volume — a box
-  // that can't even fit this alone definitely can't fit the order.
-  maxItemBboxMm: BboxMm | null;
-  // Sum of every line's bounding-box volume × qty — real 3D bin-packing
-  // isn't attempted (these are irregular custom prints, not uniform boxes);
-  // pickParcelCm() in boxtal.ts instead requires this sum to fit well under
-  // the box's own volume.
-  totalVolumeMm3: number;
-}
-
-// Feeds pickParcelCm() in boxtal.ts, which picks a shipping box from these
-// two numbers together.
-export async function getCartParcelRequirement(
-  identity: { userId: string } | { sessionId: string },
-): Promise<CartParcelRequirement> {
+// Pièces à ranger en colis (voir packing.ts) : une entrée par unité (qty 3 →
+// 3 pièces). Poids = QuoteJob.weightG, qui est par unité (le panier le
+// multiplie par qty, cf. getCartTotalWeightG).
+export async function getCartPieces(identity: { userId: string } | { sessionId: string }): Promise<PackPiece[]> {
   const items = await prisma.cartItem.findMany({
     where: identity,
-    include: { quoteJob: { select: { bboxXMm: true, bboxYMm: true, bboxZMm: true } } },
+    include: { quoteJob: { select: { bboxXMm: true, bboxYMm: true, bboxZMm: true, weightG: true, fileName: true } } },
+    orderBy: { createdAt: "asc" },
   });
-  let maxItemBboxMm: BboxMm | null = null;
-  let maxVolume = -1;
-  let totalVolumeMm3 = 0;
+  const pieces: PackPiece[] = [];
   for (const item of items) {
-    const { bboxXMm, bboxYMm, bboxZMm } = item.quoteJob;
+    const { bboxXMm, bboxYMm, bboxZMm, weightG, fileName } = item.quoteJob;
     if (bboxXMm == null || bboxYMm == null || bboxZMm == null) continue;
-    const volume = bboxXMm * bboxYMm * bboxZMm;
-    totalVolumeMm3 += volume * item.qty;
-    if (volume > maxVolume) {
-      maxVolume = volume;
-      maxItemBboxMm = { xMm: bboxXMm, yMm: bboxYMm, zMm: bboxZMm };
+    for (let n = 1; n <= item.qty; n++) {
+      pieces.push({
+        label: item.qty > 1 ? `${fileName} (${n}/${item.qty})` : fileName,
+        bboxMm: [bboxXMm, bboxYMm, bboxZMm],
+        weightG: weightG ?? 0,
+      });
     }
   }
-  return { maxItemBboxMm, totalVolumeMm3 };
+  return pieces;
 }
 
 // Called right after a successful login/signup: an anonymous visitor's cart
