@@ -262,7 +262,10 @@ function shipperIdentity(): ShipperIdentity {
 // téléphone n'est pas valide" — hit for real on a FR-domestic order, so the
 // earlier "FR-domestic accepts local format" assumption was wrong) — always
 // convert to E.164 before sending, both FR and international.
-function toInternationalFrPhone(local: string): string {
+export function toInternationalFrPhone(local: string): string {
+  const trimmed = local.trim();
+  // Already international (+33…, +32…): keep, only strip separators.
+  if (trimmed.startsWith("+")) return "+" + trimmed.replace(/\D/g, "");
   const digits = local.replace(/\D/g, "");
   return "+33" + (digits.startsWith("0") ? digits.slice(1) : digits);
 }
@@ -444,7 +447,7 @@ export async function purchaseShippingLabel(input: LabelPurchaseInput): Promise<
     "recipient.firstname": firstname,
     "recipient.lastname": lastname,
     "recipient.email": input.recipient.email,
-    "recipient.phone": input.recipient.phone,
+    "recipient.phone": toInternationalFrPhone(input.recipient.phone),
     ...parcelParams(input.parcels),
     collection_date: isoDate(nextOrSameBusinessDay(new Date())),
     delay: "aucun",

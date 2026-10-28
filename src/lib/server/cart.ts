@@ -80,8 +80,8 @@ export async function getCartSummary(identity: { userId: string } | { sessionId:
 }
 
 // Total physical weight of everything currently in the cart — the input to
-// the shipping rate simulation (boxtal.ts adds the 20% packaging margin on
-// top of this).
+// the shipping rate simulation (the per-parcel weight, with carton and +10%,
+// is computed by packing.ts).
 export async function getCartTotalWeightG(identity: { userId: string } | { sessionId: string }): Promise<number> {
   const items = await prisma.cartItem.findMany({
     where: identity,
