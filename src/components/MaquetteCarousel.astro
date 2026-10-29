@@ -2,61 +2,24 @@
 // Carrousel de maquettes « 360° » : viewer canvas 2D « tourne en glissant » sur des images pré-rendues
 // (aucun fichier 3D en ligne). Images produites par scripts/build-maquette-frames.mjs dans
 // public/assets/maquettes/<dir>/{base,sm,rank,glow}/e<élévation>_a<NNN>.{avif,webp}.
-// Pour ajouter une maquette : ajouter une entrée ici + ses images.
+// Liste des maquettes : src/data/maquettes.ts (source unique ; pour en ajouter ou retirer une, voir l'en-tête de ce fichier).
 // `soon: true` = maquette « À venir » : slide générique, aucune image ni canvas, rien n'est chargé.
-interface Maquette {
-  id: string;
-  title: string;
-  caption: string;
-  detail: string; // phrase propre à la maquette, affichée sous le viewer
-  dir?: string; // dossier des images pré-rendues
-  elevs?: number[]; // élévations disponibles (degrés), du plus bas au plus haut
-  frames?: number; // nombre d'azimuts (un tour complet)
-  startEl?: number; // index d'élévation de départ
-  posterWebp?: string; // image statique : aperçu avant chargement et repli
-  posterAlt?: string;
-  soon?: boolean;
-}
+import { MAQUETTES_ACTIVES, type Maquette } from "../data/maquettes";
 
 // Texte commun aux maquettes réelles (tout est « possible », rien d'obligatoire).
 const COMMON =
   "Nos maquettes ne sortent pas toutes brutes de l'imprimante : ponçage puis peinture possibles, plusieurs couleurs et matières possibles, détails rapportés.";
 
-const MAQUETTES: Maquette[] = [
-  {
-    id: "cellule",
-    title: "Maquette cellule",
-    caption: "Modèle pédagogique en coupe",
-    detail: "Ici, la coque verte est peinte et l'intérieur est imprimé en couleur.",
-    dir: "/assets/maquettes/cellule",
-    elevs: [12, 28, 55],
-    frames: 72,
-    startEl: 1,
-    posterWebp: "/assets/real-8.webp",
-    posterAlt: "Maquette de cellule en coupe, aperçu avant chargement de la vue à 360°",
-  },
-  {
-    id: "fluidique",
-    title: "Maquette fluidique",
-    caption: "À venir",
-    detail: "Prochainement : la maquette d'un circuit fluidique, à explorer en 3D.",
-    soon: true,
-  },
-  {
-    id: "caravane",
-    title: "Caravane",
-    caption: "À venir",
-    detail: "Prochainement : une caravane modélisée en 3D, à explorer sous tous les angles.",
-    soon: true,
-  },
-];
+const first = MAQUETTES_ACTIVES[0];
+const posterOf = (m: Maquette) => m.posterWebp || (m.dir && m.elevs ? `${m.dir}/sm/e${m.elevs[m.startEl ?? 0]}_a000.webp` : "");
 ---
 
-<div class="mq" data-mq data-items={JSON.stringify(MAQUETTES)} data-common={COMMON}>
+{first && (
+<div class="mq" data-mq data-items={JSON.stringify(MAQUETTES_ACTIVES)} data-common={COMMON}>
   <div class="mq-card">
     <div class="mq-stage" tabindex="0" role="group" aria-roledescription="carrousel" aria-label="Maquettes à 360°">
-      <img class="mq-poster" data-src={MAQUETTES[0].posterWebp} alt={MAQUETTES[0].posterAlt} width="600" height="450" decoding="async" />
-      <canvas class="mq-canvas" role="img" aria-label={`${MAQUETTES[0].title} : vue à 360°. Flèches du clavier ou glisser pour tourner, molette ou pincement pour zoomer.`}></canvas>
+      <img class="mq-poster" data-src={posterOf(first)} alt={first.posterAlt} width="600" height="450" decoding="async" />
+      <canvas class="mq-canvas" role="img" aria-label={`${first.title} : vue à 360°. Flèches du clavier ou glisser pour tourner, molette ou pincement pour zoomer.`}></canvas>
       <div class="mq-glow" aria-hidden="true"></div>
       <div class="mq-loader" role="status"><span class="mq-spin" aria-hidden="true"></span><span class="mq-loader-txt">Chargement de la maquette…</span></div>
       <div class="mq-soon" hidden>
@@ -78,7 +41,7 @@ const MAQUETTES: Maquette[] = [
     </div>
     <div class="mq-grip" hidden aria-hidden="true"><span></span></div>
     <div class="mq-foot">
-      <p class="mq-caption" aria-live="polite"><strong>{MAQUETTES[0].title}</strong> <span>{MAQUETTES[0].caption}</span></p>
+      <p class="mq-caption" aria-live="polite"><strong>{first.title}</strong> <span>{first.caption}</span></p>
       <div class="mq-meta" hidden>
         <div class="mq-dots" role="group" aria-label="Choisir une maquette"></div>
         <span class="mq-count">1 / 1</span>
@@ -86,10 +49,11 @@ const MAQUETTES: Maquette[] = [
     </div>
     <div class="mq-detail" aria-live="polite">
       <p class="mq-detail-common">{COMMON}</p>
-      <p class="mq-detail-own">{MAQUETTES[0].detail}</p>
+      <p class="mq-detail-own">{first.detail}</p>
     </div>
   </div>
 </div>
+)}
 
 <script is:inline>
   (() => {
@@ -243,13 +207,14 @@ const MAQUETTES: Maquette[] = [
         v.base.set(key(e, a), await fetchBase(v, e, a));
         if (v === V) v.dirty = true;
       };
+      const withLed = !!v.item.led; // couche LED (rank/glow) seulement si la maquette la déclare
       const loadLed = async ([e, a]) => {
         const k = key(e, a);
         const [r, g] = await Promise.all([fetchLayer(v, "rank", e, a), fetchLayer(v, "glow", e, a)]);
         v.rank.set(k, r); v.glow.set(k, g);
       };
       pool(order.slice(1, nMid), CONC_BASE, loadBase).then(() => touched).then(() => pool(order.slice(nMid), CONC_BASE, loadBase));
-      pool(order.slice(0, nMid), CONC_LED, loadLed).then(() => touched).then(() => pool(order.slice(nMid), CONC_LED, loadLed));
+      if (withLed) pool(order.slice(0, nMid), CONC_LED, loadLed).then(() => touched).then(() => pool(order.slice(nMid), CONC_LED, loadLed));
     }
 
     function shown() {
@@ -279,6 +244,7 @@ const MAQUETTES: Maquette[] = [
     function ledOf(v, k) {
       let L = v.led.get(k);
       if (L) return L;
+      if (!v.item.led) return null;
       const ri = v.rank.get(k), gi = v.glow.get(k);
       if (!ri || !gi) return null;
       sctx.clearRect(0, 0, LED_W, LED_H); sctx.drawImage(ri, 0, 0, LED_W, LED_H);
@@ -490,7 +456,7 @@ const MAQUETTES: Maquette[] = [
       let v = views.get(i);
       if (!v) { v = newView(m); views.set(i, v); }
       V = v;
-      poster.removeAttribute("src"); poster.dataset.src = m.posterWebp; poster.alt = m.posterAlt; stage.classList.remove("fail");
+      poster.removeAttribute("src"); poster.dataset.src = m.posterWebp || `${m.dir}/sm/e${m.elevs[m.startEl]}_a000.webp`; poster.alt = m.posterAlt || ""; stage.classList.remove("fail");
       cv.setAttribute("aria-label", `${m.title} : vue à 360°. Flèches du clavier ou glisser pour tourner, molette ou pincement pour zoomer.`);
       msg.hidden = true; setZoom(1);
       cv.classList.remove("on"); poster.classList.remove("off"); loader.hidden = false;

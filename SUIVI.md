@@ -65,3 +65,15 @@ Shop (non urgent) : questions de SEO-COMMUN.md ; prix d'exemple 14,10 € vs 23,
 1. Montrer à Nolann http://localhost:4456 et les captures (bloc__375, bloc__1280, entete__accueil__1100__apres) pour les items 32 et 33.
 2. Lui demander son oui (pop-up) pour exécuter le plan §8 en **Sonnet medium**, avec un commit local par étape, un build, les contrôles dist et des captures. Pas de push sans son oui.
 3. À la fin : `resize_window` desktop sur le navigateur intégré.
+
+## CHANTIER : maquettes 360° (carrousel /maquette-impression-3d)
+Etat (29/10/2026) : liste pilotee par `src/data/maquettes.ts` (cellule, purification, caravane). Rendus Cycles faits hors depot (`Source machine/glb/render_obj.py`, `run_full.sh`), convertis par `scripts/build-maquette-frames.mjs <src> <id>` (base+sm seulement, pas de rank/glow : `led:true` reserve a la cellule). Non commite : attente accord de Nolann.
+
+### Supprimer une maquette (pieces de marques tierces, retrait sur demande)
+1. `src/data/maquettes.ts` : `enabled:false` sur l'entree (ou supprimer l'entree).
+2. Supprimer `public/assets/maquettes/<id>/` (ids : `purification`, `caravane`).
+3. `npm run build`, redeployer (push sur master). Aucun titre, JSON-LD, sitemap ni lien interne ne depend des maquettes ; s'il n'en reste aucune, la section carrousel disparait.
+4. Limite : l'historique git garde les images. Un retrait definitif exige une reecriture d'historique (filter-repo) + purge du cache.
+5. Source des rendus : `Source machine/` (hors depot), a supprimer aussi si demande.
+Poids : ~20 Mo par maquette dans le depot.
+A signaler a Nolann : le lettrage de marque et le logo des roulettes sont graves dans la geometrie des modeles (re-rendu 13-20 min/modele pour les aplanir) ; les feux rouges arriere de la caravane sont en FDM (plexi possible).
