@@ -103,5 +103,30 @@ export default function ContactMap({ height = "420px" }: { height?: string }) {
     };
   }, []);
 
-  return <div ref={mapElRef} style={{ width: "100%", height }} />;
+  function recenter() {
+    const map = mapRef.current;
+    if (!map) return;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) map.setView(NASAP3D_COORDS, 6, { animate: false });
+    else map.flyTo(NASAP3D_COORDS, 6, { duration: 0.8 });
+  }
+
+  return (
+    <div style={{ position: "relative", zIndex: 0, width: "100%", height }}>
+      <div ref={mapElRef} style={{ width: "100%", height: "100%" }} />
+      <style>{`
+        .nasap-recenter{position:absolute;top:10px;right:10px;z-index:1000;width:44px;height:44px;display:flex;align-items:center;justify-content:center;padding:0;background:#1a1917;border:1px solid rgba(255,255,255,.18);border-radius:10px;color:#fff;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.35);transition:color .2s ease,border-color .2s ease}
+        .nasap-recenter:hover{color:#ff5a3c;border-color:rgba(255,90,60,.6)}
+        .nasap-recenter:focus-visible{outline:2px solid #ff5a3c;outline-offset:2px;color:#ff5a3c}
+        @media (prefers-reduced-motion: reduce){.nasap-recenter{transition:none}}
+      `}</style>
+      <button type="button" className="nasap-recenter" onClick={recenter} aria-label="Recentrer la carte" title="Recentrer la carte">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <circle cx="12" cy="12" r="3.5" />
+          <circle cx="12" cy="12" r="7.5" />
+          <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+        </svg>
+      </button>
+    </div>
+  );
 }

@@ -303,6 +303,11 @@ model Order {
   shippingParcelWidthCm  Int?
   shippingParcelHeightCm Int?
   shippingOversized      Boolean @default(false)
+  // Liste complète des colis (voir packing.ts : Parcel[]) calculée au
+  // checkout ; shippingWeightG = poids total, shippingParcel*Cm = 1er colis,
+  // shippingOversized = toujours false désormais (champs conservés pour les
+  // anciennes commandes). Null sur les commandes antérieures au multi-colis.
+  shippingParcels        Json?
   recipientName       String?
   recipientPhone      String?
   recipientAddress    String?
@@ -395,4 +400,11 @@ model ContactMessageFile {
   downloadedAt      DateTime?
 
   @@index([contactMessageId])
+}
+
+// Stock de cartons de l'atelier, saisi à la main (pas de décompte automatique).
+model ShippingBoxStock {
+  code      String   @id
+  qty       Int      @default(0)
+  updatedAt DateTime @updatedAt
 }

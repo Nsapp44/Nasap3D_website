@@ -28,6 +28,16 @@ interface Props {
   searchParams: RelaySearchParams | null;
   onPointSelected: (point: RelayPoint) => void;
   onNotice: (notice: string | null) => void;
+  // Colis trop grand pour une consigne automatique : on refuse un locker choisi sur la carte.
+  // Le widget Boxtal (v0.0.9) n'envoie que `networks[]` à son API, aucun filtre de type de
+  // point n'existe : on contrôle donc la sélection côté client (heuristique sur le nom/type).
+  hideLockers?: boolean;
+}
+
+function looksLikeLocker(point: unknown): boolean {
+  const p = point as { name?: string; type?: string; parcelPointType?: string; category?: string };
+  const text = [p.name, p.type, p.parcelPointType, p.category].filter(Boolean).join(" ");
+  return /locker|consigne|apm|automate/i.test(text);
 }
 
 // Wraps vendor/boxtal-parcel-point-map.js — ported from Cart.dc.html's
@@ -36,7 +46,7 @@ interface Props {
 // widget manages its own iframe/DOM entirely; React only needs to mount the
 // container div once and forward new search params when the address
 // changes.
-export default function BoxtalRelayMap({ searchParams, onPointSelected, onNotice }: Props) {
+export default function BoxtalRelayMap({ searchParams, onPointSelected, onNotice, hideLockers }: Props) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- vendored lib instance, no bundled types
   const mapRef = useRef<any>(null);
   const mapReadyRef = useRef(false);
@@ -45,12 +55,19 @@ export default function BoxtalRelayMap({ searchParams, onPointSelected, onNotice
   const onNoticeRef = useRef(onNotice);
   onPointSelectedRef.current = onPointSelected;
   onNoticeRef.current = onNotice;
+  const hideLockersRef = useRef(hideLockers);
+  hideLockersRef.current = hideLockers;
 
   function runPendingSearch() {
     const params = pendingSearchRef.current;
     if (!params || !mapRef.current) return;
     onNoticeRef.current(null);
     mapRef.current.searchParcelPoints(params, (point: { code: string; name: string; location: { street: string; city: string; zipCode: string } }) => {
+      if (hideLockersRef.current && looksLikeLocker(point)) {
+        onNoticeRef.current("Les lockers sont trop petits pour votre colis : choisissez un Point Relais en magasin.");
+        return;
+      }
+      onNoticeRef.current(null);
       onPointSelectedRef.current({
         code: point.code,
         name: point.name,

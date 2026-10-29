@@ -104,7 +104,7 @@ const materialsAdvice = [
 
   <div class="di-section">
     <div class="di-kicker">Sous le capot</div>
-    <div class="di-h2">Taux de remplissage&nbsp;: ce que ça change</div>
+    <h2 class="di-h2">Taux de remplissage&nbsp;: ce que ça change</h2>
     <div class="di-lead">L'intérieur d'une pièce n'est pas plein&nbsp;: une structure interne la renforce tout en économisant du temps et de la matière.</div>
     <div class="di-infill-grid">
       {
@@ -121,7 +121,7 @@ const materialsAdvice = [
 
   <div class="di-section">
     <div class="di-kicker">Vitesse ou finition</div>
-    <div class="di-h2">Qualité d'impression, en clair</div>
+    <h2 class="di-h2">Qualité d'impression, en clair</h2>
     <div class="di-quality-grid">
       {
         qualities.map((q) => (
@@ -136,7 +136,7 @@ const materialsAdvice = [
 
   <div class="di-section">
     <div class="di-kicker">Aller plus loin</div>
-    <div class="di-h2">Impression multicouleur</div>
+    <h2 class="di-h2">Impression multicouleur</h2>
     <div class="di-multicolor-banner">
       <div class="di-multicolor-text">L'impression multicouleur (plusieurs teintes sur une même pièce) est possible, mais uniquement sur devis sur-mesure — le configurateur ne la couvre pas. Décrivez votre projet et nous vous répondons avec un tarif adapté.</div>
       <a href="/contact" class="di-multicolor-cta">Me contacter</a>
@@ -145,7 +145,7 @@ const materialsAdvice = [
 
   <div class="di-section">
     <div class="di-kicker">Gabarit</div>
-    <div class="di-h2">Quelle taille de pièce est possible&#8239;?</div>
+    <h2 class="di-h2">Quelle taille de pièce est possible&#8239;?</h2>
     <div class="di-printers-grid">
       {
         printers.map((p) => (
@@ -161,7 +161,7 @@ const materialsAdvice = [
 
   <div class="di-section">
     <div class="di-kicker">Bien choisir</div>
-    <div class="di-h2">Quel matériau pour quel usage&#8239;?</div>
+    <h2 class="di-h2">Quel matériau pour quel usage&#8239;?</h2>
     <div class="di-materials-grid">
       {
         materialsAdvice.map((m) => (
@@ -192,7 +192,7 @@ const materialsAdvice = [
 
   <div class="di-section">
     <div class="di-kicker">Avant de vous lancer</div>
-    <div class="di-h2">Questions fréquentes</div>
+    <h2 class="di-h2">Questions fréquentes</h2>
     <FaqAccordion items={faqs} client:load />
   </div>
 
@@ -266,7 +266,7 @@ const materialsAdvice = [
   .di-h2 {
     font: 700 20px "Space Grotesk", sans-serif;
     color: #f3f1ec;
-    margin-bottom: 16px;
+    margin: 0 0 16px;
     text-wrap: balance;
   }
   .di-prose p {

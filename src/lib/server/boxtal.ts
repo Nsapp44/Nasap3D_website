@@ -15,6 +15,7 @@
 // to the Boxtal account) — sandbox orders are free/unbilled instead. It is
 // only ever invoked from an explicit admin action, never automatically.
 import { XMLParser } from "fast-xml-parser";
+import { parcelsRelayOk, type Parcel } from "./packing";
 
 // Overridable so local/dev can point at Boxtal's sandbox
 // (https://test.envoimoinscher.com/) with sandbox-only credentials instead
@@ -32,68 +33,22 @@ export interface ParcelCm {
   height: number;
 }
 
-// Real box formats the business actually keeps in stock (given by the
-// owner), smallest to largest — pickParcelCm() below picks the smallest one
-// that fits a piece's bounding box, one box per order.
-const PARCEL_BOXES_CM: ParcelCm[] = [
-  { length: 12, width: 12, height: 10 }, // 113×113×100mm, rounded up to whole cm
-  { length: 20, width: 20, height: 20 },
-  { length: 40, width: 35, height: 30 },
-];
-
-// ~1cm of clearance on each side of the piece, on every dimension — a piece
-// modeled at exactly the box's own size wouldn't physically go in (no room
-// for the piece itself to be handled, let alone any wrapping/filler).
-const PARCEL_MARGIN_MM = 10;
-
-// Real items don't tile a box with zero wasted space (irregular custom
-// prints, not uniform blocks) — require the combined volume of everything
-// in the cart to fit under the box's own volume with a small safety margin,
-// not 100% of it exactly. This is what catches "two large pieces + one
-// small one" not actually fitting together even though each is
-// individually smaller than the box alone. Kept small (5%, i.e. volume must
-// fit under 95% of the box) rather than a bigger margin: PARCEL_MARGIN_MM
-// above already guarantees the single biggest piece has real clearance, and
-// per the business owner, if the numbers say it fits, it fits — no need to
-// also reserve a large chunk of "unpackable" volume on top of that.
-const PACKING_EFFICIENCY = 0.95;
-
-// Picks the smallest PARCEL_BOXES_CM entry that both (a) fits the single
-// biggest item's real bounding box (allowing rotation — dimensions are
-// sorted before comparing, plus PARCEL_MARGIN_MM clearance) and (b) has
-// enough spare volume for everything else in the cart (PACKING_EFFICIENCY).
-// Returns null if nothing satisfies both. Pure/exported so admin routes can
-// tell a genuine best fit apart from the "doesn't fit anything" case
-// without duplicating this logic.
-export function pickParcelCm(
-  requirement: {
-    maxItemBboxMm: { xMm: number; yMm: number; zMm: number } | null;
-    totalVolumeMm3: number;
-  } | null,
-): ParcelCm | null {
-  if (!requirement?.maxItemBboxMm) return null;
-  const { maxItemBboxMm, totalVolumeMm3 } = requirement;
-  const partSortedMm = [maxItemBboxMm.xMm, maxItemBboxMm.yMm, maxItemBboxMm.zMm]
-    .map((mm) => mm + 2 * PARCEL_MARGIN_MM)
-    .sort((a, b) => a - b);
-  for (const box of PARCEL_BOXES_CM) {
-    const boxSortedMm = [box.length * 10, box.width * 10, box.height * 10].sort((a, b) => a - b);
-    const itemFits =
-      partSortedMm[0] <= boxSortedMm[0] && partSortedMm[1] <= boxSortedMm[1] && partSortedMm[2] <= boxSortedMm[2];
-    // Same 1cm-per-side margin as above (PARCEL_MARGIN_MM), subtracted from
-    // the box this time instead of added to the piece — the volume check
-    // uses the box's actual *usable* volume, not its raw outer volume.
-    const usableVolumeMm3 = boxSortedMm.map((mm) => Math.max(0, mm - 2 * PARCEL_MARGIN_MM)).reduce((a, b) => a * b, 1);
-    const volumeFits = totalVolumeMm3 <= usableVolumeMm3 * PACKING_EFFICIENCY;
-    if (itemFits && volumeFits) return box;
-  }
-  return null;
+// colis_1.* … colis_N.* — poids en kg (plancher 50 g) et dimensions extérieures
+// du carton en cm. Partagé par la cotation et l'achat d'étiquette.
+export function parcelParams(parcels: Parcel[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  parcels.forEach((p, i) => {
+    const n = i + 1;
+    out[`colis_${n}.poids`] = Math.max(0.3, p.weightG / 1000).toFixed(3);
+    out[`colis_${n}.longueur`] = String(p.outerCm[0]);
+    out[`colis_${n}.largeur`] = String(p.outerCm[1]);
+    out[`colis_${n}.hauteur`] = String(p.outerCm[2]);
+  });
+  return out;
 }
 
-const LARGEST_PARCEL_CM = PARCEL_BOXES_CM[PARCEL_BOXES_CM.length - 1];
-
 // Flat packaging cost (box, filler material) added on top of the carrier's
-// own price whenever an order actually ships — agreed with the business
+// own price (per parcel) whenever an order actually ships — agreed with the business
 // owner. Not charged for in-person pickup, but there's no such option in
 // the online checkout flow yet (only RELAY/HOME shipping), so every rate
 // this function returns is for a real shipment and gets it added.
@@ -195,12 +150,9 @@ export interface ShippingRates {
   relay: ShippingRate | null;
   home: ShippingRate | null;
   weightUsedG: number;
+  // 1er colis (compat) ; la liste complète est dans `parcels`.
   parcelCm: ParcelCm;
-  // true when the piece's bounding box didn't fit any PARCEL_BOXES_CM entry
-  // — these rates still use LARGEST_PARCEL_CM as a best-effort estimate (the
-  // customer isn't blocked or affected), but the admin label-purchase route
-  // refuses to auto-purchase a real label for an order with this flag set.
-  oversized: boolean;
+  parcels: Parcel[];
 }
 
 function authHeader(): string {
@@ -310,7 +262,10 @@ function shipperIdentity(): ShipperIdentity {
 // téléphone n'est pas valide" — hit for real on a FR-domestic order, so the
 // earlier "FR-domestic accepts local format" assumption was wrong) — always
 // convert to E.164 before sending, both FR and international.
-function toInternationalFrPhone(local: string): string {
+export function toInternationalFrPhone(local: string): string {
+  const trimmed = local.trim();
+  // Already international (+33…, +32…): keep, only strip separators.
+  if (trimmed.startsWith("+")) return "+" + trimmed.replace(/\D/g, "");
   const digits = local.replace(/\D/g, "");
   return "+33" + (digits.startsWith("0") ? digits.slice(1) : digits);
 }
@@ -328,35 +283,17 @@ function splitFullName(fullName: string): { firstname: string; lastname: string 
 
 const xmlParser = new XMLParser({ ignoreAttributes: true, isArray: (name) => name === "offer" || name === "label" });
 
-// Packaging margin agreed with the business owner: real piece weight + 20%
-// to account for box/filling material, used to pick the right carrier
-// weight bracket. Boxtal's own API applies the actual bracket pricing —
-// we just need to send it a realistic weight.
-export function applyPackagingMargin(pieceWeightG: number): number {
-  return pieceWeightG * 1.2;
-}
-
 // Calls Boxtal's real /api/v1/cotation (rate simulation, free, no side
 // effect) and extracts the two offers this business actually sells:
 // Mondial Relay pickup-point and Colissimo home delivery. Either can come
 // back null if Boxtal has no offer for that route/weight.
 export async function quoteShippingRates(
   recipient: ShippingAddress,
-  pieceWeightG: number,
-  parcelRequirement: {
-    maxItemBboxMm: { xMm: number; yMm: number; zMm: number } | null;
-    totalVolumeMm3: number;
-  } | null = null,
+  parcels: Parcel[],
   totalPrintMinutes: number = 0,
 ): Promise<ShippingRates> {
   const shipper = shipperAddress();
-  // 50g floor: even a single light piece ships in a real box + filler, which
-  // weighs something on its own — this avoids quoting an unrealistically
-  // cheap rate for a near-zero-weight print.
-  const weightKg = Math.max(0.05, applyPackagingMargin(pieceWeightG) / 1000);
-  const fitted = pickParcelCm(parcelRequirement);
-  const oversized = parcelRequirement?.maxItemBboxMm != null && fitted == null;
-  const parcel = fitted ?? LARGEST_PARCEL_CM;
+  if (parcels.length === 0) throw new BoxtalApiError("quoteShippingRates: no parcels");
 
   const params = new URLSearchParams({
     "shipper.country": shipper.country,
@@ -369,10 +306,7 @@ export async function quoteShippingRates(
     "recipient.city": recipient.city,
     "recipient.address": recipient.address,
     "recipient.type": "individual",
-    "colis_1.poids": weightKg.toFixed(3),
-    "colis_1.longueur": String(parcel.length),
-    "colis_1.largeur": String(parcel.width),
-    "colis_1.hauteur": String(parcel.height),
+    ...parcelParams(parcels),
     collection_date: isoDate(addBusinessDays(new Date(), productionBusinessDays(totalPrintMinutes))),
     delay: "aucun",
     content_code: CONTENT_CODE,
@@ -399,6 +333,8 @@ export async function quoteShippingRates(
   const offers: any[] = doc?.cotation?.shipment?.offer ?? [];
   let relay: ShippingRate | null = null;
   let home: ShippingRate | null = null;
+  // Mondial Relay n'accepte pas le carton XXL (L+l+h > 150).
+  const relayAllowed = parcelsRelayOk(parcels);
 
   for (const offer of offers) {
     const operatorCode = offer?.operator?.code;
@@ -407,7 +343,7 @@ export async function quoteShippingRates(
     const estimatedDeliveryDate: string | null = offer?.delivery?.date ?? null;
     const carrierCents = Math.round(Number(offer?.price?.["tax-inclusive"]) * 100);
     if (!Number.isFinite(carrierCents)) continue;
-    const cents = carrierCents + PACKAGING_FEE_CENTS;
+    const cents = carrierCents + PACKAGING_FEE_CENTS * parcels.length;
 
     // "Europe" variants verified for real against the sandbox account —
     // same operator, same delivery.type.code (PICKUP_POINT/HOME), different
@@ -415,6 +351,7 @@ export async function quoteShippingRates(
     // decides which variant to offer based on recipient.country, so no
     // country branching needed here — just recognizing both code spellings.
     if (
+      relayAllowed &&
       operatorCode === "MONR" &&
       (serviceCode === "CpourToi" || serviceCode === "CpourToiEurope") &&
       deliveryTypeCode === "PICKUP_POINT"
@@ -436,7 +373,14 @@ export async function quoteShippingRates(
     }
   }
 
-  return { relay, home, weightUsedG: Math.round(weightKg * 1000), parcelCm: parcel, oversized };
+  const [length, width, height] = parcels[0].outerCm;
+  return {
+    relay,
+    home,
+    weightUsedG: Math.round(parcels.reduce((sum, p) => sum + p.weightG, 0)),
+    parcelCm: { length, width, height },
+    parcels,
+  };
 }
 
 export interface LabelRecipient {
@@ -451,8 +395,7 @@ export interface LabelRecipient {
 
 export interface LabelPurchaseInput {
   recipient: LabelRecipient;
-  weightG: number;
-  parcelCm: ParcelCm;
+  parcels: Parcel[];
   operatorCode: string;
   serviceCode: string;
   mode: "RELAY" | "HOME";
@@ -484,7 +427,6 @@ export async function purchaseShippingLabel(input: LabelPurchaseInput): Promise<
   const shipper = shipperAddress();
   const shipperId = shipperIdentity();
   const { firstname, lastname } = splitFullName(input.recipient.fullName);
-  const weightKg = Math.max(0.05, input.weightG / 1000);
 
   const params = new URLSearchParams({
     "shipper.country": shipper.country,
@@ -505,11 +447,8 @@ export async function purchaseShippingLabel(input: LabelPurchaseInput): Promise<
     "recipient.firstname": firstname,
     "recipient.lastname": lastname,
     "recipient.email": input.recipient.email,
-    "recipient.phone": input.recipient.phone,
-    "colis_1.poids": weightKg.toFixed(3),
-    "colis_1.longueur": String(input.parcelCm.length),
-    "colis_1.largeur": String(input.parcelCm.width),
-    "colis_1.hauteur": String(input.parcelCm.height),
+    "recipient.phone": toInternationalFrPhone(input.recipient.phone),
+    ...parcelParams(input.parcels),
     collection_date: isoDate(nextOrSameBusinessDay(new Date())),
     delay: "aucun",
     content_code: CONTENT_CODE,
@@ -625,7 +564,10 @@ export async function checkLabelStatus(boxtalOrderRef: string): Promise<BoxtalOr
   const labelAvailable =
     doc?.order?.label_available === "1" || String(doc?.order?.label_available).toLowerCase() === "true";
   const labelUrl: string | null = doc?.order?.labels?.label?.[0] ?? null;
-  const carrierReference: string | null = doc?.order?.carrier_reference || null;
+  // Plusieurs colis : Boxtal peut renvoyer plusieurs numéros de suivi — on les
+  // joint par ", " dans le champ unique trackingNumber.
+  const rawRef = doc?.order?.carrier_reference;
+  const carrierReference: string | null = (Array.isArray(rawRef) ? rawRef.map(String).join(", ") : rawRef) || null;
   const state: string | null = doc?.order?.state || null;
   return {
     labelAvailable,

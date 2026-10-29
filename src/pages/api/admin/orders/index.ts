@@ -71,6 +71,7 @@ export const GET = apiHandler(async (context) => {
       shippingMode: o.shippingMode,
       shippingLabel: o.shippingLabel,
       shippingOversized: o.shippingOversized,
+      shippingParcels: o.shippingParcels,
       shippingWeightG: o.shippingWeightG,
       shippingParcelLengthCm: o.shippingParcelLengthCm,
       shippingParcelWidthCm: o.shippingParcelWidthCm,

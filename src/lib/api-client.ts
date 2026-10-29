@@ -11,6 +11,19 @@ export interface ApiResult<T = unknown> {
   data: T | null;
 }
 
+// Forme de GET /api/admin/shipping-boxes (BoxDef + stock saisi à la main).
+export interface ShippingBoxStock {
+  code: string;
+  label: string;
+  innerMm: [number, number, number];
+  outerCm: [number, number, number];
+  maxWeightG: number;
+  relayOk: boolean;
+  lockerOk: boolean;
+  karton: { article: string; url: string; flute: "simple" | "double" };
+  qty: number;
+}
+
 declare global {
   interface Window {
     NASAP3D_API_BASE?: string;
@@ -263,6 +276,12 @@ export const api = {
   },
   async adminUpdateSettings(patch: Record<string, unknown>) {
     return request("PATCH", "/admin/settings", patch);
+  },
+  async adminGetShippingBoxes() {
+    return request<ShippingBoxStock[]>("GET", "/admin/shipping-boxes");
+  },
+  async adminSetShippingBoxQty(code: string, qty: number) {
+    return request("PUT", "/admin/shipping-boxes", { code, qty });
   },
   // ---- Cart / checkout ----
   async getCart() {

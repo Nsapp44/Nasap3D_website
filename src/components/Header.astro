@@ -89,8 +89,10 @@ const guidesIsCurrent = GUIDES.some((g) => g.href === currentPath);
         aria-controls="guides-menu"
       >
         Guides
+        <svg class="guides-chevron" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+          <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
       </button>
-      <span class="guides-grp" aria-hidden="true">Guides</span>
       <div class="guides-menu" id="guides-menu">
         <ul class="guides-list" aria-label="Guides">
           {
@@ -205,7 +207,7 @@ const guidesIsCurrent = GUIDES.some((g) => g.href === currentPath);
   .nav-guides {
     position: relative;
   }
-  .guides-grp,
+  .guides-chevron,
   .g-m {
     display: none;
   }
@@ -400,29 +402,68 @@ const guidesIsCurrent = GUIDES.some((g) => g.href === currentPath);
       text-decoration-thickness: 2px;
       text-underline-offset: 6px;
     }
-    /* "Guides" sur mobile : pas de déroulant. Intitulé de groupe non
-       cliquable + 4 liens en retrait, toujours visibles dans le burger. */
+    /* "Guides" sur mobile : accordéon. Le bouton (ligne + chevron) ouvre /
+       replie les 4 liens ; fermé par défaut (script : .is-open). */
     .nav-links .nav-guides-btn {
-      display: none;
-    }
-    .nav-links .guides-grp {
-      display: block;
-      padding: 14px 4px 6px;
-      border-bottom: 0;
-      font: 600 11px "Inter", sans-serif;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.42);
-    }
-    .nav-links .guides-menu {
-      position: static;
-      padding: 0;
-      opacity: 1;
-      visibility: visible;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      min-height: 44px;
+      box-sizing: border-box;
+      padding: 12px 4px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      color: inherit;
+      text-align: left;
       transform: none;
       transition: none;
     }
+    .nav-links .nav-guides-btn:hover {
+      transform: none;
+    }
+    .nav-links .guides-chevron {
+      display: block;
+      flex: none;
+      transition: transform 0.25s ease;
+    }
+    .nav-links .nav-guides.is-open .guides-chevron {
+      transform: rotate(180deg);
+    }
+    .nav-links .guides-menu {
+      position: static;
+      display: grid;
+      grid-template-rows: 0fr;
+      padding: 0;
+      opacity: 1;
+      visibility: hidden;
+      transform: none;
+      transition:
+        grid-template-rows 0.28s ease,
+        visibility 0s linear 0.28s;
+    }
+    /* Le survol/focus (règles ordinateur) ne doit rien ouvrir sur mobile. */
+    .nav-links .nav-guides:not(.is-open) .guides-menu {
+      opacity: 1;
+      visibility: hidden;
+      transform: none;
+    }
+    .nav-links .nav-guides.is-open .guides-menu {
+      grid-template-rows: 1fr;
+      visibility: visible;
+      transition:
+        grid-template-rows 0.28s ease,
+        visibility 0s;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .nav-links .guides-menu,
+      .nav-links .nav-guides.is-open .guides-menu,
+      .nav-links .guides-chevron {
+        transition: none;
+      }
+    }
     .nav-links .guides-menu .guides-list {
+      min-height: 0;
+      overflow: hidden;
       width: auto;
       max-width: none;
       padding: 0;
@@ -468,7 +509,7 @@ const guidesIsCurrent = GUIDES.some((g) => g.href === currentPath);
   // Menu "Guides" (ordinateur) : le CSS l'ouvre déjà au survol et au focus
   // clavier ; ce script ajoute le clic/tap (.is-open + aria-expanded), la
   // fermeture sur Échap, second clic et clic extérieur (.is-closed masque le
-  // panneau malgré le survol/focus restant). Sans effet sur mobile (bouton masqué).
+  // panneau malgré le survol/focus restant). Sans effet sur mobile (accordéon, voir plus bas).
   const root = document.querySelector<HTMLElement>("[data-guides]");
   const btn = root && root.querySelector<HTMLButtonElement>(".nav-guides-btn");
   if (root && btn) {
@@ -483,7 +524,19 @@ const guidesIsCurrent = GUIDES.some((g) => g.href === currentPath);
     const isShown = () =>
       root.classList.contains("is-open") || root.matches(":hover") || root.matches(":focus-within");
 
+    // Mobile (même seuil que le burger) : accordéon, ouvert/replié au clic
+    // uniquement ; les gestionnaires "ordinateur" ci-dessous sont ignorés.
+    const mobile = window.matchMedia("(max-width: 1060px)");
+    if (mobile.matches && root.querySelector(".g-link.is-current")) setOpen(true);
+    mobile.addEventListener("change", () =>
+      setOpen(mobile.matches && !!root.querySelector(".g-link.is-current")),
+    );
+
     btn.addEventListener("click", () => {
+      if (mobile.matches) {
+        setOpen(!root.classList.contains("is-open"));
+        return;
+      }
       if (root.classList.contains("is-open")) dismiss();
       else {
         root.classList.remove("is-closed");
@@ -492,6 +545,7 @@ const guidesIsCurrent = GUIDES.some((g) => g.href === currentPath);
     });
     root.addEventListener("mouseenter", () => root.classList.remove("is-closed"));
     root.addEventListener("mouseleave", () => {
+      if (mobile.matches) return;
       setOpen(false);
       root.classList.remove("is-closed");
       // Un clic souris laisse le focus sur le bouton : on le retire pour que
@@ -500,16 +554,18 @@ const guidesIsCurrent = GUIDES.some((g) => g.href === currentPath);
       if (f instanceof HTMLElement && root.contains(f) && !f.matches(":focus-visible")) f.blur();
     });
     root.addEventListener("focusout", (e) => {
+      if (mobile.matches) return;
       if (e.relatedTarget && !root.contains(e.relatedTarget as Node)) {
         setOpen(false);
         root.classList.remove("is-closed");
       }
     });
     document.addEventListener("click", (e) => {
+      if (mobile.matches) return;
       if (!root.contains(e.target as Node) && root.classList.contains("is-open")) setOpen(false);
     });
     document.addEventListener("keydown", (e) => {
-      if (e.key !== "Escape" || !isShown()) return;
+      if (mobile.matches || e.key !== "Escape" || !isShown()) return;
       const hadFocus = root.contains(document.activeElement);
       dismiss();
       if (hadFocus) btn.focus();
