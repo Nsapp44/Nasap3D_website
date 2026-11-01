@@ -28,7 +28,7 @@ export const MAQUETTES: Maquette[] = [
       "De l'idéation à la modélisation, de l'impression aux finitions, jusqu'à l'animation LED : chaque étape est conçue avec le client, pour que le résultat lui ressemble. Une maquette réalisée de A à Z dans notre atelier.",
     parts: [
       { title: "Impression 3D et peinture", text: "La coque verte est imprimée en 3D, puis apprêtée et peinte à la main. Tout le reste de la maquette est de l'impression 3D." },
-      { title: "Assemblage", text: "Certaines parties sont imprimées d'une seule pièce, mais l'ensemble demande beaucoup d'assemblage : toutes les petites pièces noires sont imprimées à part, puis montées une à une." },
+      { title: "Assemblage", text: "Certaines parties sont imprimées d'une seule pièce, mais l'ensemble demande beaucoup d'assemblage : toutes les petites pièces blanches sont imprimées à part, puis montées une à une." },
       { title: "Électronique et LED", text: "L'électronique est intégrée à l'intérieur de la maquette. Le code de la chenille LED est lui aussi géré selon la demande du client." },
     ],
     dir: "/assets/maquettes/cellule",
