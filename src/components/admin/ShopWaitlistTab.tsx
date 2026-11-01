@@ -66,6 +66,7 @@ export default function ShopWaitlistTab() {
     setMessage(null);
     const res = await call<{ ok: boolean; to?: string }>("POST", "/admin/shop-waitlist/test", {});
     if (res.ok) setMessage({ kind: "ok", text: `Test envoyé${res.data?.to ? ` à ${res.data.to}` : ""}.` });
+    else if (res.status === 503) setMessage({ kind: "error", text: "Envoi des e-mails non configuré sur le serveur (SMTP) : aucun test envoyé." });
     else setMessage({ kind: "error", text: "Le test n'a pas pu être envoyé (échec de l'envoi du mail). Réessayez." });
     setBusy(false);
   }
@@ -80,6 +81,8 @@ export default function ShopWaitlistTab() {
     if (res.ok && res.data) {
       setMessage({ kind: res.data.failed > 0 ? "error" : "ok", text: `${res.data.sent} envoyés, ${res.data.failed} échecs, ${res.data.remaining} restants.` });
       await load();
+    } else if (res.status === 503) {
+      setMessage({ kind: "error", text: "Envoi des e-mails non configuré sur le serveur (SMTP) : rien n'a été envoyé ni supprimé." });
     } else {
       setMessage({ kind: "error", text: "L'envoi de l'annonce a échoué. Vérifiez la liste avant de réessayer." });
     }

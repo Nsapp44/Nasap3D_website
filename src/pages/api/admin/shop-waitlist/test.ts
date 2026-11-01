@@ -1,6 +1,6 @@
 import { apiHandler, json, jsonError } from "../../../../lib/api/handler";
 import { requireAdmin } from "../../../../lib/api/auth";
-import { sendMail } from "../../../../lib/server/mailer";
+import { isMailConfigured, sendMail } from "../../../../lib/server/mailer";
 import {
   renderEmailHtml,
   shopOpeningContentHtml,
@@ -12,6 +12,7 @@ import {
 export const POST = apiHandler(async (context) => {
   const admin = await requireAdmin(context);
   const to = admin.email;
+  if (!isMailConfigured()) return jsonError(503, "mail_not_configured");
   try {
     await sendMail(to, SHOP_OPENING_SUBJECT, shopOpeningText(), renderEmailHtml(SHOP_OPENING_SUBJECT, shopOpeningContentHtml()));
   } catch (err) {

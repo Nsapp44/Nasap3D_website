@@ -72,6 +72,11 @@ function getTransporter() {
 // (admin-only notifications) can keep sending plain text — `text` is always
 // included either way, both because it's required while html is optional
 // and as the actual body shown by clients that strip/ignore HTML mail.
+// Vrai si un transport SMTP est configuré (sinon sendMail ne fait que journaliser).
+export function isMailConfigured(): boolean {
+  return getTransporter() !== null;
+}
+
 export async function sendMail(to: string, subject: string, body: string, html?: string) {
   const t = getTransporter();
   if (!t) {

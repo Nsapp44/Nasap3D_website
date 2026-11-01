@@ -2,7 +2,7 @@ import { z } from "zod";
 import { apiHandler, json, jsonError } from "../../../../lib/api/handler";
 import { requireAdmin } from "../../../../lib/api/auth";
 import { prisma } from "../../../../lib/server/prisma";
-import { sendMail } from "../../../../lib/server/mailer";
+import { isMailConfigured, sendMail } from "../../../../lib/server/mailer";
 import {
   renderEmailHtml,
   shopOpeningContentHtml,
@@ -19,6 +19,8 @@ export const POST = apiHandler(async (context) => {
   await requireAdmin(context);
   const body = schema.safeParse(await context.request.json().catch(() => null));
   if (!body.success) return jsonError(400, "confirm_required");
+  // Sans SMTP, sendMail ne fait que journaliser : la liste serait vidée sans aucun envoi.
+  if (!isMailConfigured()) return jsonError(503, "mail_not_configured");
 
   const rows = await prisma.shopWaitlist.findMany({ orderBy: { createdAt: "asc" } });
   const html = renderEmailHtml(SHOP_OPENING_SUBJECT, shopOpeningContentHtml());
