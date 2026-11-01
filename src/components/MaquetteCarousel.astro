@@ -1,7 +1,7 @@
 ---
 // Carrousel de maquettes « 360° » : viewer canvas 2D « tourne en glissant » sur des images pré-rendues
 // (aucun fichier 3D en ligne). Images produites par scripts/build-maquette-frames.mjs dans
-// public/assets/maquettes/<dir>/{base,sm,rank,glow}/e<élévation>_a<NNN>.{avif,webp}.
+// public/assets/maquettes/<dir>/{base,sm}/e<élévation>_a<NNN>.avif (+ sm/e<élévation>_a000.webp, aperçu), {rank,glow}/…webp.
 // Liste des maquettes : src/data/maquettes.ts (source unique ; pour en ajouter ou retirer une, voir l'en-tête de ce fichier).
 // `soon: true` = maquette « À venir » : slide générique, aucune image ni canvas, rien n'est chargé.
 import { MAQUETTES_ACTIVES, type Maquette } from "../data/maquettes";
@@ -130,12 +130,6 @@ const posterOf = (m: Maquette) => m.posterWebp || (m.dir && m.elevs ? `${m.dir}/
     const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
     // ---- Chargement des images ----
-    const avifOk = new Promise((res) => {
-      const i = new Image();
-      i.onload = () => res(i.width > 0);
-      i.onerror = () => res(false);
-      i.src = "data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUEAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdGwAAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAIAAAACAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQAMAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgANogQEAwgMg8f8D///8WfhwB8+ErK42A=";
-    });
     function loadImg(url) {
       return new Promise((res, rej) => {
         const i = new Image();
@@ -153,7 +147,6 @@ const posterOf = (m: Maquette) => m.posterWebp || (m.dir && m.elevs ? `${m.dir}/
         item, n: item.frames, az: 0, elF: item.startEl, vaz: 0, auto: !reduce,
         dragging: false, dirty: true, ready: false, failed: false, started: false,
         base: new Map(), rank: new Map(), glow: new Map(), led: new Map(),
-        avif: false,
       };
     }
     // Ordre de chargement : 1re vue, 1 sur 2 à l'élévation moyenne, le reste de cette élévation, puis les autres élévations.
@@ -165,10 +158,9 @@ const posterOf = (m: Maquette) => m.posterWebp || (m.dir && m.elevs ? `${m.dir}/
       for (const e of elevs) if (e !== mid) for (const p of [0, 1]) for (let a = p; a < frames; a += 2) list.push([e, a]);
       return list;
     }
-    async function fetchBase(v, e, a) {
-      const dir = `${v.item.dir}/${small ? "sm" : "base"}/${fname(e, a)}`;
-      if (v.avif) { try { return await loadImg(dir + ".avif"); } catch {} }
-      return loadImg(dir + ".webp");
+    // Vues en AVIF seulement ; si la 1re vue ne se charge pas (navigateur sans AVIF), l'aperçu photo (webp) reste affiché.
+    function fetchBase(v, e, a) {
+      return loadImg(`${v.item.dir}/${small ? "sm" : "base"}/${fname(e, a)}.avif`);
     }
     const fetchLayer = (v, kind, e, a) => loadImg(`${v.item.dir}/${kind}/${fname(e, a)}.webp`);
 
@@ -195,7 +187,6 @@ const posterOf = (m: Maquette) => m.posterWebp || (m.dir && m.elevs ? `${m.dir}/
       if (v.started) return;
       v.started = true;
       await pageIdle;
-      v.avif = await avifOk;
       const order = loadOrder(v), [e0, a0] = order[0];
       try {
         v.base.set(key(e0, a0), await fetchBase(v, e0, a0));

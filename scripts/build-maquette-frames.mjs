@@ -2,8 +2,9 @@
 // Usage : node scripts/build-maquette-frames.mjs [dossier_final] [id_maquette]
 //   dossier_final : contient base/, rank/, glow/ avec des e<elev>_a<NNN>.png (défaut ci-dessous)
 //   id_maquette   : sous-dossier de sortie dans public/assets/maquettes/ (défaut : cellule)
-// Sortie : public/assets/maquettes/<id>/{base,sm,rank,glow}/e<elev>_a<NNN>.{webp,avif}
-//   base : 1200x900 (webp+avif q80) ; sm : 640x480 (mobile) ; rank/glow : 800x600 fixe, sans perte,
+// Sortie : public/assets/maquettes/<id>/{base,sm}/e<elev>_a<NNN>.avif (+ sm/e<elev>_a000.webp, aperçu) ;
+//   {rank,glow}/e<elev>_a<NNN>.webp
+//   base : 1200x900 ; sm : 640x480 (mobile) ; rank/glow : 800x600 fixe, sans perte,
 //   redimensionnés au plus proche voisin (le rang R*255 ne doit jamais être interpolé).
 // Relançable : saute les fichiers déjà à jour (date de modification).
 import sharp from "sharp";
@@ -33,7 +34,8 @@ async function job(kind, inFile, name, w, h, opts) {
   const dir = path.join(out, kind);
   await mkdir(dir, { recursive: true });
   const jobs = [];
-  const targets = [["webp", opts.webp]];
+  const targets = [];
+  if (opts.webp && (!opts.webpOnly || opts.webpOnly(name))) targets.push(["webp", opts.webp]);
   if (opts.avif) targets.push(["avif", opts.avif]);
   for (const [ext, o] of targets) {
     const dest = path.join(dir, `${name}.${ext}`);
@@ -62,10 +64,12 @@ const run = async (files, fn) => {
 };
 const nm = (f) => f.replace(/\.png$/, "");
 const lossy = { webp: { quality: Q, effort: 5 }, avif: { quality: Q - 15, effort: 4 } };
+// Vues en AVIF seulement ; un webp par hauteur (vue _a000 en sm) sert d'aperçu photo / repli sans AVIF.
+const poster = (name) => name.endsWith("_a000");
 await run(base, async (f) => {
   const i = path.join(src, "base", f);
-  await job("base", i, nm(f), 1200, 900, { ...lossy, kernel: "lanczos3" });
-  await job("sm", i, nm(f), 640, 480, { ...lossy, kernel: "lanczos3" });
+  await job("base", i, nm(f), 1200, 900, { avif: lossy.avif, kernel: "lanczos3" });
+  await job("sm", i, nm(f), 640, 480, { ...lossy, webpOnly: poster, kernel: "lanczos3" });
 });
 // Calques LED : sans perte, plus proche voisin, 800x600 pour les deux. `exact` garde R sous alpha partiel.
 const lossless = { webp: { lossless: true, exact: true, effort: 4 }, kernel: "nearest" };
@@ -75,6 +79,5 @@ for (const [kind, files] of [["rank", rank], ["glow", glow]]) {
 
 const mb = (n) => (n / 1048576).toFixed(2) + " Mo";
 console.log(`Écrit ${count} fichiers (${skipped} déjà à jour) dans ${out}`);
-console.log(`Poids (webp+avif) : base ${mb(total.base)}, sm ${mb(total.sm)}, rank ${mb(total.rank)}, glow ${mb(total.glow)}`);
+console.log(`Poids : base ${mb(total.base)}, sm ${mb(total.sm)}, rank ${mb(total.rank)}, glow ${mb(total.glow)}`);
 console.log(`Desktop (base+rank+glow) ≈ ${mb(total.base + total.rank + total.glow)} ; mobile (sm+rank+glow) ≈ ${mb(total.sm + total.rank + total.glow)}`);
-console.log("Note : le poids chargé par un visiteur est celui d'UN format (avif OU webp), soit environ la moitié si les deux sont présents.");
