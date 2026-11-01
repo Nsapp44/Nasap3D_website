@@ -232,3 +232,32 @@ ${escapeHtml(message).replace(/\n/g, "<br />")}${attachmentLine}
 </table>`,
   ].join("\n");
 }
+
+// Annonce d'ouverture de Nasap Shop, envoyée une seule fois aux inscrits de la
+// liste d'attente (puis leur adresse est supprimée). Contenu fixe, rien d'issu d'un formulaire.
+const SHOP_URL = "https://shop.nasap3d.com/";
+export const SHOP_OPENING_SUBJECT = "Nasap Shop est ouvert";
+
+export function shopOpeningText(): string {
+  return `Bonjour,\n\nvous nous aviez demandé d'être prévenu : Nasap Shop, la boutique d'objets sur mesure imprimés en 3D par Nasap3D, est ouverte. Découvrez les collections : ${SHOP_URL}\n\nComme promis, votre adresse vient d'être supprimée de notre liste : vous ne recevrez pas d'autre e-mail de notre part.\n\nL'atelier Nasap3D, Nantes.`;
+}
+
+export function shopOpeningContentHtml(): string {
+  return [
+    h1("Nasap Shop est ouvert"),
+    p("Bonjour,", { margin: "0 0 16px 0" }),
+    p(
+      "vous nous aviez demandé d'être prévenu : Nasap Shop, la boutique d'objets sur mesure imprimés en 3D par Nasap3D, est ouverte.",
+      { margin: "0 0 24px 0" },
+    ),
+    `<table border="0" cellpadding="0" cellspacing="0" style="margin:0 0 24px 0;">
+<tr><td align="center" style="background-color:#ff5a3c;border-radius:4px;">
+<a href="${SHOP_URL}" target="_blank" style="display:inline-block;padding:14px 28px;font-family:'Inter',Arial,Helvetica,sans-serif;font-size:15px;font-weight:600;color:#161514;text-decoration:none;min-height:20px;line-height:20px;">Découvrir les collections</a>
+</td></tr>
+</table>`,
+    p(
+      "Comme promis, votre adresse vient d'être supprimée de notre liste : vous ne recevrez pas d'autre e-mail de notre part. L'atelier Nasap3D, Nantes.",
+      { small: true, margin: "0" },
+    ),
+  ].join("\n");
+}

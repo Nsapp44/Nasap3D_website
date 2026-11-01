@@ -408,3 +408,11 @@ model ShippingBoxStock {
   qty       Int      @default(0)
   updatedAt DateTime @updatedAt
 }
+
+// Liste d'attente éphémère « être prévenu de l'ouverture » de Nasap Shop : e-mails seulement,
+// purgée à l'ouverture (envoi de l'annonce puis suppression de chaque ligne).
+model ShopWaitlist {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}

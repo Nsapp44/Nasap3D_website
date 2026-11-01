@@ -159,7 +159,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   if (reqHost.startsWith("shop.")) {
     const p = context.url.pathname;
     if (p === "/") return context.rewrite("/shop");
-    const isStatic = p === "/shop" || p.startsWith("/assets/") || p.startsWith("/_astro/") || p === "/favicon.ico" || p === "/robots.txt";
+    const isStatic = p === "/shop" || p === "/api/shop-waitlist" || p.startsWith("/assets/") || p.startsWith("/_astro/") || p === "/favicon.ico" || p === "/robots.txt";
     if (!isStatic) return context.redirect(`https://nasap3d.com${p}${context.url.search}`, 302);
   }
 

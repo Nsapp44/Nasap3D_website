@@ -6,6 +6,7 @@ import OrdersTab from "./OrdersTab";
 import StockTab from "./StockTab";
 import ShippingTab from "./ShippingTab";
 import QuoteBuilderTab from "./QuoteBuilderTab";
+import ShopWaitlistTab from "./ShopWaitlistTab";
 
 interface Settings {
   quoteEnabled: boolean;
@@ -18,11 +19,11 @@ interface Settings {
 
 export default function AdminPage() {
   const authStatus = useAdminAuth();
-  const [tab, setTab] = useState<"orders" | "stock" | "shipping" | "quote">("orders");
+  const [tab, setTab] = useState<"orders" | "stock" | "shipping" | "quote" | "waitlist">("orders");
   const [settings, setSettings] = useState<Settings | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  function selectTab(next: "orders" | "stock" | "shipping" | "quote") {
+  function selectTab(next: "orders" | "stock" | "shipping" | "quote" | "waitlist") {
     setTab(next);
     setMobileNavOpen(false);
   }
@@ -89,6 +90,9 @@ export default function AdminPage() {
                 <span onClick={() => selectTab("quote")} className={`admin-tab${tab === "quote" ? " active" : ""}`}>
                   Devis
                 </span>
+                <span onClick={() => selectTab("waitlist")} className={`admin-tab${tab === "waitlist" ? " active" : ""}`}>
+                  Liste shop
+                </span>
               </div>
               <div className="admin-account">
                 <span onClick={adminLogout} className="logout-link">
@@ -137,6 +141,7 @@ export default function AdminPage() {
           {tab === "stock" && <StockTab settings={settings} onSettingsSaved={loadSettings} />}
           {tab === "shipping" && <ShippingTab />}
           {tab === "quote" && <QuoteBuilderTab />}
+          {tab === "waitlist" && <ShopWaitlistTab />}
         </>
       )}
 

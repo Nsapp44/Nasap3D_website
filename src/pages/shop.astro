@@ -39,7 +39,7 @@ const steps = [
         </a>
         <nav class="ns-head-nav" aria-label="Liens">
           <a class="ns-navlink" href="https://nasap3d.com/">L'atelier Nasap3D</a>
-          <a class="ns-btn ns-btn-primary ns-btn-sm" href="https://nasap3d.com/contact">Être prévenu</a>
+          <a class="ns-btn ns-btn-primary ns-btn-sm" href="#prevenu" data-goto-prevenu>Être prévenu</a>
         </nav>
       </div>
     </header>
@@ -53,11 +53,22 @@ const steps = [
             <p class="ns-lead ns-in" style="--d:120ms">
               Nasap Shop, c'est la boutique de l'atelier Nasap3D : des pièces imprimées en 3D, fidèles à votre photo, relues et ajustées à la main à Nantes. Les premières collections arrivent.
             </p>
-            <div class="ns-actions ns-in" style="--d:180ms">
-              <a class="ns-btn ns-btn-primary" href="https://nasap3d.com/contact">
-                Être prévenu de l'ouverture
-                <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-              </a>
+            <div class="ns-wait ns-in" style="--d:180ms">
+              <form id="prevenu" class="ns-form" novalidate>
+                <label class="ns-label" for="prevenu-email">Votre e-mail</label>
+                <div class="ns-form-row">
+                  <input id="prevenu-email" class="ns-input" type="email" name="email" autocomplete="email" inputmode="email" required placeholder="votre@e-mail.fr" aria-describedby="prevenu-note prevenu-msg" />
+                  <input class="ns-trap" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
+                  <button class="ns-btn ns-btn-primary" type="submit">
+                    <span class="ns-btn-label">Être prévenu de l'ouverture</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                  </button>
+                </div>
+                <p id="prevenu-note" class="ns-note">Un seul e-mail, le jour de l'ouverture. Puis votre adresse est supprimée.</p>
+              </form>
+              <div id="prevenu-msg" class="ns-msg" aria-live="polite"></div>
+            </div>
+            <div class="ns-actions ns-in" style="--d:200ms">
               <a class="ns-btn ns-btn-ghost" href="https://nasap3d.com/devis-instantane">Un projet dès maintenant</a>
             </div>
             <p class="ns-hint ns-in" style="--d:220ms">En attendant, l'atelier fabrique déjà vos pièces sur mesure.</p>
@@ -119,6 +130,77 @@ const steps = [
     </footer>
   </div>
 </BaseLayout>
+
+<script>
+  const form = document.getElementById("prevenu") as HTMLFormElement | null;
+  const msg = document.getElementById("prevenu-msg");
+  const email = document.getElementById("prevenu-email") as HTMLInputElement | null;
+  const btn = form?.querySelector<HTMLButtonElement>("button[type=submit]") ?? null;
+  const label = form?.querySelector<HTMLElement>(".ns-btn-label") ?? null;
+
+  document.querySelectorAll<HTMLAnchorElement>("[data-goto-prevenu]").forEach((a) => {
+    a.addEventListener("click", (e) => {
+      if (!form || !email) return;
+      e.preventDefault();
+      const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      form.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "center" });
+      email.focus({ preventScroll: true });
+    });
+  });
+
+  function show(html: string, kind: "error" | "ok") {
+    if (!msg) return;
+    msg.className = "ns-msg " + (kind === "error" ? "ns-msg-error" : "ns-msg-ok");
+    msg.innerHTML = html;
+  }
+
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!email || !btn || !label || !msg) return;
+    const value = email.value.trim();
+    if (!value || !email.checkValidity()) {
+      show("Cette adresse e-mail ne semble pas valide.", "error");
+      email.setAttribute("aria-invalid", "true");
+      email.focus();
+      return;
+    }
+    email.removeAttribute("aria-invalid");
+    const website = (form.elements.namedItem("website") as HTMLInputElement).value;
+    btn.disabled = true;
+    const original = label.textContent;
+    label.textContent = "Envoi…";
+    show("", "ok");
+    try {
+      const res = await fetch("/api/shop-waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: value, website }),
+      });
+      let data: { error?: string } | null = null;
+      try { data = await res.json(); } catch { /* corps vide */ }
+      if (res.ok) {
+        form.hidden = true;
+        show(
+          '<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg><span>C\'est noté ! Vous recevrez un seul e-mail, le jour de l\'ouverture.</span>',
+          "ok",
+        );
+        return;
+      }
+      if (res.status === 400 && data?.error === "invalid_email") {
+        show("Cette adresse e-mail ne semble pas valide.", "error");
+        email.setAttribute("aria-invalid", "true");
+      } else if (res.status === 429) {
+        show("Trop d'essais, réessayez dans une minute.", "error");
+      } else {
+        show('Oups, ça n\'a pas marché. Réessayez, ou écrivez-nous depuis la <a href="https://nasap3d.com/contact">page contact</a>.', "error");
+      }
+    } catch {
+      show('Oups, ça n\'a pas marché. Réessayez, ou écrivez-nous depuis la <a href="https://nasap3d.com/contact">page contact</a>.', "error");
+    }
+    btn.disabled = false;
+    label.textContent = original;
+  });
+</script>
 
 <style>
   .ns {
@@ -194,7 +276,30 @@ const steps = [
   .ns-hero { padding: 64px 0 88px; }
   .ns-hero-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 56px; align-items: center; }
   .ns-lead { font-size: 18px; line-height: 1.6; margin: 24px 0 30px; max-width: 34em; }
-  .ns-actions { display: flex; flex-wrap: wrap; gap: 14px; }
+  .ns-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 18px; }
+  .ns-wait { max-width: 36em; }
+  .ns-label { display: block; font-size: 13px; font-weight: 500; color: var(--soft); margin: 0 0 6px 4px; }
+  .ns-form-row { display: flex; gap: 10px; align-items: stretch; }
+  .ns-input {
+    flex: 1 1 auto; min-width: 0; height: 52px; padding: 0 22px; border-radius: 999px;
+    border: 1.5px solid rgba(28, 26, 24, 0.45); background: #fff; color: var(--ink);
+    font: 400 16px Inter, system-ui, sans-serif;
+  }
+  .ns-input::placeholder { color: var(--soft); }
+  .ns-input:focus-visible { outline: 3px solid #3b6fd8; outline-offset: 2px; }
+  .ns-input[aria-invalid="true"] { border-color: var(--accent-dk); }
+  .ns-form-row .ns-btn { flex: none; border: 0; cursor: pointer; font-family: inherit; }
+  .ns-form-row .ns-btn:focus-visible { outline: 3px solid #3b6fd8; outline-offset: 3px; }
+  .ns-form-row .ns-btn:disabled { opacity: .6; cursor: progress; }
+  .ns-trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  .ns-note { font-size: 13px; color: var(--soft); margin: 10px 0 0 4px; }
+  .ns-msg:empty { display: none; }
+  .ns-msg { margin-top: 10px; font-size: 15px; line-height: 1.5; }
+  .ns-msg-error { color: var(--accent-dk); font-weight: 500; }
+  .ns-msg-error :global(a) { color: var(--accent-dk); text-decoration: underline; }
+  .ns-msg-error :global(a:focus-visible) { outline: 3px solid #3b6fd8; outline-offset: 3px; border-radius: 4px; }
+  .ns-msg-ok { display: flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 500; font-size: 17px; padding: 14px 18px; background: var(--paper2); border: 1px solid var(--line); border-radius: 16px; }
+  .ns-msg-ok :global(svg) { color: var(--accent-dk); flex: none; }
   .ns-hint { font-size: 14px; color: var(--soft); margin: 16px 0 0; }
 
   /* Étiquette suspendue au-dessus d'une étagère en noyer */
@@ -287,6 +392,8 @@ const steps = [
     .ns-board { aspect-ratio: 16 / 11; }
     .ns-lead { font-size: 16px; margin: 18px 0 24px; }
     .ns-actions .ns-btn { width: 100%; }
+    .ns-form-row { flex-direction: column; }
+    .ns-form-row .ns-btn { width: 100%; }
     .ns-sec { padding: 56px 0; }
     .ns-h2 { margin-bottom: 24px; }
     .ns-band { padding: 24px 20px; margin-top: 40px; }
