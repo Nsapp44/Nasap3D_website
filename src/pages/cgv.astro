@@ -1,0 +1,44 @@
+---
+import LegalLayout from "../layouts/LegalLayout.astro";
+---
+
+<LegalLayout
+  path="/cgv"
+  title="Conditions Générales de Vente | Nasap3D"
+  description="Conditions générales de vente de Nasap3D : devis, paiement, livraison, garanties, rétractation."
+  pageTitle="Conditions Générales de Vente"
+  sections={[
+    {
+      heading: "1. Objet",
+      body: "Les présentes conditions générales de vente (CGV) encadrent la vente par Nasap3D de prestations d'impression 3D, rétro-conception, maquettage, maintenance machine et sessions d'initiation.",
+    },
+    {
+      heading: "2. Devis et commandes",
+      body: "Le configurateur de devis instantané fournit une estimation basée sur les paramètres saisis par le client (fichier, matériau, remplissage, qualité, quantité). Le prix définitif est confirmé après analyse du fichier. Toute demande hors-configurateur (pièce complexe, rétro-conception, maintenance) fait l'objet d'un devis sur-mesure via le formulaire de contact.",
+    },
+    {
+      heading: "3. Paiement",
+      body: "Toute commande est d'abord soumise à une expertise humaine, sans paiement à cette étape. Une fois la commande acceptée, le paiement s'effectue en ligne, de manière sécurisée, via Stripe.",
+    },
+    {
+      heading: "4. Délais et livraison",
+      body: "Les délais indiqués sont donnés à titre indicatif et dépendent de la charge de l'atelier. Le retrait se fait gratuitement à l'atelier (Nantes, Canclaux), sur rendez-vous. En cas d'expédition, des frais de port ainsi qu'un forfait d'emballage de 1,50 € s'ajoutent au prix des pièces ; la livraison est proposée en France et dans les autres pays de l'Union européenne.",
+    },
+    {
+      heading: "5. Garanties",
+      body: "Les interventions de maintenance machine bénéficient d'une garantie de retour de 3 jours. Toute anomalie constatée doit être signalée dans ce délai.",
+    },
+    {
+      heading: "6. Rétractation",
+      body: "Conformément à la réglementation applicable, le droit de rétractation ne s'applique pas aux biens confectionnés selon les spécifications du client (pièces personnalisées).",
+    },
+    {
+      heading: "7. Pièce défectueuse ou endommagée à la livraison",
+      body: "L'absence de droit de rétractation (article 6) ne concerne que le changement d'avis : les garanties légales de conformité et des vices cachés s'appliquent normalement à toute commande, y compris personnalisée, et ne peuvent être exclues par les présentes CGV. En complément, et pour un traitement rapide : toute pièce reçue défectueuse (défaut d'impression) ou endommagée pendant le transport doit être signalée dans les 48h suivant la réception, photos à l'appui, via le formulaire de contact. Une réimpression gratuite est proposée en priorité ; un remboursement n'intervient que si la réimpression n'est pas possible (matériau ou fichier devenu indisponible, par exemple). Sont exclus de cette garantie commerciale : les tolérances dimensionnelles normales de l'impression 3D FDM, les légères variations de teinte entre l'écran et la pièce imprimée, les défauts liés à un fichier fourni par le client (design non imprimable, coques trop fines), et toute dégradation survenue après réception.",
+    },
+    {
+      heading: "8. Litiges",
+      body: "En cas de litige, écrivez-nous à nasap3D@gmail.com : nous répondons sous 7 jours et cherchons avec vous une solution amiable. Les présentes conditions sont soumises au droit français. À défaut d'accord amiable, le litige sera porté devant les tribunaux français compétents.",
+    },
+  ]}
+/>
