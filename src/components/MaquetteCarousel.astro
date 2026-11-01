@@ -50,6 +50,11 @@ const posterOf = (m: Maquette) => m.posterWebp || (m.dir && m.elevs ? `${m.dir}/
     <div class="mq-detail" aria-live="polite">
       <p class="mq-detail-common">{COMMON}</p>
       <p class="mq-detail-own">{first.detail}</p>
+      {first.parts && (
+        <div class="mq-parts">
+          {first.parts.map((p) => (<div class="mq-part"><p class="mq-part-t">{p.title}</p><p>{p.text}</p></div>))}
+        </div>
+      )}
     </div>
   </div>
 </div>
@@ -110,6 +115,11 @@ const posterOf = (m: Maquette) => m.posterWebp || (m.dir && m.elevs ? `${m.dir}/
       detailEl.innerHTML = "";
       if (!m.soon) { const c = document.createElement("p"); c.className = "mq-detail-common"; c.textContent = COMMON; detailEl.append(c); }
       const o = document.createElement("p"); o.className = "mq-detail-own"; o.textContent = m.detail; detailEl.append(o);
+      if (m.parts && m.parts.length) {
+        const w = document.createElement("div"); w.className = "mq-parts";
+        m.parts.forEach((x) => { const d = document.createElement("div"); d.className = "mq-part"; const h = document.createElement("p"); h.className = "mq-part-t"; h.textContent = x.title; const b = document.createElement("p"); b.textContent = x.text; d.append(h, b); w.append(d); });
+        detailEl.append(w);
+      }
       void detailEl.offsetWidth;
       detailEl.classList.add("in");
       void captionEl.offsetWidth;
@@ -643,18 +653,41 @@ const posterOf = (m: Maquette) => m.posterWebp || (m.dir && m.elevs ? `${m.dir}/
   }
   .mq-detail :global(p) {
     margin: 0;
-    font: 400 16px/1.6 "Inter", sans-serif;
+    font: 400 14px/1.6 "Inter", sans-serif;
     color: rgba(243, 241, 236, 0.9);
     overflow-wrap: anywhere;
   }
   .mq-detail :global(.mq-detail-common) {
-    font-size: 14px;
-    color: rgba(243, 241, 236, 0.7);
+    font-size: 12px;
+    color: rgba(243, 241, 236, 0.55);
   }
   .mq-detail :global(.mq-detail-common + .mq-detail-own) {
     margin-top: 10px;
     font-weight: 500;
     color: #f3f1ec;
+  }
+  .mq-detail :global(.mq-parts) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .mq-detail :global(.mq-part) {
+    padding: 12px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    background: #1a1917;
+  }
+  .mq-detail :global(.mq-part p) {
+    font-size: 13px;
+    line-height: 1.55;
+    color: rgba(243, 241, 236, 0.78);
+  }
+  .mq-detail :global(.mq-part .mq-part-t) {
+    margin-bottom: 4px;
+    font: 600 13px/1.3 "Space Grotesk", sans-serif;
+    letter-spacing: 0.02em;
+    color: #ff5a3c;
   }
   .mq-nav:focus-visible,
   .mq-reset:focus-visible,
@@ -849,7 +882,7 @@ const posterOf = (m: Maquette) => m.posterWebp || (m.dir && m.elevs ? `${m.dir}/
     .mq-next { right: 8px; }
     .mq-foot { padding: 12px 14px; }
     .mq-detail { padding: 14px; }
-    .mq-detail :global(p) { font-size: 15px; }
+    .mq-detail :global(p) { font-size: 14px; }
     .mq-soon { padding: 0 56px; }
     .mq-soon-title { font-size: 20px; }
   }

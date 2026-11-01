@@ -6,7 +6,8 @@ export interface Maquette {
   id: string;
   title: string;
   caption: string;
-  detail: string; // phrase propre à la maquette, affichée sous le viewer
+  detail: string; // phrase d'accroche propre à la maquette, affichée sous le viewer
+  parts?: { title: string; text: string }[]; // sections détaillées sous l'accroche
   dir?: string; // dossier des images pré-rendues
   elevs?: number[]; // élévations disponibles (degrés), du plus bas au plus haut
   frames?: number; // nombre d'azimuts (un tour complet)
@@ -24,7 +25,12 @@ export const MAQUETTES: Maquette[] = [
     title: "Maquette cellule",
     caption: "Modèle pédagogique en coupe",
     detail:
-      "La coque verte est imprimée en 3D, puis apprêtée et peinte à la main ; tout le reste de la maquette est de l'impression 3D. Certaines parties sont imprimées d'une seule pièce, mais l'ensemble demande beaucoup d'assemblage : toutes les petites pièces noires sont imprimées à part, et l'électronique est intégrée à l'intérieur. Le code de la chenille LED est écrit par NASAP. L'idéation et l'animation ont été conçues en collaboration avec le client, pour que le résultat lui ressemble.",
+      "De l'idéation à la modélisation, de l'impression aux finitions, jusqu'à l'animation LED : chaque étape est conçue avec le client, pour que le résultat lui ressemble. Une maquette réalisée de A à Z dans notre atelier.",
+    parts: [
+      { title: "Impression 3D et peinture", text: "La coque verte est imprimée en 3D, puis apprêtée et peinte à la main. Tout le reste de la maquette est de l'impression 3D." },
+      { title: "Assemblage", text: "Certaines parties sont imprimées d'une seule pièce, mais l'ensemble demande beaucoup d'assemblage : toutes les petites pièces noires sont imprimées à part, puis montées une à une." },
+      { title: "Électronique et LED", text: "L'électronique est intégrée à l'intérieur de la maquette. Le code de la chenille LED est lui aussi géré selon la demande du client." },
+    ],
     dir: "/assets/maquettes/cellule",
     elevs: [12, 28, 55],
     frames: 72,
@@ -39,7 +45,12 @@ export const MAQUETTES: Maquette[] = [
     title: "Maquette de système de purification",
     caption: "Pièce d'ingénierie imprimée en 3D",
     detail:
-      "Le châssis et les connecteurs sont imprimés en 3D. La tuyauterie, elle, est faite de vrais tubes transparents en PVC, que nous avons sourcés. Plusieurs petits éléments en métal ajoutent à la qualité de la maquette : les petites roulettes sont de vraies roulettes en métal, normalement destinées à des chariots de cuisine, et les pièces métalliques sur la façade sont des presse-étoupes, détournés pour imiter les prises du modèle réel, avec leurs câbles noirs. Un projet d'ingénierie où l'on mélange impression 3D et composants du commerce pour un rendu crédible.",
+      "De l'idéation à la modélisation, de l'impression aux finitions : chaque étape est conçue avec le client, pour que le résultat lui ressemble. Une maquette réalisée de A à Z dans notre atelier.",
+    parts: [
+      { title: "Impression 3D", text: "Le châssis et les connecteurs sont imprimés en 3D." },
+      { title: "Composants sourcés", text: "La tuyauterie est faite de vrais tubes transparents en PVC, que nous avons sourcés. Nous avons aussi sourcé plusieurs petits éléments en métal, afin d'ajouter du réalisme et de la qualité à la maquette : les petites roulettes, par exemple, sont de vraies roulettes en métal, à l'origine destinées à des chariots de cuisine." },
+      { title: "Détails de façade", text: "Les pièces métalliques sur la façade sont des presse-étoupes, détournés pour imiter les prises du modèle réel, avec leurs câbles noirs. L'impression 3D et les composants du commerce se mélangent pour un rendu crédible." },
+    ],
     dir: "/assets/maquettes/purification",
     elevs: [12, 28, 55],
     frames: 72,
@@ -52,7 +63,12 @@ export const MAQUETTES: Maquette[] = [
     title: "Maquette de caravane",
     caption: "Carrosserie imprimée en 3D",
     detail:
-      "Toute la caravane est imprimée en 3D, pièce par pièce, à l'exception des vitres noires et des feux orange : ce sont des plexiglas que nous découpons puis ajoutons à la maquette, pour un rendu premium et réaliste. Ponçage, assemblage et finitions soignées donnent à l'ensemble l'allure d'un vrai modèle de vitrine.",
+      "De l'idéation à la modélisation, de l'impression aux finitions : chaque étape est conçue avec le client, pour que le résultat lui ressemble. Une maquette réalisée de A à Z dans notre atelier.",
+    parts: [
+      { title: "Impression 3D", text: "Toute la caravane est imprimée en 3D, pièce par pièce." },
+      { title: "Plexiglas découpé", text: "Seules exceptions : les vitres noires et les feux orange. Ce sont des plexiglas que nous découpons puis ajoutons à la maquette, pour un rendu premium et réaliste." },
+      { title: "Finitions", text: "Ponçage, assemblage et finitions soignées donnent à l'ensemble l'allure d'un vrai modèle de vitrine." },
+    ],
     dir: "/assets/maquettes/caravane",
     elevs: [12, 28, 55],
     frames: 72,

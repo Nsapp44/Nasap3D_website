@@ -272,7 +272,8 @@ const jsonLd = {
     width: 100%;
     height: auto;
     aspect-ratio: 4 / 5;
-    object-fit: contain;
+    object-fit: cover;
+    object-position: center;
     background: #201d1b;
   }
   .lp-real figcaption {
@@ -376,10 +377,11 @@ const jsonLd = {
     inset: 0;
     z-index: -1;
     border-radius: inherit;
-    box-shadow: 0 0 46px 14px rgba(255, 90, 60, 0.7);
+    box-shadow: 0 0 26px 6px rgba(255, 90, 60, 0.6);
     pointer-events: none;
     animation: lpHalo 2.4s ease-in-out infinite;
   }
+  .lp-final .lp-btn-primary::before { display: none; } /* en bas : déjà dans une zone rouge, pas de halo */
   .lp-btn-primary:hover {
     scale: 1.05;
     background: #ff7155;
