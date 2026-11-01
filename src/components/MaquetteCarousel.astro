@@ -647,9 +647,13 @@ const posterOf = (m: Maquette) => m.posterWebp || (m.dir && m.elevs ? `${m.dir}/
     color: rgba(243, 241, 236, 0.9);
     overflow-wrap: anywhere;
   }
+  .mq-detail :global(.mq-detail-common) {
+    font-size: 14px;
+    color: rgba(243, 241, 236, 0.7);
+  }
   .mq-detail :global(.mq-detail-common + .mq-detail-own) {
-    margin-top: 8px;
-    font-weight: 600;
+    margin-top: 10px;
+    font-weight: 500;
     color: #f3f1ec;
   }
   .mq-nav:focus-visible,

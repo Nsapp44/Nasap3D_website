@@ -354,7 +354,7 @@ const jsonLd = {
   /* Bouton principal : UNE seule définition. Le halo vit sur ::before (animation d'opacité seule),
      pour que l'animation ne touche jamais au box-shadow du bouton (ni au survol). */
   @keyframes lpHalo {
-    0%, 100% { opacity: .6; }
+    0%, 100% { opacity: .15; }
     50% { opacity: 1; }
   }
   .lp-btn-primary {
@@ -368,6 +368,7 @@ const jsonLd = {
     background: #ff5a3c;
     color: #161514;
     box-shadow: 0 8px 26px rgba(255, 90, 60, 0.35), 0 0 0 1px rgba(255, 90, 60, 0.5);
+    transition: scale .2s ease, background .2s ease, box-shadow .2s ease, transform .2s ease;
   }
   .lp-btn-primary::before {
     content: "";
@@ -375,11 +376,12 @@ const jsonLd = {
     inset: 0;
     z-index: -1;
     border-radius: inherit;
-    box-shadow: 0 0 36px 8px rgba(255, 90, 60, 0.5);
+    box-shadow: 0 0 46px 14px rgba(255, 90, 60, 0.7);
     pointer-events: none;
-    animation: lpHalo 3.6s ease-in-out infinite;
+    animation: lpHalo 2.4s ease-in-out infinite;
   }
   .lp-btn-primary:hover {
+    scale: 1.05;
     background: #ff7155;
     box-shadow: 0 12px 34px rgba(255, 90, 60, 0.5), 0 0 0 1px rgba(255, 90, 60, 0.7);
   }
@@ -409,6 +411,7 @@ const jsonLd = {
   @media (prefers-reduced-motion: reduce) {
     .lp-title, .lp-subtitle, .lp-btn { animation: none !important; }
     .lp-btn-primary::before { animation: none; opacity: .8; }
+    .lp-btn-primary:hover { scale: none; }
     .lp-real:hover { scale: none; }
     .lp-btn:hover, .lp-btn:active, .lp-real:hover img,
     .lp-btn-primary:hover .lp-arrow, .lp-btn-primary:focus-visible .lp-arrow { transform: none; }

@@ -26,6 +26,8 @@ Reflets plexi : soleil seul = invisible/gris plat ; bandes de lumière avec éne
 39. [ ] À propos : contenu SEO, proposition à valider avant d'écrire.
 43. [ ] Capture 375 px du menu Guides ; décision « Europe » dans cgu/confidentialité/panier (à lui).
 45. [x] Maquettes purification + caravane : rendus finaux, conversion, test retrait/restauration (OK : 2 maquettes, 0 requête, build OK), captures 375/768/desktop (pas de scroll horizontal), commit local. En attente : Nolann teste en local, push sur son « oui ».
+46. [x] Descriptions des 3 maquettes enrichies (SEO, matières réelles : plexi, tubes PVC, roulettes, presse-étoupes, coque peinte, code LED NASAP) ; texte commun un peu réduit (14 px). Vérifié 375.
+47. [x] Bouton « Parler de mon projet » (/maquette-impression-3d) : halo visible et clignotant (2,4 s, opacité .15→1), grossit au survol (scale 1.05, désactivé en reduced-motion). Index.astro `.projet-cta-link` non touché (autre style).
 Nettoyage avant prod (annoncer d'abord) : commandes d'exemple N3D-2001..2009 en base locale (http://localhost:3000/admin).
 
 ## Prochain pas exact
