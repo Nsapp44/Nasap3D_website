@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { apiHandler, json, jsonError } from "../../lib/api/handler";
 import { requireAuth } from "../../lib/api/auth";
+import { enforceRateLimit } from "../../lib/api/rateLimit";
 import { prisma } from "../../lib/server/prisma";
 import { getCartSummary, getCartPieces, getCartTotalPrintMinutes } from "../../lib/server/cart";
 import { packPieces } from "../../lib/server/packing";
@@ -78,6 +79,8 @@ const checkoutShippingSchema = z.discriminatedUnion("mode", [
 // if there's an account. The front prompts login/signup before this.
 export const POST = apiHandler(async (context) => {
   const user = await requireAuth(context);
+  // Each call hits Boxtal and writes an order: keyed on the user, not the IP (shared behind the proxy).
+  enforceRateLimit(`checkout:${user.id}`, 10, 60_000);
 
   // Daily order cap (like JLCPCB) — checked first, before any Boxtal call
   // or DB write, so a full workshop fails fast instead of wasting a rate
