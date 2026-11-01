@@ -153,6 +153,16 @@ const CROSS_ORIGIN_ISOLATED_PATHS = new Set<string>([]); // TEMP AB test
 export const onRequest = defineMiddleware(async (context, next) => {
   startBackgroundSweepsOnce();
 
+  // Sous-domaine shop.nasap3d.com (même conteneur) : tant que la boutique n'est pas ouverte,
+  // seule la page « à venir » est servie ; le reste redirige vers le site principal.
+  const reqHost = (context.request.headers.get("x-forwarded-host") || context.request.headers.get("host") || "").toLowerCase();
+  if (reqHost.startsWith("shop.")) {
+    const p = context.url.pathname;
+    if (p === "/") return context.rewrite("/shop");
+    const isStatic = p === "/shop" || p.startsWith("/assets/") || p.startsWith("/_astro/") || p === "/favicon.ico" || p === "/robots.txt";
+    if (!isStatic) return context.redirect(`https://nasap3d.com${p}${context.url.search}`, 302);
+  }
+
   if (CROSS_ORIGIN_ISOLATED_PATHS.has(context.url.pathname)) {
     const response = await next();
     response.headers.set("Cross-Origin-Opener-Policy", "same-origin");

@@ -3,10 +3,12 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
 <BaseLayout
-  title="Nasap Shop, la boutique Nasap3D, bientôt en ligne"
+  title="Nasap Shop — la boutique Nasap3D, bientôt en ligne"
   description="Nasap Shop : la future boutique de Nasap3D, avec des objets imprimés en 3D à Nantes, prêts à offrir ou à poser chez soi. Ouverture prochainement."
   path="/shop"
+  canonicalUrl="https://shop.nasap3d.com/"
 >
+  <link slot="head" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700&display=swap" />
   <section class="shop-soon">
     <div class="shop-card">
       <img class="shop-logo" src="/assets/nasap-shop-symbole.svg" width="120" height="72" alt="Logo Nasap Shop" />
@@ -20,8 +22,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       </ul>
       <p class="shop-note">En attendant, l'atelier continue de fabriquer vos pièces sur mesure.</p>
       <div class="shop-actions">
-        <a class="shop-btn shop-btn-primary" href="/devis-instantane">Demander un devis</a>
-        <a class="shop-btn" href="/contact">Être prévenu de l'ouverture</a>
+        <a class="shop-btn shop-btn-primary" href="https://nasap3d.com/devis-instantane">Demander un devis</a>
+        <a class="shop-btn" href="https://nasap3d.com/contact">Être prévenu de l'ouverture</a>
       </div>
     </div>
   </section>

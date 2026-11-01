@@ -17,9 +17,11 @@ interface Props {
   hideHeader?: boolean;
   // Image d'aperçu pour les partages (og:image / twitter:image), chemin depuis la racine.
   ogImage?: string;
+  // URL canonique absolue si elle n'est pas sur ce site (ex. page du sous-domaine shop).
+  canonicalUrl?: string;
 }
-const { title, description, path, showAuthIcon, noindex = false, noindexFollow = false, hideFooter = false, hideHeader = false, ogImage = "/assets/og-nasap3d.jpg" } = Astro.props;
-const canonical = new URL(path, Astro.site).toString();
+const { title, description, path, showAuthIcon, noindex = false, noindexFollow = false, hideFooter = false, hideHeader = false, ogImage = "/assets/og-nasap3d.jpg", canonicalUrl } = Astro.props;
+const canonical = canonicalUrl ?? new URL(path, Astro.site).toString();
 ---
 
 <!doctype html>
