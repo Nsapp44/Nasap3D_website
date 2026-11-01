@@ -1,0 +1,29 @@
+### Décisions en vigueur
+- **France d'abord, Nantes ensuite. PAS d'international** (Nolann, 27/10 : « national je voulais dire que France »). **Ne pas perdre Nantes** : une commande de 1 300 € vient de Nantes, et « le site rassure et donne envie, c'est bien ce qu'on fait ». **Jamais « livraison gratuite ».**
+- Accueil :
+  - h1 « Impression 3D en France » (on le garde) ;
+  - une seule page ville ciblée (Nantes) ; Angers et Cholet inchangées (règle Google « doorway ») ;
+  - « Atelier à Nantes » reste dans le title et la meta ;
+  - `areaServed` du JSON-LD inchangé.
+- En-tête :
+  - identique à avant, avec « Guides » en plus ;
+  - menu burger à 1060 px et moins ;
+  - `.nav-links` gap `clamp(16px, calc((100vw - 920px) / 8), 26px)` (Header.astro ~172, HomeHeader.tsx ~239).
+- Pied de page :
+  - « Livraison partout en France » + liens devis / réalisations / services ;
+  - **on GARDE les liens Nantes, Cholet et Angers** (ce sont les seuls liens vers /impression-3d-nantes présents sur toutes les pages).
+- Rétro-conception : pas de page.
+- Canclaux :
+  - retiré seulement du texte à côté de « Contact », en bas de l'accueil : déjà fait (43c9aa8) ;
+  - **on le laisse partout ailleurs**, y compris dans la bulle de la carte, car « l'adresse complète c'est important ».
+- Textes :
+  - phrase A : « Aucun paiement à la commande. Expertise et validation de votre pièce en amont. » ;
+  - jamais « humain » ni « sans IA » ; rien d'inventé ;
+  - prix via `getPublicPricing()` ; site TTC.
+- Interdits :
+  - configurateur inchangé ; Ads non coupées ;
+  - ne pas toucher les fichiers du shop (cgu, maquette-impression-3d, OrdersTab/OrderCard/Dashboard, api/orders/[id], lib/server/orders, middleware, session) ni reparer-piece-3d.astro.
+- og:image : real-17.
+- **Plan :** `docs/plan_seo_national_2026-10-27.md` (§1-9, décisions intégrées). Rien n'est appliqué au code avant son oui.
+- Recherche international / Nantes, archivée : `docs/international_seo_2026-10-27.md`.
+
