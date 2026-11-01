@@ -65,7 +65,7 @@ export const MAQUETTES: Maquette[] = [
     detail:
       "De l'idéation à la modélisation, de l'impression aux finitions : chaque étape est conçue avec le client, pour que le résultat lui ressemble. Une maquette réalisée de A à Z dans notre atelier.",
     parts: [
-      { title: "Impression 3D", text: "Toute la caravane est imprimée en 3D, pièce par pièce." },
+      { title: "Impression 3D", text: "Toute la caravane est imprimée en 3D, pièce par pièce. Nos machines de dernière génération impriment aussi plusieurs couleurs dans la masse : les détails noirs de la carrosserie blanche sont imprimés directement en bicolore, sans peinture." },
       { title: "Plexiglas découpé", text: "Seules exceptions : les vitres noires et les feux orange. Ce sont des plexiglas que nous découpons puis ajoutons à la maquette, pour un rendu premium et réaliste." },
       { title: "Finitions", text: "Ponçage, assemblage et finitions soignées donnent à l'ensemble l'allure d'un vrai modèle de vitrine." },
     ],
