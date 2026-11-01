@@ -3,7 +3,7 @@
 Impression 3D / fabrication sur mesure, Nantes. Astro + React (îlots `client:load`) + Prisma/PostgreSQL + Stripe + Boxtal + react-pdf + Plausible (proxy `/m/s.js`, `/m/e`). Déploiement Docker OVH, **redéploiement auto au push sur `master`**.
 
 ## Règles dures
-- **Ne jamais commiter ni pousser sans l'accord de Nolann** : résumer les changements, montrer les captures, demander.
+- **Commit LOCAL libre (décision de Nolann 29/10/2026), push seulement avec son accord** : commiter en local ses propres fichiers (`git add <fichier>`, jamais `-A`) autant que nécessaire, surtout avant une passation ; ne jamais pousser (un push sur master redéploie) sans son accord : résumer les changements, montrer les captures, demander.
 - **Responsive à chaque changement d'interface** (mobile 375, tablette 768, desktop/grand écran) : skill `verif-responsive-web`. Aucun scroll horizontal.
 - **Respecter le design existant** : fond sombre `#161514`/`#1a1917`/`#201d1b`, accent `#ff5a3c`, Space Grotesk (titres) + Inter, cartes arrondies bordure `rgba(255,255,255,0.1)`, animation d'entrée `translateY(6px)` 0,5 s, `prefers-reduced-motion` respecté. Fixer soi-même fond et texte (thème sombre de Windows).
 - Montrer des captures avant/après pour tout changement visuel.
