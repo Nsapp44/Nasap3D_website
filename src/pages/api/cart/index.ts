@@ -4,7 +4,7 @@ import { getSessionUser } from "../../../lib/api/auth";
 import { getOrCreateGuestSessionId } from "../../../lib/api/cookies";
 import { identityFor } from "../../../lib/api/identity";
 import { prisma } from "../../../lib/server/prisma";
-import { getCartSummary, getCartPieces } from "../../../lib/server/cart";
+import { getCartSummary, getCartPieces, cartWouldExceedLimit } from "../../../lib/server/cart";
 import { packPieces, parcelsRelayOk, parcelsLockerOk } from "../../../lib/server/packing";
 import { enforceRateLimit, clientIp } from "../../../lib/api/rateLimit";
 
@@ -45,6 +45,11 @@ export const POST = apiHandler(async (context) => {
   const owns = (user && quoteJob.userId === user.id) || (!user && quoteJob.sessionId === sessionId);
   if (!owns) return jsonError(403, "forbidden");
   if (quoteJob.status !== "ANALYZED") return jsonError(409, "quote_not_ready");
+
+  const identityForLimit = user ? ({ userId: user.id } as const) : ({ sessionId: sessionId! } as const);
+  if (await cartWouldExceedLimit(identityForLimit, body.data.qty ?? quoteJob.quantity)) {
+    return jsonError(409, "cart_too_large");
+  }
 
   await prisma.cartItem.create({
     data: {

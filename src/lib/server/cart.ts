@@ -101,6 +101,24 @@ export async function getCartTotalPrintMinutes(identity: { userId: string } | { 
   return items.reduce((sum, item) => sum + (item.quoteJob.estimatedTimeMin ?? 0) * item.qty, 0);
 }
 
+// Plafond du panier (anti-abus : le rangement en colis est coûteux, une pièce par unité).
+// Au-delà : passer par le formulaire de contact (devis sur mesure).
+export const CART_MAX_PIECES = 500;
+export const CART_MAX_LINES = 30;
+
+// True si ajouter/modifier une ligne ferait dépasser le plafond.
+// `replacingItemId` : ligne modifiée (sa quantité actuelle n'est pas comptée).
+export async function cartWouldExceedLimit(
+  identity: { userId: string } | { sessionId: string },
+  newQty: number,
+  replacingItemId?: string,
+): Promise<boolean> {
+  const items = await prisma.cartItem.findMany({ where: identity, select: { id: true, qty: true } });
+  const others = items.filter((i) => i.id !== replacingItemId);
+  if (!replacingItemId && others.length >= CART_MAX_LINES) return true;
+  return others.reduce((sum, i) => sum + i.qty, 0) + newQty > CART_MAX_PIECES;
+}
+
 // Pièces à ranger en colis (voir packing.ts) : une entrée par unité (qty 3 →
 // 3 pièces). Poids = QuoteJob.weightG, qui est par unité (le panier le
 // multiplie par qty, cf. getCartTotalWeightG).

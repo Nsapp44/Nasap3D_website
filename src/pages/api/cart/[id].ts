@@ -2,7 +2,7 @@ import { z } from "zod";
 import { apiHandler, json, jsonError } from "../../../lib/api/handler";
 import { identityFor } from "../../../lib/api/identity";
 import { prisma } from "../../../lib/server/prisma";
-import { getCartSummary } from "../../../lib/server/cart";
+import { getCartSummary, cartWouldExceedLimit } from "../../../lib/server/cart";
 import { deleteQuoteJobFileIfOrphaned } from "../../../lib/server/quoteCleanup";
 import { enforceRateLimit, clientIp } from "../../../lib/api/rateLimit";
 
@@ -25,6 +25,8 @@ export const PATCH = apiHandler(async (context) => {
   const identity = await identityFor(context);
   const item = await prisma.cartItem.findUnique({ where: { id } });
   if (!item || !owns(identity, item)) return jsonError(404, "not_found");
+
+  if (await cartWouldExceedLimit(identity, body.data.qty, id)) return jsonError(409, "cart_too_large");
 
   await prisma.cartItem.update({ where: { id }, data: { qty: body.data.qty } });
   const summary = await getCartSummary(identity);
