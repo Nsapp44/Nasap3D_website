@@ -7,8 +7,19 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   description="Nasap Shop : la future boutique de Nasap3D, avec des objets imprimés en 3D à Nantes, prêts à offrir ou à poser chez soi. Ouverture prochainement."
   path="/shop"
   canonicalUrl="https://shop.nasap3d.com/"
+  hideHeader
+  hideFooter
 >
   <link slot="head" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700&display=swap" />
+  <header class="shop-head">
+    <div class="shop-head-in">
+      <a href="/shop" class="shop-brand" aria-label="Nasap Shop, accueil">
+        <img src="/assets/nasap-shop-symbole.svg" width="60" height="36" alt="" />
+        <span class="shop-brand-name"><span>Nasap</span> <span class="o">Shop</span></span>
+      </a>
+      <span class="shop-head-tag">par Nasap3D · Nantes</span>
+    </div>
+  </header>
   <section class="shop-soon">
     <div class="shop-card">
       <img class="shop-logo" src="/assets/nasap-shop-symbole.svg" width="120" height="72" alt="Logo Nasap Shop" />
@@ -27,9 +38,24 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       </div>
     </div>
   </section>
+  <footer class="shop-foot">
+    <p>Nasap Shop est une boutique de l'atelier <a href="https://nasap3d.com/">Nasap3D</a>, Nantes · <a href="https://nasap3d.com/mentions-legales">Mentions légales</a></p>
+  </footer>
 </BaseLayout>
 
 <style>
+  .shop-head { background: #faf6f0; border-bottom: 1px solid rgba(28, 26, 24, 0.08); }
+  .shop-head-in { max-width: 1120px; margin: 0 auto; min-height: 78px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .shop-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .shop-brand img { display: block; }
+  .shop-brand-name { font-family: "Barlow Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 28px; line-height: 1; white-space: nowrap; color: #1c1a18; }
+  .shop-brand-name .o { color: #ff5a3c; }
+  .shop-head-tag { font-size: 13px; color: #6f665d; }
+  @media (max-width: 480px) { .shop-head-tag { display: none; } }
+  .shop-foot { background: #f3ece2; color: #6f665d; font-size: 13px; text-align: center; padding: 18px 16px; }
+  .shop-foot p { margin: 0; }
+  .shop-foot a { color: #c2391f; }
+  .shop-soon { min-height: calc(100vh - 78px - 58px); align-items: center; }
   .shop-soon {
     background: #faf6f0;
     color: #3d3833;
