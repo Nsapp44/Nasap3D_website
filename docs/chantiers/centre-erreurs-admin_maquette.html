@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette : centre d'erreurs admin (demande 65)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Maquette statique, autonome. Icônes : Lucide (ISC, https://github.com/lucide-icons/lucide/blob/main/LICENSE). */
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0f0e0d; color: #f3f1ec; font: 400 13px/1.5 'Inter', system-ui, sans-serif; padding: 32px 24px 80px; }
+  .doc-title { font: 700 22px 'Space Grotesk', system-ui, sans-serif; margin: 0 0 6px; }
+  .doc-sub { color: rgba(255,255,255,.55); margin: 0 0 32px; max-width: 820px; }
+  .state { margin-bottom: 48px; }
+  .state-label { font: 600 12px 'Inter', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: #ff5a3c; margin-bottom: 10px; }
+  .state-note { color: rgba(255,255,255,.55); font-size: 12px; margin: 8px 0 0; max-width: 820px; }
+  .frame { background: #161514; border: 1px solid rgba(255,255,255,.12); border-radius: 10px; overflow: hidden; position: relative; }
+  .frame.desk { width: 1100px; max-width: 100%; }
+  .frame.desk.tall { min-height: 640px; }
+  .frame.mob { width: 375px; height: 760px; }
+  .row { display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-start; }
+
+  /* En-tête admin (copie de AdminPage.tsx) */
+  .admin-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 40px; border-bottom: 1px solid rgba(255,255,255,.08); position: relative; background: #161514; }
+  .logo { display: flex; align-items: center; gap: 10px; font: 700 18px 'Space Grotesk', sans-serif; color: #f3f1ec; }
+  .admin-badge { font: 700 9px 'Inter', sans-serif; color: #161514; background: #ff5a3c; border-radius: 4px; padding: 3px 7px; }
+  .right { display: flex; align-items: center; gap: 28px; }
+  .quick { display: flex; align-items: center; gap: 18px; font: 500 12px 'Inter', sans-serif; color: rgba(255,255,255,.75); }
+  .avatar { width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); display: inline-block; }
+  .tabs { display: flex; gap: 26px; font: 500 13px 'Inter', sans-serif; }
+  .tab { color: rgba(255,255,255,.5); padding-bottom: 4px; border-bottom: 2px solid transparent; }
+  .tab.active { color: #f3f1ec; font-weight: 600; border-bottom-color: #ff5a3c; }
+  .logout { color: rgba(255,255,255,.6); font-size: 12px; }
+  .burger { display: flex; flex-direction: column; gap: 5px; width: 36px; height: 36px; justify-content: center; align-items: center; }
+  .burger span { width: 20px; height: 2px; background: #f3f1ec; border-radius: 1px; }
+
+  /* Bouton d'alertes */
+  .alert-btn { position: relative; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: 9px; border: 1px solid transparent; background: transparent; color: rgba(255,255,255,.45); cursor: pointer; padding: 0; transition: background .2s ease, color .2s ease; }
+  .alert-btn:hover { background: rgba(255,255,255,.06); color: #f3f1ec; }
+  .alert-btn:focus-visible { outline: 2px solid #ff5a3c; outline-offset: 2px; }
+  .alert-btn.has-critical { color: #ff5a3c; }
+  .alert-btn.open { background: rgba(255,90,60,.12); border-color: rgba(255,90,60,.35); }
+  .alert-btn svg { width: 20px; height: 20px; }
+  .pill { position: absolute; top: -3px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #ff5a3c; color: #161514; font: 700 10px/18px 'Inter', sans-serif; text-align: center; box-shadow: 0 0 0 2px #161514; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* Contenu factice sous l'en-tête */
+  .page { max-width: 1000px; margin: 0 auto; padding: 24px; }
+  .bar { border: 1px solid rgba(255,255,255,.1); background: #1a1917; border-radius: 12px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; }
+  .bar b { font: 600 13px 'Space Grotesk', sans-serif; }
+  .ghost { height: 120px; border: 1px solid rgba(255,255,255,.06); border-radius: 12px; background: #1a1917; margin-top: 16px; opacity: .5; }
+  .badge-on { font: 700 9px 'Inter', sans-serif; padding: 5px 9px; border-radius: 5px; background: rgba(143,209,158,.15); color: #8fd19e; }
+  .track { width: 46px; height: 24px; border-radius: 12px; background: #ff5a3c; position: relative; }
+  .track::after { content: ""; position: absolute; top: 3px; left: 25px; width: 18px; height: 18px; border-radius: 50%; background: #fff; }
+
+  /* Panneau (popover desktop) */
+  .panel { position: absolute; top: 62px; right: 150px; width: 400px; max-height: 560px; display: flex; flex-direction: column; background: #1a1917; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; box-shadow: 0 18px 50px rgba(0,0,0,.55); z-index: 30; animation: enter .5s ease both; }
+  @keyframes enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 12px; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .panel-title { font: 700 15px 'Space Grotesk', sans-serif; color: #f3f1ec; margin: 0; }
+  .panel-count { font: 500 11px 'Inter', sans-serif; color: rgba(255,255,255,.55); margin-top: 2px; }
+  .icon-btn { width: 32px; height: 32px; border-radius: 8px; border: none; background: transparent; color: rgba(255,255,255,.6); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+  .icon-btn:hover { background: rgba(255,255,255,.06); color: #f3f1ec; }
+  .icon-btn svg { width: 18px; height: 18px; }
+  .list { overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+  .card { border: 1px solid rgba(255,255,255,.1); border-radius: 10px; background: #201d1b; padding: 12px 12px 12px 14px; position: relative; }
+  .card::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 0 3px 3px 0; background: #ff5a3c; }
+  .card.warn::before { background: #f0b35a; }
+  .card-top { display: flex; gap: 10px; align-items: flex-start; }
+  .type-ic { flex: none; width: 28px; height: 28px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; background: rgba(255,90,60,.14); color: #ff5a3c; }
+  .warn .type-ic { background: rgba(240,179,90,.14); color: #f0b35a; }
+  .type-ic svg { width: 16px; height: 16px; }
+  .card-title { font: 600 13px 'Space Grotesk', sans-serif; color: #f3f1ec; display: flex; justify-content: space-between; gap: 8px; }
+  .when { font: 400 10.5px 'Inter', sans-serif; color: rgba(255,255,255,.4); white-space: nowrap; }
+  .card-text { font: 400 12px/1.5 'Inter', sans-serif; color: rgba(255,255,255,.75); margin-top: 2px; }
+  .ref { color: #f3f1ec; font-weight: 600; text-decoration: underline; text-decoration-color: rgba(255,90,60,.6); text-underline-offset: 2px; }
+  .detail { font: 400 11px/1.45 'Inter', sans-serif; color: rgba(255,255,255,.45); margin-top: 4px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; padding-left: 38px; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 11px; border-radius: 7px; border: 1px solid rgba(255,255,255,.18); background: transparent; color: #f3f1ec; font: 600 11.5px 'Inter', sans-serif; cursor: pointer; }
+  .btn:hover { border-color: #ff5a3c; color: #ff5a3c; }
+  .btn.primary { background: #ff5a3c; border-color: #ff5a3c; color: #161514; }
+  .btn.primary:hover { color: #161514; filter: brightness(1.08); }
+  .btn.muted { color: rgba(255,255,255,.6); border-color: rgba(255,255,255,.1); }
+  .btn svg { width: 14px; height: 14px; }
+  .manual { margin: 10px 0 0 38px; padding: 10px; border-radius: 8px; background: #161514; border: 1px solid rgba(255,255,255,.1); }
+  .manual label { display: block; font: 500 11px 'Inter', sans-serif; color: rgba(255,255,255,.6); margin-bottom: 6px; }
+  .manual-row { display: flex; gap: 6px; }
+  .input { flex: 1; min-width: 0; height: 32px; border: 1px solid rgba(255,255,255,.15); border-radius: 7px; background: #1a1917; color: #e8e6e1; padding: 0 10px; font: 12px 'Inter', sans-serif; }
+  .input:focus { outline: 2px solid #ff5a3c; outline-offset: 1px; }
+  .manual-hint { font: 400 10.5px/1.4 'Inter', sans-serif; color: rgba(255,255,255,.45); margin-top: 6px; }
+  .panel-foot { padding: 10px 16px; border-top: 1px solid rgba(255,255,255,.08); font: 400 11px 'Inter', sans-serif; color: rgba(255,255,255,.45); }
+
+  /* Mobile 375 */
+  .mob .admin-header { padding: 14px 20px; }
+  .mob .right { gap: 14px; }
+  .mob .quick { gap: 10px; }
+  .mob .page { padding: 16px; }
+  .scrim { position: absolute; inset: 0; background: rgba(0,0,0,.55); z-index: 25; }
+  .drawer { position: absolute; left: 0; right: 0; bottom: 0; height: 85%; border-radius: 16px 16px 0 0; top: auto; width: auto; max-height: none; animation: enter .5s ease both; }
+  .drawer .panel-head { padding-top: 6px; }
+  .handle { width: 40px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.25); margin: 8px auto 4px; }
+  .drawer .btn { min-height: 40px; padding: 0 13px; }
+  .drawer .icon-btn { width: 40px; height: 40px; }
+  .drawer .actions { padding-left: 0; }
+  .drawer .manual { margin-left: 0; }
+  .drawer .input { height: 40px; }
+
+  @media (prefers-reduced-motion: reduce) { .panel, .drawer { animation: none; } .alert-btn { transition: none; } }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+    <symbol id="i-retry" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></symbol>
+    <symbol id="i-package" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"/><path d="m7.5 4.27 9 5.15"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></symbol>
+    <symbol id="i-card" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></symbol>
+    <symbol id="i-truck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></symbol>
+  </defs>
+</svg>
+
+<h1 class="doc-title">Centre d'erreurs admin : maquette</h1>
+<p class="doc-sub">Demande 65. Statique, données factices. L'icône vit dans la zone toujours visible de l'en-tête (avant « Compte »), jamais dans le burger. Spec : <code>docs/chantiers/centre-erreurs-admin_spec.md</code>.</p>
+
+<!-- ÉTAT 1 -->
+<section class="state">
+  <div class="state-label">1 · Fermé, aucune erreur</div>
+  <div class="frame desk">
+    <div class="admin-header">
+      <div class="logo">NASAP3D <span class="admin-badge">ADMIN</span></div>
+      <div class="right">
+        <div class="quick">
+          <button type="button" class="alert-btn" aria-label="Erreurs : aucune" aria-expanded="false"><svg aria-hidden="true"><use href="#i-alert"/></svg></button>
+          <span>Compte</span><span class="avatar"></span>
+        </div>
+        <div class="tabs"><span class="tab active">Commandes</span><span class="tab">Stock filament</span><span class="tab">Expédition</span><span class="tab">Devis</span><span class="tab">Liste shop</span></div>
+        <span class="logout">Déconnexion</span>
+      </div>
+    </div>
+    <div class="page"><div class="bar"><span><span class="badge-on">EN LIGNE</span> &nbsp;<b>Devis instantané — en ligne</b></span><span class="track"></span></div></div>
+  </div>
+  <p class="state-note">Icône grise discrète (rgba 255,255,255,.45), pas de pastille. Survol : fond léger + blanc.</p>
+</section>
+
+<!-- ÉTAT 2 -->
+<section class="state">
+  <div class="state-label">2 · Fermé, 5 erreurs dont des critiques</div>
+  <div class="frame desk">
+    <div class="admin-header">
+      <div class="logo">NASAP3D <span class="admin-badge">ADMIN</span></div>
+      <div class="right">
+        <div class="quick">
+          <button type="button" class="alert-btn has-critical" aria-label="Erreurs : 5 à traiter" aria-expanded="false" aria-haspopup="dialog"><svg aria-hidden="true"><use href="#i-alert"/></svg><span class="pill" aria-hidden="true">5</span></button>
+          <span class="sr-only" aria-live="polite">5 erreurs à traiter</span>
+          <span>Compte</span><span class="avatar"></span>
+        </div>
+        <div class="tabs"><span class="tab active">Commandes</span><span class="tab">Stock filament</span><span class="tab">Expédition</span><span class="tab">Devis</span><span class="tab">Liste shop</span></div>
+        <span class="logout">Déconnexion</span>
+      </div>
+    </div>
+    <div class="page"><div class="bar"><span><span class="badge-on">EN LIGNE</span> &nbsp;<b>Devis instantané — en ligne</b></span><span class="track"></span></div></div>
+  </div>
+  <p class="state-note">Au moins une critique : icône orange #ff5a3c. Seulement des « attention » : icône blanche + pastille. Au-delà de 9 : « 9+ ».</p>
+</section>
+
+<!-- ÉTAT 3 -->
+<section class="state">
+  <div class="state-label">3 · Panneau ouvert (desktop / tablette)</div>
+  <div class="frame desk tall">
+    <div class="admin-header">
+      <div class="logo">NASAP3D <span class="admin-badge">ADMIN</span></div>
+      <div class="right">
+        <div class="quick">
+          <button type="button" class="alert-btn has-critical open" aria-label="Erreurs : 5 à traiter" aria-expanded="true" aria-controls="alert-panel" aria-haspopup="dialog"><svg aria-hidden="true"><use href="#i-alert"/></svg><span class="pill" aria-hidden="true">5</span></button>
+          <span>Compte</span><span class="avatar"></span>
+        </div>
+        <div class="tabs"><span class="tab active">Commandes</span><span class="tab">Stock filament</span><span class="tab">Expédition</span><span class="tab">Devis</span><span class="tab">Liste shop</span></div>
+        <span class="logout">Déconnexion</span>
+      </div>
+    </div>
+    <div class="page"><div class="bar"><span><span class="badge-on">EN LIGNE</span> &nbsp;<b>Devis instantané — en ligne</b></span><span class="track"></span></div><div class="ghost"></div><div class="ghost"></div></div>
+
+    <div class="panel" id="alert-panel" role="dialog" aria-labelledby="ap-title">
+      <div class="panel-head">
+        <div><h2 class="panel-title" id="ap-title" tabindex="-1">Erreurs à traiter</h2><div class="panel-count">5 erreurs · 3 critiques</div></div>
+        <button type="button" class="icon-btn" aria-label="Fermer"><svg aria-hidden="true"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="list">
+        <article class="card">
+          <div class="card-top"><span class="type-ic"><svg aria-hidden="true"><use href="#i-truck"/></svg></span>
+            <div style="flex:1"><div class="card-title">Étiquette refusée par Boxtal <span class="when">il y a 12 min</span></div>
+              <div class="card-text"><a class="ref" href="#">N3D-2041</a> : le code postal ne correspond pas à la ville.</div>
+              <div class="detail">Raison Boxtal : « Code postal 44300 inconnu pour Nante ».</div></div></div>
+          <div class="actions"><button class="btn primary" type="button"><svg aria-hidden="true"><use href="#i-retry"/></svg>Réessayer</button><button class="btn" type="button" aria-expanded="true">Étiquette faite à la main</button><button class="btn muted" type="button">Voir la commande</button></div>
+          <div class="manual">
+            <label for="trk1">N° de suivi (étiquette créée sur boxtal.com)</label>
+            <div class="manual-row"><input class="input" id="trk1" value="3SAAAA0123456"><button class="btn primary" type="button">Enregistrer</button></div>
+            <div class="manual-hint">La commande sera marquée « étiquette faite à la main » ; le bouton « Créer l'étiquette » disparaît.</div>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-top"><span class="type-ic"><svg aria-hidden="true"><use href="#i-card"/></svg></span>
+            <div style="flex:1"><div class="card-title">Anomalie de paiement <span class="when">hier, 18:40</span></div>
+              <div class="card-text"><a class="ref" href="#">N3D-2039</a> : paiement reçu (48,00 €) alors que la commande est refusée. Vérifier et rembourser si besoin.</div></div></div>
+          <div class="actions"><button class="btn" type="button">Ouvrir dans Stripe</button><button class="btn muted" type="button">Voir la commande</button><button class="btn muted" type="button">Traité</button></div>
+        </article>
+        <article class="card">
+          <div class="card-top"><span class="type-ic"><svg aria-hidden="true"><use href="#i-pin"/></svg></span>
+            <div style="flex:1"><div class="card-title">Adresse incomplète <span class="when">ce matin</span></div>
+              <div class="card-text"><a class="ref" href="#">N3D-2043</a> : il manque le téléphone et le code postal du destinataire.</div></div></div>
+          <div class="actions"><button class="btn muted" type="button">Voir la commande</button></div>
+        </article>
+        <article class="card warn">
+          <div class="card-top"><span class="type-ic"><svg aria-hidden="true"><use href="#i-package"/></svg></span>
+            <div style="flex:1"><div class="card-title">Cartons épuisés</div>
+              <div class="card-text">Plus de carton M ni XL. <a class="ref" href="#">N3D-2045</a> a besoin d'un M.</div></div></div>
+          <div class="actions"><button class="btn" type="button">Voir le stock</button></div>
+        </article>
+        <article class="card warn">
+          <div class="card-top"><span class="type-ic"><svg aria-hidden="true"><use href="#i-retry"/></svg></span>
+            <div style="flex:1"><div class="card-title">Suivi Boxtal injoignable <span class="when">il y a 2 h</span></div>
+              <div class="card-text"><a class="ref" href="#">N3D-2038</a> : Boxtal ne répond pas, le suivi n'a pas pu être vérifié (3 essais).</div></div></div>
+          <div class="actions"><button class="btn" type="button"><svg aria-hidden="true"><use href="#i-retry"/></svg>Réessayer</button><button class="btn muted" type="button">Voir la commande</button></div>
+        </article>
+      </div>
+      <div class="panel-foot">Les erreurs liées à l'état d'une commande disparaissent seules une fois réglées.</div>
+    </div>
+  </div>
+  <p class="state-note">Popover 400 px ancré sous l'icône. Échap / clic dehors ferment, le focus revient au bouton. Critiques (barre orange) avant « attention » (barre ambre #f0b35a).</p>
+</section>
+
+<!-- ÉTAT 4 -->
+<section class="state">
+  <div class="state-label">4 · Mobile 375 : fermé, puis tiroir ouvert</div>
+  <div class="row">
+    <div class="frame mob">
+      <div class="admin-header">
+        <div class="logo" style="font-size:15px">NASAP3D <span class="admin-badge">ADMIN</span></div>
+        <div class="right">
+          <div class="quick">
+            <button type="button" class="alert-btn has-critical" aria-label="Erreurs : 5 à traiter" aria-expanded="false"><svg aria-hidden="true"><use href="#i-alert"/></svg><span class="pill" aria-hidden="true">5</span></button>
+            <span>Compte</span><span class="avatar"></span>
+          </div>
+          <div class="burger"><span></span><span></span><span></span></div>
+        </div>
+      </div>
+      <div class="page"><div class="bar"><b>Devis — en ligne</b><span class="track"></span></div><div class="ghost"></div><div class="ghost"></div><div class="ghost"></div></div>
+    </div>
+
+    <div class="frame mob">
+      <div class="admin-header">
+        <div class="logo" style="font-size:15px">NASAP3D <span class="admin-badge">ADMIN</span></div>
+        <div class="right">
+          <div class="quick">
+            <button type="button" class="alert-btn has-critical open" aria-label="Erreurs : 5 à traiter" aria-expanded="true"><svg aria-hidden="true"><use href="#i-alert"/></svg><span class="pill" aria-hidden="true">5</span></button>
+            <span>Compte</span><span class="avatar"></span>
+          </div>
+          <div class="burger"><span></span><span></span><span></span></div>
+        </div>
+      </div>
+      <div class="page"><div class="bar"><b>Devis — en ligne</b><span class="track"></span></div><div class="ghost"></div></div>
+      <div class="scrim"></div>
+      <div class="panel drawer" role="dialog" aria-labelledby="ap-title-m">
+        <div class="handle" aria-hidden="true"></div>
+        <div class="panel-head">
+          <div><h2 class="panel-title" id="ap-title-m" tabindex="-1">Erreurs à traiter</h2><div class="panel-count">5 erreurs · 3 critiques</div></div>
+          <button type="button" class="icon-btn" aria-label="Fermer"><svg aria-hidden="true"><use href="#i-x"/></svg></button>
+        </div>
+        <div class="list">
+          <article class="card">
+            <div class="card-top"><span class="type-ic"><svg aria-hidden="true"><use href="#i-truck"/></svg></span>
+              <div style="flex:1"><div class="card-title">Étiquette refusée par Boxtal</div>
+                <div class="card-text"><a class="ref" href="#">N3D-2041</a> : le code postal ne correspond pas à la ville.</div>
+                <div class="when">il y a 12 min</div></div></div>
+            <div class="actions"><button class="btn primary" type="button"><svg aria-hidden="true"><use href="#i-retry"/></svg>Réessayer</button><button class="btn" type="button">Étiquette faite à la main</button></div>
+          </article>
+          <article class="card">
+            <div class="card-top"><span class="type-ic"><svg aria-hidden="true"><use href="#i-card"/></svg></span>
+              <div style="flex:1"><div class="card-title">Anomalie de paiement</div>
+                <div class="card-text"><a class="ref" href="#">N3D-2039</a> : paiement reçu (48,00 €) alors que la commande est refusée. Vérifier et rembourser si besoin.</div></div></div>
+            <div class="actions"><button class="btn" type="button">Ouvrir dans Stripe</button><button class="btn muted" type="button">Traité</button></div>
+          </article>
+          <article class="card">
+            <div class="card-top"><span class="type-ic"><svg aria-hidden="true"><use href="#i-pin"/></svg></span>
+              <div style="flex:1"><div class="card-title">Adresse incomplète</div>
+                <div class="card-text"><a class="ref" href="#">N3D-2043</a> : il manque le téléphone et le code postal.</div></div></div>
+            <div class="actions"><button class="btn muted" type="button">Voir la commande</button></div>
+          </article>
+          <article class="card warn">
+            <div class="card-top"><span class="type-ic"><svg aria-hidden="true"><use href="#i-package"/></svg></span>
+              <div style="flex:1"><div class="card-title">Cartons épuisés</div>
+                <div class="card-text">Plus de carton M ni XL.</div></div></div>
+            <div class="actions"><button class="btn" type="button">Voir le stock</button></div>
+          </article>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="state-note">≤ 560 px : tiroir depuis le bas (85 % de hauteur), fond assombri, boutons et champs de 40 px, focus bouclé dans le tiroir. Aucun scroll horizontal ; la liste défile seule.</p>
+</section>
+
+</body>
+</html>
