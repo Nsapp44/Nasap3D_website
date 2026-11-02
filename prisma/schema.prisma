@@ -335,9 +335,12 @@ model Order {
   // destinataire dès que la commande passe en DELIVERED (voir purgeShippingDataOnDelivery
   // dans routes/admin.ts) : plus aucune utilité passé ce point.
   trackingNumber String?
+  // Étiquette faite à la main (hors Boxtal) : posé par l'admin avec le n° de suivi.
+  labelManualAt  DateTime?
 
   items   OrderItem[]
   invoice Invoice?
+  alerts  AdminAlert[]
 
   @@index([userId])
   @@index([status])
@@ -407,6 +410,34 @@ model ShippingBoxStock {
   code      String   @id
   qty       Int      @default(0)
   updatedAt DateTime @updatedAt
+}
+
+// Centre d'erreurs admin : événements dont la trace n'existe que dans un catch
+// (les autres alertes sont dérivées de l'état des commandes, voir adminAlerts.ts).
+// key = `${kind}:${orderId ?? "global"}` (+ `:${stripeRef}` pour PAYMENT_ANOMALY), unique anti-doublon.
+enum AdminAlertKind {
+  LABEL_REFUSED
+  TRACKING_UNREACHABLE
+  PAYMENT_ANOMALY
+  EMAIL_FAILED
+}
+
+model AdminAlert {
+  id          String         @id @default(cuid())
+  kind        AdminAlertKind
+  key         String         @unique
+  orderId     String?
+  order       Order?         @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  orderRef    String?
+  message     String
+  detail      String?
+  count       Int            @default(1)
+  firstSeenAt DateTime       @default(now())
+  lastSeenAt  DateTime       @default(now())
+  resolvedAt  DateTime?
+  resolvedBy  String?
+
+  @@index([resolvedAt])
 }
 
 // Liste d'attente éphémère « être prévenu de l'ouverture » de Nasap Shop : e-mails seulement,

@@ -102,7 +102,59 @@ function isoDate(d: Date): string {
 }
 
 export class BoxtalConfigError extends Error {}
-export class BoxtalApiError extends Error {}
+export class BoxtalApiError extends Error {
+  // Raison courte et lisible (jamais de XML/JSON), affichée dans l'admin ; `message` reste réservé aux logs.
+  shortReason?: string;
+  constructor(message: string, shortReason?: string) {
+    super(message);
+    this.shortReason = shortReason;
+  }
+}
+
+const SHORT_REASON_MAX = 160;
+const SHORT_REASON_FALLBACK = "Boxtal a refusé la demande";
+export const BOXTAL_REASON_UNREACHABLE = "Boxtal ne répond pas";
+export const boxtalHttpReason = (status: number): string => `Boxtal a répondu HTTP ${status}`;
+
+function cleanReason(text: string): string {
+  const t = text
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return t.length > SHORT_REASON_MAX ? `${t.slice(0, SHORT_REASON_MAX - 1).trimEnd()}…` : t;
+}
+
+// Texte lisible tiré de `doc.error` (forme supposée {code, message}, ou une chaîne) ; repli générique sinon.
+export function boxtalDocErrorReason(error: unknown): string {
+  let raw: unknown = error;
+  if (error && typeof error === "object") raw = (error as { message?: unknown }).message;
+  if (typeof raw !== "string") return SHORT_REASON_FALLBACK;
+  return cleanReason(raw) || SHORT_REASON_FALLBACK;
+}
+
+// Raison courte à montrer à l'admin pour une erreur Boxtal : jamais `err.message` (peut contenir du XML).
+export function shortBoxtalReason(err: unknown): string {
+  const r = err instanceof BoxtalApiError ? err.shortReason : undefined;
+  return (r && cleanReason(r)) || SHORT_REASON_FALLBACK;
+}
+
+// Variables d'environnement Boxtal absentes (noms seulement, aucun appel réseau).
+export function boxtalConfigMissing(): string[] {
+  const names = [
+    "BOXTAL_API_KEY_V1",
+    "BOXTAL_API_SECRET_V1",
+    "BOXTAL_SHIPPER_COUNTRY",
+    "BOXTAL_SHIPPER_ZIPCODE",
+    "BOXTAL_SHIPPER_CITY",
+    "BOXTAL_SHIPPER_ADDRESS",
+    "BOXTAL_SHIPPER_FIRSTNAME",
+    "BOXTAL_SHIPPER_LASTNAME",
+    "BOXTAL_SHIPPER_COMPANY",
+    "BOXTAL_SHIPPER_EMAIL",
+    "BOXTAL_SHIPPER_PHONE",
+  ];
+  return names.filter((n) => !process.env[n]);
+}
 
 // Node's global fetch() has NO default timeout — confirmed live: a fake
 // endpoint that accepts the connection but never replies leaves the call
@@ -329,13 +381,13 @@ export async function quoteShippingRates(
       headers: { "Accept-Language": "fr-FR", "Api-Version": API_VERSION, Authorization: authHeader() },
     });
   } catch (err) {
-    throw new BoxtalApiError(`boxtal cotation request failed: ${(err as Error).message}`);
+    throw new BoxtalApiError(`boxtal cotation request failed: ${(err as Error).message}`, BOXTAL_REASON_UNREACHABLE);
   }
   const xml = await res.text();
-  if (!res.ok) throw new BoxtalApiError(`boxtal cotation http ${res.status}: ${xml.slice(0, 300)}`);
+  if (!res.ok) throw new BoxtalApiError(`boxtal cotation http ${res.status}: ${xml.slice(0, 300)}`, boxtalHttpReason(res.status));
 
   const doc = xmlParser.parse(xml);
-  if (doc?.error) throw new BoxtalApiError(`boxtal cotation error: ${JSON.stringify(doc.error).slice(0, 300)}`);
+  if (doc?.error) throw new BoxtalApiError(`boxtal cotation error: ${JSON.stringify(doc.error).slice(0, 300)}`, boxtalDocErrorReason(doc.error));
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- xmlParser.parse() output is untyped by design (external API's XML shape)
   const offers: any[] = doc?.cotation?.shipment?.offer ?? [];
@@ -497,13 +549,13 @@ export async function purchaseShippingLabel(input: LabelPurchaseInput): Promise<
       body: params.toString(),
     });
   } catch (err) {
-    throw new BoxtalApiError(`boxtal order request failed: ${(err as Error).message}`);
+    throw new BoxtalApiError(`boxtal order request failed: ${(err as Error).message}`, BOXTAL_REASON_UNREACHABLE);
   }
   const xml = await res.text();
-  if (!res.ok) throw new BoxtalApiError(`boxtal order http ${res.status}: ${xml.slice(0, 500)}`);
+  if (!res.ok) throw new BoxtalApiError(`boxtal order http ${res.status}: ${xml.slice(0, 500)}`, boxtalHttpReason(res.status));
 
   const doc = xmlParser.parse(xml);
-  if (doc?.error) throw new BoxtalApiError(`boxtal order error: ${JSON.stringify(doc.error).slice(0, 500)}`);
+  if (doc?.error) throw new BoxtalApiError(`boxtal order error: ${JSON.stringify(doc.error).slice(0, 500)}`, boxtalDocErrorReason(doc.error));
 
   const reference: string | undefined = doc?.order?.shipment?.reference;
   if (!reference || !/^[0-9a-zA-Z]{20}$/.test(reference)) {
@@ -549,13 +601,13 @@ export async function checkLabelStatus(boxtalOrderRef: string): Promise<BoxtalOr
       headers: { "Accept-Language": "fr-FR", "Api-Version": API_VERSION, Authorization: authHeader() },
     });
   } catch (err) {
-    throw new BoxtalApiError(`boxtal order_status request failed: ${(err as Error).message}`);
+    throw new BoxtalApiError(`boxtal order_status request failed: ${(err as Error).message}`, BOXTAL_REASON_UNREACHABLE);
   }
   const xml = await res.text();
-  if (!res.ok) throw new BoxtalApiError(`boxtal order_status http ${res.status}: ${xml.slice(0, 500)}`);
+  if (!res.ok) throw new BoxtalApiError(`boxtal order_status http ${res.status}: ${xml.slice(0, 500)}`, boxtalHttpReason(res.status));
 
   const doc = xmlParser.parse(xml);
-  if (doc?.error) throw new BoxtalApiError(`boxtal order_status error: ${JSON.stringify(doc.error).slice(0, 500)}`);
+  if (doc?.error) throw new BoxtalApiError(`boxtal order_status error: ${JSON.stringify(doc.error).slice(0, 500)}`, boxtalDocErrorReason(doc.error));
 
   // Boxtal's order_status response has two different label fields, easy to
   // confuse: `label_url` (singular) is a web-UI link into their customer
