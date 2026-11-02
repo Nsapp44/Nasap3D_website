@@ -1,4 +1,4 @@
-# SUIVI : état courant (02/11/2026)
+﻿# SUIVI : état courant (02/11/2026)
 
 Archives (texte d'origine intact) : `docs/SUIVI_archive_2026-10-29.md` (SUIVI complet avant allègement), `docs/SUIVI_archive_2026-10-25.md`, `docs/SUIVI_archive_2026-10-27.md`.
 Index : multi-colis (récap validé, maquette, recette, pourquoi) → `docs/chantiers/multi-colis_2026-10-29.md` ; décisions SEO national (France d'abord, Nantes gardé, pied de page, textes, interdits) → `docs/chantiers/seo-national-decisions_2026-10-29.md` ; file des demandes 31-45 + état technique + « ce qui n'a pas marché » → `docs/chantiers/seo-national-file-et-etat_2026-10-29.md` ; plan SEO → `docs/plan_seo_national_2026-10-27.md` ; analyse Search Console 02/11 (chiffres, causes, textes proposés, 404, indexation, remesure) → `docs/chantiers/seo-search-console_2026-11-02.md`.
@@ -6,27 +6,17 @@ Index : multi-colis (récap validé, maquette, recette, pourquoi) → `docs/chan
 ## État global
 Multi-colis + SEO national + maquettes + CGV + plafond panier + limite /api/checkout : **EN LIGNE** (constaté 02/11 : `origin/master` = 5149161 ; titres « France » en ligne depuis le 01/11 23:04). Push suivant seulement sur le « oui » explicite de Nolann (redéploie le site). Branche de la session SEO Search Console : `claude/elated-yonath-f6ddff`.
 
-## CHANTIER maquettes 360° (/maquette-impression-3d)
-Liste pilotée par `src/data/maquettes.ts` (cellule, purification, caravane ; `enabled`). Rendus Cycles hors dépôt (`Source machine/glb/render_obj.py`, `run_both.sh`), convertis par `node scripts/build-maquette-frames.mjs "<dossier base>" <id>` (base+sm, ~18 Mo/modèle). Aucun nom de marque dans le dépôt (code, alt, docs).
-Matières (validées 01/11) : tout FDM mat/satin à strates fines, sauf plexi (vitres, feux) brillant modéré ; exposition -0.5, bandes plexi `--strip 10` (22 = vitres de côté blanches/dégradées, 8 = noir plat), `--silk_m 0.15 --silk_r 0.42`, PVC laiteux (Principled transmission IOR 1.54 + Translucent, `--tube_milk 0.1 --tube_t 1.0`), barre avant caravane gris soie, accroche/dessous caravane blancs, pommeau levier gris + tête noire, roues noires/jantes soie, petites pièces inox séparées. Strates finales `--layer 0.06 --ampv 0.5` (wob 1.6). Rendus finaux faits le 01/11 (216 images/modèle, 1600x1200) puis convertis ; commande : `--exposure=-0.5 --key=2.6 --rim=1.8 --fill_s=0.3 --world=0.08 --strip=10 --samples=128 --full` (+ `--fill=0.94` caravane), script `glb/run_final.sh`. Leçons : skill `rendu-360-maquettes`.
-
-### Supprimer une maquette (retrait sur demande)
-1. `src/data/maquettes.ts` : `enabled:false` (ou supprimer l'entrée).
-2. Supprimer `public/assets/maquettes/<id>/` (ids : `purification`, `caravane`).
-3. `npm run build`, redéployer. Aucun titre, JSON-LD, sitemap ni lien interne ne dépend des maquettes ; sans maquette, la section disparaît.
-4. L'historique git garde les images : retrait définitif = filter-repo + purge cache.
-5. Source des rendus : `Source machine/` (hors dépôt), à supprimer aussi si demandé.
-À signaler à Nolann : lettrage de marque et logo des roulettes gravés dans la géométrie ; feux rouges arrière de la caravane en FDM (plexi possible).
-
-## Ce qui n'a pas marché
-Reflets plexi : soleil seul = invisible/gris plat ; bandes de lumière avec énergie mise à l'échelle R² (R=0,1 m) = trop faibles ; 250 W et plus = vitres blanches cramées ; 20 W = gris plat ; 45-60 W = bon dégradé. Orange translucide = noir (rien derrière) : orange opaque brillant. `Stop-Process` par motif dans la ligne de commande s'est tué lui-même : tuer par PID.
+## CHANTIER maquettes 360° : FAIT (rendus finaux 01/11, en ligne). Matières, commandes de rendu, retrait d'une maquette, « ce qui n'a pas marché » → `docs/chantiers/maquettes-360_2026-11-01.md`.
 
 ## File des demandes ouvertes
 38. [ ] Fresque moche (accueil ?) + mettre en avant Bambu Lab H2C / X2D / X1C : confirmer la page par capture.
 39. [ ] À propos : contenu SEO, proposition à valider avant d'écrire.
 43. [ ] Capture 375 px du menu Guides ; décision « Europe » dans cgu/confidentialité/panier (à lui).
 45-55. [x] FAITS (maquettes, textes, logo N, photos, shop « à venir » + liste d'attente, images AVIF, mentions légales) : détail intégral → `docs/chantiers/file-demandes-45-55_2026-11-01.md`. Non vérifié en vrai : onglet admin « Liste shop » et envoi SMTP (tester « M'envoyer un test » après push) ; DNS shop.nasap3d.com à faire par Nolann.
-51. [ ] Passe SEO complète par l'advisor (titres, meta, JSON-LD, sitemap, textes maquettes, maillage). 02/11 : analyse Search Console FAITE (baisse = fiche Google Business Profile, pas le passage national ; textes proposés, 404, indexation) → `docs/chantiers/seo-search-console_2026-11-02.md`. EN ATTENTE du choix de Nolann (pop-up) avant tout code.
+51. [ ] Passe SEO complète par l'advisor (titres, meta, JSON-LD, sitemap, textes maquettes, maillage). 02/11 : analyse Search Console FAITE (baisse = fiche Google Business Profile, pas le passage national ; textes proposés, 404, indexation) → `docs/chantiers/seo-search-console_2026-11-02.md`. Pop-up du 02/11 resté sans réponse (Nolann a enchaîné d'autres demandes) : choix du code (page Nantes + lien accueil, meta légales + sitemap, titre /services, note 5.0/54 en dur, 301, titre Nantes) TOUJOURS À OBTENIR, redemander en une fois. Nolann renvoie le sitemap et demande l'indexation des 8 pages lui-même (marche à suivre donnée le 02/11).
+57. [ ] (Nolann 02/11, « hyper important ») Lien d'avis Google https://g.page/r/CX9gHVS07c9sEBM/review bien mis en avant (bouton) dans le mail « commande livrée » et dans TOUS les mails du shop : commande livrée = demander un avis. Mails dans `src/lib/server/` (interdit à la session SEO) → relayé le 02/11 à la session `local_164305c6` (maintenance) ; vérifier que c'est fait.
+58. [x] JSON-LD accueil : `hasMap` + `sameAs` = `https://maps.google.com/?cid=7840746835036430463` (cid tiré du lien d'avis, vérifié = fiche « Nasap3D ») ; commit local 1a3b49b. Build pas encore relancé.
+59. [ ] Fiche Google, résumé Google Ads : « Votre site Web a besoin d'une balise Google » (capture de Nolann 02/11). Poser la balise = cookies Google Ads → bannière de consentement obligatoire (le site n'a que Plausible, sans cookies). Décision à proposer à Nolann (pop-up), pas de code avant.
 56. [x] Page CGV + lien « CGV » au pied de page (Nolann 01/11 : « tout ça propre, faut rassurer »), à faire AVANT le push. Base : `/cgu` porte déjà le titre « CGU et de Vente » et contient la vente (expertise avant paiement, Stripe, retrait Nantes/expédition UE + 1,50 €, pas de rétractation sur pièces personnalisées, garanties légales, 48 h réimpression) ; créer `src/pages/cgv.astro` (LegalLayout), recentrer `/cgu` sur l'usage du site, `Footer.astro` ligne 20, sitemap, responsive. Section Litiges identique aux mentions légales. FAIT le 01/11 : `cgv.astro` créée (8 sections dont Litiges), `/cgu` recentrée sur l'usage du site, lien CGV au pied de page et en 404, sitemap ; vérifié 375/768/bureau, build OK. Commit local.
 Nettoyage avant prod (annoncer d'abord) : commandes d'exemple N3D-2001..2009 en base locale (http://localhost:3000/admin).
 
