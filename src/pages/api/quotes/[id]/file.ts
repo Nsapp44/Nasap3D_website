@@ -17,10 +17,11 @@ export const GET = apiHandler(async (context) => {
   const owns = (user && quoteJob.userId === user.id) || (!user && sessionId && quoteJob.sessionId === sessionId);
   if (!owns) return jsonError(404, "not_found");
 
+  const asciiName = quoteJob.fileName.replace(/[^\x20-\x7e]|["\\%]/g, "_");
   const buffer = await readFileByKey(quoteJob.fileKey);
   return new Response(new Uint8Array(buffer), {
     headers: {
-      "Content-Disposition": `inline; filename="${quoteJob.fileName.replace(/"/g, "")}"`,
+      "Content-Disposition": `inline; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(quoteJob.fileName).replace(/['()*]/g, (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase())}`,
       "Content-Type": "application/octet-stream",
     },
   });
