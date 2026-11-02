@@ -323,12 +323,14 @@ export default function CartPage() {
       }
       const messages: Record<string, string> = {
         empty_cart: "Votre panier est vide.",
+        cart_changed: "Votre panier a changé pendant la validation. Vérifiez-le puis validez à nouveau.",
         missing_relay_point: "Choisissez un point relais avant de commander.",
         shipping_not_configured: "La livraison n'est pas encore configurée, réessayez plus tard.",
         shipping_provider_error: "Le calcul des frais de livraison a échoué, réessayez.",
         shipping_offer_unavailable: "Cette offre de livraison n'est plus disponible, recalculez les frais.",
       };
       trackEvent("Panier - échec envoi", { raison: data?.error || "inconnu" });
+      if (data?.error === "cart_changed") window.dispatchEvent(new Event("nasap3d-cart-changed"));
       setCheckoutState("idle");
       setCheckoutError((data?.error && messages[data.error]) || "La commande n'a pas pu être envoyée, réessayez.");
       return;
