@@ -29,3 +29,10 @@ shop.nasap3d.com {
 4. **Où est la config du proxy hôte ?** Chemin du Caddyfile sur le serveur (fichier système ou conteneur Caddy séparé + volume) et commande de rechargement, pour les prochaines notes.
 
 **Vérifier après le push** : 6 « mot de passe oublié » en moins d'une minute depuis un téléphone en 4G → le 6e est refusé (erreur 429 `rate_limited`) ; au même moment, depuis le wifi du PC, la page fonctionne encore.
+
+## 4. Webhook Stripe : événements à cocher (tableau de bord Stripe, à faire par Nolann)
+Le site traite désormais les paiements différés (virement, SEPA…) : la commande ne passe en « payée » que lorsque Stripe confirme l'argent reçu.
+- Stripe → Développeurs → Webhooks → l'endpoint `https://nasap3d.com/api/webhooks/stripe` → « Événements écoutés » : cocher
+  `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`.
+- Sans `async_payment_succeeded`, un paiement différé resterait « en attente de paiement » côté site alors que l'argent est arrivé.
+- Vérifier : après un paiement test, l'endpoint affiche des livraisons en 200.
