@@ -5,7 +5,7 @@ import { enforceRateLimit } from "../../lib/api/rateLimit";
 import { prisma } from "../../lib/server/prisma";
 import { getCartSummary, getCartPieces, getCartTotalPrintMinutes } from "../../lib/server/cart";
 import { packPieces } from "../../lib/server/packing";
-import { createOrderFromCart, EmptyCartError, type ShippingSelection } from "../../lib/server/orders";
+import { createOrderFromCart, EmptyCartError, CartChangedError, type ShippingSelection } from "../../lib/server/orders";
 import { quoteShippingRates, BoxtalConfigError, BoxtalApiError } from "../../lib/server/boxtal";
 import { sendOrderPlacedEmail, notifyAdminOrderToReview } from "../../lib/server/orderEmails";
 
@@ -153,6 +153,7 @@ export const POST = apiHandler(async (context) => {
     created = await createOrderFromCart(user.id, shipping);
   } catch (err) {
     if (err instanceof EmptyCartError) return jsonError(400, "empty_cart");
+    if (err instanceof CartChangedError) return jsonError(409, "cart_changed");
     throw err;
   }
 
