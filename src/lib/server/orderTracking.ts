@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
-import { checkLabelStatus, BoxtalApiError, BoxtalConfigError } from "./boxtal";
+import { checkLabelStatus, BoxtalApiError, BoxtalConfigError, shortBoxtalReason } from "./boxtal";
+import { recordAlert, resolveAlerts } from "./adminAlerts";
 import { deleteFile } from "./storage";
 
 // Wiped the moment an order reaches DELIVERED — none of it serves any
@@ -84,9 +85,14 @@ export async function refreshOrderTrackingStatus(orderId: string): Promise<{
   try {
     status = await checkLabelStatus(order.boxtalOrderRef);
   } catch (err) {
-    if (err instanceof BoxtalConfigError || err instanceof BoxtalApiError) return null;
+    if (err instanceof BoxtalApiError) {
+      await recordAlert({ kind: "TRACKING_UNREACHABLE", orderId, orderRef: order.ref, message: shortBoxtalReason(err), detail: err.message });
+      return null;
+    }
+    if (err instanceof BoxtalConfigError) return null;
     throw err;
   }
+  await resolveAlerts("TRACKING_UNREACHABLE", orderId);
 
   if (status.isLikelyDelivered) {
     await prisma.order.update({

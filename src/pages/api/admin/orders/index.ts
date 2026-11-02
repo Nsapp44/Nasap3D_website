@@ -78,7 +78,7 @@ export const GET = apiHandler(async (context) => {
       shippingParcelLengthCm: o.shippingParcelLengthCm,
       shippingParcelWidthCm: o.shippingParcelWidthCm,
       shippingParcelHeightCm: o.shippingParcelHeightCm,
-      canBuyLabel: !!o.shippingMode && !!o.shippingCarrierCode && !!o.shippingServiceCode && !!o.shippingWeightG,
+      canBuyLabel: !!o.shippingMode && !!o.shippingCarrierCode && !!o.shippingServiceCode && !!o.shippingWeightG && !o.labelManualAt,
       boxtalOrderRef: o.boxtalOrderRef,
       shippingLabelUrl: o.shippingLabelUrl,
       trackingNumber: o.trackingNumber,

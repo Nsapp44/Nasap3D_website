@@ -1,5 +1,6 @@
 import type Stripe from "stripe";
 import { prisma } from "./prisma";
+import { recordAlert } from "./adminAlerts";
 import { createAndAttachInvoiceForOrder } from "./invoiceGenerator";
 import { notifyAdminOrderPaid, notifyAdminPaymentAnomaly, sendOrderPaidEmail } from "./orderEmails";
 
@@ -63,6 +64,7 @@ export async function applyPaidCheckoutSession(
   if (!check.ok) {
     const problem = `${REASON_LABEL[check.reason]} (reçu : ${eur(session.amount_total)} en ${session.currency ?? "devise inconnue"}, attendu : ${eur(order.totalCents)} en eur, statut de paiement : ${session.payment_status}). La commande n'a pas été modifiée.`;
     console.error(`order ${order.ref}: stripe payment anomaly (${check.reason}) — ${problem}`);
+    await recordAlert({ kind: "PAYMENT_ANOMALY", orderId: order.id, orderRef: order.ref, message: problem, keySuffix: stripeRef });
     await notifyAdminPaymentAnomaly(order.ref, problem, stripeRef);
     return "anomaly";
   }
@@ -91,6 +93,7 @@ export async function applyPaidCheckoutSession(
     const status = fresh?.status ?? "inconnu";
     const problem = `paiement Stripe reçu (${eur(session.amount_total)}) alors que la commande est en statut ${status} : vérifier et rembourser si besoin.`;
     console.error(`order ${order.ref}: ${problem}`);
+    await recordAlert({ kind: "PAYMENT_ANOMALY", orderId: order.id, orderRef: order.ref, message: problem, keySuffix: stripeRef });
     await notifyAdminPaymentAnomaly(order.ref, problem, stripeRef);
     return "anomaly";
   }
@@ -111,6 +114,13 @@ export async function applyPaidCheckoutSession(
     await sendOrderPaidEmail(paid.user.email, paid.ref, paid.totalCents);
   } catch (err) {
     console.error(`order ${order.ref} marked paid, but invoice/email follow-up failed`, err);
+    await recordAlert({
+      kind: "EMAIL_FAILED",
+      orderId: order.id,
+      orderRef: order.ref,
+      message: "Payée, mais facture ou e-mails non générés : à régénérer à la main.",
+      detail: err instanceof Error ? err.message : String(err),
+    });
     try {
       await notifyAdminPaymentAnomaly(order.ref, "payée, mais facture/emails non générés : à régénérer à la main.", stripeRef);
     } catch (notifyErr) {
@@ -133,9 +143,9 @@ export async function handleAsyncPaymentFailed(session: Stripe.Checkout.Session)
     return;
   }
   console.warn(`order ${order.ref}: checkout.session.async_payment_failed — order stays AWAITING_PAYMENT`);
-  await notifyAdminPaymentAnomaly(
-    order.ref,
-    "le prélèvement / paiement différé a été refusé. La commande reste en attente de paiement et le client peut payer à nouveau depuis son compte.",
-    paymentIntentIdOf(session) ?? session.id,
-  );
+  const problem =
+    "le prélèvement / paiement différé a été refusé. La commande reste en attente de paiement et le client peut payer à nouveau depuis son compte.";
+  const stripeRef = paymentIntentIdOf(session) ?? session.id;
+  await recordAlert({ kind: "PAYMENT_ANOMALY", orderId, orderRef: order.ref, message: problem, keySuffix: stripeRef });
+  await notifyAdminPaymentAnomaly(order.ref, problem, stripeRef);
 }

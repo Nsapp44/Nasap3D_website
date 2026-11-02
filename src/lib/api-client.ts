@@ -283,6 +283,15 @@ export const api = {
   async adminSetShippingBoxQty(code: string, qty: number) {
     return request("PUT", "/admin/shipping-boxes", { code, qty });
   },
+  async adminGetAlerts() {
+    return request<{ alerts: unknown[] }>("GET", "/admin/alerts");
+  },
+  async adminResolveAlert(id: string) {
+    return request("PATCH", "/admin/alerts/" + encodeURIComponent(id), { resolve: true });
+  },
+  async adminManualLabel(orderId: string, trackingNumber: string) {
+    return request("POST", "/admin/orders/" + orderId + "/manual-label", { trackingNumber });
+  },
   // ---- Cart / checkout ----
   async getCart() {
     return request("GET", "/cart");
