@@ -111,6 +111,11 @@ export async function applyPaidCheckoutSession(
     await sendOrderPaidEmail(paid.user.email, paid.ref, paid.totalCents);
   } catch (err) {
     console.error(`order ${order.ref} marked paid, but invoice/email follow-up failed`, err);
+    try {
+      await notifyAdminPaymentAnomaly(order.ref, "payée, mais facture/emails non générés : à régénérer à la main.", stripeRef);
+    } catch (notifyErr) {
+      console.error(`order ${order.ref}: admin notification also failed`, notifyErr);
+    }
   }
   return "applied";
 }
