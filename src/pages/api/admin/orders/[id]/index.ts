@@ -5,11 +5,13 @@ import { prisma } from "../../../../../lib/server/prisma";
 import { ORDER_STATUSES } from "../../../../../lib/server/orderStatus";
 import { SHIPPING_DATA_PURGE, purgeOrderFiles } from "../../../../../lib/server/orderTracking";
 import { createAndAttachInvoiceForOrder } from "../../../../../lib/server/invoiceGenerator";
+import { isTransitionAllowed, isOrderPaidOrInvoiced } from "../../../../../lib/server/adminOrderRules";
+import { deleteFile } from "../../../../../lib/server/storage";
 
 // Direct port of PATCH /admin/orders/:id — generic status update
 // (PRINTING/READY/DELIVERED) and/or tracking number.
 export const PATCH = apiHandler(async (context) => {
-  await requireAdmin(context);
+  const admin = await requireAdmin(context);
   const { id } = context.params;
 
   const schema = z.object({
@@ -59,8 +61,12 @@ export const PATCH = apiHandler(async (context) => {
     return jsonError(409, "tracking_number_required");
   }
 
+  if (!isTransitionAllowed(order.status, nextStatus, body.data.force)) {
+    return jsonError(409, "invalid_status_transition");
+  }
+
   if (body.data.force) {
-    console.warn(`ADMIN EMERGENCY OVERRIDE: order ${order.ref} forced from ${order.status} to ${nextStatus}, bypassing normal guards`);
+    console.warn(`ADMIN EMERGENCY OVERRIDE: order ${order.ref} forced from ${order.status} to ${nextStatus} by admin ${admin.id}, bypassing normal guards`);
   }
 
   const now = new Date();
@@ -126,15 +132,36 @@ export const DELETE = apiHandler(async (context) => {
   await requireAdmin(context);
   const { id } = context.params;
 
-  const order = await prisma.order.findUnique({ where: { id }, include: { invoice: true } });
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: { invoice: true, items: { include: { quoteJob: true } } },
+  });
   if (!order) return jsonError(404, "not_found");
 
-  console.warn(`ADMIN DELETE: order ${order.ref} (status ${order.status}) deleted${order.invoice ? ` — had invoice ${order.invoice.ref}` : ""}`);
+  // Decision Nolann : une commande payee ou facturee ne se supprime jamais
+  // (factures a conserver legalement).
+  if (isOrderPaidOrInvoiced(order)) return jsonError(409, "order_paid_or_invoiced");
 
-  if (order.invoice) {
-    await prisma.invoice.delete({ where: { id: order.invoice.id } });
+  const fileKeys = order.items
+    .map((i) => i.quoteJob)
+    .filter((q): q is NonNullable<typeof q> => !!q && !q.fileDeletedAt)
+    .map((q) => q.fileKey);
+
+  // OrderItem cascade avec la commande ; pas de facture ici (garde ci-dessus).
+  await prisma.$transaction(async (tx) => {
+    await tx.order.delete({ where: { id } });
+  });
+
+  console.warn(`ADMIN DELETE: order ${order.ref} (status ${order.status}) deleted`);
+
+  // Purge des fichiers apres le commit (si la suppression echoue, rien n'est perdu).
+  for (const key of fileKeys) {
+    try {
+      await deleteFile(key);
+    } catch (err) {
+      console.error(`ADMIN DELETE: failed to delete file ${key} for order ${order.ref}`, err);
+    }
   }
-  await prisma.order.delete({ where: { id } });
 
   return json({ ok: true });
 });
