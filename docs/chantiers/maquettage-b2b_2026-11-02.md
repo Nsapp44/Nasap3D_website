@@ -65,3 +65,4 @@ Sources : agence-cub.com, atelierconcept.fr, agencetag-1.fr, maquettes-architect
 
 ## 7. Choix de Nolann (pop-up 02/11)
 Mot-clé : **maquettiste** (title/h1 « Maquettiste à Nantes… », « maquettage » dans meta et texte). Structure : **piste B** (page renforcée + `/maquette-industrielle`, sans `/maquettiste-nantes`). Grand groupe client : **aucune mention**. Budget Ads préparé : **3 €/jour**, 3 semaines (≈ 63 €), rien dépensé sans son feu vert. Reste à lui demander : délais réels, prix « à partir de » ou non.
+Délais et prix (Nolann 02/11) : aucun prix ni « à partir de » ; délai « d'une semaine à un mois selon le projet », à présenter comme très réactifs, capables de gérer l'urgence ; tout est devis sur mesure → inciter à demander.

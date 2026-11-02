@@ -1,0 +1,549 @@
+---
+// Page indexable : maquettes industrielles sur mesure (machines, démonstrateurs, salons).
+// Page sœur de /maquette-impression-3d (maquettiste à Nantes) ; sert aussi de page d'arrivée à la pub industrielle.
+import BaseLayout from "../layouts/BaseLayout.astro";
+import FaqAccordion from "../components/FaqAccordion";
+import MaquetteCarousel from "../components/MaquetteCarousel.astro";
+import { MAQUETTES_ACTIVES } from "../data/maquettes";
+
+const uses = [
+  { title: "Salon et stand", text: "Un objet à poser sur le stand, qui retient l'attention des visiteurs et se transporte facilement." },
+  { title: "Formation technique", text: "Former des techniciens ou des clients sur un équipement sans immobiliser la machine réelle." },
+  { title: "Présentation commerciale", text: "Montrer une machine trop grosse ou trop lourde pour être transportée chez le client." },
+  { title: "Démonstrateur de procédé", text: "Faire comprendre un flux, un circuit ou une séquence, avec LED et éléments animés." },
+  { title: "Maquette en coupe", text: "Ouvrir l'équipement pour montrer ce qui se passe à l'intérieur, sans rien démonter." },
+];
+
+const strengths = [
+  { title: "LED", text: "Chenilles et voyants lumineux pilotés par une électronique intégrée, programmés selon votre demande." },
+  { title: "Pièces mobiles", text: "Vannes, leviers, portes ou roulettes qui bougent vraiment, pour une maquette qu'on manipule." },
+  { title: "Démontable", text: "Modules séparables pour le transport, le stockage ou l'accès aux détails internes." },
+  { title: "Échelle au choix", text: "Du modèle de table à la reproduction détaillée, l'échelle est choisie avec vous." },
+  { title: "Matières et finitions", text: "Impression multicolore, ponçage, peinture, composants du commerce, plexiglas découpé : rendu métal, verre ou plastique." },
+  { title: "360° en ligne", text: "Une vue interactive de la maquette, à partager par lien avec vos équipes et vos clients." },
+];
+
+const steps = [
+  { n: "1", title: "Expertise", text: "Vous envoyez plans, photos ou description. Nous étudions la faisabilité gratuitement, avant tout paiement." },
+  { n: "2", title: "Modélisation", text: "Nous modélisons la maquette en 3D à partir de vos éléments et vous la présentons." },
+  { n: "3", title: "Fabrication et finitions", text: "Impression, assemblage, peinture, électronique : tout est réalisé dans notre atelier à Nantes." },
+  { n: "4", title: "Livraison", text: "Livraison partout en France, ou retrait à Nantes (Canclaux)." },
+];
+
+const cases = [
+  { title: "Cellule avec animation LED", text: "Modèle en coupe avec électronique et chenille LED intégrées, pour la médiation scientifique." },
+  { title: "Système de purification", text: "Équipement de procédé biotechnologique, avec vraie tuyauterie et composants métalliques." },
+  { title: "Caravane de vitrine", text: "Carrosserie multicolore imprimée dans la masse, vitres en plexiglas découpé." },
+];
+
+const gallery = [
+  { img: "/assets/real-19.webp", label: "Maquette de bioréacteur en inox imprimée en 3D" },
+  { img: "/assets/real-1.webp", label: "Maquette d'un équipement de filtration sur roulettes" },
+  { img: "/assets/real-21.webp", label: "Détail de vannes, leviers et manomètres à l'échelle" },
+  { img: "/assets/real-2.webp", label: "Maquette d'équipement de procédé avec pompe et tuyauterie" },
+];
+
+const faqs = [
+  { q: "Qu'est-ce qu'une maquette industrielle ?", a: "C'est une reproduction à l'échelle d'une machine, d'un équipement ou d'un procédé, fabriquée pour montrer, expliquer ou vendre : salon, formation, présentation commerciale ou démonstration." },
+  { q: "Pouvez-vous reproduire une machine à partir de plans ou de photos ?", a: "Oui. Plans, fichier 3D, photos, cotes ou description suffisent : nous modélisons la maquette puis la fabriquons. Nous confirmons la faisabilité avant tout paiement." },
+  { q: "La maquette peut-elle avoir des LED et des pièces qui bougent ?", a: "Oui. Nous intégrons de l'électronique (chenille lumineuse, voyants) et des éléments mobiles comme des vannes, des leviers ou des portes, selon le niveau de démonstration voulu." },
+  { q: "La maquette est-elle démontable et transportable pour un salon ?", a: "Oui, nous pouvons la concevoir en modules démontables avec un emballage adapté, pour qu'elle voyage et se remonte facilement. Précisez-le dans votre demande." },
+  { q: "Quels sont les délais ?", a: "Les délais vont d'une semaine à un mois selon le projet. Nous sommes très réactifs et les urgences sont possibles : indiquez votre échéance dès votre premier message." },
+  { q: "Combien coûte une maquette industrielle ?", a: "Chaque maquette est unique : le devis est sur mesure et gratuit, après étude de votre projet. Il dépend de la taille, du niveau de détail et des options (LED, pièces mobiles, finitions). Nous n'affichons pas de tarif public." },
+  { q: "Mes plans sont confidentiels, que faites-vous ?", a: "Nous signons un accord de confidentialité (NDA) si vous le demandez, avant de recevoir vos documents. Ils ne servent qu'à réaliser votre maquette." },
+  { q: "Livrez-vous hors de Nantes ?", a: "Oui, partout en France, ou retrait à Nantes (Canclaux). Vous ne payez qu'une fois la commande acceptée, après notre étude de faisabilité." },
+];
+
+const siteUrl = "https://nasap3d.com";
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Service",
+      name: "Maquettes industrielles sur mesure : machines, démonstrateurs, salons",
+      description:
+        "Fabrication de maquettes industrielles sur mesure à Nantes : machines, procédés, démonstrateurs et maquettes de salon, avec LED, pièces mobiles et vue 360° en ligne. Étude de faisabilité gratuite avant tout paiement.",
+      serviceType: "Maquette industrielle sur mesure",
+      url: `${siteUrl}/maquette-industrielle`,
+      inLanguage: "fr-FR",
+      provider: { "@id": `${siteUrl}/#business` },
+      areaServed: [
+        { "@type": "City", name: "Nantes" },
+        { "@type": "Country", name: "France" },
+      ],
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: faqs.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    },
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Accueil", item: `${siteUrl}/` },
+        { "@type": "ListItem", position: 2, name: "Maquettes", item: `${siteUrl}/maquette-impression-3d` },
+        { "@type": "ListItem", position: 3, name: "Maquette industrielle", item: `${siteUrl}/maquette-industrielle` },
+      ],
+    },
+  ],
+};
+---
+
+<BaseLayout
+  title="Maquette industrielle sur mesure : machines, salons | Nasap3D"
+  description="Maquette industrielle sur mesure à Nantes : machine, démonstrateur, stand de salon, avec LED et pièces mobiles. Étude gratuite avant paiement, livraison France."
+  path="/maquette-industrielle"
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
+  </Fragment>
+
+  <section class="lp-hero">
+    <h1 class="lp-title">Maquettes industrielles sur mesure : machines, démonstrateurs, salons</h1>
+    <p class="lp-subtitle">Votre machine est trop grosse, trop chère ou trop sensible pour être montrée en vrai ? Nous en fabriquons une maquette fidèle dans notre atelier de Nantes, avec LED, pièces mobiles et finitions soignées. Faisabilité étudiée gratuitement avant tout paiement, avec un atelier réactif qui s'adapte à votre échéance, urgences comprises.</p>
+    <div class="lp-ctas">
+      <a href="/contact" class="lp-btn lp-btn-primary"><span class="lp-btn-label">Demander un devis sur mesure <span class="lp-arrow" aria-hidden="true">→</span></span></a>
+    </div>
+  </section>
+
+  <section class="lp-section" data-rv>
+    <h2 class="lp-h2">À quoi sert une maquette industrielle</h2>
+    <div class="lp-steps">
+      {
+        uses.map((u, i) => (
+          <div class="lp-step" style={`--i:${i}`}>
+            <h3 class="lp-step-title">{u.title}</h3>
+            <p class="lp-step-text">{u.text}</p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="lp-section" data-rv>
+    <h2 class="lp-h2">Ce que peut faire votre maquette</h2>
+    <div class="lp-steps">
+      {
+        strengths.map((s, i) => (
+          <div class="lp-step" style={`--i:${i}`}>
+            <h3 class="lp-step-title">{s.title}</h3>
+            <p class="lp-step-text">{s.text}</p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="lp-section" data-rv>
+    <h2 class="lp-h2">Maquettes industrielles réalisées</h2>
+    <div class="lp-steps">
+      {
+        cases.map((c, i) => (
+          <div class="lp-step" style={`--i:${i}`}>
+            <h3 class="lp-step-title">{c.title}</h3>
+            <p class="lp-step-text">{c.text}</p>
+          </div>
+        ))
+      }
+    </div>
+    <div class="lp-real-grid lp-real-gap">
+      {
+        gallery.map((r, i) => (
+          <figure class="lp-real" style={`--i:${i}`}>
+            <img src={r.img} alt={r.label} loading="lazy" decoding="async" width="600" height="750" />
+            <figcaption>
+              <strong>{r.label}</strong>
+            </figcaption>
+          </figure>
+        ))
+      }
+    </div>
+  </section>
+
+  {
+    MAQUETTES_ACTIVES.length > 0 && (
+      <section class="lp-section" data-rv>
+        <h2 class="lp-h2">Faites tourner nos maquettes en 360°</h2>
+        <MaquetteCarousel />
+      </section>
+    )
+  }
+
+  <section class="lp-section" data-rv>
+    <h2 class="lp-h2">Du premier échange à la livraison</h2>
+    <div class="lp-steps">
+      {
+        steps.map((s, i) => (
+          <div class="lp-step" style={`--i:${i}`}>
+            <div class="lp-step-n">{s.n}</div>
+            <h3 class="lp-step-title">{s.title}</h3>
+            <p class="lp-step-text">{s.text}</p>
+          </div>
+        ))
+      }
+    </div>
+    <p class="lp-note">Devis sur mesure et gratuit. Nous sommes très réactifs et gérons les urgences : indiquez-nous votre échéance.</p>
+  </section>
+
+  <section class="lp-section" data-rv>
+    <h2 class="lp-h2">Questions sur les maquettes industrielles</h2>
+    <FaqAccordion items={faqs} client:visible />
+  </section>
+
+  <section class="lp-section lp-final" data-rv>
+    <h2 class="lp-h2">Une machine ou un procédé à présenter ?</h2>
+    <p class="lp-note lp-final-note">Décrivez votre projet et votre échéance : nous revenons vers vous avec une étude de faisabilité gratuite.</p>
+    <div class="lp-ctas">
+      <a href="/contact" class="lp-btn lp-btn-primary"><span class="lp-btn-label">Demander un devis sur mesure <span class="lp-arrow" aria-hidden="true">→</span></span></a>
+    </div>
+    <p class="lp-links"><a href="/maquette-impression-3d">← Maquettiste à Nantes : tous nos types de maquettes</a></p>
+  </section>
+</BaseLayout>
+
+
+<script>
+  // Apparition douce au défilement. Sans JS ou avec « réduire les animations », tout reste visible.
+  const items = document.querySelectorAll<HTMLElement>("[data-rv]");
+  if (items.length && !matchMedia("(prefers-reduced-motion: reduce)").matches && "IntersectionObserver" in window) {
+    document.documentElement.classList.add("lp-motion");
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            e.target.classList.add("is-in");
+            io.unobserve(e.target);
+          }
+        }
+      },
+      { threshold: 0, rootMargin: "0px 0px 700px 0px" },
+    );
+    items.forEach((el) => io.observe(el));
+  }
+</script>
+
+<style>
+  .lp-hero,
+  .lp-section {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  .lp-hero {
+    padding-top: 40px;
+    padding-bottom: 40px;
+  }
+  .lp-section {
+    padding-bottom: 44px;
+  }
+  .lp-title {
+    font: 700 32px/1.15 "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin: 0 0 14px;
+  }
+  .lp-subtitle {
+    font: 400 15px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.65);
+    margin: 0 0 24px;
+  }
+  .lp-ctas {
+    display: flex;
+    gap: 12px;
+  }
+  .lp-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    text-decoration: none;
+    font: 600 14px/1.35 "Inter", sans-serif;
+    padding: 14px 18px;
+    border-radius: 8px;
+  }
+  .lp-btn-secondary {
+    border: 1px solid rgba(255, 90, 60, 0.6);
+    background: rgba(255, 90, 60, 0.08);
+    color: #f3f1ec;
+  }
+  .lp-h2 {
+    font: 700 20px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin: 0 0 16px;
+  }
+  .lp-steps {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  /* Nombre impair de cartes : la dernière prend toute la ligne (pas de carte orpheline). */
+  .lp-steps > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .lp-step {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 18px;
+    background: #1a1917;
+  }
+  .lp-step-n {
+    font: 700 18px "Space Grotesk", sans-serif;
+    color: #ff5a3c;
+    margin-bottom: 6px;
+  }
+  .lp-step-title {
+    font: 600 14px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin: 0 0 6px;
+  }
+  .lp-step-text {
+    font: 400 12px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+    margin: 0;
+  }
+  .lp-real-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  .lp-real {
+    margin: 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #1a1917;
+  }
+  .lp-real img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    object-position: center;
+    background: #201d1b;
+  }
+  .lp-real figcaption {
+    padding: 12px 14px;
+    font: 400 12px/1.5 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.55);
+  }
+  .lp-real strong {
+    display: block;
+    color: #f3f1ec;
+    font: 600 13px "Space Grotesk", sans-serif;
+  }
+  .lp-final {
+    border: 1px solid rgba(255, 90, 60, 0.3);
+    background: rgba(255, 90, 60, 0.08);
+    border-radius: 12px;
+    padding: 28px 24px;
+    margin-bottom: 44px;
+  }
+
+  /* Motion : entrée du hero au chargement, apparition au défilement, survols. */
+  @keyframes lpFadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .lp-title { animation: lpFadeUp .5s .05s ease both; }
+  .lp-subtitle { animation: lpFadeUp .5s .15s ease both; }
+  .lp-hero .lp-btn-primary { animation: lpFadeUp .5s .25s ease both; }
+  .lp-hero .lp-btn-secondary { animation: lpFadeUp .5s .35s ease both; }
+
+  :global(.lp-motion) [data-rv] {
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity .5s ease, transform .5s ease;
+  }
+  :global(.lp-motion) [data-rv].is-in {
+    opacity: 1;
+    transform: none;
+  }
+  :global(.lp-motion) .lp-step,
+  :global(.lp-motion) .lp-real {
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity .5s ease, transform .5s ease, border-color .25s ease, box-shadow .25s ease, scale .25s ease;
+    transition-delay: calc(var(--i, 0) * 90ms + 100ms), calc(var(--i, 0) * 90ms + 100ms), 0s, 0s, 0s;
+  }
+  :global(.lp-motion) [data-rv].is-in .lp-step,
+  :global(.lp-motion) [data-rv].is-in .lp-real {
+    opacity: 1;
+    transform: none;
+  }
+
+  .lp-btn {
+    transition: transform .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
+  }
+  .lp-btn:hover {
+    transform: translateY(-2px);
+  }
+  .lp-btn:active {
+    transform: translateY(0);
+  }
+  .lp-btn-secondary:hover {
+    border-color: #ff5a3c;
+    background: rgba(255, 90, 60, 0.16);
+  }
+  .lp-step:hover,
+  .lp-real:hover {
+    border-color: rgba(255, 90, 60, 0.45);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  }
+  /* Même survol que les cartes machines : carte +2 % (propriété scale, indépendante du transform d'entrée), photo +5 %. */
+  .lp-real {
+    transition: scale .25s ease, border-color .25s ease, box-shadow .25s ease;
+  }
+  .lp-real:hover {
+    scale: 1.02;
+  }
+
+  /* Bouton principal : UNE seule définition. Le halo vit sur ::before (animation d'opacité seule),
+     pour que l'animation ne touche jamais au box-shadow du bouton (ni au survol). */
+  @keyframes lpHalo {
+    0%, 100% { opacity: .15; }
+    50% { opacity: 1; }
+  }
+  .lp-btn-primary {
+    position: relative;
+    isolation: isolate;
+    flex: 0 0 auto;
+    padding: 20px 32px;
+    font-size: 17px;
+    font-weight: 700;
+    border-radius: 10px;
+    background: #ff5a3c;
+    color: #161514;
+    box-shadow: 0 8px 26px rgba(255, 90, 60, 0.35), 0 0 0 1px rgba(255, 90, 60, 0.5);
+    transition: scale .2s ease, background .2s ease, box-shadow .2s ease, transform .2s ease;
+  }
+  .lp-btn-primary::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    box-shadow: 0 0 26px 6px rgba(255, 90, 60, 0.6);
+    pointer-events: none;
+    animation: lpHalo 2.4s ease-in-out infinite;
+  }
+  .lp-final .lp-btn-primary::before { display: none; } /* en bas : déjà dans une zone rouge, pas de halo */
+  .lp-btn-primary:hover {
+    scale: 1.05;
+    background: #ff7155;
+    box-shadow: 0 12px 34px rgba(255, 90, 60, 0.5), 0 0 0 1px rgba(255, 90, 60, 0.7);
+  }
+  .lp-btn-primary:active {
+    transform: translateY(1px) scale(0.99);
+  }
+  .lp-btn-primary:focus-visible {
+    outline: 3px solid #f3f1ec;
+    outline-offset: 3px;
+  }
+  .lp-btn-label {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .lp-arrow {
+    display: inline-block;
+    transition: transform .25s ease;
+  }
+  .lp-btn-primary:hover .lp-arrow,
+  .lp-btn-primary:focus-visible .lp-arrow {
+    transform: translateX(6px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lp-title, .lp-subtitle, .lp-btn { animation: none !important; }
+    .lp-btn-primary::before { animation: none; opacity: .8; }
+    .lp-btn-primary:hover { scale: none; }
+    .lp-real:hover { scale: none; }
+    .lp-btn:hover, .lp-btn:active, .lp-real:hover img,
+    .lp-btn-primary:hover .lp-arrow, .lp-btn-primary:focus-visible .lp-arrow { transform: none; }
+    .lp-btn, .lp-arrow, .lp-real img { transition: none; }
+  }
+
+  @media (max-width: 640px) {
+    .lp-title {
+      font-size: 26px;
+    }
+    .lp-ctas {
+      flex-direction: column;
+    }
+    .lp-btn-primary {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 20px 22px;
+    }
+    .lp-steps,
+    .lp-real-grid {
+      grid-template-columns: 1fr;
+    }
+    .lp-final {
+      margin-left: 16px;
+      margin-right: 16px;
+    }
+  }
+
+  /* Ajouts B2B : note, bloc de renvoi, liens, grille photo sous les cartes. */
+  .lp-note {
+    font: 400 14px/1.6 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.65);
+    margin: 16px 0 0;
+  }
+  .lp-final-note {
+    margin: 0 0 20px;
+  }
+  .lp-real-gap {
+    margin-top: 14px;
+  }
+  .lp-cross {
+    display: block;
+    margin-top: 14px;
+    padding: 16px 18px;
+    border: 1px solid rgba(255, 90, 60, 0.3);
+    border-radius: 10px;
+    background: rgba(255, 90, 60, 0.08);
+    text-decoration: none;
+    transition: border-color .25s ease, background .25s ease;
+  }
+  .lp-cross:hover {
+    border-color: #ff5a3c;
+    background: rgba(255, 90, 60, 0.16);
+  }
+  .lp-cross:focus-visible,
+  .lp-links a:focus-visible {
+    outline: 3px solid #f3f1ec;
+    outline-offset: 3px;
+  }
+  .lp-cross-title {
+    display: block;
+    font: 600 15px "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin-bottom: 4px;
+  }
+  .lp-cross-text {
+    display: block;
+    font: 400 13px/1.5 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.65);
+  }
+  .lp-links {
+    font: 400 14px/1.8 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.65);
+    margin: 20px 0 0;
+  }
+  .lp-links a {
+    color: #f3f1ec;
+    text-decoration: underline;
+    text-decoration-color: rgba(255, 90, 60, 0.6);
+    text-underline-offset: 3px;
+    display: inline-block;
+    padding: 4px 0;
+  }
+  .lp-links a:hover {
+    color: #ff5a3c;
+  }
+</style>
