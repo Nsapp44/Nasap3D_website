@@ -18,7 +18,7 @@ const loginSchema = z.object({
 
 // Direct port of POST /auth/login.
 export const POST = apiHandler(async ({ request, cookies, clientAddress }) => {
-  enforceRateLimit(`auth:login:${clientIp({ clientAddress })}`, 10, 60_000);
+  enforceRateLimit(`auth:login:${clientIp({ clientAddress, request })}`, 10, 60_000);
 
   const body = loginSchema.safeParse(await request.json().catch(() => null));
   if (!body.success) return jsonError(400, "invalid_body");

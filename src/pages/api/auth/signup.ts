@@ -23,7 +23,7 @@ interface PendingSignupPayload {
 // POST /api/auth/signup/confirm). Closing the popup or letting the 3-minute
 // code expire leaves no account behind, only an unused, self-expiring row.
 export const POST = apiHandler(async ({ request, clientAddress }) => {
-  enforceRateLimit(`auth:signup:${clientIp({ clientAddress })}`, 5, 60_000);
+  enforceRateLimit(`auth:signup:${clientIp({ clientAddress, request })}`, 5, 60_000);
 
   const body = credentialsSchema.safeParse(await request.json().catch(() => null));
   if (!body.success) return jsonError(400, "invalid_body");

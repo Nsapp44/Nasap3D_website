@@ -10,7 +10,7 @@ interface PendingSignupPayload {
 
 // Direct port of POST /auth/signup/resend.
 export const POST = apiHandler(async ({ request, clientAddress }) => {
-  enforceRateLimit(`auth:signup:resend:${clientIp({ clientAddress })}`, 10, 60_000);
+  enforceRateLimit(`auth:signup:resend:${clientIp({ clientAddress, request })}`, 10, 60_000);
 
   const schema = z.object({ pendingId: z.string() });
   const body = schema.safeParse(await request.json().catch(() => null));

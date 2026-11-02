@@ -31,7 +31,7 @@ interface PendingSignupPayload {
 // front-end's error-message lookup, so they're still explicitly re-thrown/
 // caught here for identical response shape.
 export const POST = apiHandler(async ({ request, cookies, clientAddress }) => {
-  enforceRateLimit(`auth:signup:confirm:${clientIp({ clientAddress })}`, 15, 60_000);
+  enforceRateLimit(`auth:signup:confirm:${clientIp({ clientAddress, request })}`, 15, 60_000);
 
   const schema = z.object({ pendingId: z.string(), code: z.string().trim().length(6) });
   const body = schema.safeParse(await request.json().catch(() => null));

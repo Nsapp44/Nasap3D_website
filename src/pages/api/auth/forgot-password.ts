@@ -11,7 +11,7 @@ const schema = z.object({ email: z.string(), captchaToken: z.string().optional()
 
 // Direct port of POST /auth/forgot-password.
 export const POST = apiHandler(async ({ request, clientAddress }) => {
-  enforceRateLimit(`auth:forgot-password:${clientIp({ clientAddress })}`, 5, 60_000);
+  enforceRateLimit(`auth:forgot-password:${clientIp({ clientAddress, request })}`, 5, 60_000);
 
   const body = schema.safeParse(await request.json().catch(() => null));
   if (!body.success) return jsonError(400, "invalid_body");
