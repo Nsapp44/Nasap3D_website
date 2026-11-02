@@ -62,3 +62,6 @@ Title « Maquette sur mesure : architecture, produit, pédagogique | Nasap3D » 
 Délais réels (fourchettes), prix « à partir de » (ou non), droit de citer le grand groupe (nom/logo ou anonymisé), avis Google à montrer, budget Ads.
 
 Sources : agence-cub.com, atelierconcept.fr, agencetag-1.fr, maquettes-architecture.fr, atelier-scale.com, 3dnatives.com, 118000.fr, kolonell.com, support.google.com (annonces responsives, Smart Bidding, appels).
+
+## 7. Choix de Nolann (pop-up 02/11)
+Mot-clé : **maquettiste** (title/h1 « Maquettiste à Nantes… », « maquettage » dans meta et texte). Structure : **piste B** (page renforcée + `/maquette-industrielle`, sans `/maquettiste-nantes`). Grand groupe client : **aucune mention**. Budget Ads préparé : **3 €/jour**, 3 semaines (≈ 63 €), rien dépensé sans son feu vert. Reste à lui demander : délais réels, prix « à partir de » ou non.
