@@ -465,6 +465,14 @@ export default function OrderCard({ order, onChanged, boxStock }: { order: Admin
         </div>
       )}
 
+      {order.labelManualAt && (
+        <div className="order-section">
+          <span className="hint-text">
+            Étiquette faite à la main{order.trackingNumber ? ` · suivi ${order.trackingNumber}` : ""}
+          </span>
+        </div>
+      )}
+
       {hasLabel && (
         <div className="order-section">
           <a href={api.adminOrderLabelDownloadUrl(order.id)} target="_blank" rel="noreferrer" className="btn-label">
