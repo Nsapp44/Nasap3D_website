@@ -110,6 +110,17 @@ export async function createAndAttachInvoiceForOrder(
     });
     return { attached: true };
   } catch (err) {
+    // P2002 : numéro/ref de facture en doublon sous concurrence. Si la facture
+    // de cette commande existe désormais, on la considère rattachée. Le
+    // rattrapage est isolé pour ne pas masquer l'erreur d'origine.
+    if ((err as { code?: string } | null)?.code === "P2002") {
+      try {
+        const raced = await prisma.invoice.findUnique({ where: { orderId: order.id } });
+        if (raced) return { attached: false, reason: "order already has an invoice" };
+      } catch (lookupErr) {
+        console.error("invoice P2002 lookup failed", lookupErr);
+      }
+    }
     return { attached: false, reason: `invoice generation failed: ${err instanceof Error ? err.message : String(err)}` };
   }
 }

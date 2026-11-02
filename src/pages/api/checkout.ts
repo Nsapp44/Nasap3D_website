@@ -131,8 +131,14 @@ export const POST = apiHandler(async (context) => {
     try {
       rates = await quoteShippingRates(requested.recipient, packed.parcels, printMinutes);
     } catch (err) {
-      if (err instanceof BoxtalConfigError) return jsonError(503, "shipping_not_configured");
-      if (err instanceof BoxtalApiError) return jsonError(502, "shipping_provider_error");
+      if (err instanceof BoxtalConfigError) {
+        console.error("checkout: boxtal not configured:", err.message);
+        return jsonError(503, "shipping_not_configured");
+      }
+      if (err instanceof BoxtalApiError) {
+        console.error("checkout: boxtal cotation failed:", err.message);
+        return jsonError(502, "shipping_provider_error");
+      }
       throw err;
     }
     const rate = requested.mode === "RELAY" ? rates.relay : rates.home;

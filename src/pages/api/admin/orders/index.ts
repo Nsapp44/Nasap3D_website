@@ -34,6 +34,8 @@ export const GET = apiHandler(async (context) => {
     prisma.order.findMany({
       where,
       orderBy: { createdAt: "desc" },
+      // Plafond de sécurité ; ?limit=N optionnel (1..1000). Défaut 500.
+      take: Math.min(Math.max(Number(url.searchParams.get("limit")) || 500, 1), 1000),
       include: {
         items: { include: { quoteJob: { select: { fileName: true, fileDeletedAt: true } } } },
         user: { select: { email: true, customerNo: true } },

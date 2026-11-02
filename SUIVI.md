@@ -5,13 +5,13 @@ Index des archives (texte d'origine intact) : SUIVI du 01/11 complet (maquettes 
 
 ## État global (02/11/2026, conversation « NASAP [maintenance] suites sécurité »)
 Site en ligne = 5149161. Branche `claude/nasap3d-maintenance-suite-a237b1` (worktree `nasap3d-pipeline-test-cedca2`). Commits locaux libres (git add par fichier), **un SEUL push groupé, sur « oui » explicite de Nolann, après la session maquettage B2B**. Ne jamais commiter `astro.dev.tmp.mjs` ni `.claude/launch.json`.
-Commits locaux non poussés (après 5149161) : 13efe2c note dev, 4a75368 M5 IP réelle, d903be3 M3, 1a37f1d note §4, eed15a0 B1 webhook atomique, 441e127 M4 panier, b495f5a/5b5dd23 SUIVI, ac31ca3 lot quotes, 4e42fe7 lot admin, a309488 messages front, dabfee5 alerte B1, ebe7a0f responsive « Supprimer le compte » ; + lot BAS (voir ci-dessous). Vérifié 02/11 sur l'arbre commité : vitest 128/128, tsc 0 ; build vert (testeur, avant l'élargissement de la table admin, sans impact build).
+Commits locaux non poussés (après 5149161) : 13efe2c note dev, 4a75368 M5 IP réelle, d903be3 M3, 1a37f1d note §4, eed15a0 B1 webhook atomique, 441e127 M4 panier, b495f5a/5b5dd23 SUIVI, ac31ca3 lot quotes, 4e42fe7 lot admin, a309488 messages front, dabfee5 alerte B1, ebe7a0f responsive « Supprimer le compte » ; + lot BAS (commit « Points BAS »). Vérifié 02/11 sur l'arbre commité : vitest 128/128, tsc 0 ; build vert (testeur, avant l'élargissement de la table admin, sans impact build).
 Architecture : un seul conteneur Astro ; Caddy et DNS sur OVH, hors dépôt, faits par le dev (Florian) → note dans `docs/`.
 **Avant le push** : Nolann coche les 4 événements du webhook Stripe (`docs/note_dev_shop_caddy_ip_2026-11-02.md` §4) ; les messages front sont déjà commités (a309488) et partent avec d903be3/eed15a0/441e127.
 
 ## File des demandes
 1. [x] Mémoire architecture. 3. [x] Note dev. 57-58. [x]
-2. [x] Suites sécurité : M5, M3, B1, M4, lot quotes, lot admin, messages front, B1 alerte ; BAS : voir lot BAS.
+2. [x] Suites sécurité : M5, M3, B1, M4, lot quotes, lot admin, messages front, B1 alerte, BAS (P2002 facture, prix manquant = erreur, Authorization Boxtal limité à l'hôte, log raison Boxtal, admin orders take 500 / ?limit ≤1000). **Reportés** : messages d'erreur Boxtal contenant 300-500 car. de réponse XML (choix Nolann, remonte au front admin) ; pagination front admin (>500 commandes : seules les 500 récentes). Vérifié : vitest 128/128, tsc 0, build OK.
 4. [ ] Restes : 38 (fresque + Bambu H2C/X2D/X1C), 39 (À propos SEO), 43 (menu Guides 375 px, « Europe »), 51 (SEO, peut-être couvert par session SEO) ; tester onglet admin « Liste shop » + « M'envoyer un test » ; nettoyer N3D-2001..2009 : le DELETE admin bloque les commandes payées/facturées → si ces commandes sont PENDING+, nettoyage direct en base, à annoncer à Nolann avant.
 59. [ ] Session SEO `local_60b2274e-30eb-4a76-8d5b-bec7033b5594` : relayer son rapport.
 60. [ ] Mail d'annonce liste d'attente shop aux couleurs NASAP Shop + petite couche NASAP (`emailTemplate.ts`, `api/admin/shop-waitlist/announce.ts`, `test.ts`) ; ne pas toucher l'onglet « Liste shop ».
@@ -26,4 +26,4 @@ DELIVERED terminal ; DELETE admin bloqué si payée/facturée/PENDING+ (`adminOr
 `astro check` plante : seuls tsc + `npm run build` font foi. Un executant avait d'abord interdit les sauts PENDING→READY (casserait le menu admin) : corrigé.
 
 ## Prochain pas exact
-Finir le lot BAS (agent en cours : P2002 invoiceGenerator, unitPriceCents, Boxtal, pagination admin) → testeur vitest+tsc+build → commit local → demandes 60+64 (executant-ui, gabarit mail) → 4 et 62. Advisor : appelé avant « fini » seulement.
+Demandes 60+64 (executant-ui, gabarit mail) → 4 et 62. Advisor : appelé avant « fini » seulement.

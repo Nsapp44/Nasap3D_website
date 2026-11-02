@@ -176,9 +176,17 @@ function authHeader(): string {
 // download gets a clean filename via Content-Disposition, not because the
 // URL itself requires it.
 export async function fetchLabelDocument(url: string): Promise<{ contentType: string; buffer: Buffer }> {
+  // N'envoyer les identifiants qu'à l'hôte Boxtal, jamais à une URL tierce.
+  let host = "";
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    throw new BoxtalApiError("boxtal label document: invalid url");
+  }
+  const isBoxtalHost = host === new URL(BASE_URL).hostname || host === "boxtal.com" || host.endsWith(".boxtal.com");
   let res: Response;
   try {
-    res = await timedFetch(url, { headers: { Authorization: authHeader() } });
+    res = await timedFetch(url, isBoxtalHost ? { headers: { Authorization: authHeader() } } : {});
   } catch (err) {
     throw new BoxtalApiError(`boxtal label document request failed: ${(err as Error).message}`);
   }
