@@ -116,3 +116,18 @@ export async function notifyAdminOrderPaid(ref: string, customerEmail: string | 
     console.error("[orderEmails] admin paid notification failed", err);
   }
 }
+
+// Admin-facing: a Stripe payment that the webhook could not apply cleanly (wrong amount, wrong order status, failed deferred payment) — needs a human check.
+export async function notifyAdminPaymentAnomaly(ref: string, problem: string, stripeRef: string) {
+  const notify = process.env.ORDER_NOTIFY_EMAIL;
+  if (!notify) return;
+  try {
+    await sendMail(
+      notify,
+      `Paiement à vérifier — ${ref}`,
+      `Un paiement Stripe pour la commande ${ref} demande une vérification.\n\nProblème : ${problem}\n\nRéférence Stripe à chercher dans le tableau de bord Stripe : ${stripeRef}\n\nVoir dans l'admin : ${frontUrl()}/admin`,
+    );
+  } catch (err) {
+    console.error("[orderEmails] admin payment anomaly notification failed", err);
+  }
+}
