@@ -405,7 +405,7 @@ model ContactMessageFile {
   @@index([contactMessageId])
 }
 
-// Stock de cartons : baisse auto au paiement (boxStockAuto.ts, jamais sous 0) + correction manuelle.
+// Stock de cartons : baisse auto a l'expédition (READY) (boxStockAuto.ts, jamais sous 0) + correction manuelle.
 model ShippingBoxStock {
   code      String   @id
   qty       Int      @default(0)

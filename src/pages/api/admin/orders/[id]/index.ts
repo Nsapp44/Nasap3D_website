@@ -7,6 +7,7 @@ import { SHIPPING_DATA_PURGE, purgeOrderFiles } from "../../../../../lib/server/
 import { createAndAttachInvoiceForOrder } from "../../../../../lib/server/invoiceGenerator";
 import { isTransitionAllowed, isOrderPaidOrInvoiced } from "../../../../../lib/server/adminOrderRules";
 import { deleteFile } from "../../../../../lib/server/storage";
+import { decrementBoxStockForOrder } from "../../../../../lib/server/boxStockAuto";
 
 // Direct port of PATCH /admin/orders/:id — generic status update
 // (PRINTING/READY/DELIVERED) and/or tracking number.
@@ -81,6 +82,15 @@ export const PATCH = apiHandler(async (context) => {
       ...(nextStatus === "DELIVERED" ? SHIPPING_DATA_PURGE : {}),
     },
   });
+
+  // Stock de cartons : baisse une seule fois, a la premiere expedition
+  // (READY, ou DELIVERED direct depuis PRINTING). `readyAt` fait office de
+  // marqueur : un aller-retour READY -> PRINTING -> READY ne rebaisse pas.
+  // Utilise les cartons lus AVANT la mise a jour (SHIPPING_DATA_PURGE les
+  // efface a la livraison). Ne fait jamais echouer le changement de statut.
+  if ((nextStatus === "READY" || nextStatus === "DELIVERED") && !order.readyAt) {
+    await decrementBoxStockForOrder(order.ref, order.shippingParcels);
+  }
 
   // Same automatic storage cleanup as the periodic Boxtal-tracking sweep
   // (see purgeOrderFiles's own comment) — this is the manual/admin path to

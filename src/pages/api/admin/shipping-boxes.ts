@@ -4,7 +4,7 @@ import { requireAdmin } from "../../../lib/api/auth";
 import { prisma } from "../../../lib/server/prisma";
 import { BOXES } from "../../../lib/server/packing";
 
-// Stock de cartons : correction manuelle par l admin (baisse auto au paiement, voir boxStockAuto.ts), jamais
+// Stock de cartons : correction manuelle par l admin (baisse auto a l expedition, voir boxStockAuto.ts), jamais
 // sous 0.
 export const GET = apiHandler(async (context) => {
   await requireAdmin(context);
