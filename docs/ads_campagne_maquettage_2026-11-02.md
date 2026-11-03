@@ -97,7 +97,7 @@ La description 2 n'a pas de point final (pour rester sous 90 avec marge).
 
 #### Couverture (contrôle)
 - **8 mots-clés** : maquettiste nantes (titre 1), maquette sur mesure (2), maquette industrielle (3), maquette de machine (4), maquette pédagogique (5), maquette salon professionnel (6), maquette en coupe (7), maquette démonstrateur (8).
-- **5 types** : architecture (titre 9, description 2), industrielle (titre 3, description 2), commerciale / salon / présentation (titre 6, description 2), pédagogique et scientifique (titre 5, description 2), design produit (titre 10, description 2).
+- **4 types** (fusion du 03/11) : architecture (titre 9, description 2), industrielle, commerciale et de salon (titres 3 et 6, description 2), pédagogique et scientifique (titre 5, description 2), design produit (titre 10, description 2).
 - **Métier** : idéation, conception, modélisation 3D, fabrication (description 1 ; titre 11).
 - **Autres faits** : faisabilité gratuite et expertise avant paiement (titre 12, description 3), devis sur mesure et livraison (description 3), 360° (titre 13, description 4), LED et pièces mobiles (titre 14, description 4), démontable et transportable (titre 15), atelier Canclaux et urgences (description 4).
 
@@ -212,15 +212,14 @@ La page maquette est déjà la page d'arrivée de l'annonce : pas de lien annexe
 | 6 | `Livraison en France` | 19 |
 
 ### Extraits structurés
-Type d'en-tête : **Types**. Valeurs (3 minimum, 10 maximum, ≤ 25 car.), les 5 types de maquettes :
+Type d'en-tête : **Types**. Valeurs (3 minimum, 10 maximum, ≤ 25 car.), les 4 types de maquettes (industrielle, commerciale et de salon = un seul type depuis le 03/11) :
 
 | N° | Valeur | Car. |
 |---|---|---|
 | 1 | `Architecture` | 12 |
-| 2 | `Industrielle` | 12 |
-| 3 | `Salon et présentation` | 21 |
-| 4 | `Pédagogie et science` | 20 |
-| 5 | `Design produit` | 14 |
+| 2 | `Industrielle et salon` | 21 |
+| 3 | `Pédagogie et science` | 20 |
+| 4 | `Design produit` | 14 |
 
 ### Appel
 **Composants > Appels > +** : saisis **ton numéro** (pays : France), le même qu'à l'étape 2 du formulaire. Case « Compter comme conversion » : non (pas de balise). Je ne mets pas ton numéro ici volontairement.
@@ -239,4 +238,4 @@ Type d'en-tête : **Types**. Valeurs (3 minimum, 10 maximum, ≤ 25 car.), les 5
 ## 6. Contrôle des limites
 Longueurs recomptées par script PowerShell (`"texte".Length` sur chaque texte, fichier lu en UTF-8) : voir les colonnes « Car. » ci-dessus.
 
-Résultat : **45 textes contrôlés** (15 titres, 4 descriptions, 2 chemins, 4 textes de liens annexes, 8 lignes de description de liens annexes, 6 accroches, 5 valeurs « Types », 1 nom d'établissement), **0 dépassement**. Limites : titres 30, descriptions 90, chemins 15, liens annexes 25, lignes de liens annexes 35, accroches 25, extraits 25, nom d'établissement 25. Les plus proches de la limite : titre 12 (29/30), titre 6 (28/30), descriptions 2 à 4 (89/90). Contrôle des mots interdits sur les 45 textes : « impression » 0, « € » 0, « prix » 0, « à partir de » 0, nom de client 0.
+Résultat : **44 textes contrôlés** (15 titres, 4 descriptions, 2 chemins, 4 textes de liens annexes, 8 lignes de description de liens annexes, 6 accroches, 4 valeurs « Types », 1 nom d'établissement), **0 dépassement**. Limites : titres 30, descriptions 90, chemins 15, liens annexes 25, lignes de liens annexes 35, accroches 25, extraits 25, nom d'établissement 25. Les plus proches de la limite : titre 12 (29/30), titre 6 (28/30), descriptions 2 à 4 (89/90). Contrôle des mots interdits sur les 44 textes : « impression » 0, « € » 0, « prix » 0, « à partir de » 0, nom de client 0.

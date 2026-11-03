@@ -1,4 +1,4 @@
-# Relecture de cohérence des 2 pages maquette (agent Fable, 03/11/2026)
+# Relecture de cohérence des 2 pages maquette (agent Fable, 03/11/2026) : LES 12 CORRECTIONS SONT APPLIQUÉES (03/11)
 
 M = src/pages/maquettiste-nantes.astro, I = src/pages/maquette-industrielle.astro. Lignes d'avant la fusion des types (à relocaliser par grep). Aucune correction ne retire un mot-clé SEO. Contrôles OK : 0 « € », 4 types = 4 cartes, offerTypes = types, FAQPage/Service cohérents, 360° actifs.
 
