@@ -43,7 +43,9 @@ export async function getCartSummary(identity: { userId: string } | { sessionId:
 
   const lines: CartLine[] = items.map((item) => {
     const q = item.quoteJob;
-    const unitPriceCents = q.unitPriceCents ?? 0;
+    // Un devis sans prix ne doit jamais devenir une ligne gratuite.
+    if (q.unitPriceCents == null) throw new Error(`cart line ${item.id}: quote ${q.id} has no unit price`);
+    const unitPriceCents = q.unitPriceCents;
     const discountPct = discountForQty(item.qty, tiers);
     const lineTotalCents = Math.round(unitPriceCents * item.qty * (1 - discountPct / 100));
     return {

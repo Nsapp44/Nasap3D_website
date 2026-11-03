@@ -1,7 +1,9 @@
 import { apiHandler, json, jsonError } from "../../../../../lib/api/handler";
 import { requireAdmin } from "../../../../../lib/api/auth";
 import { prisma } from "../../../../../lib/server/prisma";
-import { purchaseShippingLabel, BoxtalConfigError, BoxtalApiError } from "../../../../../lib/server/boxtal";
+import { purchaseShippingLabel, BoxtalConfigError, BoxtalApiError, shortBoxtalReason } from "../../../../../lib/server/boxtal";
+import { recordAlert, resolveAlerts } from "../../../../../lib/server/adminAlerts";
+import { describeMissingFields, missingShippingFields } from "../../../../../lib/server/shippingChecks";
 import type { Parcel } from "../../../../../lib/server/packing";
 import { refreshOrderTrackingStatus } from "../../../../../lib/server/orderTracking";
 
@@ -19,22 +21,11 @@ export const POST = apiHandler(async (context) => {
   // Retrait à l'atelier : gratuit, jamais expédié, rien à acheter chez
   // Boxtal.
   if (order.shippingMode === "PICKUP") return jsonError(409, "not_shippable");
-  if (
-    !order.shippingMode ||
-    !order.shippingCarrierCode ||
-    !order.shippingServiceCode ||
-    !order.shippingWeightG ||
-    !order.shippingParcelLengthCm ||
-    !order.shippingParcelWidthCm ||
-    !order.shippingParcelHeightCm ||
-    !order.recipientName ||
-    !order.recipientPhone ||
-    !order.recipientAddress ||
-    !order.recipientCity ||
-    !order.recipientZipcode ||
-    !order.recipientCountry
-  ) {
-    return jsonError(409, "missing_shipping_info");
+  // Étiquette déjà faite à la main (hors site) : ne pas en racheter une.
+  if (order.labelManualAt) return jsonError(409, "label_made_manually");
+  const missing = missingShippingFields(order);
+  if (missing.length > 0) {
+    return jsonError(409, "missing_shipping_info", { reason: describeMissingFields(missing) });
   }
   if (order.shippingMode === "RELAY" && !order.relayPointCode) {
     return jsonError(409, "missing_relay_point");
@@ -47,8 +38,9 @@ export const POST = apiHandler(async (context) => {
     : [
         {
           box: "S",
-          outerCm: [order.shippingParcelLengthCm, order.shippingParcelWidthCm, order.shippingParcelHeightCm],
-          weightG: order.shippingWeightG,
+          // missingShippingFields() a vérifié que ces champs sont renseignés.
+          outerCm: [order.shippingParcelLengthCm!, order.shippingParcelWidthCm!, order.shippingParcelHeightCm!],
+          weightG: order.shippingWeightG!,
           pieces: [],
         },
       ];
@@ -56,17 +48,17 @@ export const POST = apiHandler(async (context) => {
   try {
     const result = await purchaseShippingLabel({
       recipient: {
-        fullName: order.recipientName,
-        phone: order.recipientPhone,
+        fullName: order.recipientName!,
+        phone: order.recipientPhone!,
         email: order.user.email,
-        address: order.recipientAddress,
-        city: order.recipientCity,
-        zipcode: order.recipientZipcode,
-        country: order.recipientCountry,
+        address: order.recipientAddress!,
+        city: order.recipientCity!,
+        zipcode: order.recipientZipcode!,
+        country: order.recipientCountry!,
       },
       parcels,
-      operatorCode: order.shippingCarrierCode,
-      serviceCode: order.shippingServiceCode,
+      operatorCode: order.shippingCarrierCode!,
+      serviceCode: order.shippingServiceCode!,
       mode: order.shippingMode as "RELAY" | "HOME",
       relayPointCode: order.relayPointCode,
       declaredValueCents: order.subtotalCents,
@@ -83,6 +75,7 @@ export const POST = apiHandler(async (context) => {
     // itself (confirmed against the real API), only learned afterward —
     // try right away so it's often already there by the time the admin
     // looks, instead of always needing a separate manual check.
+    await resolveAlerts("LABEL_REFUSED", order.id);
     const tracking = await refreshOrderTrackingStatus(id!);
     return json({
       boxtalOrderRef: updated.boxtalOrderRef,
@@ -94,7 +87,9 @@ export const POST = apiHandler(async (context) => {
     if (err instanceof BoxtalConfigError) return jsonError(500, "boxtal_not_configured");
     if (err instanceof BoxtalApiError) {
       console.error("boxtal label purchase failed", err);
-      return jsonError(502, "boxtal_order_failed", { reason: err.message });
+      const reason = shortBoxtalReason(err);
+      await recordAlert({ kind: "LABEL_REFUSED", orderId: order.id, orderRef: order.ref, message: reason, detail: err.message });
+      return jsonError(502, "boxtal_order_failed", { reason });
     }
     throw err;
   }
@@ -129,7 +124,7 @@ export const GET = apiHandler(async (context) => {
     if (err instanceof BoxtalConfigError) return jsonError(500, "boxtal_not_configured");
     if (err instanceof BoxtalApiError) {
       console.error("boxtal label status check failed", err);
-      return jsonError(502, "boxtal_status_failed", { reason: err.message });
+      return jsonError(502, "boxtal_status_failed", { reason: shortBoxtalReason(err) });
     }
     throw err;
   }

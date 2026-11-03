@@ -5,7 +5,7 @@ import { enforceRateLimit } from "../../lib/api/rateLimit";
 import { prisma } from "../../lib/server/prisma";
 import { getCartSummary, getCartPieces, getCartTotalPrintMinutes } from "../../lib/server/cart";
 import { packPieces } from "../../lib/server/packing";
-import { createOrderFromCart, EmptyCartError, type ShippingSelection } from "../../lib/server/orders";
+import { createOrderFromCart, EmptyCartError, CartChangedError, type ShippingSelection } from "../../lib/server/orders";
 import { quoteShippingRates, BoxtalConfigError, BoxtalApiError } from "../../lib/server/boxtal";
 import { sendOrderPlacedEmail, notifyAdminOrderToReview } from "../../lib/server/orderEmails";
 
@@ -131,8 +131,14 @@ export const POST = apiHandler(async (context) => {
     try {
       rates = await quoteShippingRates(requested.recipient, packed.parcels, printMinutes);
     } catch (err) {
-      if (err instanceof BoxtalConfigError) return jsonError(503, "shipping_not_configured");
-      if (err instanceof BoxtalApiError) return jsonError(502, "shipping_provider_error");
+      if (err instanceof BoxtalConfigError) {
+        console.error("checkout: boxtal not configured:", err.message);
+        return jsonError(503, "shipping_not_configured");
+      }
+      if (err instanceof BoxtalApiError) {
+        console.error("checkout: boxtal cotation failed:", err.message);
+        return jsonError(502, "shipping_provider_error");
+      }
       throw err;
     }
     const rate = requested.mode === "RELAY" ? rates.relay : rates.home;
@@ -153,6 +159,7 @@ export const POST = apiHandler(async (context) => {
     created = await createOrderFromCart(user.id, shipping);
   } catch (err) {
     if (err instanceof EmptyCartError) return jsonError(400, "empty_cart");
+    if (err instanceof CartChangedError) return jsonError(409, "cart_changed");
     throw err;
   }
 

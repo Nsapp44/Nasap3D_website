@@ -48,6 +48,8 @@ export interface AdminOrder {
   relayPointCity: string | null;
   relayPointZipcode: string | null;
   trackingNumber: string | null;
+  // Posé par le lot 2 (étiquette faite à la main) ; absent tant que l'API ne l'expose pas.
+  labelManualAt?: string | null;
 }
 
 // Ported from Admin.dc.html's _loadOrders/onOrderSearchChange/setOrderFilter

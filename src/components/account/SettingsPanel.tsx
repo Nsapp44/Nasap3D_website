@@ -90,6 +90,12 @@ export default function SettingsPanel({ account }: { account: Account }) {
         .danger-card { border: 1px solid rgba(255,90,60,.3); border-radius: 12px; background: rgba(255,90,60,.06); padding: 22px; max-width: 520px; }
         .danger-text { font: 400 11px/1.6 'Inter',sans-serif; color: rgba(255,255,255,.5); margin-bottom: 14px; }
         .delete-input { max-width: 300px; margin-bottom: 14px; }
+        @media (max-width: 560px) {
+          .delete-input { max-width: 100%; }
+          .settings { padding: 28px 16px 48px; }
+          .settings-card, .danger-card { padding: 18px 16px; }
+          .danger-btn, .submit-btn { display: block; text-align: center; box-sizing: border-box; width: 100%; }
+        }
         .danger-btn { display: inline-block; border: 1px solid #ff5a3c; color: #ff5a3c; font: 600 12px 'Inter',sans-serif; padding: 10px 18px; border-radius: 7px; cursor: pointer; transition: background .2s ease, color .2s ease; }
         .danger-btn:hover { background: #ff5a3c; color: #161514; }
       `}</style>

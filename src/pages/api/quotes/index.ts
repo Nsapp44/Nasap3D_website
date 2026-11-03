@@ -154,7 +154,11 @@ export const POST = apiHandler(async (context) => {
   // signal available this early (the parsed File's own .size isn't known
   // until after formData() has already buffered everything).
   const contentLengthHeader = context.request.headers.get("content-length");
-  const weightMB = estimateUploadWeightMB(contentLengthHeader ? Number(contentLengthHeader) : null);
+  // Reject before any slot/body read: missing/invalid length -> 411, too big -> 413.
+  const contentLength = contentLengthHeader !== null && /^\d+$/.test(contentLengthHeader.trim()) ? Number(contentLengthHeader) : NaN;
+  if (!Number.isFinite(contentLength)) return jsonError(411, "length_required");
+  if (contentLength > MAX_FILE_BYTES) return jsonError(413, "file_too_large");
+  const weightMB = estimateUploadWeightMB(contentLength);
   const releaseUploadSlot = await acquireUploadSlot(weightMB);
   const uploadSlotSafetyTimer = setTimeout(releaseUploadSlot, UPLOAD_GATE_HOLD_CEILING_MS);
 
@@ -192,6 +196,7 @@ export const POST = apiHandler(async (context) => {
     if (!materialKey || !colorId || !qualityKey || !Number.isFinite(infillPct)) {
       return jsonError(400, "invalid_body");
     }
+    if (infillPct < 0 || infillPct > 100) return jsonError(400, "invalid_infill");
     if (!Number.isFinite(scale) || scale < MIN_SCALE || scale > MAX_SCALE) {
       return jsonError(400, "invalid_scale");
     }
@@ -208,7 +213,9 @@ export const POST = apiHandler(async (context) => {
 
     const fileBuffer = Buffer.from(await file.arrayBuffer());
     const dir = await mkdtemp(path.join(tmpdir(), "nasap3d-upload-"));
-    const tmpPath = path.join(dir, fileName);
+    // Fixed name + whitelisted extension: the client filename never touches
+    // the filesystem (path traversal). Parsers only use the buffer and ext.
+    const tmpPath = path.join(dir, `upload${ext}`);
     try {
       await writeFile(tmpPath, fileBuffer);
 

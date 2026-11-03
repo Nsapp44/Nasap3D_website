@@ -43,8 +43,25 @@ function groupOrdersByClient(orders: AdminOrder[]): ClientGroup[] {
   return Array.from(groups.values());
 }
 
-export default function OrdersTab() {
-  const { orders, counts, filter, search, onSearchChange, setOrderFilter, reload } = useAdminOrders(true);
+export default function OrdersTab({ focus = null, onClearFocus }: { focus?: { ref: string; n: number } | null; onClearFocus?: () => void }) {
+  const { orders: allOrders, counts, filter, search, onSearchChange, setOrderFilter, reload } = useAdminOrders(true);
+  // Filtre posé depuis le centre d'erreurs : on remet le statut sur « Toutes » (sinon la commande peut être cachée)
+  // et on cherche sa référence ; le filtre exact ci-dessous évite qu'une autre ref qui la contient s'affiche.
+  useEffect(() => {
+    if (!focus) return;
+    setOrderFilter("all");
+    onSearchChange(focus.ref);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- seulement quand un nouveau filtre est demandé
+  }, [focus]);
+  const orders = focus ? allOrders.filter((o) => o.ref === focus.ref) : allOrders;
+  function clearFocus() {
+    onClearFocus?.();
+    onSearchChange("");
+  }
+  function handleSearchChange(value: string) {
+    if (focus) onClearFocus?.();
+    onSearchChange(value);
+  }
   const clientGroups = groupOrdersByClient(orders);
   // Stock de cartons chargé une seule fois pour toute la liste (pas un fetch par carte).
   const [boxStock, setBoxStock] = useState<ShippingBoxStock[]>([]);
@@ -81,8 +98,22 @@ export default function OrdersTab() {
       <div className="title">Commandes en cours</div>
 
       <div className="search-wrap">
-        <input value={search} onChange={(e) => onSearchChange(e.target.value)} type="text" placeholder="Rechercher — n° de commande, email, n° client" className="search-input" />
+        <input value={search} onChange={(e) => handleSearchChange(e.target.value)} type="text" placeholder="Rechercher — n° de commande, email, n° client" className="search-input" />
       </div>
+
+      {focus && (
+        <div className="focus-row">
+          <span className="focus-chip">
+            Commande {focus.ref}
+            <button type="button" className="focus-chip-x" onClick={clearFocus} aria-label={`Retirer le filtre sur la commande ${focus.ref}`}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+              </svg>
+            </button>
+          </span>
+        </div>
+      )}
 
       <div className="filter-row">
         {FILTER_DEFS.map((f) => {
@@ -149,6 +180,12 @@ export default function OrdersTab() {
         .title { font: 700 26px 'Space Grotesk',sans-serif; color: #f3f1ec; margin-bottom: 18px; }
         .search-wrap { position: relative; margin-bottom: 14px; max-width: 340px; }
         .search-input { width: 100%; box-sizing: border-box; height: 38px; border: 1px solid rgba(255,255,255,.15); border-radius: 7px; background: #1a1917; padding: 0 12px; font: 12px 'Inter',sans-serif; color: #e8e6e1; outline: none; }
+        .focus-row { margin-bottom: 14px; }
+        .focus-chip { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; font: 600 11px 'Inter',sans-serif; padding: 0 4px 0 12px; min-height: 32px; border-radius: 7px; background: rgba(255,90,60,.12); color: #f3f1ec; border: 1px solid rgba(255,90,60,.4); overflow-wrap: anywhere; }
+        .focus-chip-x { flex: none; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border: none; border-radius: 5px; background: transparent; color: #ff8a70; cursor: pointer; padding: 0; }
+        .focus-chip-x:hover { background: rgba(255,90,60,.18); color: #ff5a3c; }
+        .focus-chip-x:focus-visible { outline: 2px solid #ff5a3c; outline-offset: 1px; }
+        @media (max-width: 640px) { .focus-chip { min-height: 40px; } .focus-chip-x { width: 40px; height: 40px; } }
         .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
         .filter-chip { display: inline-flex; align-items: center; gap: 6px; font: 600 11px 'Inter',sans-serif; padding: 7px 12px; border-radius: 7px; cursor: pointer; background: transparent; color: rgba(255,255,255,.6); border: 1px solid rgba(255,255,255,.15); }
         .filter-chip.active { background: #ff5a3c; color: #161514; border-color: #ff5a3c; }

@@ -11,7 +11,7 @@ const schema = z.object({ token: z.string(), newPassword: z.string() });
 // Direct port of POST /auth/reset-password. Revokes every other session on
 // success — the "credential change ⇒ revoke everything" invariant.
 export const POST = apiHandler(async ({ request, clientAddress }) => {
-  enforceRateLimit(`auth:reset-password:${clientIp({ clientAddress })}`, 10, 60_000);
+  enforceRateLimit(`auth:reset-password:${clientIp({ clientAddress, request })}`, 10, 60_000);
 
   const body = schema.safeParse(await request.json().catch(() => null));
   if (!body.success) return jsonError(400, "invalid_body");
