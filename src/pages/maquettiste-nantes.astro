@@ -28,7 +28,14 @@ const strengths = [
   { title: "Maquettes interactives et électronique intégrée", text: "Écrans, LED, chenille lumineuse, éléments qui bougent : nous intégrons l'électronique pour une maquette interactive, qui se manipule et se démontre." },
   { title: "Visible en 360° en ligne", text: "Vos clients font tourner la maquette sur écran avant même de la voir en vrai." },
   { title: "Réactivité", text: "Nous savons prendre une demande en charge rapidement et répondre vite, urgences comprises : indiquez-nous l'échéance dès le premier message." },
+  { title: "Un regard de bureau d'études et de design produit", text: "Nous rendons faisable une idée qui existe déjà, ou nous partons d'une simple idée sans dessin pour la concevoir avec vous, de l'idéation à la fabrication." },
   { title: "Confidentialité", text: "Vos plans et projets restent chez nous. Nous signons un accord de confidentialité si vous le demandez." },
+];
+
+const beyond = [
+  { title: "Prototype fonctionnel ou d'aspect", text: "Un objet pour tester une forme, un mécanisme ou un usage, ou pour montrer le rendu final avant l'industrialisation." },
+  { title: "Objets et petits produits pour marques", text: "Exposition, PLV, événementiel, présentation marketing, édition limitée : des objets conçus et fabriqués sur mesure pour porter votre image." },
+  { title: "De la maquette à la petite série", text: "Une maquette validée peut devenir une petite série fabriquée dans notre atelier. Découvrez nos <a href=\"/services\">services de fabrication</a>." },
 ];
 
 const steps = [
@@ -68,6 +75,7 @@ const faqs = [
   { q: "Livrez-vous les maquettes hors de Nantes ?", a: "Oui, partout en France. Vous pouvez aussi retirer votre maquette à Nantes (Canclaux)." },
   { q: "Mon projet est confidentiel : signez-vous un accord de confidentialité ?", a: "Oui, sur demande nous signons un accord de confidentialité (NDA) avant que vous nous transmettiez plans et fichiers. Vos documents ne sont utilisés que pour votre maquette." },
   { q: "La maquette peut-elle être démontable et transportable pour un salon ?", a: "Oui. Nous pouvons concevoir la maquette en plusieurs modules démontables, avec un emballage adapté, pour qu'elle voyage et se remonte facilement sur votre stand. Précisez-le dans votre demande." },
+  { q: "Fabriquez-vous aussi des objets ou des produits pour une marque ?", a: "Oui : objets et petits produits pour l'exposition, le marketing, le retail et les petites séries. Décrivez votre idée, même sans dessin, nous la rendons faisable et la fabriquons dans notre atelier à Nantes." },
   { q: "Combien coûte une maquette sur mesure ?", a: "Chaque maquette est unique : le devis est sur mesure et gratuit, après étude de votre projet. Nous n'affichons pas de tarif public, car il dépend de la taille, du niveau de détail et des options (LED, pièces mobiles, finitions). Décrivez votre besoin, nous vous répondons rapidement." },
 ];
 
@@ -77,6 +85,7 @@ const offerTypes = [
   { name: "Maquette industrielle, commerciale et de salon", description: "Machines, équipements, procédés et stands reproduits avec LED et pièces mobiles, démontables et transportables, pour démonstration, salon et présentation client." },
   { name: "Maquette pédagogique et scientifique", description: "Modèles en coupe et maquettes scientifiques pour laboratoires, écoles et médiation." },
   { name: "Maquette de design produit", description: "Prototype d'aspect ou maquette de gamme pour valider une forme, une couleur, une ergonomie avant l'industrialisation." },
+  { name: "Prototypes et objets sur mesure pour marques", description: "Prototypes fonctionnels ou d'aspect, objets et petits produits pour exposition, marketing et retail, petites séries à partir d'une maquette validée." },
 ];
 const jsonLd = {
   "@context": "https://schema.org",
@@ -124,7 +133,7 @@ const jsonLd = {
 
 <BaseLayout
   title="Maquettiste à Nantes : conception et fabrication | Nasap3D"
-  description="Maquettiste à Nantes : idéation, modélisation 3D, fabrication. Maquettes industrielles, de salon, interactives (écrans, LED), pièces mobiles."
+  description="Bureau d'études et maquettiste à Nantes : idéation, modélisation 3D, fabrication. Maquettes industrielles, de salon, interactives (écrans, LED)."
   path="/maquettiste-nantes"
 >
   <Fragment slot="head">
@@ -133,10 +142,15 @@ const jsonLd = {
 
   <section class="lp-hero">
     <h1 class="lp-title">Maquettiste à Nantes : maquettes industrielles, d'architecture et de présentation</h1>
-    <p class="lp-subtitle">Notre atelier de Nantes conçoit et fabrique des maquettes sur mesure : idéation, conception, modélisation 3D, puis fabrication (impression 3D, ponçage, peinture, intégration électronique avec écrans et LED, éléments interactifs et pièces mobiles). Une maquette fidèle à votre projet, livrée partout en France. Un maquettage réactif, adapté à vos échéances, urgences comprises.</p>
+    <p class="lp-subtitle">Bureau d'études et atelier de maquettiste à Nantes. De l'idée à l'objet : conception, modélisation 3D, fabrication, électronique intégrée.</p>
     <div class="lp-ctas">
       <a href="/contact" class="lp-btn lp-btn-primary"><span class="lp-btn-label">Demander un devis sur mesure <span class="lp-arrow" aria-hidden="true">→</span></span></a>
     </div>
+  </section>
+
+  <section class="lp-section" data-rv>
+    <h2 class="lp-h2">Un bureau d'études et un atelier de maquettiste sous le même toit</h2>
+    <p class="lp-note lp-intro">Nous faisons plus que des maquettes. Design produit, modélisation 3D et maîtrise de nos machines (impression multi-matériaux, résine, laser, peinture, électronique) se retrouvent dans le même atelier. Vous pouvez venir avec un plan, avec une idée à rendre faisable, ou seulement avec une idée sans dessin. Nous vous accompagnons de l'idéation jusqu'à la production.</p>
   </section>
 
   <section class="lp-section" data-rv>
@@ -147,21 +161,6 @@ const jsonLd = {
           <div class="lp-step" style={`--i:${i}`}>
             <h3 class="lp-step-title">{a.title}</h3>
             <p class="lp-step-text">{a.text}</p>
-          </div>
-        ))
-      }
-    </div>
-  </section>
-
-  <section class="lp-section" data-rv>
-    <h2 class="lp-h2">De l'idée à la maquette : comment ça se passe</h2>
-    <div class="lp-steps">
-      {
-        steps.map((s, i) => (
-          <div class="lp-step" style={`--i:${i}`}>
-            <div class="lp-step-n">{s.n}</div>
-            <h3 class="lp-step-title">{s.title}</h3>
-            <p class="lp-step-text">{s.text}</p>
           </div>
         ))
       }
@@ -185,6 +184,21 @@ const jsonLd = {
   </section>
 
   <section class="lp-section" data-rv>
+    <h2 class="lp-h2">De l'idée à la maquette : comment ça se passe</h2>
+    <div class="lp-steps lp-timeline">
+      {
+        steps.map((s, i) => (
+          <div class="lp-step" style={`--i:${i}`}>
+            <div class="lp-step-n">{s.n}</div>
+            <h3 class="lp-step-title">{s.title}</h3>
+            <p class="lp-step-text">{s.text}</p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="lp-section" data-rv>
     <h2 class="lp-h2">Quatre types de maquettes sur mesure</h2>
     <div class="lp-steps">
       {
@@ -201,6 +215,20 @@ const jsonLd = {
             </div>
           )
         )
+      }
+    </div>
+  </section>
+
+  <section class="lp-section" data-rv>
+    <h2 class="lp-h2">Au-delà de la maquette : prototypes, objets pour marques, petites séries</h2>
+    <div class="lp-steps">
+      {
+        beyond.map((t, i) => (
+          <div class="lp-step" style={`--i:${i}`}>
+            <h3 class="lp-step-title">{t.title}</h3>
+            <p class="lp-step-text" set:html={t.text} />
+          </div>
+        ))
       }
     </div>
   </section>
@@ -545,6 +573,49 @@ const jsonLd = {
     .lp-final {
       margin-left: 16px;
       margin-right: 16px;
+    }
+  }
+
+
+  .lp-step-text :global(a) { color: #f3f1ec; text-decoration: underline; text-decoration-color: rgba(255, 90, 60, 0.6); text-underline-offset: 3px; }
+  .lp-step-text :global(a:hover) { color: #ff5a3c; }
+  .lp-step-text :global(a:focus-visible) { outline: 3px solid #f3f1ec; outline-offset: 3px; }
+  .lp-intro { margin-top: 0; }
+
+  /* Timeline du process : ligne qui se remplit et numéro qui s'allume au défilement (CSS seul, transform/opacity).
+     Sans support de view(), aucune règle ne s'applique : rendu inchangé. */
+  @keyframes lpLineFill { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  @keyframes lpNumOn { from { opacity: .3; transform: scale(1); } to { opacity: 1; transform: scale(1.12); } }
+  @supports (animation-timeline: view()) {
+    .lp-timeline { position: relative; }
+    .lp-timeline::before,
+    .lp-timeline::after {
+      content: "";
+      position: absolute;
+      left: -12px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      border-radius: 2px;
+      pointer-events: none;
+    }
+    .lp-timeline::before { background: rgba(255, 255, 255, 0.1); }
+    .lp-timeline::after {
+      background: #ff5a3c;
+      transform-origin: top;
+      animation: lpLineFill linear both;
+      animation-timeline: view();
+      animation-range: entry 40% cover 70%;
+    }
+    .lp-timeline .lp-step-n {
+      transform-origin: left center;
+      animation: lpNumOn linear both;
+      animation-timeline: view();
+      animation-range: entry 60% entry 100%;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .lp-timeline::after { animation: none; transform: none; }
+      .lp-timeline .lp-step-n { animation: none; opacity: 1; transform: none; }
     }
   }
 
