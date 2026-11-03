@@ -10,16 +10,18 @@ import { MAQUETTES_ACTIVES } from "../data/maquettes";
 const types = [
   { title: "Maquette d'architecture", text: "Bâtiment, quartier ou aménagement intérieur, à l'échelle de votre choix, pour un concours, une promotion immobilière ou une présentation client." },
   { title: "Maquette industrielle", text: "Machine, équipement ou procédé (filtration, bioréacteur) reproduit fidèlement, avec LED et pièces mobiles si besoin, pour vos démonstrations et appels d'offres." },
-  { title: "Maquette de salon et de présentation", text: "Maquette de stand, de produit ou de gamme, soignée, démontable et facile à transporter, pour tenir un salon ou convaincre un client." },
-  { title: "Maquette pédagogique", text: "Modèle en coupe, multicolore et peint, pour expliquer une cellule, un mécanisme ou un procédé en laboratoire, en école ou en médiation scientifique." },
+  { title: "Maquette commerciale, de salon et de présentation", text: "Maquette de stand, de produit ou de gamme, soignée, démontable et facile à transporter, pour tenir un salon ou convaincre un client." },
+  { title: "Maquette pédagogique et scientifique", text: "Modèle en coupe, multicolore et peint, pour expliquer une cellule, un mécanisme ou un procédé en laboratoire, en école ou en médiation scientifique." },
+  { title: "Maquette de design produit", text: "Prototype d'aspect ou maquette de gamme pour valider une forme, une couleur, une ergonomie avant l'industrialisation." },
 ];
 
 const audiences = [
-  { title: "Bureaux d'études", text: "Valider un encombrement, un agencement ou un principe avant de lancer la fabrication." },
+  { title: "Bureaux d'études et designers produit", text: "Valider une forme, un encombrement ou un principe avant de lancer la fabrication." },
   { title: "Industriels", text: "Présenter une machine ou un procédé trop gros, trop cher ou trop sensible à déplacer." },
   { title: "Architectes et promoteurs", text: "Rendre un projet lisible pour un jury, une collectivité ou des acquéreurs." },
-  { title: "Exposants de salons", text: "Un objet qui attire l'œil sur le stand et qui se transporte sans souci." },
-  { title: "Laboratoires et écoles", text: "Des modèles qui rendent un phénomène ou un appareil compréhensible d'un coup d'œil." },
+  { title: "Équipes commerciales et exposants", text: "Un objet qui attire l'œil sur le stand, appuie la vente et se transporte sans souci." },
+  { title: "Laboratoires, écoles et médiation scientifique", text: "Des modèles pédagogiques qui rendent un phénomène ou un appareil compréhensible d'un coup d'œil." },
+  { title: "Porteurs de projet et start-up", text: "Passer de l'idée à un objet que l'on montre à un investisseur, un partenaire ou un client." },
 ];
 
 const strengths = [
@@ -39,7 +41,7 @@ const cases = [
 
 const steps = [
   { n: "1", title: "Vous décrivez le projet", text: "Plans, fichier 3D, photos ou simple idée : tout point de départ convient." },
-  { n: "2", title: "Modélisation 3D si besoin", text: "Pas de fichier ? Nous modélisons la maquette à partir de vos éléments." },
+  { n: "2", title: "Idéation et modélisation 3D", text: "Pas de fichier ? Nous imaginons et modélisons la maquette avec vous, à partir de vos éléments." },
   { n: "3", title: "Étude de faisabilité gratuite", text: "Nous examinons votre projet et vous répondons avant tout paiement. Pas de paiement à la commande." },
   { n: "4", title: "Fabrication, finitions, livraison", text: "Réalisée dans notre atelier à Nantes, puis retrait sur place ou livraison partout en France." },
 ];
@@ -54,7 +56,9 @@ const gallery = [
 ];
 
 const faqs = [
-  { q: "Réalisez-vous des maquettes d'architecture, industrielles, de salon ou pédagogiques ?", a: "Oui : maquette d'architecture, maquette industrielle, maquette de salon et de présentation, maquette pédagogique et scientifique. Chaque maquette est conçue sur mesure à partir de vos plans, fichiers ou photos." },
+  { q: "Pouvez-vous nous aider à concevoir la maquette à partir d'une simple idée ?", a: "Oui. Nous menons l'idéation et la conception avec vous : ce que la maquette doit montrer, l'échelle, les parties mobiles ou lumineuses, puis nous la modélisons en 3D et la fabriquons dans notre atelier à Nantes. L'étude de faisabilité est gratuite, avant tout paiement." },
+  { q: "Êtes-vous un maquettiste ou un service d'impression 3D ?", a: "Un maquettiste : l'impression 3D est l'un de nos outils, à côté de la découpe, du ponçage, de la peinture et de l'électronique. Notre métier, c'est la conception de la maquette (modélisation 3D, design produit, choix des finitions) jusqu'à sa livraison." },
+  { q: "Réalisez-vous des maquettes d'architecture, industrielles, commerciales, de design produit, pédagogiques ou scientifiques ?", a: "Oui : maquette d'architecture, maquette industrielle, maquette commerciale, de salon et de présentation, maquette de design produit, maquette pédagogique et scientifique. Chaque maquette est conçue sur mesure à partir de vos plans, fichiers, photos ou d'une simple idée." },
   { q: "Quels matériaux et quelles finitions pour une maquette ?", a: "Nous choisissons la matière selon l'usage de la maquette (présentation, manipulation, démonstration). Ponçage, apprêt et peinture sont possibles selon le rendu attendu ; décrivez votre projet et nous vous conseillons pendant l'étude de faisabilité." },
   { q: "Quelle échelle et quelles dimensions maximales ?", a: "L'échelle se choisit librement selon votre projet. Une pièce unique est limitée par le volume de nos machines ; au-delà, la maquette est découpée en plusieurs parties puis assemblée. Nous confirmons la faisabilité avant tout paiement." },
   { q: "Faut-il un fichier 3D pour commander une maquette ?", a: "Non. Avec des plans, des photos, des cotes ou même une simple description, nous pouvons modéliser la maquette nous-mêmes avant de la fabriquer." },
@@ -70,8 +74,9 @@ const siteUrl = "https://nasap3d.com";
 const offerTypes = [
   { name: "Maquette d'architecture", description: "Bâtiments, quartiers et aménagements à l'échelle, pour concours, promotion et présentation client." },
   { name: "Maquette industrielle", description: "Machines, équipements et procédés reproduits avec LED et pièces mobiles." },
-  { name: "Maquette de salon et de présentation", description: "Maquettes de stand, de produit ou de gamme, démontables et transportables." },
-  { name: "Maquette pédagogique", description: "Modèles en coupe et maquettes scientifiques pour laboratoires, écoles et médiation." },
+  { name: "Maquette commerciale, de salon et de présentation", description: "Maquettes de stand, de produit ou de gamme, démontables et transportables." },
+  { name: "Maquette pédagogique et scientifique", description: "Modèles en coupe et maquettes scientifiques pour laboratoires, écoles et médiation." },
+  { name: "Maquette de design produit", description: "Prototype d'aspect ou maquette de gamme pour valider une forme, une couleur, une ergonomie avant l'industrialisation." },
 ];
 const jsonLd = {
   "@context": "https://schema.org",
@@ -80,9 +85,9 @@ const jsonLd = {
       "@type": "Service",
       name: "Maquettiste à Nantes : maquettes industrielles, d'architecture et de présentation",
       description:
-        "Atelier de maquettiste à Nantes : conception et fabrication de maquettes sur mesure (industrielles, architecture, salon, pédagogiques), avec LED et pièces mobiles. Étude de faisabilité gratuite avant tout paiement, livraison en France.",
+        "Idéation, conception, modélisation 3D, atelier de maquettiste à Nantes : conception et fabrication de maquettes sur mesure (industrielles, architecture, salon, pédagogiques), avec LED et pièces mobiles. Étude de faisabilité gratuite avant tout paiement, livraison en France.",
       serviceType: "Maquettiste, maquettes sur mesure",
-      url: `${siteUrl}/maquette-impression-3d`,
+      url: `${siteUrl}/maquettiste-nantes`,
       inLanguage: "fr-FR",
       provider: { "@id": `${siteUrl}/#business` },
       areaServed: [
@@ -110,7 +115,7 @@ const jsonLd = {
       "@type": "BreadcrumbList",
       itemListElement: [
         { "@type": "ListItem", position: 1, name: "Accueil", item: `${siteUrl}/` },
-        { "@type": "ListItem", position: 2, name: "Maquettes", item: `${siteUrl}/maquette-impression-3d` },
+        { "@type": "ListItem", position: 2, name: "Maquettes", item: `${siteUrl}/maquettiste-nantes` },
       ],
     },
   ],
@@ -118,9 +123,9 @@ const jsonLd = {
 ---
 
 <BaseLayout
-  title="Maquettiste à Nantes : maquettes industrielles et pro | Nasap3D"
-  description="Maquettiste à Nantes, atelier à Canclaux : maquettage industriel, architecture, salon. Expertise avant paiement, devis sur mesure, livraison France."
-  path="/maquette-impression-3d"
+  title="Maquettiste à Nantes : conception et fabrication | Nasap3D"
+  description="Maquettiste à Nantes : idéation, modélisation 3D, fabrication. Maquettes industrielles, architecture, commerciales, pédagogiques. Expertise gratuite."
+  path="/maquettiste-nantes"
 >
   <Fragment slot="head">
     <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
@@ -128,7 +133,7 @@ const jsonLd = {
 
   <section class="lp-hero">
     <h1 class="lp-title">Maquettiste à Nantes : maquettes industrielles, d'architecture et de présentation</h1>
-    <p class="lp-subtitle">Notre atelier de Nantes conçoit et fabrique des maquettes sur mesure : modélisation 3D, impression, ponçage, peinture, LED et pièces mobiles. Une maquette fidèle à votre projet, étudiée gratuitement avant tout paiement et livrée partout en France. Un maquettage réactif, adapté à vos échéances, urgences comprises.</p>
+    <p class="lp-subtitle">Notre atelier de Nantes conçoit et fabrique des maquettes sur mesure : idéation, conception, modélisation 3D, puis fabrication (impression 3D, ponçage, peinture), LED et pièces mobiles. Une maquette fidèle à votre projet, étudiée gratuitement avant tout paiement et livrée partout en France. Un maquettage réactif, adapté à vos échéances, urgences comprises.</p>
     <div class="lp-ctas">
       <a href="/contact" class="lp-btn lp-btn-primary"><span class="lp-btn-label">Demander un devis sur mesure <span class="lp-arrow" aria-hidden="true">→</span></span></a>
     </div>
@@ -149,7 +154,13 @@ const jsonLd = {
   </section>
 
   <section class="lp-section" data-rv>
-    <h2 class="lp-h2">Quatre types de maquettes sur mesure</h2>
+    <h2 class="lp-h2">De l'idée à la maquette : idéation, conception, modélisation 3D, fabrication</h2>
+    <p class="lp-note">Un maquettiste ne se contente pas de reproduire : il aide à donner forme à une idée. Nous partons de votre besoin (convaincre un jury, présenter une machine, expliquer un phénomène) et nous menons l'idéation avec vous : ce que la maquette doit montrer, à quelle échelle, ce qui doit s'allumer ou bouger. Vient ensuite la conception : découpe en pièces, assemblage, démontage pour le transport.</p>
+    <p class="lp-note">La modélisation 3D est faite dans notre atelier à partir de vos plans, photos ou croquis. C'est aussi là qu'intervient notre regard de design produit, sur les proportions, les couleurs et la lisibilité. La fabrication combine plusieurs outils (impression 3D, découpe, ponçage, peinture, électronique) selon le rendu voulu : maquette d'architecture, <a href="/maquette-industrielle">maquette industrielle sur mesure</a>, maquette commerciale, pédagogique ou scientifique. Chaque projet passe d'abord par une étude de faisabilité gratuite, avant tout paiement.</p>
+  </section>
+
+  <section class="lp-section" data-rv>
+    <h2 class="lp-h2">Cinq types de maquettes sur mesure</h2>
     <div class="lp-steps">
       {
         types.map((t, i) => (
@@ -546,6 +557,19 @@ const jsonLd = {
   }
   .lp-final-note {
     margin: 0 0 20px;
+  }
+  .lp-note a {
+    color: #f3f1ec;
+    text-decoration: underline;
+    text-decoration-color: rgba(255, 90, 60, 0.6);
+    text-underline-offset: 3px;
+  }
+  .lp-note a:hover {
+    color: #ff5a3c;
+  }
+  .lp-note a:focus-visible {
+    outline: 3px solid #f3f1ec;
+    outline-offset: 3px;
   }
   .lp-real-gap {
     margin-top: 14px;

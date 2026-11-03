@@ -149,7 +149,7 @@ export default function HomeHeader() {
             {item.label}
           </a>
         ))}
-        <a href="/maquette-impression-3d" className="nav-hover-scale">
+        <a href="/maquettiste-nantes" className="nav-hover-scale">
           Maquettes
         </a>
         {quoteEnabled && (

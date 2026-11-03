@@ -29,6 +29,7 @@ export default defineConfig({
   // subprocess (Kiri:Moto's own CLI) and writes real temp files, which
   // categorically rules out an edge/serverless target.
   output: 'server',
+  redirects: { '/maquette-impression-3d': { status: 301, destination: '/maquettiste-nantes' } },
   adapter: node({ mode: 'standalone' }),
   // The adapter's own `port`/`host` options (node({port, host})) are NOT
   // what actually reaches the running server — @astrojs/node's build
