@@ -2,6 +2,7 @@ import type Stripe from "stripe";
 import { prisma } from "./prisma";
 import { recordAlert } from "./adminAlerts";
 import { createAndAttachInvoiceForOrder } from "./invoiceGenerator";
+import { decrementBoxStockForOrder } from "./boxStockAuto";
 import { notifyAdminOrderPaid, notifyAdminPaymentAnomaly, sendOrderPaidEmail } from "./orderEmails";
 
 function eur(cents: number | null | undefined) {
@@ -99,6 +100,7 @@ export async function applyPaidCheckoutSession(
   }
 
   console.log(`order ${order.ref} marked PENDING from Stripe webhook`);
+  await decrementBoxStockForOrder(order.ref, order.shippingParcels);
 
   // Invoice PDF + emails are follow-ups, not the critical path: the payment is already recorded above, and a failure
   // here must not become a 500 (Stripe would retry, and the CAS above would just report a duplicate).

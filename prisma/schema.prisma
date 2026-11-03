@@ -405,7 +405,7 @@ model ContactMessageFile {
   @@index([contactMessageId])
 }
 
-// Stock de cartons de l'atelier, saisi à la main (pas de décompte automatique).
+// Stock de cartons : baisse auto au paiement (boxStockAuto.ts, jamais sous 0) + correction manuelle.
 model ShippingBoxStock {
   code      String   @id
   qty       Int      @default(0)

@@ -111,7 +111,7 @@ Code : `src/lib/server/packing.ts` (`packPieces()`, testé dans `test/packing.te
 
 **Stockage** : `Order.shippingParcels` (JSON : carton, extérieur, poids, pièces de chaque colis), figé à la commande. `shippingWeightG` = total, `shippingParcel*Cm` = 1er colis (compatibilité). Les anciennes commandes (`shippingParcels` vide) gardent l'affichage d'avant.
 
-**Stock de cartons** : table `ShippingBoxStock`, onglet admin « Expédition » (`ShippingTab.tsx`, `GET/PATCH /api/admin/shipping-boxes`). Stock **manuel** uniquement (+/−, jamais sous 0, aucune baisse automatique) ; à 0, la carte commande affiche « Stock à 0 : acheter ce carton » avec le lien karton.eu.
+**Stock de cartons** : table `ShippingBoxStock`, onglet admin « Expédition » (`ShippingTab.tsx`, `GET/PATCH /api/admin/shipping-boxes`). Baisse **automatique au paiement** (`boxStockAuto.ts`, appelée une seule fois dans le webhook Stripe au passage AWAITING_PAYMENT → PENDING, d'après les cartons de `shippingParcels`, jamais sous 0, retrait sans carton = rien) + correction **manuelle** (+/−, jamais sous 0) pour les commandes emballées autrement ; à 0, la carte commande affiche « Stock à 0 : acheter ce carton » avec le lien karton.eu.
 
 ## Commande impossible (pièce trop grande)
 

@@ -4,8 +4,8 @@ import { requireAdmin } from "../../../lib/api/auth";
 import { prisma } from "../../../lib/server/prisma";
 import { BOXES } from "../../../lib/server/packing";
 
-// Stock de cartons de l'atelier : saisi à la main par l'admin, jamais
-// décompté automatiquement.
+// Stock de cartons : correction manuelle par l admin (baisse auto au paiement, voir boxStockAuto.ts), jamais
+// sous 0.
 export const GET = apiHandler(async (context) => {
   await requireAdmin(context);
   const rows = await prisma.shippingBoxStock.findMany();
