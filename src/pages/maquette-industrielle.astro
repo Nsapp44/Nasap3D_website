@@ -14,7 +14,7 @@ const uses = [
 ];
 
 const strengths = [
-  { title: "LED", text: "Chenilles et voyants lumineux pilotés par une électronique intégrée, programmés selon votre demande." },
+  { title: "Électronique intégrée", text: "Écrans, LED, animations lumineuses : la maquette peut être interactive." },
   { title: "Pièces mobiles", text: "Vannes, leviers, portes ou roulettes qui bougent vraiment, pour une maquette qu'on manipule." },
   { title: "Démontable", text: "Modules séparables pour le transport, le stockage ou l'accès aux détails internes." },
   { title: "Échelle au choix", text: "Du modèle de table à la reproduction détaillée, l'échelle est choisie avec vous." },
@@ -23,7 +23,7 @@ const strengths = [
 ];
 
 const steps = [
-  { n: "1", title: "Expertise", text: "Vous envoyez plans, photos ou description. Nous étudions la faisabilité gratuitement, avant tout paiement." },
+  { n: "1", title: "Expertise", text: "Vous envoyez plans, photos ou description. Nous vous disons si la maquette est faisable." },
   { n: "2", title: "Modélisation", text: "Nous modélisons la maquette en 3D à partir de vos éléments et vous la présentons." },
   { n: "3", title: "Fabrication et finitions", text: "Impression, assemblage, peinture, électronique : tout est réalisé dans notre atelier à Nantes." },
   { n: "4", title: "Livraison", text: "Livraison partout en France, ou retrait à Nantes (Canclaux)." },
@@ -44,7 +44,7 @@ const gallery = [
 
 const faqs = [
   { q: "Qu'est-ce qu'une maquette industrielle ?", a: "C'est une reproduction à l'échelle d'une machine, d'un équipement ou d'un procédé, fabriquée pour montrer, expliquer ou vendre : salon, formation, présentation commerciale ou démonstration." },
-  { q: "Pouvez-vous reproduire une machine à partir de plans ou de photos ?", a: "Oui. Plans, fichier 3D, photos, cotes ou description suffisent : nous modélisons la maquette puis la fabriquons. Nous confirmons la faisabilité avant tout paiement." },
+  { q: "Pouvez-vous reproduire une machine à partir de plans ou de photos ?", a: "Oui. Plans, fichier 3D, photos, cotes ou description suffisent : nous modélisons la maquette puis la fabriquons." },
   { q: "La maquette peut-elle avoir des LED et des pièces qui bougent ?", a: "Oui. Nous intégrons de l'électronique (chenille lumineuse, voyants) et des éléments mobiles comme des vannes, des leviers ou des portes, selon le niveau de démonstration voulu." },
   { q: "La maquette est-elle démontable et transportable pour un salon ?", a: "Oui, nous pouvons la concevoir en modules démontables avec un emballage adapté, pour qu'elle voyage et se remonte facilement. Précisez-le dans votre demande." },
   { q: "Quels sont les délais ?", a: "Comptez d'une semaine à un mois selon la complexité de la machine ; une urgence se traite si vous donnez l'échéance dès le départ." },
@@ -59,7 +59,7 @@ const jsonLd = {
       "@type": "Service",
       name: "Maquettes industrielles sur mesure : machines, démonstrateurs, salons",
       description:
-        "Fabrication de maquettes industrielles sur mesure à Nantes : machines, procédés, démonstrateurs et maquettes de salon, avec LED, pièces mobiles et vue 360° en ligne. Étude de faisabilité gratuite avant tout paiement.",
+        "Fabrication de maquettes industrielles sur mesure à Nantes : machines, procédés, démonstrateurs et maquettes de salon, avec intégration électronique (écrans, LED), éléments interactifs, pièces mobiles et vue 360° en ligne.",
       serviceType: "Maquette industrielle sur mesure",
       url: `${siteUrl}/maquette-industrielle`,
       inLanguage: "fr-FR",
@@ -91,7 +91,7 @@ const jsonLd = {
 
 <BaseLayout
   title="Maquette industrielle sur mesure : machines, salons | Nasap3D"
-  description="Maquette industrielle sur mesure à Nantes : machine, démonstrateur, stand de salon, avec LED et pièces mobiles. Étude gratuite avant paiement, livraison France."
+  description="Maquette industrielle sur mesure à Nantes : machine, démonstrateur, salon, avec électronique (écrans, LED), éléments interactifs et pièces mobiles. Livraison France."
   path="/maquette-industrielle"
 >
   <Fragment slot="head">
@@ -100,7 +100,7 @@ const jsonLd = {
 
   <section class="lp-hero">
     <h1 class="lp-title">Maquettes industrielles sur mesure : machines, démonstrateurs, salons</h1>
-    <p class="lp-subtitle">Votre machine est trop grosse, trop chère ou trop sensible pour être montrée en vrai ? Nous en fabriquons une maquette fidèle dans notre atelier de Nantes, avec LED, pièces mobiles et finitions soignées. Faisabilité étudiée gratuitement avant tout paiement, avec un atelier réactif qui s'adapte à votre échéance, urgences comprises.</p>
+    <p class="lp-subtitle">Votre machine est trop grosse, trop chère ou trop sensible pour être montrée en vrai ? Nous en fabriquons une maquette fidèle dans notre atelier de Nantes, avec intégration électronique (écrans, LED), éléments interactifs, pièces mobiles et finitions soignées. Un atelier réactif qui s'adapte à votre échéance, urgences comprises.</p>
     <div class="lp-ctas">
       <a href="/contact" class="lp-btn lp-btn-primary"><span class="lp-btn-label">Demander un devis sur mesure <span class="lp-arrow" aria-hidden="true">→</span></span></a>
     </div>
@@ -192,7 +192,7 @@ const jsonLd = {
 
   <section class="lp-section lp-final" data-rv>
     <h2 class="lp-h2">Une machine ou un procédé à présenter ?</h2>
-    <p class="lp-note lp-final-note">Décrivez votre projet et votre échéance : nous revenons vers vous avec une étude de faisabilité gratuite.</p>
+    <p class="lp-note lp-final-note">Décrivez votre projet et votre échéance : nous revenons vers vous avec une réponse sur la faisabilité.</p>
     <div class="lp-ctas">
       <a href="/contact" class="lp-btn lp-btn-primary"><span class="lp-btn-label">Demander un devis sur mesure <span class="lp-arrow" aria-hidden="true">→</span></span></a>
     </div>
