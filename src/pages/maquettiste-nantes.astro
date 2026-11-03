@@ -9,8 +9,7 @@ import { MAQUETTES_ACTIVES } from "../data/maquettes";
 
 const types = [
   { title: "Maquette d'architecture", text: "Bâtiment, quartier ou aménagement intérieur, à l'échelle de votre choix, pour un concours, une promotion immobilière ou une présentation client." },
-  { title: "Maquette industrielle", text: "Machine, équipement ou procédé (filtration, bioréacteur) reproduit fidèlement, avec LED et pièces mobiles si besoin, pour vos démonstrations et appels d'offres." },
-  { title: "Maquette commerciale, de salon et de présentation", text: "Maquette de stand, de produit ou de gamme, soignée, démontable et facile à transporter, pour tenir un salon ou convaincre un client." },
+  { title: "Maquette industrielle, commerciale et de salon", href: "/maquette-industrielle", text: "Machine, équipement, procédé (filtration, bioréacteur), stand, produit ou gamme reproduit fidèlement, avec LED et pièces mobiles si besoin, démontable et facile à transporter, pour une démonstration, un appel d'offres, un salon ou une présentation client." },
   { title: "Maquette pédagogique et scientifique", text: "Modèle en coupe, multicolore et peint, pour expliquer une cellule, un mécanisme ou un procédé en laboratoire, en école ou en médiation scientifique." },
   { title: "Maquette de design produit", text: "Prototype d'aspect ou maquette de gamme pour valider une forme, une couleur, une ergonomie avant l'industrialisation." },
 ];
@@ -58,7 +57,7 @@ const gallery = [
 const faqs = [
   { q: "Pouvez-vous nous aider à concevoir la maquette à partir d'une simple idée ?", a: "Oui. Nous menons l'idéation et la conception avec vous : ce que la maquette doit montrer, l'échelle, les parties mobiles ou lumineuses, puis nous la modélisons en 3D et la fabriquons dans notre atelier à Nantes. L'étude de faisabilité est gratuite, avant tout paiement." },
   { q: "Êtes-vous un maquettiste ou un service d'impression 3D ?", a: "Un maquettiste : l'impression 3D est l'un de nos outils, à côté de la découpe, du ponçage, de la peinture et de l'électronique. Notre métier, c'est la conception de la maquette (modélisation 3D, design produit, choix des finitions) jusqu'à sa livraison." },
-  { q: "Réalisez-vous des maquettes d'architecture, industrielles, commerciales, de design produit, pédagogiques ou scientifiques ?", a: "Oui : maquette d'architecture, maquette industrielle, maquette commerciale, de salon et de présentation, maquette de design produit, maquette pédagogique et scientifique. Chaque maquette est conçue sur mesure à partir de vos plans, fichiers, photos ou d'une simple idée." },
+  { q: "Réalisez-vous des maquettes d'architecture, industrielles, commerciales, de design produit, pédagogiques ou scientifiques ?", a: "Oui : maquette d'architecture, maquette industrielle, commerciale et de salon (démonstration, présentation client), maquette de design produit, maquette pédagogique et scientifique. Chaque maquette est conçue sur mesure à partir de vos plans, fichiers, photos ou d'une simple idée." },
   { q: "Quels matériaux et quelles finitions pour une maquette ?", a: "Nous choisissons la matière selon l'usage de la maquette (présentation, manipulation, démonstration). Ponçage, apprêt et peinture sont possibles selon le rendu attendu ; décrivez votre projet et nous vous conseillons pendant l'étude de faisabilité." },
   { q: "Quelle échelle et quelles dimensions maximales ?", a: "L'échelle se choisit librement selon votre projet. Une pièce unique est limitée par le volume de nos machines ; au-delà, la maquette est découpée en plusieurs parties puis assemblée. Nous confirmons la faisabilité avant tout paiement." },
   { q: "Faut-il un fichier 3D pour commander une maquette ?", a: "Non. Avec des plans, des photos, des cotes ou même une simple description, nous pouvons modéliser la maquette nous-mêmes avant de la fabriquer." },
@@ -73,8 +72,7 @@ const faqs = [
 const siteUrl = "https://nasap3d.com";
 const offerTypes = [
   { name: "Maquette d'architecture", description: "Bâtiments, quartiers et aménagements à l'échelle, pour concours, promotion et présentation client." },
-  { name: "Maquette industrielle", description: "Machines, équipements et procédés reproduits avec LED et pièces mobiles." },
-  { name: "Maquette commerciale, de salon et de présentation", description: "Maquettes de stand, de produit ou de gamme, démontables et transportables." },
+  { name: "Maquette industrielle, commerciale et de salon", description: "Machines, équipements, procédés, stands et produits reproduits avec LED et pièces mobiles, démontables et transportables, pour démonstration, salon et présentation client." },
   { name: "Maquette pédagogique et scientifique", description: "Modèles en coupe et maquettes scientifiques pour laboratoires, écoles et médiation." },
   { name: "Maquette de design produit", description: "Prototype d'aspect ou maquette de gamme pour valider une forme, une couleur, une ergonomie avant l'industrialisation." },
 ];
@@ -160,21 +158,24 @@ const jsonLd = {
   </section>
 
   <section class="lp-section" data-rv>
-    <h2 class="lp-h2">Cinq types de maquettes sur mesure</h2>
+    <h2 class="lp-h2">Quatre types de maquettes sur mesure</h2>
     <div class="lp-steps">
       {
-        types.map((t, i) => (
-          <div class="lp-step" style={`--i:${i}`}>
-            <h3 class="lp-step-title">{t.title}</h3>
-            <p class="lp-step-text">{t.text}</p>
-          </div>
-        ))
+        types.map((t, i) =>
+          t.href ? (
+            <a class="lp-step lp-step-link" href={t.href} style={`--i:${i}`}>
+              <h3 class="lp-step-title">{t.title} <span class="lp-arrow" aria-hidden="true">→</span></h3>
+              <p class="lp-step-text">{t.text}</p>
+            </a>
+          ) : (
+            <div class="lp-step" style={`--i:${i}`}>
+              <h3 class="lp-step-title">{t.title}</h3>
+              <p class="lp-step-text">{t.text}</p>
+            </div>
+          )
+        )
       }
     </div>
-    <a class="lp-cross" href="/maquette-industrielle">
-      <span class="lp-cross-title">Maquettes industrielles, démonstrateurs et salons <span class="lp-arrow" aria-hidden="true">→</span></span>
-      <span class="lp-cross-text">Notre page dédiée aux machines, procédés et maquettes de stand.</span>
-    </a>
   </section>
 
   <section class="lp-section" data-rv>
@@ -574,35 +575,21 @@ const jsonLd = {
   .lp-real-gap {
     margin-top: 14px;
   }
-  .lp-cross {
+  .lp-step-link {
     display: block;
-    margin-top: 14px;
-    padding: 16px 18px;
-    border: 1px solid rgba(255, 90, 60, 0.3);
-    border-radius: 10px;
-    background: rgba(255, 90, 60, 0.08);
     text-decoration: none;
+    border-color: rgba(255, 90, 60, 0.3);
+    background: rgba(255, 90, 60, 0.08);
     transition: border-color .25s ease, background .25s ease;
   }
-  .lp-cross:hover {
+  .lp-step-link:hover {
     border-color: #ff5a3c;
     background: rgba(255, 90, 60, 0.16);
   }
-  .lp-cross:focus-visible,
+  .lp-step-link:focus-visible,
   .lp-links a:focus-visible {
     outline: 3px solid #f3f1ec;
     outline-offset: 3px;
-  }
-  .lp-cross-title {
-    display: block;
-    font: 600 15px "Space Grotesk", sans-serif;
-    color: #f3f1ec;
-    margin-bottom: 4px;
-  }
-  .lp-cross-text {
-    display: block;
-    font: 400 13px/1.5 "Inter", sans-serif;
-    color: rgba(255, 255, 255, 0.65);
   }
   .lp-links {
     font: 400 14px/1.8 "Inter", sans-serif;
