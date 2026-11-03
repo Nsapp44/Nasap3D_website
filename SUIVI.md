@@ -5,11 +5,13 @@ Archives : `docs/SUIVI_archive_2026-11-03.md` (et autres), SUIVI complet d'avant
 ## État global
 `origin/master` = 9d69d2f (en ligne). Local, NON poussé, branche `claude/maquettage-b2b` : c59cbb1, 943a3fb, a31400d (page `/maquettiste-nantes` avec bureau d'études, prototypes/objets pour marques, 6 atouts, FAQ 13, timeline CSS) + `/maquette-industrielle`. Push seulement sur le « oui » de Nolann (redéploie le site) ; avant : advisor + scan `claude-security` depuis le fil principal. Structure a31400d PAS encore vérifiée visuellement (375/768/1440, build, 0 « € »).
 
-## EN COURS : storyboard animé « cellule » (marketing de /maquettiste-nantes)
-Brief complet, séquence voulue et faits : `docs/chantiers/storyboard-cellule-brief_2026-11-03.md`. Artifact v1 générique (https://claude.ai/artifact/9az7LYrVJrfeLZzEiMFQsU) = À REFAIRE sur la vraie cellule verte à LED. **Nolann (03/11) : c'est du travail Opus architecte/Fable (conception visuelle), nouvelle conversation Opus ultracode conseillée.** Cette session (Sonnet, lancée par une autre session) ne peut pas en créer une : il ouvre lui-même la conversation Opus et colle : « Lis SUIVI.md et docs/chantiers/storyboard-cellule-brief_2026-11-03.md, puis refais le storyboard. »
-Ce qui n'a pas marché : sphère SVG générique (pas la vraie cellule) ; animation de pinceau pour la peinture (il veut jeu de lumière + microtexture). Début de copie d'images (scratchpad) abandonné : `sm` n'existe qu'en avif.
-
-Point 03/11 soir : rendus Blender faits hors dépôt (`Source machine/glb/storyboard/` : STORYBOARD.md, scripts, `out/` PNG, `web/` webp éclaté 28 / aimant 14 / esp 16, ~530 Ko à 640 px, `--pas=2` pour mobile). Temps 4 « lumière » raté (aplat) : refait par `architecte` (en cours). Reste : page Artifact (`executant-ui`, MÊME URL 9az7LYrVJrfeLZzEiMFQsU, images en assets), captures `testeur`, relecture architecte, advisor, UN pop-up. Doutes : base_controle non comparé pixel à `base/e28_a000` ; étiquettes anglaises du modèle visibles ; ESP = carte noir_178..206 déjà modélisée.
+## Storyboard « cellule » : v2 PUBLIÉ (04/11), en attente du retour de Nolann
+- Artifact v2 (même URL) : https://claude.ai/artifact/9az7LYrVJrfeLZzEiMFQsU. Il suit les 8 temps du brief (`docs/chantiers/storyboard-cellule-brief_2026-11-03.md`) sur la vraie cellule (rendus Blender). Copies dans le dépôt : `docs/chantiers/storyboard.html` + `storyboard-cellule-page-brief.md`. Les images sont hors dépôt : `Source machine/glb/storyboard/web/` (+ `STORYBOARD.md` à jour).
+- Mesures vertes : 0 erreur, 0 scroll horizontal ; 375 = 272 Ko ; 768/1440 = 502 Ko ; reduced = 34 Ko. 0 « € », ni « gratuit », ni nom de client.
+- La version publiée n'a pas pu être vérifiée dans le navigateur intégré (non connecté à claude.ai) : c'est Nolann qui la regarde.
+- Défauts connus, à trancher par Nolann : le reflet de la lumière (T4) est un peu flou ; la carte lumière a une bordure 3:2 ; à 10 %, le texte T2 arrive alors que la cellule est encore floue ; en transition, « Un bouton, et elle s'éclaire » est pâle.
+- Ce qui n'a pas marché (v1) : sphère SVG générique ; animation de pinceau (il veut un jeu de lumière + microtexture).
+- Suite possible : intégrer l'animation dans /maquettiste-nantes (le site), si Nolann valide.
 
 ## Maintenance FUSIONNÉE ici (03/11, décision Nolann « tout ici »)
 Branche `claude/nasap3d-maintenance-suite-a237b1` fusionnée localement (centre d'erreurs admin lots 1-3, stock cartons à l'expédition, durcissements Stripe/quotes/admin ; vitest 169, tsc 0 selon elle). SUIVI complet d'origine : `docs/chantiers/suivi-maintenance_2026-11-03.md` (demandes 4, 59, 60, 62-65 : mails shop, bouton avis Google 64, captures centre d'erreurs, lot 4 devis au poids). Avant le push : Nolann coche les 4 événements du webhook Stripe (`docs/note_dev_shop_caddy_ip_2026-11-02.md` §4). Un SEUL push groupé sur son « oui ». Tests/build à relancer sur l'arbre fusionné (testeur) avant push. Conv « NASAP maintenance » supprimée ; conv « maquette B2B » (local_1df33bdf) à supprimer à la demande de Nolann.
@@ -21,5 +23,5 @@ Branche `claude/nasap3d-maintenance-suite-a237b1` fusionnée localement (centre 
 - À supprimer (liste cumulée) : worktree `maquettage-b2b-propre` / branche `claude/maquettage-b2b` après push+merge ; cette conversation en fin de tâche ; serveur dev port 4350 (PID 22244). Branche maintenance `claude/nasap3d-maintenance-suite-a237b1` : conflit attendu seulement sur SUIVI.md.
 
 ## Prochain pas exact
-1. Nolann ouvre une conversation Opus ultracode pour le storyboard (brief ci-dessus).
-2. Après : vérif visuelle de a31400d, puis « oui » de push → `curl.exe -I https://nasap3d.com/maquette-impression-3d` (301), 200 sur les 2 pages, `node scripts/indexnow.mjs`, Nolann demande l'indexation.
+1. Retour de Nolann sur le storyboard v2 (pop-up envoyé le 04/11) : retouches ou intégration au site.
+2. Ensuite : vérif visuelle de a31400d, puis « oui » de push → `curl.exe -I https://nasap3d.com/maquette-impression-3d` (301), 200 sur les 2 pages, `node scripts/indexnow.mjs`, Nolann demande l'indexation.

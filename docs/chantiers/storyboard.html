@@ -1,0 +1,573 @@
+<meta charset="utf-8">
+<title>Storyboard cellule</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500&display=swap">
+<style>
+:root { color-scheme: dark; --bg:#161514; --bg2:#1a1917; --card:#201d1b; --line:rgba(255,255,255,.1); --fg:#f3efe9; --muted:#a8a29b; --accent:#ff5a3c; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); margin: 0; font-family: Inter, system-ui, sans-serif; font-size: 1.05rem; line-height: 1.6; -webkit-text-size-adjust: 100%; }
+h1, h2, h3 { font-family: "Space Grotesk", Inter, system-ui, sans-serif; letter-spacing: -.01em; text-wrap: balance; margin: 0; line-height: 1.12; }
+h1 { font-size: clamp(2rem, 5vw, 3.6rem); font-weight: 700; }
+h2 { font-size: clamp(1.5rem, 3.4vw, 2.4rem); font-weight: 600; }
+p { margin: 0; }
+img, canvas { display: block; }
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+.sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.tag { font-size: .78rem; font-weight: 500; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+
+.wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px; overflow-x: clip; }
+.intro { max-width: 1280px; margin-inline: auto; display: grid; gap: 6px; padding-bottom: 8px; }
+.intro p:last-child { color: var(--muted); font-size: .95rem; }
+
+/* ---- Scène ---- */
+.scene { height: 700vh; }
+.stage { position: sticky; top: 0; height: 100svh; max-width: 1280px; margin-inline: auto; display: grid; align-content: center; row-gap: 20px; padding-block: 12px 40px; --bh: 46svh; }
+.box { position: relative; aspect-ratio: 4 / 3; width: min(100%, calc(var(--bh) * 4 / 3)); margin-inline: auto; }
+.box canvas { width: 100%; height: 100%; }
+.poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.texts { display: grid; align-content: start; }
+.tb { display: flex; flex-direction: column; gap: 12px; max-width: 34rem; }
+.tb p { color: var(--muted); max-width: 46ch; }
+.tb .lead { color: var(--fg); font-family: "Space Grotesk", Inter, system-ui, sans-serif; font-weight: 500; font-size: clamp(1.25rem, 2.6vw, 1.75rem); line-height: 1.25; letter-spacing: -.01em; text-wrap: balance; }
+.pills { display: grid; }
+.pill { display: inline-flex; align-items: center; gap: 12px; align-self: start; width: fit-content; max-width: 100%; min-height: 44px; padding: 8px 18px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font-weight: 500; font-size: .95rem; line-height: 1.3; }
+.pill::before { content: ""; flex: none; width: 24px; height: 2px; background: var(--accent); border-radius: 2px; }
+.pw { display: grid; gap: 12px; }
+.ring { position: absolute; left: 49.77%; top: 40.33%; width: 22%; aspect-ratio: 1; margin: -11% 0 0 -11%; border: 2px solid var(--accent); border-radius: 50%; opacity: 0; pointer-events: none; }
+.loader { position: absolute; right: 8px; bottom: 8px; width: 16px; height: 16px; opacity: 0; transition: opacity .3s; pointer-events: none; }
+.loader i { display: block; width: 16px; height: 16px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spinr 1s linear infinite; }
+.hud { position: absolute; left: 0; right: 0; bottom: 0; display: grid; gap: 8px; }
+.hud span { font-size: .78rem; letter-spacing: .08em; color: var(--muted); font-variant-numeric: tabular-nums; }
+.track { height: 2px; background: var(--line); }
+.track i { display: block; height: 100%; background: var(--accent); transform: scaleX(0); transform-origin: left; }
+
+@media (min-width: 1024px) {
+  .stage { grid-template-columns: minmax(0, 42%) minmax(0, 58%); column-gap: 40px; align-items: center; --bh: calc(100svh - 112px); }
+  .box { grid-column: 2; grid-row: 1; width: min(100%, calc(var(--bh) * 4 / 3)); }
+  .texts { grid-column: 1; grid-row: 1; align-content: center; }
+}
+@media (max-width: 767px) { .scene { height: 600vh; } }
+
+/* ---- Mode animé : texte empilé, image réservée au canvas ---- */
+html.anim .tb { grid-area: 1 / 1; opacity: 0; transform: translateY(6px); }
+html.anim .t1 { opacity: 1; transform: none; animation: entree .5s ease-out backwards; }
+html.anim .pw { grid-area: 1 / 1; opacity: 0; transform: translateY(6px); }
+html.anim .sfig, html.anim .vig { display: none; }
+html.anim .poster { transform: scale(.55); filter: blur(10px); will-change: transform; }
+html.anim .box canvas { will-change: transform, opacity;
+  /* bords fondus : en zoom, l'image ne doit jamais finir sur une coupe droite */
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 9%, #000 91%, transparent), linear-gradient(to bottom, transparent, #000 9%, #000 91%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent, #000 9%, #000 91%, transparent), linear-gradient(to bottom, transparent, #000 9%, #000 91%, transparent);
+  mask-composite: intersect; }
+
+/* ---- Mode statique (mouvement réduit ou GSAP absent) ---- */
+html:not(.anim) .scene { height: auto; }
+html:not(.anim) .stage { position: static; height: auto; display: block; padding-block: 8px 24px; }
+html:not(.anim) .box, html:not(.anim) .hud { display: none; }
+html:not(.anim) .texts { display: flex; flex-direction: column; gap: 56px; }
+html:not(.anim) .tb { max-width: 40rem; }
+html:not(.anim) .pills { gap: 28px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+.sfig, .vig { position: relative; aspect-ratio: 4 / 3; width: 100%; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--bg2); margin-top: 8px; }
+.sfig.r32 { aspect-ratio: 3 / 2; }
+.sfig img { width: 100%; height: 100%; object-fit: cover; }
+.sfig .glow { position: absolute; inset: 0; mix-blend-mode: screen; }
+.vig img { position: absolute; width: 220%; height: 220%; max-width: none; left: var(--l); top: var(--t); }
+
+/* ---- Après la scène ---- */
+.after { max-width: 1280px; margin-inline: auto; display: grid; gap: 72px; padding-block: 32px 64px; }
+.story { display: grid; gap: 20px; max-width: 40rem; }
+.story .lead { font-family: "Space Grotesk", Inter, system-ui, sans-serif; font-weight: 500; font-size: clamp(1.25rem, 2.6vw, 1.75rem); line-height: 1.25; letter-spacing: -.01em; text-wrap: balance; }
+.more { display: grid; gap: 28px; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.card { display: grid; align-content: start; gap: 10px; padding: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; }
+.card svg { width: 40px; height: 40px; fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; overflow: visible; }
+.card h3 { font-size: 1.05rem; font-weight: 600; }
+.card p { color: var(--muted); font-size: .9rem; line-height: 1.5; max-width: 40ch; }
+@media (min-width: 560px) { .grid { gap: 16px; } .card { padding: 20px; gap: 12px; } .card p { font-size: .95rem; } }
+@media (min-width: 1024px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.cta { max-width: 760px; width: 100%; margin-inline: auto; display: grid; justify-items: center; gap: 16px; text-align: center; padding: clamp(24px, 5vw, 48px) clamp(16px, 4vw, 40px); background: var(--card); border: 1px solid var(--line); border-radius: 16px; }
+.cta p { color: var(--muted); max-width: 46ch; }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 14px 22px; border-radius: 999px; background: var(--accent); color: var(--bg); font-weight: 500; text-decoration: none; transition: background-color .2s; }
+.btn:hover { background: color-mix(in srgb, var(--accent), white 16%); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 999px; }
+.alt { display: inline-flex; align-items: center; min-height: 44px; }
+.note { font-size: .85rem; }
+
+/* ---- Entrées et boucles (seulement si le mouvement est permis) ---- */
+@keyframes entree { from { opacity: 0; transform: translateY(6px); } }
+@keyframes spinr { to { transform: rotate(360deg); } }
+@keyframes dash { to { stroke-dashoffset: -16; } }
+@keyframes tourne { to { transform: rotate(360deg); } }
+@keyframes onde { from { transform: scale(.3); opacity: 1; } to { transform: scale(2); opacity: 0; } }
+@keyframes barre { 0%, 100% { transform: scaleY(.3); } 50% { transform: scaleY(1); } }
+@keyframes wifi { 0%, 100% { opacity: .2; } 25%, 60% { opacity: 1; } }
+@keyframes trace { 0% { stroke-dashoffset: 1; } 60%, 100% { stroke-dashoffset: 0; } }
+html.mo .rv { opacity: 0; transform: translateY(6px); transition: opacity .5s ease, transform .5s ease; transition-delay: var(--dl, 0ms); }
+html.mo .rv.in { opacity: 1; transform: none; }
+html.mo .card .a { animation-play-state: paused; animation-iteration-count: infinite; }
+html.mo .card.live .a { animation-play-state: running; }
+html.mo .row { stroke-dasharray: 5 3; animation: dash 2s linear infinite; }
+html.mo .gear { transform-origin: 20px 20px; animation: tourne 6s linear infinite; }
+html.mo .wave { transform-origin: 20px 20px; animation: onde 2s ease-out infinite; }
+html.mo .eq { transform-box: fill-box; transform-origin: 50% 100%; animation: barre 1.2s ease-in-out infinite; }
+html.mo .arc { animation: wifi 2.4s ease-in-out infinite; }
+html.mo .bulb { stroke-dasharray: 1; stroke-dashoffset: 1; animation: trace 3s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) {
+  html .rv, html .card .a, html .t1 { animation: none !important; transition: none !important; }
+}
+</style>
+<script>
+(function () { var c = document.documentElement.classList; if (!matchMedia("(prefers-reduced-motion: reduce)").matches) { c.add("mo", "anim"); } })();
+</script>
+
+<div class="wrap">
+  <header class="intro">
+    <p class="tag">STORYBOARD · /maquettiste-nantes</p>
+    <p>Faites défiler : voici la future section, sur la vraie cellule.</p>
+  </header>
+
+  <section class="scene" id="scene" aria-labelledby="h1">
+    <div class="stage">
+      <div class="box" id="box">
+        <canvas id="cv" role="img" aria-label="Cellule verte, vue de loin, en cours de mise au point"></canvas>
+        <img class="poster" id="poster" alt="" aria-hidden="true" width="160" height="120" decoding="async" src="data:image/webp;base64,UklGRvoBAABXRUJQVlA4IO4BAADwGACdASqgAHgAPrVSnkqnJSKhrtn5IOAWiWcA1FNT2td41RjZ+KdQorA42lxU+O9MVdPS2ENKQ+dkacvfrxqF7jTHiPttp3maeM6Hcfy10a4ECkv8hGYiC9fq6+wxDzASMA0GatbPij6JevsaJoyLfSsPHxQw0IVzrh+r/5LrGXKlTWIRqgtIfMTj5aHhz0sgmfDb1ZjbiFcT2L16ijkowCtI1ojTXHNIsFZCrpzdk15B3dI45Qdljbz1RuUH4n0G4Bo93ukcqwW/Bx2gtVSAAP70uPZp6X2z0einXWlNqVkDUqLtpWGtvQaZ38HotKl/CGtfof3XfQJrcCi5OtQXQxb74KSDdHDmizfDRUzsikqFyfycw83mILLQ4xd965CDaLcbq9sYDx+cjPqwtwcxjkIx+ppzUPmpvL7FB5lgTqA/ohCbeylT/oz9dM1N2fdH1jhF7XcbLzLUwwaGs++K+cCCFSzRngHrgQjJzddo2L+cp6HJvZ/kS2yASxKEb4Bi8TZhMMCfbY3/2klpHPe7jsL0YSgxOD8Xb2WcyF3Ymk+Jhwg2HyMHoA60AHjje+mL466ZpfLaPfXZi7tRpPbeYPjZtINWNWpecvCJhHtwBku5pMdOYU7NBXchWS8itF6alHyNa0ipgACHkAAAAA==">
+        <i class="ring" id="r1"></i><i class="ring" id="r2"></i>
+        <div class="loader" id="loader" role="status"><i></i><span class="sr">Chargement</span></div>
+      </div>
+
+      <div class="texts">
+        <div class="tb t1" id="t1">
+          <h1 id="h1">Maquettage professionnel à Nantes</h1>
+          <p>Des maquettes qui s'allument, bougent et se démontent.</p>
+          <div class="sfig"><img src="eclate/f_000.webp" alt="Cellule verte fermée, vue de loin" width="640" height="480"></div>
+        </div>
+
+        <div class="tb" id="t2">
+          <h2>Tout est pensé de l'intérieur.</h2>
+          <div class="sfig"><img src="eclate/f_027.webp" alt="Cellule verte ouverte, coques écartées, intérieur visible" width="640" height="480" loading="lazy"></div>
+        </div>
+
+        <div class="tb" id="t3">
+          <h2 class="sr">Trois détails de la cellule</h2>
+          <div class="pills">
+            <div class="pw"><div class="vig" style="--l:-88.8%;--t:-114.6%"><img src="eclate/f_027.webp" alt="" width="640" height="480" loading="lazy"></div><span class="pill">Électronique intégrée</span></div>
+            <div class="pw"><div class="vig" style="--l:-59.5%;--t:-38.7%"><img src="eclate/f_027.webp" alt="" width="640" height="480" loading="lazy"></div><span class="pill">Pièces qui s'emboîtent</span></div>
+            <div class="pw"><div class="vig" style="--l:-89.4%;--t:-15%"><img src="eclate/f_027.webp" alt="" width="640" height="480" loading="lazy"></div><span class="pill">Imprimée en 3D, finie à la main</span></div>
+          </div>
+        </div>
+
+        <div class="tb" id="t4">
+          <h2>Une finition qui se touche.</h2>
+          <p>Ponçage, apprêt, peinture : la lumière ne ment pas.</p>
+          <div class="sfig r32"><img src="lumiere/f_008.webp" alt="Gros plan sur la surface peinte, un reflet blanc la traverse" width="640" height="426" loading="lazy"></div>
+        </div>
+
+        <div class="tb" id="t5a">
+          <h2>Aimantées, amovibles.</h2>
+          <p>On les retire, on les remet : clac.</p>
+        </div>
+
+        <div class="tb" id="t5b">
+          <h2>Un bouton, et elle s'éclaire.</h2>
+          <div class="sfig"><img src="aimant/f_013.webp" alt="Cellule ouverte, pièces de couleur en place" width="640" height="480" loading="lazy"><img class="glow" src="led/glow.webp" alt="" width="800" height="600" loading="lazy"></div>
+        </div>
+
+        <div class="tb" id="t6">
+          <h2>Le cerveau rentre dedans.</h2>
+          <p>Microcontrôleur, LED, câblage : intégrés dès la conception.</p>
+          <div class="sfig"><img src="esp/f_015.webp" alt="Carte électronique et points LED rangés dans la cellule" width="640" height="480" loading="lazy"><img class="glow" src="led/glow.webp" alt="" width="800" height="600" loading="lazy"></div>
+        </div>
+
+        <div class="tb" id="t7a">
+          <p class="lead">Tout part d'une idée, parfois d'un simple croquis.</p>
+        </div>
+      </div>
+
+      <div class="hud" aria-hidden="true"><span id="cnt">01 / 08</span><div class="track"><i id="bar"></i></div></div>
+    </div>
+  </section>
+
+  <div class="after">
+    <section class="story" aria-label="Récit">
+      <p class="lead rv" style="--dl:0ms">On la conçoit pièce par pièce, électronique comprise.</p>
+      <p class="lead rv" style="--dl:120ms">Elle arrive prête à être montrée, manipulée, allumée.</p>
+    </section>
+
+    <section class="more">
+      <h2 class="rv">Et encore plus</h2>
+      <div class="grid">
+        <article class="card rv" style="--dl:0ms">
+          <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="5" y="7" width="30" height="21" rx="3"/><path d="M15 33h10M20 28v5"/><line class="a row" x1="10" y1="13" x2="30" y2="13"/><line class="a row" x1="10" y1="17.5" x2="30" y2="17.5" style="animation-delay:-.7s"/><line class="a row" x1="10" y1="22" x2="30" y2="22" style="animation-delay:-1.3s"/></svg>
+          <h3>Écran</h3><p>Afficher une donnée, un texte, une image.</p>
+        </article>
+        <article class="card rv" style="--dl:60ms">
+          <svg viewBox="0 0 40 40" aria-hidden="true"><g class="a gear"><circle cx="20" cy="20" r="9"/><circle cx="20" cy="20" r="3.5"/><path d="M29 20h4M26.36 26.36l2.83 2.83M20 29v4M13.64 26.36l-2.83 2.83M11 20H7M13.64 13.64l-2.83-2.83M20 11V7M26.36 13.64l2.83-2.83"/></g></svg>
+          <h3>Mouvement</h3><p>Un moteur, une pièce qui tourne ou se lève.</p>
+        </article>
+        <article class="card rv" style="--dl:120ms">
+          <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="2"/><circle class="a wave" cx="20" cy="20" r="8"/><circle class="a wave" cx="20" cy="20" r="8" style="animation-delay:-1s"/></svg>
+          <h3>Capteur</h3><p>Elle réagit quand on approche ou qu'on touche.</p>
+        </article>
+        <article class="card rv" style="--dl:180ms">
+          <svg viewBox="0 0 40 40" aria-hidden="true"><path class="a eq" d="M10 12v16"/><path class="a eq" d="M16 12v16" style="animation-delay:-.4s;animation-duration:1.5s"/><path class="a eq" d="M22 12v16" style="animation-delay:-.8s;animation-duration:1s"/><path class="a eq" d="M28 12v16" style="animation-delay:-.2s;animation-duration:1.8s"/></svg>
+          <h3>Son</h3><p>Une voix, un bruitage, une ambiance.</p>
+        </article>
+        <article class="card rv" style="--dl:240ms">
+          <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="30" r="1.5"/><path class="a arc" d="M15.05 24.05A7 7 0 0 1 24.95 24.05"/><path class="a arc" d="M10.81 19.81A13 13 0 0 1 29.19 19.81" style="animation-delay:.4s"/><path class="a arc" d="M6.56 15.56A19 19 0 0 1 33.44 15.56" style="animation-delay:.8s"/></svg>
+          <h3>Connecté</h3><p>Pilotée depuis un téléphone ou un écran.</p>
+        </article>
+        <article class="card rv" style="--dl:300ms">
+          <svg viewBox="0 0 40 40" aria-hidden="true"><path class="a bulb" pathLength="1" d="M15 25c-3-2.2-4.5-5-4.5-8a9.5 9.5 0 0 1 19 0c0 3-1.5 5.8-4.5 8v3h-10z"/><path d="M16.5 31h7M18 34h4"/></svg>
+          <h3>Votre idée</h3><p>Une envie précise ? On l'étudie avec vous.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="cta rv" aria-labelledby="hcta">
+      <h2 id="hcta">Parlons de votre maquette.</h2>
+      <p>Décrivez votre projet : on revient vers vous avec une proposition.</p>
+      <a class="btn" href="https://nasap3d.com/contact">Décrire mon projet</a>
+      <a class="alt" href="https://nasap3d.com/maquettiste-nantes">Explorez la cellule en 3D →</a>
+      <p class="note">(la galerie 3D existante de la page, non dupliquée ici)</p>
+    </section>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script>
+(function () {
+  "use strict";
+  var root = document.documentElement;
+  var hasG = typeof gsap !== "undefined" && typeof ScrollTrigger !== "undefined";
+  if (!hasG) root.classList.remove("anim");
+  var mo = root.classList.contains("mo");
+
+  /* ---- Entrées au défilement et boucles des cartes (hors scène) ---- */
+  var rvs = document.querySelectorAll(".rv");
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (e.isIntersecting) e.target.classList.add("in");
+        if (e.target.classList.contains("card")) e.target.classList.toggle("live", e.isIntersecting);
+      });
+    }, { rootMargin: "0px 0px -8% 0px" });
+    rvs.forEach(function (el) { io.observe(el); });
+  } else {
+    rvs.forEach(function (el) { el.classList.add("in", "live"); });
+  }
+
+  if (!(hasG && mo)) return; // rendu statique complet
+
+  gsap.registerPlugin(ScrollTrigger);
+  var $ = function (s) { return document.querySelector(s); };
+  var scene = $("#scene"), box = $("#box"), cv = $("#cv"), ctx = cv.getContext("2d");
+  var poster = $("#poster"), loader = $("#loader"), ring1 = $("#r1"), ring2 = $("#r2");
+  var bar = $("#bar"), cnt = $("#cnt");
+  var small = innerWidth < 768;
+  var LINE = getComputedStyle(root).getPropertyValue("--line").trim();
+
+  /* ---- Images ---- */
+  var SEQ = {
+    ecl: { n: 28, dir: "eclate", arr: [] },
+    lum: { n: 16, dir: "lumiere", arr: [] },
+    aim: { n: 14, dir: "aimant", arr: [] },
+    esp: { n: 16, dir: "esp", arr: [] }
+  };
+  var HD = null, glowImg = null, LED = null, ledFail = false;
+  var started = {}, ver = 0, rq = 0;
+  function pad(i) { return String(i).padStart(3, "0"); }
+  function bump() { ver++; if (!rq) rq = requestAnimationFrame(function () { rq = 0; render(); }); }
+  function loadImg(src) {
+    return new Promise(function (res) {
+      var im = new Image(); im.decoding = "async"; im.src = src;
+      var p = im.decode ? im.decode() : new Promise(function (a, b) { im.onload = a; im.onerror = b; });
+      p.then(function () { res(im); }, function () { res(null); });
+    });
+  }
+  function loadSeq(name) {
+    if (started[name]) return; started[name] = 1;
+    var s = SEQ[name], ids = [];
+    for (var i = 0; i < s.n; i++) if (!small || i % 2 === 0 || i === s.n - 1) ids.push(i);
+    var w = function (i) { return (i === s.n - 1 || i % 4 === 0) ? 0 : (i % 2 === 0 ? 1 : 2); };
+    ids.sort(function (a, b) { return w(a) - w(b) || a - b; });
+    ids.forEach(function (i) {
+      if (s.arr[i]) return;
+      loadImg(s.dir + "/f_" + pad(i) + ".webp").then(function (im) { if (im) { s.arr[i] = im; bump(); } });
+    });
+  }
+  function loadHd() { if (small || HD) return; loadImg("eclate/hd_027.webp").then(function (im) { if (im) { HD = im; bump(); } }); }
+  function pick(arr, i, n) {
+    for (var d = 0; d < n; d++) {
+      if (arr[i + d]) return [arr[i + d], d];
+      if (i - d >= 0 && arr[i - d]) return [arr[i - d], d];
+    }
+    return [null, 99];
+  }
+  loadImg("eclate/f_000.webp").then(function (im) { if (im) { SEQ.ecl.arr[0] = im; bump(); } });
+
+  /* ---- Chenille LED : une seule extraction, hors scrub ---- */
+  var LED_W = 800, LED_H = 600, LED_FADE = 0.12;
+  var sc = document.createElement("canvas"); sc.width = LED_W; sc.height = LED_H;
+  var sctx = sc.getContext("2d", { willReadFrequently: true });
+  var lc = document.createElement("canvas"); lc.width = LED_W; lc.height = LED_H;
+  var lctx = lc.getContext("2d");
+  var hc = document.createElement("canvas"); hc.width = 160; hc.height = 120;
+  var hctx = hc.getContext("2d"); hctx.imageSmoothingQuality = "high";
+  var idat = lctx.createImageData(LED_W, LED_H);
+  var ledK = -1, ledHas = false;
+
+  function buildLed(ri, gi) {
+    sctx.clearRect(0, 0, LED_W, LED_H); sctx.drawImage(ri, 0, 0, LED_W, LED_H);
+    var R = sctx.getImageData(0, 0, LED_W, LED_H).data;
+    sctx.clearRect(0, 0, LED_W, LED_H); sctx.drawImage(gi, 0, 0, LED_W, LED_H);
+    var G = sctx.getImageData(0, 0, LED_W, LED_H).data;
+    var N = LED_W * LED_H, RK = new Float32Array(N).fill(-1), p, it, x, y;
+    for (p = 0; p < N; p++) if (R[p * 4 + 3]) RK[p] = R[p * 4] / 255;
+    for (it = 0; it < 6; it++) {
+      var nx = RK.slice();
+      for (y = 1; y < LED_H - 1; y++) for (x = 1; x < LED_W - 1; x++) {
+        p = y * LED_W + x;
+        if (RK[p] >= 0 || !G[p * 4 + 3]) continue;
+        var best = -1, nb = [p - 1, p + 1, p - LED_W, p + LED_W, p - LED_W - 1, p - LED_W + 1, p + LED_W - 1, p + LED_W + 1];
+        for (var k = 0; k < 8; k++) { var r = RK[nb[k]]; if (r >= 0 && (best < 0 || r < best)) best = r; }
+        if (best >= 0) nx[p] = best;
+      }
+      RK.set(nx);
+    }
+    var n = 0;
+    for (p = 0; p < N; p++) if (G[p * 4 + 3] && RK[p] >= 0) n++;
+    var L = { n: n, pos: new Uint32Array(n), rank: new Float32Array(n), rgba: new Uint8Array(n * 4) }, j = 0;
+    for (p = 0; p < N; p++) {
+      var o = p * 4;
+      if (!G[o + 3] || RK[p] < 0) continue;
+      L.pos[j] = o; L.rank[j] = RK[p];
+      L.rgba[j * 4] = G[o]; L.rgba[j * 4 + 1] = G[o + 1]; L.rgba[j * 4 + 2] = G[o + 2]; L.rgba[j * 4 + 3] = G[o + 3];
+      j++;
+    }
+    return L;
+  }
+  function paintLed(L, t) {
+    var d = idat.data, te = t * (1 + LED_FADE);
+    d.fill(0);
+    if (te <= 0) return false;
+    for (var j = 0; j < L.n; j++) {
+      var vis = (te - L.rank[j]) / LED_FADE;
+      if (vis <= 0) continue;
+      var o = L.pos[j], q = j * 4, f = vis >= 1 ? 1 : vis;
+      d[o] = L.rgba[q]; d[o + 1] = L.rgba[q + 1]; d[o + 2] = L.rgba[q + 2]; d[o + 3] = L.rgba[q + 3] * f;
+    }
+    lctx.putImageData(idat, 0, 0);
+    hctx.clearRect(0, 0, 160, 120); hctx.drawImage(lc, 0, 0, 160, 120);
+    return true;
+  }
+  function loadLed() {
+    if (started.led) return; started.led = 1;
+    Promise.all([loadImg("led/rank.webp"), loadImg("led/glow.webp")]).then(function (r) {
+      if (!r[0] || !r[1]) return;
+      glowImg = r[1];
+      try { LED = buildLed(r[0], r[1]); } catch (e) { LED = null; ledFail = true; }
+      bump();
+    });
+  }
+  function drawLed(a, t) {
+    if (a < 0.004) return;
+    ctx.save(); ctx.globalCompositeOperation = "lighter";
+    if (LED) {
+      var k = Math.round(t * 200);
+      if (k !== ledK) { ledK = k; ledHas = paintLed(LED, k / 200); }
+      if (ledHas) {
+        ctx.globalAlpha = a; ctx.drawImage(lc, 0, 0, cw, ch);
+        ctx.globalAlpha = a * 0.7; ctx.drawImage(hc, 0, 0, cw, ch);
+      }
+    } else if (ledFail && glowImg) {
+      ctx.globalAlpha = a * t; ctx.drawImage(glowImg, 0, 0, cw, ch);
+    }
+    ctx.restore();
+  }
+
+  /* ---- État piloté par la timeline ---- */
+  var P = { aEcl: 0, ecl: 0, zoom: 1.5, cx: 320, cy: 240, aLum: 0, lum: 0, lumS: 1.04, aAim: 0, aim: 13, aEsp: 0, esp: 0, ledT: 0, ledA: 0 };
+  var Q = { ledEsp: 0 };
+  var cw = 0, ch = 0, lastKey = "", dpr = 1;
+
+  function r2(v) { return Math.round(v * 100); }
+  function drawEcl(e) {
+    var im, d = 0;
+    if (P.zoom > 1.01 && e === 27 && HD) { im = HD; }
+    else { var pk = pick(SEQ.ecl.arr, e, 28); im = pk[0]; d = pk[1]; }
+    if (!im) return 99;
+    var k = im.naturalWidth / 640, z = P.zoom, sw = 640 / z * k, sh = 480 / z * k;
+    var sx = Math.min(Math.max(P.cx * k - sw / 2, 0), im.naturalWidth - sw);
+    var sy = Math.min(Math.max(P.cy * k - sh / 2, 0), im.naturalHeight - sh);
+    ctx.drawImage(im, sx, sy, sw, sh, 0, 0, cw, ch);
+    return d;
+  }
+  function drawLum(i) {
+    var pk = pick(SEQ.lum.arr, i, 16), im = pk[0];
+    if (!im) return 99;
+    var dw = cw * 0.92 * P.lumS, dh = dw * im.naturalHeight / im.naturalWidth;
+    var dx = (cw - dw) / 2, dy = (ch - dh) / 2, rad = 16 * dpr;
+    ctx.save(); ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(dx, dy, dw, dh, rad); else ctx.rect(dx, dy, dw, dh);
+    ctx.clip(); ctx.drawImage(im, dx, dy, dw, dh); ctx.restore();
+    ctx.save(); ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(dx, dy, dw, dh, rad); else ctx.rect(dx, dy, dw, dh);
+    ctx.lineWidth = dpr; ctx.strokeStyle = LINE; ctx.stroke(); ctx.restore();
+    return pk[1];
+  }
+  function drawFull(name, i) {
+    var s = SEQ[name], pk = pick(s.arr, i, s.n);
+    if (!pk[0]) return 99;
+    ctx.drawImage(pk[0], 0, 0, cw, ch);
+    return pk[1];
+  }
+  function render(force) {
+    if (!cw) return;
+    var e = Math.round(P.ecl), l = Math.round(P.lum), a = Math.round(P.aim), s = Math.round(P.esp);
+    var key = [cw, ver, r2(P.aEcl), e, r2(P.zoom), r2(P.cx), r2(P.cy), r2(P.aLum), l, r2(P.lumS), r2(P.aAim), a, r2(P.aEsp), s, Math.round(P.ledT * 200), r2(P.ledA), r2(Q.ledEsp)].join("|");
+    if (key === lastKey && !force) return;
+    lastKey = key;
+    ctx.clearRect(0, 0, cw, ch);
+    var worst = 0;
+    if (P.aEcl > 0.003) { ctx.globalAlpha = P.aEcl; worst = Math.max(worst, drawEcl(e)); }
+    if (P.aLum > 0.003) { ctx.globalAlpha = P.aLum; worst = Math.max(worst, drawLum(l)); }
+    if (P.aAim > 0.003) {
+      ctx.globalAlpha = P.aAim; worst = Math.max(worst, drawFull("aim", a));
+      if (a === 13 && SEQ.aim.arr[13]) drawLed(P.ledA * P.aAim, P.ledT);
+    }
+    if (P.aEsp > 0.003) {
+      ctx.globalAlpha = P.aEsp; worst = Math.max(worst, drawFull("esp", s));
+      if (s === 15 && SEQ.esp.arr[15]) drawLed(Q.ledEsp * P.aEsp, 1);
+    }
+    ctx.globalAlpha = 1;
+    loader.style.opacity = worst > 2 ? "1" : "0";
+  }
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cw = Math.max(1, Math.round(box.clientWidth * dpr)); ch = Math.round(cw * 3 / 4);
+    if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+    render(true);
+  }
+  if ("ResizeObserver" in window) new ResizeObserver(resize).observe(box); else addEventListener("resize", resize);
+
+  /* ---- Déclencheurs hors scrub : clac et éclair de la chenille ---- */
+  var clacArmed = false, espArmed = true, flash = null;
+  function clac() {
+    gsap.fromTo(ring1, { scale: 0.6, opacity: 0.9 }, { scale: 1.4, opacity: 0, duration: 0.45, ease: "power2.out", overwrite: true });
+    gsap.fromTo(ring2, { scale: 0.6, opacity: 0.45 }, { scale: 1.4, opacity: 0, duration: 0.45, ease: "power2.out", delay: 0.08, overwrite: true });
+    gsap.fromTo(cv, { scale: 1 }, { keyframes: [{ scale: 1.012, duration: 0.09 }, { scale: 1, duration: 0.09 }], overwrite: true });
+  }
+  function check() {
+    if (P.aim < 4) clacArmed = true;
+    if (clacArmed && P.aim >= 12.5 && P.aAim > 0.5) { clacArmed = false; clac(); }
+    var e = Math.round(P.esp);
+    if (espArmed && e >= 15 && P.aEsp > 0.5) {
+      espArmed = false; if (flash) flash.kill();
+      flash = gsap.timeline({ onUpdate: render }).to(Q, { ledEsp: 1, duration: 0.2, ease: "power1.out" }).to(Q, { ledEsp: 0.6, duration: 0.5, ease: "power1.inOut" });
+    } else if (!espArmed && e < 12) {
+      espArmed = true; if (flash) flash.kill();
+      flash = gsap.to(Q, { ledEsp: 0, duration: 0.2, onUpdate: render });
+    }
+  }
+
+  /* ---- Temps courant : compteur et description du canvas ---- */
+  var TH = [0, 0.08, 0.30, 0.42, 0.55, 0.72];
+  var LAB = [
+    "Cellule verte, vue de loin, en cours de mise au point",
+    "Cellule verte qui s'ouvre, coques écartées",
+    "Gros plan sur trois détails de la cellule ouverte",
+    "Surface peinte de la cellule, un reflet blanc la traverse",
+    "Cellule ouverte : les pièces de couleur se soulèvent puis se remettent en place, la bande de points s'allume",
+    "Carte électronique et points LED rangés dans la cellule"
+  ];
+  var curT = -1;
+  function setTime(p) {
+    var t = 0;
+    for (var i = 0; i < TH.length; i++) if (p >= TH[i]) t = i;
+    if (t === curT) return;
+    curT = t; cnt.textContent = "0" + (t + 1) + " / 08"; cv.setAttribute("aria-label", LAB[t]);
+  }
+
+  /* ---- Timeline maîtresse (durée 1 = toute la scène) ---- */
+  var tl = gsap.timeline({
+    defaults: { ease: "none" },
+    scrollTrigger: {
+      trigger: scene, start: "top top", end: "bottom bottom", scrub: 0.6,
+      onUpdate: function (self) {
+        var p = self.progress;
+        if (p > 0.20) { loadSeq("lum"); loadSeq("aim"); loadLed(); }
+        if (p > 0.45) loadSeq("esp");
+      }
+    },
+    onUpdate: function () { check(); setTime(tl.progress()); render(); }
+  });
+  var inT = function (id, t) { tl.to(id, { opacity: 1, y: 0, duration: 0.015, ease: "power1.out" }, t); };
+  var outT = function (id, t) { tl.to(id, { opacity: 0, duration: 0.012 }, t); };
+
+  tl.to(bar, { scaleX: 1, duration: 1 }, 0);
+
+  // T1 arrivée
+  tl.to(poster, { scale: 1, filter: "blur(0px)", duration: 0.08, ease: "power1.out" }, 0);
+  outT("#t1", 0.066);
+  // T2 mise au point puis éclaté
+  tl.to(P, { aEcl: 1, duration: 0.04 }, 0.08);
+  tl.to(poster, { opacity: 0, duration: 0.001 }, 0.12);
+  inT("#t2", 0.085);
+  tl.to(P, { ecl: 27, duration: 0.18, ease: "power1.inOut" }, 0.12);
+  tl.to(P, { zoom: 1, duration: 0.18, ease: "power1.inOut" }, 0.12);
+  outT("#t2", 0.285);
+  // T3 trois zooms
+  inT("#t3", 0.295);
+  tl.to(P, { zoom: 2.2, cx: 403.9, cy: 358.9, duration: 0.015, ease: "power2.inOut" }, 0.30);
+  tl.to(P, { cx: 318.5, cy: 193.6, duration: 0.01, ease: "power2.inOut" }, 0.34);
+  tl.to(P, { cx: 405.5, cy: 141.8, duration: 0.01, ease: "power2.inOut" }, 0.38);
+  tl.to(P, { zoom: 1, cx: 320, cy: 240, duration: 0.01, ease: "power2.inOut" }, 0.41);
+  var pw = gsap.utils.toArray("#t3 .pw");
+  [[0.30, 0.335], [0.345, 0.375], [0.385, 0.405]].forEach(function (r, i) {
+    tl.to(pw[i], { opacity: 1, y: 0, duration: 0.01, ease: "power1.out" }, r[0]);
+    tl.to(pw[i], { opacity: 0, duration: 0.01 }, r[1]);
+  });
+  outT("#t3", 0.415);
+  // T4 lumière
+  tl.to(P, { aEcl: 0, duration: 0.03 }, 0.42);
+  tl.to(P, { aLum: 1, duration: 0.03 }, 0.42);
+  tl.to(P, { lum: 15, lumS: 1, duration: 0.13 }, 0.42);
+  inT("#t4", 0.43);
+  outT("#t4", 0.54);
+  // T5 aimants, bouton, LED
+  tl.to(P, { aLum: 0, duration: 0.02 }, 0.55);
+  tl.to(P, { aAim: 1, duration: 0.02 }, 0.55);
+  inT("#t5a", 0.555);
+  tl.to(P, { aim: 0, duration: 0.03, ease: "power3.out" }, 0.57);
+  tl.to(P, { aim: 13, duration: 0.05, ease: "power2.in" }, 0.60);
+  outT("#t5a", 0.645);
+  inT("#t5b", 0.655);
+  tl.to(P, { ledA: 1, duration: 0.005 }, 0.65);
+  tl.to(P, { ledT: 1, duration: 0.065 }, 0.655);
+  outT("#t5b", 0.715);
+  // T6 l'ESP rentre
+  tl.to(P, { aAim: 0, duration: 0.02 }, 0.72);
+  tl.to(P, { aEsp: 1, duration: 0.02 }, 0.72);
+  inT("#t6", 0.74);
+  tl.to(P, { esp: 15, duration: 0.10 }, 0.74);
+  // fin de scène
+  tl.to(cv, { opacity: 0.25, duration: 0.11 }, 0.84);
+  outT("#t6", 0.86);
+  inT("#t7a", 0.885);
+
+  /* ---- Chargement progressif ---- */
+  if ("IntersectionObserver" in window) {
+    var sio = new IntersectionObserver(function (es) {
+      if (es[0].isIntersecting) { loadSeq("ecl"); loadHd(); }
+    }, { rootMargin: "50% 0px" });
+    sio.observe(scene);
+  } else { loadSeq("ecl"); loadHd(); }
+
+  resize();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { ScrollTrigger.refresh(); });
+  setTime(0);
+})();
+</script>
