@@ -5,7 +5,11 @@ Archives : `docs/SUIVI_archive_2026-11-03.md` (et autres), SUIVI complet d'avant
 ## État global
 `origin/master` = 9d69d2f (en ligne). Local, NON poussé, branche `claude/maquettage-b2b` : c59cbb1, 943a3fb, a31400d (page `/maquettiste-nantes` avec bureau d'études, prototypes/objets pour marques, 6 atouts, FAQ 13, timeline CSS) + `/maquette-industrielle`. Push seulement sur le « oui » de Nolann (redéploie le site) ; avant : advisor + scan `claude-security` depuis le fil principal. Structure a31400d PAS encore vérifiée visuellement (375/768/1440, build, 0 « € »).
 
-## Storyboard « cellule » : v2 PUBLIÉ (04/11), en attente du retour de Nolann
+## File des demandes (04/11)
+1. [ ] Storyboard v3 d'après les retours de Nolann : **`docs/chantiers/storyboard-retours-v2_2026-11-04.md`** (points 0-10 : titre d'arrivée en blanc « Des maquettes qui s'animent, se manipulent, s'observent. », un seul plan de coupe « Électronique intégrée » avec bandeaux LED à modéliser + ESP + bouton capacitif, retirer la pièce verte de fixation, retirer 2 zooms, temps ESP et compteur 6/8, finition plus texturée sans carré, aimants = lettres noires + hexagones verts du milieu, motion 2D de pression sur le bouton, textes T7 réduits).
+2. [ ] Répondre à sa question « comment t'intègres ça à la page existante ? » et LUI MONTRER la page /maquettiste-nantes complète, avec le storyboard intégré (proposition : le storyboard remplace le hero, puis les sections existantes de a31400d), captures 375/768/1440.
+
+## Storyboard « cellule » : v2 PUBLIÉ (04/11), retours reçus → v3 (voir File)
 - Artifact v2 (même URL) : https://claude.ai/artifact/9az7LYrVJrfeLZzEiMFQsU. Il suit les 8 temps du brief (`docs/chantiers/storyboard-cellule-brief_2026-11-03.md`) sur la vraie cellule (rendus Blender). Copies dans le dépôt : `docs/chantiers/storyboard.html` + `storyboard-cellule-page-brief.md`. Les images sont hors dépôt : `Source machine/glb/storyboard/web/` (+ `STORYBOARD.md` à jour).
 - Mesures vertes : 0 erreur, 0 scroll horizontal ; 375 = 272 Ko ; 768/1440 = 502 Ko ; reduced = 34 Ko. 0 « € », ni « gratuit », ni nom de client.
 - Fichiers publiés confirmés : 79 (78 images + la page). Le rendu en ligne reste à regarder par Nolann (navigateur intégré non connecté à claude.ai).
@@ -23,10 +27,11 @@ Branche `claude/nasap3d-maintenance-suite-a237b1` fusionnée localement (centre 
 - À supprimer (liste cumulée) : worktree `maquettage-b2b-propre` / branche `claude/maquettage-b2b` après push+merge ; cette conversation en fin de tâche ; serveur dev port 4350 (PID 22244). Branche maintenance `claude/nasap3d-maintenance-suite-a237b1` : conflit attendu seulement sur SUIVI.md.
 
 ## Questions en attente (un seul pop-up au retour de Nolann)
-- Storyboard v2 : corriger les 3 défauts CSS / intégrer tel quel à /maquettiste-nantes / resserrer le reflet T4 (Blender) ? Défaut sûr en attendant : rien d'intégrer, faire la vérif visuelle de a31400d.
+- « Électronique intégrée, complice, tu peux mettre » (fin T7) : sens exact ? Défaut sûr : une ligne « Électronique intégrée » dans le texte final.
+- Lumière T4 « pas ouf, on verra » : retravailler maintenant ou plus tard ? Défaut : texture plus fine seulement.
 - FAQ coût « devis sur mesure et gratuit » : à trancher.
 
 ## Prochain pas exact
-0. Passation (boucle de compaction 04/11) : nouvelle conversation Sonnet medium « NASAP [maquettage B2B] storyboard + push », même dossier ; l'ancienne s'appelle « … (à supprimer) ». Refusée tant que le tour ne vient pas de Nolann.
-1. Retour de Nolann sur le storyboard v2 (voir Questions en attente) ; sans réponse, avancer sur le point 2 (vérif visuelle seulement, pas de push).
-2. Ensuite : vérif visuelle de a31400d, puis « oui » de push → `curl.exe -I https://nasap3d.com/maquette-impression-3d` (301), 200 sur les 2 pages, `node scripts/indexnow.mjs`, Nolann demande l'indexation.
+1. (Opus) File 1 : Blender (pièce verte retirée, bandeaux LED modélisés via un modèle trouvé ou un brouillon à l'échelle, plan de coupe électronique, aimants lettres + hexagones, peinture plus texturée, vue arrière) puis page storyboard v3 (scratchpad de l'ancienne conv : copie dans `docs/chantiers/storyboard.html`), republier l'Artifact (même URL).
+2. File 2 : intégrer dans `/maquettiste-nantes` (site Astro), captures, advisor, montrer à Nolann.
+3. Ensuite : vérif visuelle de a31400d, puis « oui » de push → `curl.exe -I https://nasap3d.com/maquette-impression-3d` (301), 200 sur les 2 pages, `node scripts/indexnow.mjs`, Nolann demande l'indexation.
