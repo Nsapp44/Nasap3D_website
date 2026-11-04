@@ -16,16 +16,20 @@ Archives : SUIVI précédent intégral → `docs/chantiers/suivi-storyboard-v3_2
 - Console dev : 403 Vite `@fs` + hydratation React du header ratée = problème connu du worktree (pas du storyboard), pas de config commitée.
 - Volet navigateur intégré : scroll/capture peu fiables → captures Chrome headless (testeur).
 
+## Décisions de Nolann (04/11 nuit, oral)
+- Trait de liaison point → pill sur mobile quand la pill est décalée : OUI.
+- Texte storyboard calé à gauche (x=80) à 1440 : GARDER tel quel, « ça me choque pas ».
+- Fin de l'animation : PAS de fond vide → montrer le produit fini avec les LED allumées (réutiliser `led/cell.webp` + glow, ou la dernière image LED) sous la dernière battue.
+- FAQ « devis sur mesure et gratuit » : GARDER (validé par Nolann ; la règle « pas de gratuit » ne s'applique pas à cette ligne FAQ).
+- « Optimise tout ça, prépare la page, intègre-la au reste de la page » : la transition storyboard → sections existantes (bureau d'études, prototypes, atouts, timeline, FAQ, CTA final) doit être fluide et cohérente (espacements, alignements, rythme), poids optimisé (lazy-load des séquences hors 1re, mobile < 450 Ko au chargement initial). Puis LUI MONTRER la page complète (captures pleine page 375/768/1440 via SendUserFile) « juste après ».
+
 ## Questions en attente (un seul pop-up AskUserQuestion à Nolann)
-- H1 : garder H1 SEO « Maquettiste à Nantes… » au-dessus du storyboard (fait) ou mettre « Des maquettes qui s'animent… » en H1 ?
-- 375 : pill « Bouton capacitif » décalée ~75 px de son point, sans trait de liaison ; ajouter un trait ?
-- 1440 : colonne texte storyboard à x=80 alors que la page est centrée sur 800 px ; aligner ?
-- Fin du storyboard sur fond vide (canvas éteint) ; garder ?
-- FAQ coût « devis sur mesure et gratuit » : à trancher.
+- H1 : H1 SEO gardé au-dessus du storyboard (défaut actuel) — à confirmer sur captures.
 - Cartes « Et encore plus » de page_v3 retirées (doublon des atouts) : OK ?
 - Torsades el28 gardées / sens de levée des aimants / « Électronique intégrée, complice » / lumière T4 : défauts détaillés dans l'archive.
 
 ## Prochain pas exact
+0. executant-ui : appliquer les décisions de Nolann ci-dessus (trait mobile, fin = produit fini LED allumées, intégration fluide au reste de la page, optimisation poids). Puis captures + vérif 0 chevauchement.
 1. testeur : `npx astro build` (arrière-plan) + poids ajouté par le storyboard sur mobile + 0 « € »/gratuit/avant paiement dans les fichiers ajoutés ; captures avant/après de la page 375/768/1440.
 2. Republier l'Artifact https://claude.ai/artifact/9az7LYrVJrfeLZzEiMFQsU (le LIRE d'abord) avec page_v3 à jour (`Source machine/glb/storyboard/page_v3/`, nouveau ruban LED + coords ELEC).
 3. Montrer à Nolann (captures via SendUserFile) + pop-up des questions ci-dessus ; advisor final.
