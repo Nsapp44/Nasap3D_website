@@ -1,0 +1,156 @@
+---
+// Storyboard « cellule » : scène animée au défilement (hero de /maquettiste-nantes).
+// Images : /storyboard/cellule/** ; GSAP 3.12.5 auto-hébergé (/vendor/gsap) ; logique : /storyboard/cellule/cellule.js.
+// Sans JS ou avec « réduire les animations » : version statique (une image + son texte par scène).
+const P = "/storyboard/cellule/";
+---
+
+<div class="sb">
+  <script is:inline>
+    (function () {
+      var sb = document.currentScript.parentNode, c = sb.classList;
+      if (!matchMedia("(prefers-reduced-motion: reduce)").matches) c.add("mo", "anim");
+    })();
+  </script>
+
+  <section class="sb-scene" id="sb-scene" aria-label="Une maquette, de l'extérieur à l'intérieur">
+    <div class="sb-stage">
+      <div class="sb-box" id="sb-box">
+        <canvas id="sb-cv" role="img" aria-label="Cellule verte, vue de loin, en cours de mise au point"></canvas>
+        <img class="sb-poster" id="sb-poster" alt="" aria-hidden="true" width="160" height="120" decoding="async" src="data:image/webp;base64,UklGRlQCAABXRUJQVlA4IEgCAACQEgCdASqgAHgAPsFgq1AnpaQipBTZCPAYCWdu4XSg4DcfGrMBiMt1SJErEov8aVwOlnzlG/hRfjrLhs9xxF0C68jFH4FcLxk8UKlO3p9q2WYYItW4v+fCIBFQZOYVcyto/y269uCb4yL5oItCOUxI5cqzPCN2y7V786kUrHK+dlNUphQaXpoAGxTALdmAla8XD+NL1nDTShhRflUAAP7+25Wh2QJTK7rKBVw5w6xLBisIm7N0uJ9bk0vkmyktHJK2HK8qDGWGc0U94HWoKztrMCdez3wpGY1OcdLQXxGF6hmx2qfigvmb+2YEBigx3HKtEk9KShogc3t+ifwEv28J+7BlIIBVuBeCrmGdvcyXUaY7+uyp/VtZWpXLB6tt+Ivs0h/7nDhl62ypXV1UNk0leuI7ko49P1Aq4hCCttuEGGDmulcHXVrq3CVgJ7bE+iKPqDNKplWeK1LqkcBRzWLj7FimrCM5q+/XTs51Cq4gVBH+z+RY0921wvqzW1y5D/Q0Il33wKU32u3JVcdNEaAOgg4rMQeRCWs+vCBvixGFlWCWMAzDq0mQD2e6nR7dSf7GpgvBLuKZfBx47tw5sSkIdGrw75sxop1QmNMgtHyuHGhR2p9oCcPN77ZMEUXSkIp9LKdT1FeZwCs4RoOLkJzuuIvEmiLjN7HU5Js3B0xYnFux54CBQrUEom0oqfxXO/C+FlbCmVBEWCQVMx30YacU/IG/h9X36bYnEgwFGbvYvHr2SkMSoRxR+9vDA9UI9BykEECekAAAAA==" />
+        <div class="sb-leg" id="sb-lg0" aria-hidden="true"><i class="sb-dot"></i><span class="sb-pill">Bandeau LED</span></div>
+        <div class="sb-leg" id="sb-lg1" aria-hidden="true"><i class="sb-dot"></i><span class="sb-pill">ESP</span></div>
+        <div class="sb-leg" id="sb-lg2" aria-hidden="true"><i class="sb-dot"></i><span class="sb-pill">Bouton capacitif</span></div>
+        <i class="sb-pz sb-pz-wave" id="sb-pzw"></i><i class="sb-pz sb-pz-ring" id="sb-pzr"></i><i class="sb-pz sb-pz-dot" id="sb-pzd"></i>
+        <div class="sb-loader" id="sb-loader" role="status"><i></i><span class="sb-sr">Chargement</span></div>
+      </div>
+
+      <div class="sb-texts">
+        <div class="sb-tb sb-t1" id="sb-t1">
+          <p class="sb-title">Des maquettes qui s'animent, se manipulent, s'observent.</p>
+          <div class="sb-sfig"><img src={`${P}eclate3/f_000.webp`} alt="Cellule verte fermée, vue de loin" width="640" height="480" loading="lazy" /></div>
+        </div>
+
+        <div class="sb-tb" id="sb-t2">
+          <h2>Tout est pensé de l'intérieur.</h2>
+          <div class="sb-sfig"><img src={`${P}eclate3/f_027.webp`} alt="Cellule verte ouverte, coques écartées, intérieur visible" width="640" height="480" loading="lazy" /></div>
+        </div>
+
+        <div class="sb-tb" id="sb-t3">
+          <h2>Électronique intégrée.</h2>
+          <p>Un bandeau LED, une carte, un bouton : tout est prévu dans la maquette.</p>
+          <div class="sb-sfig"><img src={`${P}elec/f_007.webp`} alt="Petit tas d'électronique : bandeau LED courbe, carte ESP, bouton capacitif en métal" width="640" height="480" loading="lazy" /></div>
+          <div class="sb-pills"><span class="sb-pill">Bandeau LED</span><span class="sb-pill">ESP</span><span class="sb-pill">Bouton capacitif</span></div>
+        </div>
+
+        <div class="sb-tb" id="sb-t4">
+          <h2>Une finition qui se touche.</h2>
+          <p>Ponçage, apprêt, peinture : la lumière ne ment pas.</p>
+          <div class="sb-sfig sb-r32"><img src={`${P}lumiere3/f_008.webp`} alt="Gros plan sur la surface peinte, un reflet clair la traverse" width="640" height="426" loading="lazy" /></div>
+        </div>
+
+        <div class="sb-tb" id="sb-t5a">
+          <h2>Aimantées, amovibles.</h2>
+          <p>On les retire, on les remet : clac.</p>
+          <div class="sb-sfig"><img src={`${P}aimant3/f_009.webp`} alt="Gros plan : pièces aimantées soulevées, torsades décollées" width="640" height="480" loading="lazy" /></div>
+        </div>
+
+        <div class="sb-tb" id="sb-t5b">
+          <h2>Un bouton, et elle s'éclaire.</h2>
+          <div class="sb-sfig"><img src={`${P}led/cell.webp`} alt="Cellule complète assemblée, bande de points lumineux allumée" width="640" height="480" loading="lazy" /><img class="sb-glow" src={`${P}led/glow.webp`} alt="" width="800" height="600" loading="lazy" /></div>
+        </div>
+
+        <div class="sb-tb" id="sb-t7a">
+          <p class="sb-lead">Tout part d'une idée, parfois d'un simple croquis.</p>
+          <p class="sb-lead">Électronique intégrée.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script is:inline defer src="/vendor/gsap/gsap.min.js"></script>
+<script is:inline defer src="/vendor/gsap/ScrollTrigger.min.js"></script>
+<script is:inline defer src="/storyboard/cellule/cellule.js"></script>
+
+<style is:global>
+  /* Le filet global « overflow-x: hidden » sur html/body casse position: sticky (body devient le conteneur de défilement). `clip` empêche aussi tout scroll horizontal. */
+  html:has(.sb), body:has(.sb) { overflow-x: clip; }
+
+  .sb { --bg:#161514; --bg2:#1a1917; --card:#201d1b; --line:rgba(255,255,255,.1); --fg:#f3efe9; --muted:#a8a29b; --accent:#ff5a3c;
+    color: var(--fg); font-family: Inter, system-ui, sans-serif; font-size: 1.05rem; line-height: 1.6;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); overflow-x: clip; }
+  .sb *, .sb *::before, .sb *::after { box-sizing: border-box; }
+  .sb h2, .sb .sb-title { font-family: "Space Grotesk", Inter, system-ui, sans-serif; letter-spacing: -.01em; text-wrap: balance; margin: 0; line-height: 1.12; }
+  .sb .sb-title { font-size: clamp(2rem, 5vw, 3.6rem); font-weight: 700; color: #fff; }
+  .sb h2 { font-size: clamp(1.5rem, 3.4vw, 2.4rem); font-weight: 600; color: var(--fg); }
+  .sb p { margin: 0; }
+  .sb img, .sb canvas { display: block; }
+  .sb .sb-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+  /* ---- Scène ---- */
+  .sb .sb-scene { height: 600vh; }
+  .sb .sb-stage { position: sticky; top: 0; height: 100svh; max-width: 1280px; margin-inline: auto; display: grid; align-content: center; row-gap: 20px; padding-block: 12px 40px; --bh: 46svh; }
+  .sb .sb-box { position: relative; aspect-ratio: 4 / 3; width: min(100%, calc(var(--bh) * 4 / 3)); margin-inline: auto; }
+  .sb .sb-box canvas { width: 100%; height: 100%; }
+  .sb .sb-poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .sb .sb-texts { display: grid; align-content: start; }
+  .sb .sb-tb { display: flex; flex-direction: column; gap: 12px; max-width: 34rem; }
+  .sb .sb-tb p { color: var(--muted); max-width: 46ch; }
+  .sb .sb-tb .sb-title { color: #fff; max-width: none; }
+  .sb .sb-tb .sb-lead { color: var(--fg); font-family: "Space Grotesk", Inter, system-ui, sans-serif; font-weight: 500; font-size: clamp(1.25rem, 2.6vw, 1.75rem); line-height: 1.25; letter-spacing: -.01em; text-wrap: balance; }
+  .sb .sb-pills { display: grid; }
+  .sb .sb-pill { display: inline-flex; align-items: center; gap: 12px; align-self: start; width: fit-content; max-width: 100%; min-height: 44px; padding: 8px 18px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font-weight: 500; font-size: .95rem; line-height: 1.3; white-space: nowrap; }
+  .sb .sb-pill::before { content: ""; flex: none; width: 24px; height: 2px; background: var(--accent); border-radius: 2px; }
+  .sb .sb-loader { position: absolute; right: 8px; bottom: 8px; width: 16px; height: 16px; opacity: 0; transition: opacity .3s; pointer-events: none; }
+  .sb .sb-loader i { display: block; width: 16px; height: 16px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: sb-spin 1s linear infinite; }
+
+  /* légendes posées sur le tas d'électronique (placées par cellule.js : dessus, dessous ou décalées, sans chevauchement) */
+  .sb .sb-leg { position: absolute; left: 0; top: 0; width: 0; height: 0; opacity: 0; pointer-events: none; }
+  .sb .sb-leg .sb-dot { position: absolute; left: -5px; top: -5px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(255,90,60,.25); }
+  .sb .sb-leg .sb-pill { max-width: none; position: absolute; left: 0; bottom: 14px; min-height: 32px; padding: 4px 14px; font-size: .85rem; transform: translateX(var(--ox, -50%)); box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+  .sb .sb-leg.below .sb-pill { bottom: auto; top: 14px; }
+  .sb .sb-leg .sb-pill::before { width: 14px; }
+  @media (max-width: 480px) {
+    .sb .sb-leg .sb-pill { min-height: 28px; padding: 3px 10px; font-size: .78rem; gap: 8px; }
+    .sb .sb-leg .sb-pill::before { width: 10px; }
+  }
+  /* motion de pression sur le bouton */
+  .sb .sb-pz { position: absolute; left: 50%; top: 61.7%; border-radius: 50%; opacity: 0; pointer-events: none; }
+  .sb .sb-pz-ring { width: 15%; aspect-ratio: 1; margin: -7.5% 0 0 -7.5%; border: 2px solid var(--accent); }
+  .sb .sb-pz-dot { width: 5%; aspect-ratio: 1; margin: -2.5% 0 0 -2.5%; background: var(--accent); }
+  .sb .sb-pz-wave { width: 15%; aspect-ratio: 1; margin: -7.5% 0 0 -7.5%; border: 2px solid var(--accent); }
+
+  @media (min-width: 1024px) {
+    .sb .sb-stage { grid-template-columns: minmax(0, 42%) minmax(0, 58%); column-gap: 40px; align-items: center; --bh: calc(100svh - 112px); }
+    .sb .sb-box { grid-column: 2; grid-row: 1; width: min(100%, calc(var(--bh) * 4 / 3)); }
+    .sb .sb-texts { grid-column: 1; grid-row: 1; align-content: center; }
+  }
+
+  /* ---- Mode animé : texte empilé, image réservée au canvas ---- */
+  .sb.anim .sb-tb { grid-area: 1 / 1; opacity: 0; transform: translateY(6px); }
+  .sb.anim .sb-t1 { opacity: 1; transform: none; animation: sb-entree .5s ease-out backwards; }
+  .sb.anim .sb-sfig, .sb.anim .sb-pills { display: none; }
+  .sb.anim .sb-poster { transform: scale(.55); filter: blur(10px); will-change: transform; }
+  .sb.anim .sb-box canvas { will-change: transform, opacity;
+    -webkit-mask-image: radial-gradient(ellipse closest-side at 50% 50%, #000 80%, transparent 100%);
+    mask-image: radial-gradient(ellipse closest-side at 50% 50%, #000 80%, transparent 100%); }
+
+  /* ---- Mode statique (mouvement réduit, sans JS ou GSAP absent) : une image fixe + son texte par scène ---- */
+  .sb:not(.anim) .sb-scene { height: auto; }
+  .sb:not(.anim) .sb-stage { position: static; height: auto; display: block; padding-block: 8px 24px; }
+  .sb:not(.anim) .sb-box, .sb:not(.anim) .sb-leg { display: none; }
+  .sb:not(.anim) .sb-texts { display: flex; flex-direction: column; gap: 56px; }
+  .sb:not(.anim) .sb-tb { max-width: 40rem; }
+  .sb:not(.anim) .sb-pills { gap: 12px; }
+  .sb .sb-sfig { position: relative; aspect-ratio: 4 / 3; width: 100%; border-radius: 16px; overflow: hidden; background: var(--bg); margin-top: 8px; border: 1px solid var(--line); }
+  .sb .sb-sfig.sb-r32 { aspect-ratio: 3 / 2; }
+  .sb .sb-sfig img { width: 100%; height: 100%; object-fit: cover; }
+  .sb .sb-sfig .sb-glow { position: absolute; inset: 0; mix-blend-mode: screen; }
+
+  @keyframes sb-entree { from { opacity: 0; transform: translateY(6px); } }
+  @keyframes sb-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    .sb .sb-t1 { animation: none !important; transition: none !important; }
+  }
+</style>

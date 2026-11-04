@@ -5,6 +5,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import FaqAccordion from "../components/FaqAccordion";
 import MaquetteCarousel from "../components/MaquetteCarousel.astro";
 import MachinesStrip from "../components/MachinesStrip.astro";
+import StoryboardCellule from "../components/StoryboardCellule.astro";
 import { MAQUETTES_ACTIVES } from "../data/maquettes";
 
 const types = [
@@ -147,6 +148,8 @@ const jsonLd = {
       <a href="/contact" class="lp-btn lp-btn-primary"><span class="lp-btn-label">Demander un devis sur mesure <span class="lp-arrow" aria-hidden="true">→</span></span></a>
     </div>
   </section>
+
+  <StoryboardCellule />
 
   <section class="lp-section" data-rv>
     <h2 class="lp-h2">Un bureau d'études et un atelier de maquettiste sous le même toit</h2>
@@ -321,7 +324,7 @@ const jsonLd = {
   }
   .lp-hero {
     padding-top: 40px;
-    padding-bottom: 40px;
+    padding-bottom: 16px;
   }
   .lp-section {
     padding-bottom: 44px;
