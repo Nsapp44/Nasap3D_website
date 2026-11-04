@@ -30,3 +30,8 @@ Verdict général : « J'adore. » Le clic du bouton = « la classe ». Fin (« 
 
 ## Sa question
 « Comment t'intègres tout ça à la page qui existe aujourd'hui ? » Il veut voir **la page /maquettiste-nantes complète**, avec l'animation intégrée et le reste de la page existante.
+
+## Retours oraux sur le test aimants v3 (04/11, soir)
+- Lettres noires (Capsid, Gene of interest, Knock-out, He/Rep, ciseaux) : COLLÉES, elles ne bougent pas.
+- Hexagones : ne doivent pas s'entrechoquer → levée tout droit vers la caméra (vue de face), sans croisement.
+- Torsades orange, verte, jaune, bleue, grise = pièces aimantées : elles avancent vers la caméra et grossissent un peu (≈ ×1,15) = « décollées », puis reviennent à leur taille et se clipsent comme les autres. Jaune, bleu et gris sont « mal mis » (orange et vert ça va) : à corriger (vérifier si c'est leur position dans le .blend ou un effet de cadrage).

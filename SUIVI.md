@@ -27,6 +27,7 @@ Branche `claude/nasap3d-maintenance-suite-a237b1` fusionnée localement (centre 
 - À supprimer (liste cumulée) : worktree `maquettage-b2b-propre` / branche `claude/maquettage-b2b` après push+merge ; cette conversation en fin de tâche ; serveur dev port 4350 (PID 22244). Branche maintenance `claude/nasap3d-maintenance-suite-a237b1` : conflit attendu seulement sur SUIVI.md.
 
 ## Questions en attente (un seul pop-up au retour de Nolann)
+- Torsades jaune/bleue/grise « mal mises » : leur place dans le .blend ou dans le rendu ? Défaut : les aligner proprement dans le noyau (comme orange/vert), à montrer en capture.
 - « Électronique intégrée, complice, tu peux mettre » (fin T7) : sens exact ? Défaut sûr : une ligne « Électronique intégrée » dans le texte final.
 - Lumière T4 « on verra » : défaut = vue arrière + texture Plaster001 plus fine, lumière inchangée.
 - FAQ coût « devis sur mesure et gratuit » : à trancher.
@@ -40,6 +41,7 @@ Branche `claude/nasap3d-maintenance-suite-a237b1` fusionnée localement (centre 
 - Timeline v3 : 0-0,08 titre ; 0,10-0,26 éclaté ; 0,26-0,42 coupe électronique ; 0,42-0,50 remontage ; 0,50-0,62 finition vue arrière ; 0,62-0,76 aimants ; 0,76-0,88 bouton + LED ; 0,90+ croquis, « Et encore plus », CTA. ~600vh, pas de HUD.
 
 ## Prochain pas exact
+0. Refaire `stage_aimant3` d'après « Retours oraux sur le test aimants v3 » (fin de `docs/chantiers/storyboard-retours-v2_2026-11-04.md`) : lettres fixes ; hexagones + 5 torsades levés vers la caméra sans collision, torsades ×1,15 puis retour et clic ; repositionner jaune/bleu/gris.
 1. Brief executant : stage lumière arrière ; puis testeur lance `blender -b cellule.blend -P render_storyboard.py -- --stage=v3` en arrière-plan (dossier `Source machine/glb/storyboard`).
 2. Stage lumière arrière, rendus complets, webp, page v3, captures 375/768/1440 + reduced, republier l'Artifact (lire d'abord).
 3. Intégrer dans `/maquettiste-nantes`, captures, advisor final, montrer à Nolann.
