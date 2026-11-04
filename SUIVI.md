@@ -1,4 +1,4 @@
-# SUIVI : état courant (03/11/2026)
+# SUIVI : état courant (04/11/2026)
 
 Archives : `docs/SUIVI_archive_2026-11-03.md` (et autres), SUIVI complet d'avant le storyboard → `docs/chantiers/suivi-avant-storyboard_2026-11-03.md` (items 38-65, index des docs, structure en attente). Maquettage B2B : `docs/chantiers/maquettage-b2b_2026-11-02.md` ; guide Ads : `docs/ads_campagne_maquettage_2026-11-02.md`.
 
@@ -28,10 +28,19 @@ Branche `claude/nasap3d-maintenance-suite-a237b1` fusionnée localement (centre 
 
 ## Questions en attente (un seul pop-up au retour de Nolann)
 - « Électronique intégrée, complice, tu peux mettre » (fin T7) : sens exact ? Défaut sûr : une ligne « Électronique intégrée » dans le texte final.
-- Lumière T4 « pas ouf, on verra » : retravailler maintenant ou plus tard ? Défaut : texture plus fine seulement.
+- Lumière T4 « on verra » : défaut = vue arrière + texture Plaster001 plus fine, lumière inchangée.
 - FAQ coût « devis sur mesure et gratuit » : à trancher.
+- H1 de la page : storyboard en hero → H1 « Des maquettes qui s'animent… » ou garder le H1 SEO « Maquettiste à Nantes… » ? Défaut sûr : H1 SEO gardé (visible, sous l'animation ou en sur-titre), phrase du storyboard en texte d'accroche ; `<title>`/meta inchangés.
+
+## v3 en cours (04/11, session reprise)
+- Décisions : plaque_234 = pièce verte à retirer (groupe bouton) ; labels du plan électronique en HTML sur coords json ; aimants = lettres noir_60..138 + polyedres 6/10/12/250/252, rendu border ×2,5 ; pression bouton en CSS/canvas ; gsap via `npm i gsap` (bundlé), images dans `public/` (mobile < 450 Ko).
+- Licences : bandeau LED Sketchfab (CC-BY, compte requis) écarté → primitives ; texture peinture = ambientCG Plaster001 CC0 (`Source machine/glb/textures_cc0/Plaster001_1K/`).
+- FAIT : `render_storyboard.py` a `--v3 --sans --sub --n_elec --n_aimant3 --k_aim --outdir`, stages `elec`, `aimant3`, `v3` (eclate3→elec→aimant3). Test `out_test/` relu à l'œil : éclaté sans plaque_234 OK ; tas électronique (ESP, bouton, ruban LED primitives, fils) cadré OK, ruban un peu clair ; aimants : lettres + hexagones levés OK, rect_base [204.2,63.2,283.7,212.8], 709×532. Doutes : décalage 0,028 entre 17 clusters ; normales de 4 polyèdres vers le bas (levée visible quand même). Rien de commité côté Blender (hors dépôt).
+- Reste : stage lumière arrière (Plaster001, az≈180, 16 images), rendus complets `--stage=v3` (testeur, arrière-plan, une seule instance Blender), webp (`to_webp.py`), page v3 (executant-ui), captures, Artifact, intégration.
+- Timeline v3 : 0-0,08 titre ; 0,10-0,26 éclaté ; 0,26-0,42 coupe électronique ; 0,42-0,50 remontage ; 0,50-0,62 finition vue arrière ; 0,62-0,76 aimants ; 0,76-0,88 bouton + LED ; 0,90+ croquis, « Et encore plus », CTA. ~600vh, pas de HUD.
 
 ## Prochain pas exact
-1. (Opus) File 1 : Blender (pièce verte retirée, bandeaux LED modélisés via un modèle trouvé ou un brouillon à l'échelle, plan de coupe électronique, aimants lettres + hexagones, peinture plus texturée, vue arrière) puis page storyboard v3 (scratchpad de l'ancienne conv : copie dans `docs/chantiers/storyboard.html`), republier l'Artifact (même URL).
-2. File 2 : intégrer dans `/maquettiste-nantes` (site Astro), captures, advisor, montrer à Nolann.
-3. Ensuite : vérif visuelle de a31400d, puis « oui » de push → `curl.exe -I https://nasap3d.com/maquette-impression-3d` (301), 200 sur les 2 pages, `node scripts/indexnow.mjs`, Nolann demande l'indexation.
+1. Brief executant : stage lumière arrière ; puis testeur lance `blender -b cellule.blend -P render_storyboard.py -- --stage=v3` en arrière-plan (dossier `Source machine/glb/storyboard`).
+2. Stage lumière arrière, rendus complets, webp, page v3, captures 375/768/1440 + reduced, republier l'Artifact (lire d'abord).
+3. Intégrer dans `/maquettiste-nantes`, captures, advisor final, montrer à Nolann.
+4. Ensuite : vérif visuelle de a31400d, puis « oui » de push → scan claude-security, `curl.exe -I https://nasap3d.com/maquette-impression-3d` (301), 200 sur les 2 pages, `node scripts/indexnow.mjs`.
