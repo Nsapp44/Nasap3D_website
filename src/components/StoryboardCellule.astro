@@ -18,9 +18,9 @@ const P = "/storyboard/cellule/";
       <div class="sb-box" id="sb-box">
         <canvas id="sb-cv" role="img" aria-label="Cellule verte, vue de loin, en cours de mise au point"></canvas>
         <img class="sb-poster" id="sb-poster" alt="" aria-hidden="true" width="160" height="120" decoding="async" src="data:image/webp;base64,UklGRlQCAABXRUJQVlA4IEgCAACQEgCdASqgAHgAPsFgq1AnpaQipBTZCPAYCWdu4XSg4DcfGrMBiMt1SJErEov8aVwOlnzlG/hRfjrLhs9xxF0C68jFH4FcLxk8UKlO3p9q2WYYItW4v+fCIBFQZOYVcyto/y269uCb4yL5oItCOUxI5cqzPCN2y7V786kUrHK+dlNUphQaXpoAGxTALdmAla8XD+NL1nDTShhRflUAAP7+25Wh2QJTK7rKBVw5w6xLBisIm7N0uJ9bk0vkmyktHJK2HK8qDGWGc0U94HWoKztrMCdez3wpGY1OcdLQXxGF6hmx2qfigvmb+2YEBigx3HKtEk9KShogc3t+ifwEv28J+7BlIIBVuBeCrmGdvcyXUaY7+uyp/VtZWpXLB6tt+Ivs0h/7nDhl62ypXV1UNk0leuI7ko49P1Aq4hCCttuEGGDmulcHXVrq3CVgJ7bE+iKPqDNKplWeK1LqkcBRzWLj7FimrCM5q+/XTs51Cq4gVBH+z+RY0921wvqzW1y5D/Q0Il33wKU32u3JVcdNEaAOgg4rMQeRCWs+vCBvixGFlWCWMAzDq0mQD2e6nR7dSf7GpgvBLuKZfBx47tw5sSkIdGrw75sxop1QmNMgtHyuHGhR2p9oCcPN77ZMEUXSkIp9LKdT1FeZwCs4RoOLkJzuuIvEmiLjN7HU5Js3B0xYnFux54CBQrUEom0oqfxXO/C+FlbCmVBEWCQVMx30YacU/IG/h9X36bYnEgwFGbvYvHr2SkMSoRxR+9vDA9UI9BykEECekAAAAA==" />
-        <div class="sb-leg" id="sb-lg0" aria-hidden="true"><i class="sb-dot"></i><span class="sb-pill">Bandeau LED</span></div>
-        <div class="sb-leg" id="sb-lg1" aria-hidden="true"><i class="sb-dot"></i><span class="sb-pill">ESP</span></div>
-        <div class="sb-leg" id="sb-lg2" aria-hidden="true"><i class="sb-dot"></i><span class="sb-pill">Bouton capacitif</span></div>
+        <div class="sb-leg" id="sb-lg0" aria-hidden="true"><i class="sb-ln"></i><i class="sb-dot"></i><span class="sb-pill">Bandeau LED</span></div>
+        <div class="sb-leg" id="sb-lg1" aria-hidden="true"><i class="sb-ln"></i><i class="sb-dot"></i><span class="sb-pill">ESP</span></div>
+        <div class="sb-leg" id="sb-lg2" aria-hidden="true"><i class="sb-ln"></i><i class="sb-dot"></i><span class="sb-pill">Bouton capacitif</span></div>
         <i class="sb-pz sb-pz-wave" id="sb-pzw"></i><i class="sb-pz sb-pz-ring" id="sb-pzr"></i><i class="sb-pz sb-pz-dot" id="sb-pzd"></i>
         <div class="sb-loader" id="sb-loader" role="status"><i></i><span class="sb-sr">Chargement</span></div>
       </div>
@@ -80,6 +80,9 @@ const P = "/storyboard/cellule/";
   .sb { --bg:#161514; --bg2:#1a1917; --card:#201d1b; --line:rgba(255,255,255,.1); --fg:#f3efe9; --muted:#a8a29b; --accent:#ff5a3c;
     color: var(--fg); font-family: Inter, system-ui, sans-serif; font-size: 1.05rem; line-height: 1.6;
     padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); overflow-x: clip; }
+  @media (max-width: 767px) {
+    .sb { padding-left: max(24px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px)); }
+  }
   .sb *, .sb *::before, .sb *::after { box-sizing: border-box; }
   .sb h2, .sb .sb-title { font-family: "Space Grotesk", Inter, system-ui, sans-serif; letter-spacing: -.01em; text-wrap: balance; margin: 0; line-height: 1.12; }
   .sb .sb-title { font-size: clamp(2rem, 5vw, 3.6rem); font-weight: 700; color: #fff; }
@@ -108,8 +111,9 @@ const P = "/storyboard/cellule/";
   /* légendes posées sur le tas d'électronique (placées par cellule.js : dessus, dessous ou décalées, sans chevauchement) */
   .sb .sb-leg { position: absolute; left: 0; top: 0; width: 0; height: 0; opacity: 0; pointer-events: none; }
   .sb .sb-leg .sb-dot { position: absolute; left: -5px; top: -5px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(255,90,60,.25); }
-  .sb .sb-leg .sb-pill { max-width: none; position: absolute; left: 0; bottom: 14px; min-height: 32px; padding: 4px 14px; font-size: .85rem; transform: translateX(var(--ox, -50%)); box-shadow: 0 6px 18px rgba(0,0,0,.35); }
-  .sb .sb-leg.below .sb-pill { bottom: auto; top: 14px; }
+  .sb .sb-leg .sb-ln { position: absolute; left: 0; top: -.75px; width: 0; height: 1.5px; background: var(--accent); opacity: .6; transform-origin: 0 50%; pointer-events: none; }
+  .sb .sb-leg .sb-pill { max-width: none; position: absolute; left: 0; bottom: var(--oy, 14px); min-height: 32px; padding: 4px 14px; font-size: .85rem; transform: translateX(var(--ox, -50%)); box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+  .sb .sb-leg.below .sb-pill { bottom: auto; top: var(--oy, 14px); }
   .sb .sb-leg .sb-pill::before { width: 14px; }
   @media (max-width: 480px) {
     .sb .sb-leg .sb-pill { min-height: 28px; padding: 3px 10px; font-size: .78rem; gap: 8px; }

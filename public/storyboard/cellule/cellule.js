@@ -239,6 +239,7 @@
     render(true);
   }
   if ("ResizeObserver" in window) new ResizeObserver(resize).observe(box); else addEventListener("resize", resize);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(resize);
 
   /* Légendes : suivent les coordonnées du tas d'électronique, image par image */
   function updateLegs() {
@@ -248,33 +249,63 @@
       var a = ELEC[LEGK[i]][i0], b = ELEC[LEGK[i]][i1];
       pts.push([(a[0] + (b[0] - a[0]) * t) / 640 * bw, (a[1] + (b[1] - a[1]) * t) / 480 * bh]);
     }
+    var segs = [];
     function hit(r, s) { return r[0] < s[2] + 4 && r[2] > s[0] - 4 && r[1] < s[3] + 4 && r[3] > s[1] - 4; }
-    function free(r, self) {
-      var k;
-      for (k = 0; k < placed.length; k++) if (hit(r, placed[k])) return false;
-      for (k = 0; k < 3; k++) if (k !== self && hit(r, [pts[k][0] - 9, pts[k][1] - 9, pts[k][0] + 9, pts[k][1] + 9])) return false;
+    /* le trait (segment [x0,y0,x1,y1]) croise-t-il le rectangle r ? échantillonné tous les ~3 px */
+    function segHit(s, r) {
+      if (!s) return false;
+      var n = Math.max(2, Math.ceil(Math.sqrt((s[2] - s[0]) * (s[2] - s[0]) + (s[3] - s[1]) * (s[3] - s[1])) / 3)), k, px, py;
+      for (k = 0; k <= n; k++) {
+        px = s[0] + (s[2] - s[0]) * k / n; py = s[1] + (s[3] - s[1]) * k / n;
+        if (px > r[0] - 3 && px < r[2] + 3 && py > r[1] - 3 && py < r[3] + 3) return true;
+      }
+      return false;
+    }
+    function free(r, self, sg) {
+      var k, o;
+      for (k = 0; k < placed.length; k++) if (hit(r, placed[k]) || segHit(sg, placed[k]) || segHit(segs[k], r)) return false;
+      for (k = 0; k < 3; k++) if (k !== self) {
+        o = [pts[k][0] - 9, pts[k][1] - 9, pts[k][0] + 9, pts[k][1] + 9];
+        if (hit(r, o) || segHit(sg, o)) return false;
+      }
       return true;
     }
     for (i = 0; i < 3; i++) {
+      /* largeur/hauteur de pastille : remesurer si la mesure du resize était vide (légende masquée, police pas chargée) */
+      if (!lw[i] || !lh[i]) { lw[i] = legs[i].lastChild.offsetWidth; lh[i] = legs[i].lastChild.offsetHeight; }
       var x = pts[i][0], y = pts[i][1], w = lw[i], h = lh[i] || 32;
+      var inset = Math.min(h / 2, w / 2);
+      /* trait du point au bord de la pastille (vertical de g px si elle est centrée sur le point) */
+      var segFor = function (tx, up, g) {
+        var ex = Math.min(Math.max(0, tx + inset), tx + w - inset), ey = up ? -g : g;
+        return [x, y, x + ex, y + ey];
+      };
       var ox = -w / 2;
       if (x + ox < 0) ox = -x; else if (x + ox + w > bw) ox = bw - w - x;
-      /* essais : au-dessus, au-dessous, puis décalage horizontal des deux côtés */
+      /* essais : au-dessus, au-dessous, décalage horizontal des deux côtés, puis pastille éloignée verticalement (trait plus long) */
       var tries = [[ox, true], [ox, false]], d, best = null;
       for (d = 1; d <= 12; d++) { tries.push([ox - d * 14, true], [ox + d * 14, true], [ox - d * 14, false], [ox + d * 14, false]); }
-      for (var q = 0; q < tries.length; q++) {
-        var tx = tries[q][0], up = tries[q][1];
-        if (x + tx < 0 || x + tx + w > bw) continue;
-        var top = up ? y - GAP - h : y + GAP;
-        if (top < 0 || top + h > bh) continue;
-        var r = [x + tx, top, x + tx + w, top + h];
-        if (free(r, i)) { best = [tx, up, r]; break; }
+      for (var lv = 0; lv <= 6 && !best; lv++) {
+        var g = GAP + lv * 14;
+        for (var q = 0; q < tries.length; q++) {
+          var tx = tries[q][0], up = tries[q][1];
+          if (x + tx < 0 || x + tx + w > bw) continue;
+          var top = up ? y - g - h : y + g;
+          if (top < 0 || top + h > bh) continue;
+          var r = [x + tx, top, x + tx + w, top + h];
+          if (free(r, i, segFor(tx, up, g))) { best = [tx, up, r, g]; break; }
+        }
       }
-      if (!best) { var up0 = y - GAP - h >= 0; best = [ox, up0, [x + ox, up0 ? y - GAP - h : y + GAP, x + ox + w, (up0 ? y - GAP - h : y + GAP) + h]]; }
-      placed.push(best[2]);
+      if (!best) { var up0 = y - GAP - h >= 0; best = [ox, up0, [x + ox, up0 ? y - GAP - h : y + GAP, x + ox + w, (up0 ? y - GAP - h : y + GAP) + h], GAP]; }
+      placed.push(best[2]); segs.push(segFor(best[0], best[1], best[3]));
       legs[i].style.left = x.toFixed(1) + "px"; legs[i].style.top = y.toFixed(1) + "px";
       legs[i].lastChild.style.setProperty("--ox", best[0].toFixed(1) + "px");
+      legs[i].lastChild.style.setProperty("--oy", best[3] + "px");
       legs[i].classList.toggle("below", !best[1]);
+      /* trait fin du point au bord de la pastille (toujours : point + trait + pastille) */
+      var ln = legs[i].firstChild, ex = segs[i][2] - x, ey = segs[i][3] - y;
+      ln.style.width = Math.sqrt(ex * ex + ey * ey).toFixed(1) + "px";
+      ln.style.transform = "rotate(" + Math.atan2(ey, ex).toFixed(4) + "rad)";
     }
   }
 
@@ -370,9 +401,11 @@
   tl.to(P, { ledA: 1, duration: 0.005 }, 0.80);
   tl.to(P, { ledT: 1, duration: 0.065 }, 0.805);
   outT("#sb-t5b", 0.875);
-  // 0,90+ : fin de scène
-  tl.to(cv, { opacity: 0, duration: 0.035 }, 0.875);
+  // 0,875+ : fin de scène — le produit fini (LED allumées) reste affiché jusqu'à la sortie, sans légendes ni éclats
+  tl.to(legs, { opacity: 0, duration: 0.005, immediateRender: false }, 0.875);
+  tl.to([pzr, pzd, pzw], { opacity: 0, duration: 0.005, immediateRender: false }, 0.875);
   inT("#sb-t7a", 0.90);
+  tl.to({}, { duration: 0.0001 }, 1); // la timeline dure 1 : derniers ~8 % = produit tenu
 
   /* ---- Chargement progressif ---- */
   if ("IntersectionObserver" in window) {
