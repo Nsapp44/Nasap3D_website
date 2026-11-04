@@ -29,12 +29,12 @@ Branche `claude/nasap3d-maintenance-suite-a237b1` fusionnée localement (centre 
 - H1 de la page : storyboard en hero → H1 « Des maquettes qui s'animent… » ou garder le H1 SEO « Maquettiste à Nantes… » ? Défaut sûr : H1 SEO gardé (visible, sous l'animation ou en sur-titre), phrase du storyboard en texte d'accroche ; `<title>`/meta inchangés.
 
 ## v3 en cours (04/11)
-Détail des rendus, réglages et licences → `docs/chantiers/storyboard-v3-rendus_2026-11-04.md`. Rendus complets + webp FAITS. Page v3 en cours d'écriture (executant-ui, `scratchpad/storyboard3/index.html`).
+Détail des rendus, réglages et licences → `docs/chantiers/storyboard-v3-rendus_2026-11-04.md`. Rendus complets + webp FAITS. Page v3 écrite, copie durable `Source machine/glb/storyboard/page_v3/` (index.html + images + capture.cjs ; servir ce dossier par `python -m http.server 4371 --bind 127.0.0.1` ; captures `node capture.cjs <dossier caps>` = Chrome headless CDP, port 9333). 1re série : 375 = 388 Ko, 0 scroll horizontal partout. 5 défauts corrigés par executant-ui (04/11 soir), PAS encore recapturés : LED sur fond `led/cell.webp` (= v2 aimant/f_013, sur lequel glow/rank sont alignés ; anneau (320,296)/640×480) ; lumière en contain + masque radial ; 3 légendes élec visibles 0,325-0,385 ; zoom aimants masque radial (peut rogner les côtés de l'éclaté, sinon 80 %→88 %) ; fin : canvas à 0 avant croquis. À 375 la pastille ESP peut chevaucher « Bandeau LED ».
 - Timeline v3 : 0-0,08 titre ; 0,10-0,26 éclaté ; 0,26-0,42 coupe électronique ; 0,42-0,50 remontage ; 0,50-0,62 finition vue arrière ; 0,62-0,76 aimants ; 0,76-0,88 bouton + LED ; 0,90+ croquis, « Et encore plus », CTA. ~600vh, pas de HUD.
 - À supprimer par Nolann (suppression refusée en auto) : `Source machine/glb/storyboard/out_test*` (PAS `glb/out_test`).
 
 ## Prochain pas exact
-1. Relire la page v3 de executant-ui, puis testeur : captures 375/768/1440 + reduced, 0 scroll horizontal, poids (mobile < 450 Ko), 0 « € »/gratuit/avant paiement. Republier l'Artifact (le lire d'abord ; fichiers led/ copiables depuis la v2 côté serveur).
+1. Recapturer (`node capture.cjs <caps>` en arrière-plan, puis planche contact PIL) et vérifier les 5 corrections, puis : captures 375/768/1440 + reduced, 0 scroll horizontal, poids (mobile < 450 Ko), 0 « € »/gratuit/avant paiement. Republier l'Artifact (le lire d'abord ; fichiers led/ copiables depuis la v2 côté serveur).
 2. Intégrer dans `/maquettiste-nantes` (hero), captures, advisor final, montrer à Nolann + pop-up des questions en attente.
 3. Ensuite : vérif visuelle de a31400d, puis « oui » de push → scan claude-security, `curl.exe -I https://nasap3d.com/maquette-impression-3d` (301), 200 sur les 2 pages, `node scripts/indexnow.mjs`.
 4. Relancer `delete_session` [local_117c8401, local_e79981e6] quand la mère est inactive.
