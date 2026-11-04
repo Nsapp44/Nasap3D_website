@@ -22,6 +22,11 @@ Branche `claude/nasap3d-maintenance-suite-a237b1` fusionnée localement (centre 
 - Session maintenance `local_35b3dfd0` (item 57 lien d'avis Google) : pop-up « garder en permanence ou supprimer ».
 - À supprimer (liste cumulée) : worktree `maquettage-b2b-propre` / branche `claude/maquettage-b2b` après push+merge ; cette conversation en fin de tâche ; serveur dev port 4350 (PID 22244). Branche maintenance `claude/nasap3d-maintenance-suite-a237b1` : conflit attendu seulement sur SUIVI.md.
 
+## Questions en attente (un seul pop-up au retour de Nolann)
+- Storyboard v2 : corriger les 3 défauts CSS / intégrer tel quel à /maquettiste-nantes / resserrer le reflet T4 (Blender) ? Défaut sûr en attendant : rien d'intégrer, faire la vérif visuelle de a31400d.
+- FAQ coût « devis sur mesure et gratuit » : à trancher.
+
 ## Prochain pas exact
-1. Retour de Nolann sur le storyboard v2 (pop-up envoyé le 04/11) : retouches ou intégration au site.
+0. Passation (boucle de compaction 04/11) : nouvelle conversation Sonnet medium « NASAP [maquettage B2B] storyboard + push », même dossier ; l'ancienne s'appelle « … (à supprimer) ». Refusée tant que le tour ne vient pas de Nolann.
+1. Retour de Nolann sur le storyboard v2 (voir Questions en attente) ; sans réponse, avancer sur le point 2 (vérif visuelle seulement, pas de push).
 2. Ensuite : vérif visuelle de a31400d, puis « oui » de push → `curl.exe -I https://nasap3d.com/maquette-impression-3d` (301), 200 sur les 2 pages, `node scripts/indexnow.mjs`, Nolann demande l'indexation.
