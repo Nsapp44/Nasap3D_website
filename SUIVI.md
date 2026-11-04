@@ -28,17 +28,13 @@ Branche `claude/nasap3d-maintenance-suite-a237b1` fusionnée localement (centre 
 - FAQ coût « devis sur mesure et gratuit » : à trancher.
 - H1 de la page : storyboard en hero → H1 « Des maquettes qui s'animent… » ou garder le H1 SEO « Maquettiste à Nantes… » ? Défaut sûr : H1 SEO gardé (visible, sous l'animation ou en sur-titre), phrase du storyboard en texte d'accroche ; `<title>`/meta inchangés.
 
-## v3 en cours (04/11, session reprise)
-- Décisions : plaque_234 = pièce verte à retirer (groupe bouton) ; labels du plan électronique en HTML sur coords json ; aimants = lettres noir_60..138 + polyedres 6/10/12/250/252, rendu border ×2,5 ; pression bouton en CSS/canvas ; gsap via `npm i gsap` (bundlé), images dans `public/` (mobile < 450 Ko).
-- Licences : bandeau LED Sketchfab (CC-BY, compte requis) écarté → primitives ; texture peinture = ambientCG Plaster001 CC0 (`Source machine/glb/textures_cc0/Plaster001_1K/`).
-- FAIT : `render_storyboard.py` (hors dépôt, rien à commiter) a `--v3 --sans --sub --n_elec --n_aimant3 --k_aim --outdir`, stages `elec`, `aimant3`, `v3` (eclate3→elec→aimant3). Éclaté sans plaque_234 OK ; tas électronique OK (ruban un peu clair).
-- FAIT 04/11 : `stage_aimant3` refait (point 0) : lettres fixes ; 5 hexagones levés ensemble selon l'axe caméra (amp 35, sans décalage) ; 5 torsades amp 25, ×1,15 autour de leur centre puis reclipsage (petit rebond 0,05·amp) ; base.png plein cadre ; json `pieces`. Test `storyboard/out_test/aimant3` (9 images, rect_base [204.2,59.1,287,215.2], 717×538) relu : pas de collision, « Knock-out » se découvre, logements visibles sous les torsades levées.
-- FAIT 04/11 : stage lumière arrière `--stage=lumiere3` (dans `stage_lumiere(v3=True)` : vue arrière, normal map Plaster001 + Mapping `--lum_tex_scale`, sortie `lumiere3/` + `coords_lumiere3.json`, `--lum_idx=0,8,15` pour tester). Réglage RETENU (grain bien visible, essai `storyboard/out_test3/lumiere3/l_008.png`) : `--lum_d=260 --lum_beta=28 --lum_k=55 --lum_coat=1.0 --lum_coat_r=0.05 --lum_coat_n=0.6 --lum_sx=40 --lum_sy=400 --micro=2 --lum_tex_scale=3`. Écarté : coat_n 0,08 ou 0,35 (reflet lisse, grain invisible).
-- Reste : rendus complets `--stage=v3` (testeur, arrière-plan, une seule instance Blender), webp (`to_webp.py`), page v3 (executant-ui), captures, Artifact, intégration.
+## v3 en cours (04/11)
+Détail des rendus, réglages et licences → `docs/chantiers/storyboard-v3-rendus_2026-11-04.md`. Rendus complets + webp FAITS. Page v3 en cours d'écriture (executant-ui, `scratchpad/storyboard3/index.html`).
 - Timeline v3 : 0-0,08 titre ; 0,10-0,26 éclaté ; 0,26-0,42 coupe électronique ; 0,42-0,50 remontage ; 0,50-0,62 finition vue arrière ; 0,62-0,76 aimants ; 0,76-0,88 bouton + LED ; 0,90+ croquis, « Et encore plus », CTA. ~600vh, pas de HUD.
+- À supprimer par Nolann (suppression refusée en auto) : `Source machine/glb/storyboard/out_test*` (PAS `glb/out_test`).
 
 ## Prochain pas exact
-1. testeur (arrière-plan, une seule instance Blender, depuis `Source machine/glb`) : `blender.exe -b cellule.blend -P storyboard/render_storyboard.py -- --stage=v3 --force` + les paramètres lumière RETENUS ci-dessus (sortie `storyboard/out/`). Attention : supprimer `storyboard/out_test*` seulement (pas `glb/out_test`).
-2. Webp (`python to_webp.py <png> <web/...>`, sans -I), page v3 (executant-ui ; base : `docs/chantiers/storyboard.html` v2 + brief `storyboard-cellule-page-brief.md` ; retirer la petite carte bordée du T4), page v3, captures 375/768/1440 + reduced, republier l'Artifact (lire d'abord).
-3. Intégrer dans `/maquettiste-nantes`, captures, advisor final, montrer à Nolann.
-4. Ensuite : vérif visuelle de a31400d, puis « oui » de push → scan claude-security, `curl.exe -I https://nasap3d.com/maquette-impression-3d` (301), 200 sur les 2 pages, `node scripts/indexnow.mjs`.
+1. Relire la page v3 de executant-ui, puis testeur : captures 375/768/1440 + reduced, 0 scroll horizontal, poids (mobile < 450 Ko), 0 « € »/gratuit/avant paiement. Republier l'Artifact (le lire d'abord ; fichiers led/ copiables depuis la v2 côté serveur).
+2. Intégrer dans `/maquettiste-nantes` (hero), captures, advisor final, montrer à Nolann + pop-up des questions en attente.
+3. Ensuite : vérif visuelle de a31400d, puis « oui » de push → scan claude-security, `curl.exe -I https://nasap3d.com/maquette-impression-3d` (301), 200 sur les 2 pages, `node scripts/indexnow.mjs`.
+4. Relancer `delete_session` [local_117c8401, local_e79981e6] quand la mère est inactive.

@@ -1,0 +1,9 @@
+# Storyboard v3 : rendus Blender (04/11/2026), sorti du SUIVI
+
+- Décisions : plaque_234 = pièce verte retirée (groupe bouton) ; légendes du plan électronique en HTML sur coords json ; aimants = lettres noir_60..138 FIXES + polyèdres 6/10/12/250/252 levés, rendu border ×2,5 ; pression bouton en CSS/canvas ; à l'intégration : gsap via `npm i gsap` (bundlé), images dans `public/` (mobile < 450 Ko).
+- Licences : bandeau LED Sketchfab (CC-BY, compte requis) écarté → primitives ; texture peinture = ambientCG Plaster001 CC0 (`Source machine/glb/textures_cc0/Plaster001_1K/`).
+- `render_storyboard.py` (hors dépôt, `Source machine/glb/storyboard/`) : `--v3 --sans --sub --n_elec --n_aimant3 --k_aim --outdir`, stages `elec`, `aimant3`, `lumiere3`, `v3` (eclate3 → elec → aimant3 → lumiere3). Attention : `arg()` retombe en silence sur le défaut si le nom est faux.
+- stage_aimant3 : lettres fixes ; 5 hexagones levés ensemble selon l'axe caméra (amp 35) ; 5 torsades amp 25, ×1,15 autour de leur centre puis reclipsage (rebond 0,05·amp) ; base.png plein cadre ; json `pieces`.
+- Lumière arrière RETENUE (`out_test3/lumiere3/l_008.png`) : `--lum_d=260 --lum_beta=28 --lum_k=55 --lum_coat=1.0 --lum_coat_r=0.05 --lum_coat_n=0.6 --lum_sx=40 --lum_sy=400 --micro=2 --lum_tex_scale=3`. Écarté : coat_n 0,08 ou 0,35 (reflet lisse, grain invisible).
+- Rendu complet `--stage=v3` FAIT 04/11 (log `storyboard/v3.log`, 0 erreur) : `storyboard/out/` eclate3 e_000-027, elec c_000-013, aimant3 a_000-017 + base.png, lumiere3 l_000-015 ; coords_*.json (elec res 960×720 ; aimant3 rect_base [204.2,59.1,287,215.2], res 717×538).
+- `to_webp.py` (hors dépôt) : filtre passé de `'easl'` à `'easlc'` (sinon les c_### de elec étaient sautés). Webp dans le scratchpad de session `…/5c2d575c…/scratchpad/storyboard3/` (eclate3 192 Ko, elec 53, aimant3 377, lumiere3 54, + led/ de la v2).
