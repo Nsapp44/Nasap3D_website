@@ -27,13 +27,16 @@ Archives : SUIVI précédent intégral → `docs/chantiers/suivi-storyboard-v3_2
 1. [ ] Bandeau LED plus souple/long (S, tronçons WS2812B + fils) : 62c8c01 fait 4 tronçons + fils ; captures 04/11 montrent un ruban courbe à 4 tronçons → à confirmer par Nolann sur les captures, sinon refaire `--stage=elec` (Opus).
 2. [x] Traits des pastilles + fin produit fini + gouttière mobile : faits, testeur VERT (0 chevauchement 375/768/1440 p=0.30-0.385, 0 scroll horizontal, build OK, 291 Ko). Captures : scratchpad `caps_v4/`. Commit local en cours.
 
+3. [x] Retours Nolann 04/11 nuit : FAITS, testeur VERT (0 chevauchement, 0 scroll horizontal, build OK). Images 960 px q85 (storyboard 294 Ko initial a 375, 500 Ko a 1440, 1,2 Mo / 2 Mo apres scroll) ; poster flou garde ; anneau de clic aimants (#sb-clk, 0.714-0.729, a 40 %/65 % du cadre, recale sur capture) ; hélices orange/verte écartées (~4 mm au pic) + ESP ne traverse plus la plaque (éclaté). Bouton pzr/pzd/pzw verifie visible. Captures : scratchpad `caps_v6/`, `caps_v7/`.
+   A trancher par Nolann : orange/verte restent a 1,1 mm AU REPOS (paraissent se toucher ; corriger = bouger la pose de base, raccord galerie) ; timing ESP éclaté change ; a 1440 l'initial storyboard = 500 Ko (> 450, mobile OK) ; sauvegardes rendus `Source machine/glb/storyboard/out/*_avant_2026-11-04`.
+
 ## Questions en attente (un seul pop-up AskUserQuestion à Nolann)
 - H1 : H1 SEO gardé au-dessus du storyboard (défaut actuel) — à confirmer sur captures.
 - Cartes « Et encore plus » de page_v3 retirées (doublon des atouts) : OK ?
 - Torsades el28 gardées / sens de levée des aimants / « Électronique intégrée, complice » / lumière T4 : défauts détaillés dans l'archive.
 
 ## Prochain pas exact
-1. Montrer les captures à Nolann (SendUserFile) + pop-up des questions ci-dessus ; advisor final.
+1. Montrer captures/site à Nolann (http://localhost:4350/maquettiste-nantes) + pop-up des questions ci-dessus (ajouter : écart au repos orange/verte, timing ESP) ; advisor final.
 2. Republier l'Artifact 9az7LYrVJrfeLZzEiMFQsU (le LIRE d'abord) avec page_v3 à jour.
 3. Ménage : http.server 4371 (PID 26140) ; delete_session groupé après pop-up ; dev 4350 (PID 22244) en fin de chantier.
 4. Vérif visuelle /maquettiste-nantes + /maquette-industrielle ; scan claude-security ; push seulement sur « oui ».
