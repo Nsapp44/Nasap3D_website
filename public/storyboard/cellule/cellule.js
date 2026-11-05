@@ -53,7 +53,7 @@
       loadImg(P0 + s.dir + "/f_" + pad(i) + ".webp").then(function (im) { if (im) { s.arr[i] = im; bump(); } });
     });
   }
-  function loadHd() { if (small || HD) return; loadImg(P0 + "eclate3/hd_027.webp").then(function (im) { if (im) { HD = im; bump(); } }); }
+  function loadHd() { return; /* HD 027 inutilisee depuis que l eclate s arrete a 17 */ if (small || HD) return; loadImg(P0 + "eclate3/hd_027.webp").then(function (im) { if (im) { HD = im; bump(); } }); }
   function loadBase() { if (started.base) return; started.base = 1; loadImg(P0 + "aimant3/base.webp").then(function (im) { if (im) { BASE = im; bump(); } }); }
   function pick(arr, i, n) {
     for (var d = 0; d < n; d++) {
@@ -356,7 +356,7 @@
   tl.to(P, { aEcl: 1, duration: 0.04 }, 0.08);
   tl.to(poster, { opacity: 0, duration: 0.001 }, 0.12);
   inT("#sb-t2", 0.085);
-  tl.to(P, { ecl: 27, duration: 0.16, ease: "power1.inOut" }, 0.10);
+  tl.to(P, { ecl: 17, duration: 0.16, ease: "power1.inOut" }, 0.10);
   tl.to(P, { zoom: 1, duration: 0.16, ease: "power1.inOut" }, 0.10);
   outT("#sb-t2", 0.25);
   // 0,26 – 0,42 : plan de coupe « Électronique intégrée »
