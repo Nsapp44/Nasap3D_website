@@ -105,7 +105,7 @@ Code : `src/lib/server/packing.ts` (`packPieces()`, testé dans `test/packing.te
 
 **Prix client** : un seul prix = somme des tarifs Boxtal des colis (devis `colis_1…colis_N` en une requête) + **1,50 € d'emballage par colis** (`PACKAGING_FEE_CENTS`). Mondial Relay (point relais) n'est proposé que si **aucun** colis n'est XXL (S, M, L, XL passent) ; sinon Colissimo seul. Locker : seulement si **tous** les colis sont S, M ou L.
 
-**Plafond 25 kg par colis** (plus petite limite transporteurs : Mondial Relay et locker 25 kg ; Colissimo 30 kg). XL et XXL sont prévus pour 30 kg mais plafonnés à 25 kg (`maxWeightG`). Règles : XL = relais oui, locker non ; XXL (L+l+h = 160 > 150) = Colissimo seul.
+**Plafond 25 kg par colis** (choix du site ; Mondial Relay Point Relais accepte en réalité 30 kg, L+l+h ≤ 150 cm, longueur ≤ 120 cm ; Colissimo 30 kg). **Locker (étiquette Mondial Relay/InPost, 05/11/2026) : 20 kg max et 62×38×36 cm max** (côtés triés : plus grand ≤ 62, médian ≤ 38, plus petit ≤ 36 ; le carton L 41×36×31 rentre). Règle explicite dans `parcelsLockerOk()` (`LOCKER_MAX_WEIGHT_G`, `LOCKER_MAX_SORTED_CM`) : un colis > 20 kg ne va jamais en locker. XL et XXL sont prévus pour 30 kg mais plafonnés à 25 kg (`maxWeightG`). Règles : XL = relais oui, locker non ; XXL (L+l+h = 160 > 150) = Colissimo seul.
 
 **Messages du panier** (`GET /api/cart` renvoie `parcelCount`, `relayOk`, `lockerOk`) : « N colis » au-delà d'un colis, « Locker impossible pour cette commande », « Colissimo seulement ». Chaque message finit par « contactez-nous ».
 

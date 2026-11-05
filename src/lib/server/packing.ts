@@ -11,7 +11,7 @@ export interface BoxDef {
   emptyWeightG: number; // carton vide, fiche karton.eu « Poids de l'article » (relevé le 27/10/2026)
   maxWeightG: number;
   relayOk: boolean; // Point Relais Mondial Relay
-  lockerOk: boolean; // consigne automatique (max 64×41×38 cm)
+  lockerOk: boolean; // consigne automatique (max 62×38×36 cm, 20 kg ; voir parcelsLockerOk)
   karton: { article: string; url: string; flute: "simple" | "double" };
 }
 
@@ -56,7 +56,7 @@ export const BOXES: BoxDef[] = [
     innerMm: [600, 400, 300],
     outerCm: [62, 42, 33],
     emptyWeightG: 950,
-    // Carton prévu pour 30 kg, mais 25 kg max chez Mondial Relay / locker (plafond par colis).
+    // Carton prévu pour 30 kg, mais plafonné à 25 kg par colis par le site (locker : 20 kg, voir parcelsLockerOk).
     maxWeightG: 25000,
     relayOk: true, // 62×42×33 passe en Point Relais
     lockerOk: false,
@@ -68,7 +68,7 @@ export const BOXES: BoxDef[] = [
     innerMm: [786, 386, 378],
     outerCm: [80, 40, 40],
     emptyWeightG: 1140,
-    // Carton prévu pour 30 kg, mais 25 kg max chez Mondial Relay / locker (plafond par colis).
+    // Carton prévu pour 30 kg, mais plafonné à 25 kg par colis par le site (locker : 20 kg, voir parcelsLockerOk).
     maxWeightG: 25000,
     relayOk: false, // L+l+h = 160 > 150 : Colissimo seul
     lockerOk: false,
@@ -203,6 +203,16 @@ export function parcelsRelayOk(parcels: Parcel[]): boolean {
   return parcels.every((p) => getBox(p.box).relayOk);
 }
 
+// Limites locker (étiquette Mondial Relay / InPost, 05/11/2026) : 20 kg et
+// 62×38×36 cm, comparés après tri des 3 côtés (plus grand ≤ 62, médian ≤ 38,
+// plus petit ≤ 36). Le L (41×36×31) rentre.
+export const LOCKER_MAX_WEIGHT_G = 20000;
+export const LOCKER_MAX_SORTED_CM: [number, number, number] = [62, 38, 36];
+
 export function parcelsLockerOk(parcels: Parcel[]): boolean {
-  return parcels.every((p) => getBox(p.box).lockerOk);
+  return parcels.every((p) => {
+    if (!getBox(p.box).lockerOk || p.weightG > LOCKER_MAX_WEIGHT_G) return false;
+    const sorted = [...p.outerCm].sort((a, b) => b - a);
+    return sorted.every((v, i) => v <= LOCKER_MAX_SORTED_CM[i]);
+  });
 }

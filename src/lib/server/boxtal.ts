@@ -475,6 +475,7 @@ const INTL_CONTENT_DESCRIPTION = "Pièces imprimées en 3D sur mesure";
 export interface LabelPurchaseResult {
   boxtalOrderRef: string;
   labelUrl: string | null;
+  trackingNumber: string | null; // si présent dans la réponse d'achat (rare)
 }
 
 // Real purchase of a shipping label (api/v1/order) — REAL MONEY, billed to
@@ -563,7 +564,36 @@ export async function purchaseShippingLabel(input: LabelPurchaseInput): Promise<
   }
 
   const labels: string[] = doc?.order?.shipment?.labels?.label ?? [];
-  return { boxtalOrderRef: reference, labelUrl: labels[0] ?? null };
+  return { boxtalOrderRef: reference, labelUrl: labels[0] ?? null, trackingNumber: extractTrackingNumber(doc?.order?.shipment) };
+}
+
+// Numéro de suivi lu de façon défensive dans la réponse order / order_status.
+// Mondial Relay ne renseigne pas toujours `carrier_reference` (le n° « N°
+// Expédition » de l'étiquette, ex. 75537808, est alors ailleurs ; emplacement
+// exact non confirmé faute d'identifiants v1 en local, 05/11/2026). On prend
+// d'abord carrier_reference, puis tout champ dont le nom évoque un suivi /
+// n° d'expédition (au niveau order, parcels/parcel, shipment).
+const TRACKING_KEY_RE = /^(carrier_reference|tracking(_?(number|code|reference))?|shipment_number|expedition(_?number)?|parcel_(number|reference)|numero_?(suivi|expedition))$/i;
+
+export function extractTrackingNumber(order: unknown): string | null {
+  const found: string[] = [];
+  const walk = (node: unknown, depth: number) => {
+    if (depth > 4 || node == null || typeof node !== "object") return;
+    if (Array.isArray(node)) { node.forEach((n) => walk(n, depth + 1)); return; }
+    for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
+      if (TRACKING_KEY_RE.test(k)) {
+        for (const x of Array.isArray(v) ? v : [v]) {
+          if ((typeof x === "string" || typeof x === "number") && String(x).trim()) found.push(String(x).trim());
+        }
+      } else if (/^(parcels?|shipments?|packages?)$/i.test(k)) {
+        walk(v, depth + 1);
+      }
+    }
+  };
+  const root = order as Record<string, unknown> | null | undefined;
+  walk(root, 0);
+  const uniq = [...new Set(found)];
+  return uniq.length > 0 ? uniq.join(", ") : null;
 }
 
 export interface BoxtalOrderStatus {
@@ -626,8 +656,7 @@ export async function checkLabelStatus(boxtalOrderRef: string): Promise<BoxtalOr
   const labelUrl: string | null = doc?.order?.labels?.label?.[0] ?? null;
   // Plusieurs colis : Boxtal peut renvoyer plusieurs numéros de suivi — on les
   // joint par ", " dans le champ unique trackingNumber.
-  const rawRef = doc?.order?.carrier_reference;
-  const carrierReference: string | null = (Array.isArray(rawRef) ? rawRef.map(String).join(", ") : rawRef) || null;
+  const carrierReference: string | null = extractTrackingNumber(doc?.order);
   const state: string | null = doc?.order?.state || null;
   return {
     labelAvailable,

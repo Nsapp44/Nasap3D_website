@@ -69,6 +69,7 @@ export const POST = apiHandler(async (context) => {
         boxtalOrderRef: result.boxtalOrderRef,
         shippingLabelUrl: result.labelUrl,
         labelPurchasedAt: new Date(),
+        ...(result.trackingNumber ? { trackingNumber: result.trackingNumber } : {}),
       },
     });
     // Best-effort: the tracking number is never in the purchase response
