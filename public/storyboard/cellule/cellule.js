@@ -13,7 +13,7 @@
   var $ = function (s) { return sb.querySelector(s); };
   var scene = $("#sb-scene"), box = $("#sb-box"), cv = $("#sb-cv"), ctx = cv.getContext("2d");
   var poster = $("#sb-poster"), loader = $("#sb-loader");
-  var legs = [$("#sb-lg0"), $("#sb-lg1"), $("#sb-lg2")], pzr = $("#sb-pzr"), clk = $("#sb-clk"), pzd = $("#sb-pzd"), pzw = $("#sb-pzw");
+  var legs = [$("#sb-lg0"), $("#sb-lg1"), $("#sb-lg2")], pzr = $("#sb-pzr"), pzd = $("#sb-pzd"), pzw = $("#sb-pzw");
   var small = innerWidth < 768;
   var cs = getComputedStyle(sb);
   var BG = cs.getPropertyValue("--bg").trim() || "#161514", ACC = cs.getPropertyValue("--accent").trim() || "#ff5a3c";
@@ -384,9 +384,6 @@
   tl.to(P, { az: 1, duration: 0.04, ease: "power2.inOut" }, 0.62);
   tl.to(P, { gA: 1, duration: 0.012 }, 0.655);
   tl.to(P, { aim: 17, duration: 0.06 }, 0.665);
-  tl.fromTo(clk, { opacity: 0, scale: 1.5 }, { opacity: 0.9, scale: 1.5, duration: 0.003, ease: "power1.out", immediateRender: false }, 0.714); // « clic » d'aimantation
-  tl.to(clk, { scale: 0.8, duration: 0.009, ease: "power2.in" }, 0.717);
-  tl.to(clk, { opacity: 0, duration: 0.003 }, 0.726);
   tl.to(P, { gA: 0, duration: 0.012 }, 0.725);
   tl.to(P, { az: 0, duration: 0.03, ease: "power2.inOut" }, 0.73);
   outT("#sb-t5a", 0.745);
