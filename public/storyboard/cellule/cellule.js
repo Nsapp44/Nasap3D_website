@@ -13,7 +13,7 @@
   var $ = function (s) { return sb.querySelector(s); };
   var scene = $("#sb-scene"), box = $("#sb-box"), cv = $("#sb-cv"), ctx = cv.getContext("2d");
   var poster = $("#sb-poster"), loader = $("#sb-loader");
-  var legs = [$("#sb-lg0"), $("#sb-lg1"), $("#sb-lg2")], pzr = $("#sb-pzr"), pzd = $("#sb-pzd"), pzw = $("#sb-pzw");
+  var legs = [$("#sb-lg0"), $("#sb-lg1"), $("#sb-lg2")], pzg = $("#sb-pzg"), pzw = $("#sb-pzw");
   var small = innerWidth < 768;
   var cs = getComputedStyle(sb);
   var BG = cs.getPropertyValue("--bg").trim() || "#161514", ACC = cs.getPropertyValue("--accent").trim() || "#ff5a3c";
@@ -330,9 +330,8 @@
   }
 
   /* ---- Timeline maîtresse (durée 1 = toute la scène) ---- */
-  var pzw2 = $("#sb-pzw2"), sps = Array.prototype.slice.call(sb.querySelectorAll(".sb-pz-sp"));
-  gsap.set([pzr, pzd, pzw, pzw2].concat(sps), { opacity: 0 });
-  gsap.set(pzr, { scale: 1.9 }); gsap.set(pzd, { scale: 0.5 }); gsap.set(pzw, { scale: 0.6 }); gsap.set(pzw2, { scale: 0.6 }); gsap.set(sps, { scale: 1, x: 0, y: 0 });
+  var pzw2 = $("#sb-pzw2"), t5bh = $("#sb-t5b h2");
+  gsap.set([pzg, pzw, pzw2], { opacity: 0, scale: 1 });
   var tl = gsap.timeline({
     defaults: { ease: "none" },
     scrollTrigger: {
@@ -391,30 +390,24 @@
   // 0,76 – 0,88 : un bouton, et elle s'éclaire (pression 2D puis chenille LED)
   tl.to(P, { cellA: 1, duration: 0.012 }, 0.762);
   inT("#sb-t5b", 0.765);
-  tl.to(pzr, { opacity: 0.9, scale: 1.5, duration: 0.008, ease: "expo.out" }, 0.772);
-  tl.to(pzr, { scale: 0.8, duration: 0.018, ease: "expo.in" }, 0.78);
-  // pression : le point s'écrase (scaleX/scaleY) puis rebondit
-  tl.to(pzd, { opacity: 1, scaleX: 1.35, scaleY: 0.65, duration: 0.008, ease: "expo.out" }, 0.792);
-  tl.to(pzd, { scaleX: 1, scaleY: 1, duration: 0.014, ease: "back.out(3)" }, 0.8);
-  // onde concentrique : 2 anneaux décalés, expo.out + fondu
-  tl.to(pzw, { opacity: 0.85, duration: 0.002 }, 0.798);
-  tl.to(pzw, { scale: 3, duration: 0.032, ease: "expo.out" }, 0.798);
-  tl.to(pzw, { opacity: 0, duration: 0.03, ease: "power1.out" }, 0.801);
-  tl.to(pzw2, { opacity: 0.6, duration: 0.002 }, 0.806);
-  tl.to(pzw2, { scale: 2.5, duration: 0.032, ease: "expo.out" }, 0.806);
-  tl.to(pzw2, { opacity: 0, duration: 0.03, ease: "power1.out" }, 0.809);
-  // éclat : 6 points rayonnants
-  tl.to(sps, { opacity: 1, duration: 0.002 }, 0.798);
-  tl.to(sps, { x: function (i) { return Math.cos(i * Math.PI / 3 + 0.5) * box.offsetWidth * 0.13; }, y: function (i) { return Math.sin(i * Math.PI / 3 + 0.5) * box.offsetWidth * 0.13; }, scale: 0.3, duration: 0.026, ease: "expo.out" }, 0.798);
-  tl.to(sps, { opacity: 0, duration: 0.014, ease: "power1.in" }, 0.812);
-  tl.to(pzr, { opacity: 0, duration: 0.01 }, 0.8);
-  tl.to(pzd, { opacity: 0, duration: 0.012 }, 0.815);
+  // onde de choc : un disque lumineux et deux anneaux partent du bouton, la légende et la bande réagissent à son passage
+  tl.to(pzg, { opacity: 0.9, duration: 0.003 }, 0.781);
+  tl.to(pzg, { scale: 4.4, duration: 0.044, ease: "power3.out" }, 0.781);
+  tl.to(pzg, { opacity: 0, duration: 0.036, ease: "power1.in" }, 0.789);
+  tl.to(pzw, { opacity: 1, duration: 0.0024 }, 0.781);
+  tl.to(pzw, { scale: 6.8, duration: 0.064, ease: "power3.out" }, 0.781);
+  tl.to(pzw, { opacity: 0, duration: 0.04, ease: "power1.in" }, 0.805);
+  tl.to(pzw2, { opacity: 0.7, duration: 0.0024 }, 0.7914);
+  tl.to(pzw2, { scale: 5.6, duration: 0.06, ease: "power3.out" }, 0.7914);
+  tl.to(pzw2, { opacity: 0, duration: 0.036, ease: "power1.in" }, 0.805);
+  tl.to(t5bh, { color: "#ff5a3c", duration: 0.006 }, 0.805);
+  tl.to(t5bh, { color: "#f3efe9", duration: 0.036 }, 0.812);
   tl.to(P, { ledA: 1, duration: 0.005 }, 0.80);
   tl.to(P, { ledT: 1, duration: 0.065 }, 0.805);
   outT("#sb-t5b", 0.875);
   // 0,875+ : fin de scène — le produit fini (LED allumées) reste affiché jusqu'à la sortie, sans légendes ni éclats
   tl.to(legs, { opacity: 0, duration: 0.005, immediateRender: false }, 0.875);
-  tl.to([pzr, pzd, pzw, pzw2].concat(sps), { opacity: 0, duration: 0.005, immediateRender: false }, 0.875);
+  tl.to([pzg, pzw, pzw2], { opacity: 0, duration: 0.005, immediateRender: false }, 0.875);
   inT("#sb-t7a", 0.90);
   tl.to({}, { duration: 0.0001 }, 1); // la timeline dure 1 : derniers ~8 % = produit tenu
 
