@@ -395,6 +395,7 @@
   tl.fromTo(pzg, { opacity: 0, scale: 0.5 }, { opacity: 0.8, scale: 0.9, duration: 0.0096, ease: "power3.out", immediateRender: false }, 0.781);
   tl.to(pzg, { opacity: 0, duration: 0.04, ease: "power1.in", immediateRender: false }, 0.7906);
   tl.fromTo(pzw2, { opacity: 0.9, scale: 0.3 }, { opacity: 0, scale: 1, duration: 0.048, ease: "power3.out", immediateRender: false }, 0.781);
+  tl.set(pzw, { opacity: 0.7, scale: 0.3 }, 0.781); // comme la preview : le grand anneau attend, petit, dès le clic
   tl.fromTo(pzw, { opacity: 0.7, scale: 0.3 }, { opacity: 0, scale: 1, duration: 0.056, ease: "power3.out", immediateRender: false }, 0.789);
   tl.to(t5bh, { color: "#ff5a3c", duration: 0.006 }, 0.805);
   tl.to(t5bh, { color: "#f3efe9", duration: 0.036 }, 0.812);

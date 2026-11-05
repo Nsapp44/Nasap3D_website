@@ -71,7 +71,8 @@ const P = "/storyboard/cellule/";
 
 <script is:inline defer src="/vendor/gsap/gsap.min.js"></script>
 <script is:inline defer src="/vendor/gsap/ScrollTrigger.min.js"></script>
-<script is:inline defer src="/storyboard/cellule/cellule.js"></script>
+{/* ?v= : à changer à chaque modif de cellule.js (sinon un onglet ou un cache garde l'ancien JS avec le nouveau CSS) */}
+<script is:inline defer src="/storyboard/cellule/cellule.js?v=onde-c2"></script>
 
 <style is:global>
   /* Le filet global « overflow-x: hidden » sur html/body casse position: sticky (body devient le conteneur de défilement). `clip` empêche aussi tout scroll horizontal. */
