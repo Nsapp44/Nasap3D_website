@@ -331,7 +331,7 @@
 
   /* ---- Timeline maîtresse (durée 1 = toute la scène) ---- */
   var pzw2 = $("#sb-pzw2"), t5bh = $("#sb-t5b h2");
-  gsap.set([pzg, pzw, pzw2], { opacity: 0, scale: 1 });
+  gsap.set([pzg, pzw, pzw2], { opacity: 0, scale: 1, xPercent: -50, yPercent: -50, transformOrigin: "50% 50%" });
   var tl = gsap.timeline({
     defaults: { ease: "none" },
     scrollTrigger: {
@@ -391,15 +391,11 @@
   tl.to(P, { cellA: 1, duration: 0.012 }, 0.762);
   inT("#sb-t5b", 0.765);
   // onde de choc : un disque lumineux et deux anneaux partent du bouton, la légende et la bande réagissent à son passage
-  tl.to(pzg, { opacity: 0.9, duration: 0.003 }, 0.781);
-  tl.to(pzg, { scale: 4.4, duration: 0.044, ease: "power3.out" }, 0.781);
-  tl.to(pzg, { opacity: 0, duration: 0.036, ease: "power1.in" }, 0.789);
-  tl.to(pzw, { opacity: 1, duration: 0.0024 }, 0.781);
-  tl.to(pzw, { scale: 6.8, duration: 0.064, ease: "power3.out" }, 0.781);
-  tl.to(pzw, { opacity: 0, duration: 0.04, ease: "power1.in" }, 0.805);
-  tl.to(pzw2, { opacity: 0.7, duration: 0.0024 }, 0.7914);
-  tl.to(pzw2, { scale: 5.6, duration: 0.06, ease: "power3.out" }, 0.7914);
-  tl.to(pzw2, { opacity: 0, duration: 0.036, ease: "power1.in" }, 0.805);
+  // (variante C : lueur + 2 petits anneaux fins ; durées de la preview x 0,08)
+  tl.fromTo(pzg, { opacity: 0, scale: 0.5 }, { opacity: 0.8, scale: 0.9, duration: 0.0096, ease: "power3.out", immediateRender: false }, 0.781);
+  tl.to(pzg, { opacity: 0, duration: 0.04, ease: "power1.in", immediateRender: false }, 0.7906);
+  tl.fromTo(pzw2, { opacity: 0.9, scale: 0.3 }, { opacity: 0, scale: 1, duration: 0.048, ease: "power3.out", immediateRender: false }, 0.781);
+  tl.fromTo(pzw, { opacity: 0.7, scale: 0.3 }, { opacity: 0, scale: 1, duration: 0.056, ease: "power3.out", immediateRender: false }, 0.789);
   tl.to(t5bh, { color: "#ff5a3c", duration: 0.006 }, 0.805);
   tl.to(t5bh, { color: "#f3efe9", duration: 0.036 }, 0.812);
   tl.to(P, { ledA: 1, duration: 0.005 }, 0.80);

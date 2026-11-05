@@ -120,10 +120,10 @@ const P = "/storyboard/cellule/";
     .sb .sb-leg .sb-pill::before { width: 10px; }
   }
   /* motion de pression sur le bouton */
-  .sb .sb-pz { position: absolute; left: 50%; top: 61.7%; border-radius: 50%; opacity: 0; pointer-events: none; }
-  .sb .sb-pz-disc { width: 12%; aspect-ratio: 1; margin: -6% 0 0 -6%; background: radial-gradient(circle, rgba(255,90,60,.55) 0%, rgba(255,90,60,.18) 55%, rgba(255,90,60,0) 72%); }
-  .sb .sb-pz-wave { width: 12%; aspect-ratio: 1; margin: -6% 0 0 -6%; border: 1px solid var(--accent); }
-  .sb .sb-pz-wave2 { border-color: #ff8a72; }
+  .sb .sb-pz { position: absolute; left: 50.3%; top: 61.6%; border-radius: 50%; opacity: 0; pointer-events: none; will-change: transform, opacity; }
+  .sb .sb-pz-disc { width: 10%; aspect-ratio: 10 / 7.5; background: radial-gradient(circle, rgba(255,90,60,.7) 0%, rgba(255,90,60,.25) 45%, rgba(255,90,60,0) 70%); }
+  .sb .sb-pz-wave { width: 12%; aspect-ratio: 12 / 7.2; border: 1px solid var(--accent); }
+  .sb .sb-pz-wave2 { width: 8%; aspect-ratio: 8 / 4.8; }
 
   @media (min-width: 1024px) {
     .sb .sb-stage { grid-template-columns: minmax(0, 42%) minmax(0, 58%); column-gap: 40px; align-items: center; --bh: calc(100svh - 112px); }
