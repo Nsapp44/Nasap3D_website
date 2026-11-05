@@ -7,3 +7,6 @@
 - Lumière arrière RETENUE (`out_test3/lumiere3/l_008.png`) : `--lum_d=260 --lum_beta=28 --lum_k=55 --lum_coat=1.0 --lum_coat_r=0.05 --lum_coat_n=0.6 --lum_sx=40 --lum_sy=400 --micro=2 --lum_tex_scale=3`. Écarté : coat_n 0,08 ou 0,35 (reflet lisse, grain invisible).
 - Rendu complet `--stage=v3` FAIT 04/11 (log `storyboard/v3.log`, 0 erreur) : `storyboard/out/` eclate3 e_000-027, elec c_000-013, aimant3 a_000-017 + base.png, lumiere3 l_000-015 ; coords_*.json (elec res 960×720 ; aimant3 rect_base [204.2,59.1,287,215.2], res 717×538).
 - `to_webp.py` (hors dépôt) : filtre passé de `'easl'` à `'easlc'` (sinon les c_### de elec étaient sautés). Webp dans le scratchpad de session `…/5c2d575c…/scratchpad/storyboard3/` (eclate3 192 Ko, elec 53, aimant3 377, lumiere3 54, + led/ de la v2).
+
+## Paramètre ajouté le 05/11/2026
+Rendu lumiere3 : `--lum_az=-45` (cache le trou du connecteur). Aimant3 : lettres fixes ; éclaté : lettres rattachées au noyau, 5 hélices dans le dôme (`--aim_spread` 1.5, échelle anisotrope).
