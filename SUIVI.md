@@ -33,6 +33,8 @@ Archives : SUIVI précédent intégral → `docs/chantiers/suivi-storyboard-v3_2
    A trancher : hélices à échelle anisotrope + écart 1,5 (léger changement de style, avant/après cmp5_a_005) ; lettres de l'eclate rattachees au noyau (bougent d'un bloc) ; en fin d'eclate l'aimant passe 20 px SOUS le noyau ; poids storyboard non mesure isolement (page entiere 2,8 Mo initial, JS dominants).
    Collab : session CAO-IA Blender (controle_A.py/expo_A.py lecture seule dans C:o-test\_essais_cao_ialender
 iveauA\ ; porte penetration controle_A2.py a venir, a passer sur mes rendus).
+5. [ ] Carrousel de projets (05/11) : maquette d'abord (Opus ultracode, état des lieux de l'ancien carrousel Nasap3D). Clic = le projet s'agrandit au premier plan (mobile et PC), croix ou clic à côté = retour au carrousel, motion soigné, histoire longue par projet, maquettes 3D possibles. Pas de page séparée ; texte dans le HTML + adresse par projet (#projet-x), à valider avec l'audit SEO.
+6. [ ] Audit SEO complet : carte proposée « Nasap3D [SEO] audit complet, bonne voie ? » (task_8f8f36b8), à démarrer par un clic de Nolann.
 
 ## Questions en attente (un seul pop-up AskUserQuestion à Nolann)
 - H1 : H1 SEO gardé au-dessus du storyboard (défaut actuel) — à confirmer sur captures.
