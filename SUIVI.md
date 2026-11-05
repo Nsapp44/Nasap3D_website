@@ -36,6 +36,11 @@ iveauA\ ; porte penetration controle_A2.py a venir, a passer sur mes rendus).
 5. [ ] Carrousel de projets (05/11) : maquette d'abord (Opus ultracode, état des lieux de l'ancien carrousel Nasap3D). Clic = le projet s'agrandit au premier plan (mobile et PC), croix ou clic à côté = retour au carrousel, motion soigné, histoire longue par projet, maquettes 3D possibles. Pas de page séparée ; texte dans le HTML + adresse par projet (#projet-x), à valider avec l'audit SEO.
 6. [ ] Audit SEO complet : carte proposée « Nasap3D [SEO] audit complet, bonne voie ? » (task_8f8f36b8), à démarrer par un clic de Nolann.
 
+7. [ ] Boxtal Mondial Relais : le N° d'expédition de la fiche destinataire (ex. M1 75537808) n'est pas repris auto dans trackingNumber (saisi à la main) ; vérifier aussi limites locker (20 kg, 62x38x36) vs code (25 kg, 64x41x38) et relais (30 kg, L+l+h 150, côté 120).
+8. [ ] Éclaté cellule : l'hélice gris/bleu/jaune n'est pas au bon endroit sur la frame où l'éclaté s'arrête (capture « pas bon » = 1re image de Nolann, « bonne » = 2e) ; l'éclaté doit s'arrêter sur la bonne frame. Qualité 960 px q85 : OK, on garde.
+9. [ ] Animation du clic bouton : trop discrète → faire PLUSIEURS propositions (maquette à choisir par Nolann avant de toucher au site).
+10. [ ] Fork SEO lancé : local_75c60f2f (seo-audit), rapport attendu `docs/chantiers/seo-audit_2026-11-05.md`.
+
 ## Questions en attente (un seul pop-up AskUserQuestion à Nolann)
 - H1 : H1 SEO gardé au-dessus du storyboard (défaut actuel) — à confirmer sur captures.
 - Cartes « Et encore plus » de page_v3 retirées (doublon des atouts) : OK ?
