@@ -336,7 +336,7 @@
   var tl = gsap.timeline({
     defaults: { ease: "none" },
     scrollTrigger: {
-      trigger: scene, start: "top top", end: "bottom bottom", scrub: 0.6,
+      trigger: scene, start: "top top", end: "bottom bottom", scrub: 1,
       onUpdate: function (self) {
         var p = self.progress;
         if (p > 0.12) loadSeq("ele");
