@@ -1,0 +1,706 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette : carrousel de projets /maquettiste-nantes (2026-11-06)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<!--
+  MAQUETTE autonome (pas du code de production), v2 du 06/11/2026 (v1 : carrousel-projets_2026-11-05.html).
+  Branchement prévu : src/data/realisations.ts (données) + src/components/ProjectsCarousel.astro (HTML serveur + <script> inline, sans React).
+  Les liens pointent vers /realisations/<slug> (pages à créer). Ici, ouvrir le zoom pousse #projet-<slug> (file:// interdit un autre chemin) ;
+  en production : history.pushState vers /realisations/<slug>.
+  Images : chemins relatifs vers public/assets (en prod : <Image> Astro, srcset 400/800/1200).
+  Rendus 3D : public/assets/maquettes/<projet>/{sm,base}/e28_aNNN.avif (72 vues, une tous les 5°). Chargés à la demande seulement (survol, ou ouverture de la visionneuse).
+  Changements v2 : filtres retirés ; indicateur « 1 / 8 » remplacé par des repères cliquables + « Projets 03 à 05 sur 08 » collé aux flèches ;
+  rotation 3D au survol (la souris fait tourner) et visionneuse 360° glissable dans la fiche ; parallaxe douce ; glisser à la souris ; retours sobres.
+-->
+<style>
+  :root {
+    --bg: #161514; --bg2: #1a1917; --bg3: #201d1b;
+    --ink: #f3f1ec; --muted: rgba(255,255,255,.65); --faint: rgba(255,255,255,.5);
+    --line: rgba(255,255,255,.1); --accent: #ff5a3c;
+    --ease: cubic-bezier(.2,.8,.2,1);
+    --wrap: 800px; --pad: 24px;
+    --edge: max(var(--pad), calc((100vw - var(--wrap)) / 2 + var(--pad)));
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); color: var(--ink); }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.6 "Inter", system-ui, sans-serif; overflow-x: clip; }
+  a { color: inherit; }
+  button { font: inherit; color: inherit; }
+  .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+  /* Contexte de page (factice) */
+  .fake-head { height: 56px; border-bottom: 1px solid var(--line); background: var(--bg); display: flex; align-items: center; padding: 0 var(--edge); font: 700 15px "Space Grotesk", sans-serif; color: var(--ink); }
+  .fake-head span { color: var(--accent); }
+  .lp-section { max-width: var(--wrap); margin: 0 auto; padding: 0 var(--pad) 44px; }
+  .lp-h2 { font: 700 20px "Space Grotesk", sans-serif; color: var(--ink); margin: 0 0 16px; }
+  .lp-note { font: 400 14px/1.6 "Inter", sans-serif; color: var(--muted); margin: 0; }
+  .fake-faq { opacity: .35; }
+  .fake-faq div { height: 52px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 10px; background: var(--bg2); }
+
+  /* ===== Section carrousel ===== */
+  .pj { padding: 40px 0 36px; background: var(--bg); color: var(--ink); }
+  .pj-head { max-width: var(--wrap); margin: 0 auto; padding: 0 var(--pad); }
+  .pj-kicker { font: 600 12px "Inter", sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--accent); margin: 0 0 6px; }
+  .pj-head .lp-h2 { margin: 0 0 6px; font-size: 24px; }
+  .pj-hint-touch { display: none; }
+  @media (hover: none) { .pj-hint-hover { display: none; } .pj-hint-touch { display: inline; } }
+
+  .icon-btn { width: 44px; height: 44px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg2); color: var(--ink); display: grid; place-items: center; cursor: pointer; transition: border-color .2s, background .2s, opacity .2s, transform .2s var(--ease); flex: none; }
+  .icon-btn:hover { border-color: rgba(255,90,60,.6); background: var(--bg3); }
+  .icon-btn:active { transform: scale(.94); }
+  .icon-btn:disabled { opacity: .35; cursor: default; border-color: var(--line); transform: none; }
+  .icon-btn:focus-visible, .pj-link:focus-visible, .btn:focus-visible, .dots button:focus-visible, .tick:focus-visible, .sp-play:focus-visible, .z-spin:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  .icon-btn svg { width: 18px; height: 18px; }
+
+  .track { list-style: none; margin: 22px 0 0; padding: 6px var(--edge) 18px; display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--edge); overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; cursor: grab; }
+  .track::-webkit-scrollbar { display: none; }
+  .track.dragging { scroll-snap-type: none; cursor: grabbing; user-select: none; }
+  .track.dragging .pc, .track.dragging .pj-link { pointer-events: none; }
+  .track > li { flex: 0 0 clamp(250px, 22vw, 340px); scroll-snap-align: start; display: flex; }
+  .track a, .track img { -webkit-user-drag: none; }
+
+  .pc { position: relative; width: 100%; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 12px; background: var(--bg2); color: var(--ink); overflow: hidden; transition: translate .3s var(--ease), border-color .25s ease, box-shadow .3s ease; }
+  .pc:hover { translate: 0 -4px; border-color: rgba(255,90,60,.45); box-shadow: 0 14px 32px rgba(0,0,0,.4); }
+  .pc-media { position: relative; aspect-ratio: 4 / 5; background: var(--bg3); overflow: hidden; }
+  .pc-media > img:not(.pc-spin) { display: block; width: 100%; height: 100%; object-fit: cover; scale: 1.12; translate: calc(var(--px, 0) * -16px) 0; transition: scale .6s var(--ease); }
+  .pc:hover .pc-media > img:not(.pc-spin) { scale: 1.18; }
+  .pc-media::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(22,21,20,.65), transparent 40%); pointer-events: none; z-index: 2; }
+  /* Rendu 3D qui tourne au survol (créé par le JS, uniquement pour les projets data-spin) */
+  .pc-spin { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; scale: var(--rz, 1.1); opacity: 0; transition: opacity .35s ease; z-index: 1; pointer-events: none; }
+  .pc-media.has-spin::before { content: ""; position: absolute; inset: 0; z-index: 1; opacity: 0; transition: opacity .35s ease; background: radial-gradient(ellipse at 50% 42%, #2c2825 0%, #1b1917 70%); }
+  .pc-media.spin-on::before, .pc-media.spin-on .pc-spin { opacity: 1; }
+  .pc-badges { position: absolute; left: 10px; right: 10px; bottom: 10px; display: flex; gap: 6px; z-index: 3; }
+  .badge { font: 600 11px "Inter", sans-serif; letter-spacing: .3px; padding: 4px 8px; border-radius: 999px; background: rgba(22,21,20,.78); color: var(--ink); border: 1px solid var(--line); backdrop-filter: blur(4px); display: inline-flex; align-items: center; gap: 5px; }
+  .badge.b3d { border-color: rgba(255,90,60,.6); color: #ffd9d0; }
+  .badge.b3d svg { width: 12px; height: 12px; animation: spin360 6s linear infinite; }
+  @keyframes spin360 { to { rotate: 360deg; } }
+  .pc-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .pc-cat { font: 600 11px "Inter", sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); margin: 0; }
+  .pc-title { font: 600 16px/1.3 "Space Grotesk", sans-serif; margin: 0; color: var(--ink); }
+  .pj-link { text-decoration: none; color: inherit; }
+  .pj-link::after { content: ""; position: absolute; inset: 0; z-index: 4; border-radius: 12px; }
+  .pj-link:focus-visible { outline: none; }
+  .pc:has(.pj-link:focus-visible) { outline: 3px solid var(--ink); outline-offset: 3px; }
+  .pc-text { margin: 0; font: 400 13px/1.55 "Inter", sans-serif; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .pc-more { margin-top: auto; padding-top: 6px; font: 500 13px "Inter", sans-serif; color: var(--ink); display: inline-flex; align-items: center; gap: 6px; }
+  .pc-more span { color: var(--accent); transition: transform .25s var(--ease); }
+  .pc:hover .pc-more span { transform: translateX(4px); }
+  .pc-full { display: none; } /* copie détaillée pour le zoom ; le texte complet visible reste .pc-text + la page /realisations/<slug> */
+
+  /* Repères + compteur + flèches : une seule rangée, sous les cartes */
+  .pj-ctrl { max-width: var(--wrap); margin: 2px auto 0; padding: 0 var(--pad); display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px 22px; }
+  .pj-label { margin: 0; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+  .pj-num { font: 700 22px/1 "Space Grotesk", sans-serif; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pj-num small { font: 500 13px "Inter", sans-serif; color: var(--faint); margin-left: 6px; letter-spacing: .2px; }
+  .pj-name { margin-top: 5px; font: 500 12px "Inter", sans-serif; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
+  .ticks { display: flex; gap: 4px; min-width: 0; }
+  .tick { flex: 1 1 0; max-width: 64px; min-width: 14px; height: 44px; border: 0; background: none; padding: 0; cursor: pointer; display: grid; align-items: center; }
+  .tick::before { content: ""; display: block; height: 4px; border-radius: 4px; background: rgba(255,255,255,.14); transition: background .3s, height .3s var(--ease), box-shadow .3s; }
+  .tick:hover::before { background: rgba(255,255,255,.3); }
+  .tick.vis::before { background: rgba(255,255,255,.5); }
+  .tick.is-lead::before { height: 6px; background: var(--accent); box-shadow: 0 0 12px rgba(255,90,60,.45); }
+  .pj-arrows { display: flex; gap: 8px; }
+  .pj-all { max-width: var(--wrap); margin: 8px auto 0; padding: 0 var(--pad); font: 500 14px "Inter", sans-serif; }
+  .pj-all a { color: var(--ink); text-decoration: underline; text-decoration-color: rgba(255,90,60,.6); text-underline-offset: 3px; display: inline-flex; min-height: 44px; align-items: center; }
+
+  /* Entrée douce */
+  .js .track > li { opacity: 0; transform: translateY(6px); }
+  .js .pj.in .track > li { opacity: 1; transform: none; transition: opacity .5s ease, transform .5s ease; transition-delay: calc(var(--i) * 60ms); }
+  .js .pj-head > *, .js .pj-ctrl { opacity: 0; transform: translateY(6px); }
+  .js .pj.in .pj-head > *, .js .pj.in .pj-ctrl { opacity: 1; transform: none; transition: opacity .5s ease, transform .5s ease; }
+  .js .pj.in .pj-head > :nth-child(2) { transition-delay: 60ms; } .js .pj.in .pj-head > :nth-child(3) { transition-delay: 120ms; }
+  .js .pj.in .pj-ctrl { transition-delay: 300ms; }
+
+  /* ===== Zoom (dialog) ===== */
+  dialog.zoom { padding: 0; border: 1px solid var(--line); border-radius: 16px; background: var(--bg2); color: var(--ink); width: min(1080px, calc(100vw - 48px)); max-height: calc(100dvh - 48px); overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.6); }
+  dialog.zoom::backdrop { background: rgba(10,9,8,.82); backdrop-filter: blur(6px); }
+  .z-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); height: min(calc(100dvh - 48px), 760px); }
+  .z-media { position: relative; background: var(--bg3); min-height: 0; display: flex; flex-direction: column; }
+  .z-strip { flex: 1; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; min-height: 0; }
+  .z-strip::-webkit-scrollbar { display: none; }
+  .z-strip figure { margin: 0; flex: 0 0 100%; min-height: 0; scroll-snap-align: center; display: block; padding: 16px; position: relative; }
+  .z-strip img { width: 100%; height: 100%; object-fit: contain; border-radius: 8px; }
+  .z-ph { position: absolute; top: 50%; translate: 0 -50%; z-index: 2; }
+  .z-ph.prev { left: 12px; } .z-ph.next { right: 12px; }
+  .z-foot { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 8px 12px 12px; }
+  .dots { display: flex; gap: 2px; }
+  .dots button { width: 44px; height: 44px; border: 0; background: none; cursor: pointer; display: grid; place-items: center; padding: 0; }
+  .dots button::before { content: ""; width: 8px; height: 8px; border-radius: 99px; background: rgba(255,255,255,.3); transition: width .25s var(--ease), background .25s; }
+  .dots button.d3::before { box-shadow: inset 0 0 0 2px rgba(255,90,60,.9); background: transparent; width: 12px; height: 12px; }
+  .dots button[aria-current="true"]::before { width: 22px; background: var(--accent); box-shadow: none; }
+  .dots button.d3[aria-current="true"]::before { width: 26px; height: 12px; }
+  .z-cap { font: 400 12px/1.4 "Inter", sans-serif; color: var(--faint); text-align: center; padding: 0 16px 12px; min-height: 2.8em; }
+  .z-info { padding: 28px 28px 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+  .z-info .pc-cat { padding-right: 52px; }
+  .z-title { font: 700 26px/1.2 "Space Grotesk", sans-serif; margin: 0; color: var(--ink); padding-right: 40px; }
+  .z-text p { margin: 0 0 10px; font: 400 15px/1.65 "Inter", sans-serif; color: rgba(255,255,255,.78); }
+  .z-ctas { margin-top: auto; padding-top: 12px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .btn { min-height: 44px; padding: 0 18px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font: 600 14px "Inter", sans-serif; border: 1px solid var(--line); background: var(--bg3); color: var(--ink); transition: border-color .2s, filter .2s; }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #161514; }
+  .btn:hover { border-color: rgba(255,90,60,.6); }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .z-pager { display: flex; justify-content: space-between; gap: 10px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .z-pager button { min-height: 44px; background: none; border: 0; color: var(--muted); cursor: pointer; font: 500 13px "Inter", sans-serif; padding: 0 4px; text-align: left; max-width: 48%; }
+  .z-pager button:last-child { text-align: right; }
+  .z-pager button:hover { color: var(--ink); }
+  .z-pager button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; border-radius: 6px; }
+  .z-close { position: absolute; top: 14px; right: 14px; z-index: 3; background: rgba(22,21,20,.85); }
+
+  /* Visionneuse 360° (diapo du zoom) */
+  .z-spin { background: radial-gradient(ellipse at 50% 45%, #2b2724 0%, #1c1a18 72%); outline-offset: -6px; }
+  .z-spin .sp-stage { position: absolute; inset: 16px 28px 56px; touch-action: pan-y pinch-zoom; cursor: grab; user-select: none; -webkit-user-select: none; }
+  .z-spin .sp-stage.grab { cursor: grabbing; }
+  .z-spin img { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: 0; pointer-events: none; -webkit-user-drag: none; }
+  .sp-ui { position: absolute; left: 16px; right: 16px; bottom: 10px; display: flex; align-items: center; gap: 12px; }
+  .sp-play { width: 44px; height: 44px; border-radius: 99px; border: 1px solid var(--line); background: rgba(22,21,20,.7); display: grid; place-items: center; cursor: pointer; flex: none; transition: border-color .2s, background .2s; }
+  .sp-play:hover { border-color: rgba(255,90,60,.6); }
+  .sp-play svg { width: 16px; height: 16px; }
+  .sp-play .i-pause { display: none; } .sp-play[aria-pressed="true"] .i-play { display: none; } .sp-play[aria-pressed="true"] .i-pause { display: block; }
+  .sp-bar { flex: 1; height: 3px; border-radius: 3px; background: rgba(255,255,255,.14); position: relative; overflow: hidden; }
+  .sp-bar i { position: absolute; top: 0; bottom: 0; left: 0; width: 18%; background: var(--accent); border-radius: 3px; translate: calc(var(--p, 0) * 455%) 0; }
+  .sp-pill { position: absolute; left: 50%; top: 22px; translate: -50% 0; font: 600 12px "Inter", sans-serif; letter-spacing: .3px; padding: 6px 12px; border-radius: 99px; background: rgba(22,21,20,.78); border: 1px solid rgba(255,90,60,.5); color: #ffd9d0; display: inline-flex; gap: 7px; align-items: center; pointer-events: none; transition: opacity .5s; z-index: 2; white-space: nowrap; }
+  .sp-pill svg { width: 14px; height: 14px; }
+  .z-spin.touched .sp-pill { opacity: 0; }
+  .sp-load { position: absolute; right: 18px; top: 26px; font: 500 11px "Inter", sans-serif; color: var(--faint); transition: opacity .4s; }
+  .sp-load.done { opacity: 0; }
+
+  /* Tablette */
+  @media (max-width: 900px) {
+    dialog.zoom { width: calc(100vw - 32px); max-height: calc(100dvh - 32px); }
+    .z-grid { grid-template-columns: 1fr; grid-template-rows: auto; height: auto; max-height: calc(100dvh - 32px); overflow-y: auto; }
+    .z-strip { flex: none; height: min(52dvh, 520px); }
+    .z-info { overflow: visible; padding: 8px 24px 24px; }
+  }
+  /* Mobile */
+  @media (max-width: 640px) {
+    .pj { padding-top: 28px; }
+    .pj-head .lp-h2 { font-size: 21px; }
+    .track { gap: 12px; }
+    .track > li { flex-basis: 78vw; }
+    .pj-ctrl { grid-template-columns: minmax(0, 1fr) auto; gap: 0 12px; }
+    .ticks { grid-column: 1 / -1; grid-row: 1; }
+    .tick { max-width: none; }
+    .pj-label { grid-row: 2; }
+    .pj-arrows { grid-row: 2; }
+    .pj-name { max-width: 100%; }
+    dialog.zoom { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; border: 0; margin: 0; }
+    .z-grid { max-height: 100dvh; height: auto; }
+    .z-strip { height: 50dvh; }
+    .z-strip figure { padding: 8px; }
+    .z-ph { display: none; }
+    .z-media.on-spin .z-ph { display: grid; }
+    .z-spin .sp-stage { inset: 8px 56px 56px; }
+    .z-title { font-size: 22px; }
+    .z-info { padding: 4px 20px 28px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .track, .z-strip { scroll-behavior: auto; }
+    .js .track > li, .js .pj.in .track > li, .js .pj-head > *, .js .pj-ctrl, .js .pj.in .pj-head > *, .js .pj.in .pj-ctrl { opacity: 1; transform: none; transition: none; }
+    .pc, .pc-media > img, .pc-more span, .tick::before, .icon-btn, .pc-spin, .pc-media::before { transition: none; }
+    .pc:hover { translate: none; }
+    .pc-media > img:not(.pc-spin), .pc:hover .pc-media > img:not(.pc-spin) { scale: 1; translate: none; }
+    .pc:hover .pc-more span { transform: none; }
+    .badge.b3d svg { animation: none; }
+  }
+</style>
+</head>
+<body>
+<script>document.documentElement.classList.add('js'); document.body.classList.add('js');</script>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <symbol id="i-3d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3.2-6.9"/><path d="M21 4v5h-5"/></symbol>
+  <symbol id="i-l" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></symbol>
+  <symbol id="i-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></symbol>
+</defs></svg>
+
+<header class="fake-head">Nasap<span>3D</span>&nbsp;· maquette carrousel (fin de /maquettiste-nantes)</header>
+
+<!-- ===================== SECTION À BRANCHER (remplace « Nos maquettes ») ===================== -->
+<section class="pj" id="nos-maquettes" aria-labelledby="pj-title">
+  <div class="pj-head">
+    <p class="pj-kicker">Réalisations</p>
+    <h2 class="lp-h2" id="pj-title">Nos maquettes</h2>
+    <p class="lp-note">Touchez un projet pour l'agrandir : photos, détails et fiche complète. <span class="pj-hint-hover">Survolez ceux marqués 3D 360° : la souris les fait tourner.</span><span class="pj-hint-touch">Ceux marqués 3D 360° tournent sous vos doigts dans la fiche.</span></p>
+  </div>
+
+  <ul class="track" id="pj-track" aria-label="Projets de maquettes" tabindex="-1">
+    <li style="--i:0"><article class="pc" data-slug="systeme-filtration-purification" data-spin="purification" data-rz="1.25">
+      <div class="pc-media"><img src="../../public/assets/real-1.webp" width="896" height="1195" loading="lazy" decoding="async" alt="Système de filtration et de purification : équipement de procédé biotechnologique, châssis imprimé, vraie tuyauterie transparente, roulettes et presse-étoupes en métal">
+        <div class="pc-badges"><span class="badge">5 vues</span><span class="badge b3d"><svg aria-hidden="true"><use href="#i-3d"/></svg>3D 360°</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Industrie et salon</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/systeme-filtration-purification">Système de filtration et de purification</a></h3>
+        <p class="pc-text">Équipement de procédé biotechnologique reproduit à l'échelle : châssis imprimé, vraie tuyauterie transparente, roulettes et presse-étoupes en métal. Panneau fluidique, vannes et tubulures fonctionnels à l'échelle.</p>
+        <div class="pc-full"><p>Équipement de procédé biotechnologique reproduit à l'échelle : châssis imprimé, vraie tuyauterie transparente, roulettes et presse-étoupes en métal.</p><p>Panneau fluidique, vannes et tubulures fonctionnels à l'échelle ; manomètres et vannes imprimés.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+
+    <li style="--i:1"><article class="pc" data-slug="maquette-cellule-biologique" data-spin="cellule" data-rz="1.12">
+      <div class="pc-media"><img src="../../public/assets/real-8.webp" width="589" height="643" loading="lazy" decoding="async" alt="Cellule biologique : maquette pédagogique en coupe, coque imprimée puis peinte à la main">
+        <div class="pc-badges"><span class="badge">3 vues</span><span class="badge b3d"><svg aria-hidden="true"><use href="#i-3d"/></svg>3D 360°</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Pédagogie</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/maquette-cellule-biologique">Cellule biologique en coupe</a></h3>
+        <p class="pc-text">Maquette pédagogique en coupe : coque imprimée puis peinte à la main, organites en pièces multicolores.</p>
+        <div class="pc-full"><p>Maquette pédagogique en coupe : coque imprimée puis peinte à la main, organites en pièces multicolores.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+
+    <li style="--i:2"><article class="pc" data-slug="caravane-de-presentation" data-spin="caravane" data-rz="1.45">
+      <div class="pc-media"><img src="../../public/assets/real-5.webp" width="1200" height="1600" loading="lazy" decoding="async" alt="Caravanes de présentation miniatures imprimées en 3D, série de modèles réduits">
+        <div class="pc-badges"><span class="badge">2 vues</span><span class="badge b3d"><svg aria-hidden="true"><use href="#i-3d"/></svg>3D 360°</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Vitrine</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/caravane-de-presentation">Caravane de présentation</a></h3>
+        <p class="pc-text">Maquette de vitrine pour le secteur du loisir : carrosserie imprimée en plusieurs couleurs dans la masse, vitres et feux en plexiglas. Série de modèles réduits imprimés et détaillés.</p>
+        <div class="pc-full"><p>Maquette de vitrine pour le secteur du loisir : carrosserie imprimée en plusieurs couleurs dans la masse, vitres et feux en plexiglas.</p><p>Série de modèles réduits imprimés et détaillés.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+
+    <li style="--i:3"><article class="pc" data-slug="maquette-bioreacteur">
+      <div class="pc-media"><img src="../../public/assets/real-19.webp" width="896" height="1195" loading="lazy" decoding="async" alt="Maquette de bioréacteur en inox imprimée en 3D">
+        <div class="pc-badges"><span class="badge">3 vues</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Industrie et salon</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/maquette-bioreacteur">Maquette de bioréacteur</a></h3>
+        <p class="pc-text">Reproduction détaillée d'une cuve en inox, de ses tubulures et raccords. Bloc de vannes, leviers et manomètres imprimés à l'échelle, avec stickers intégrés.</p>
+        <div class="pc-full"><p>Reproduction détaillée d'une cuve en inox, de ses tubulures et raccords.</p><p>Bloc de vannes, leviers et manomètres imprimés à l'échelle, avec stickers intégrés.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+
+    <li style="--i:4"><article class="pc" data-slug="maquettes-design-produit">
+      <div class="pc-media"><img src="../../public/assets/real-17.webp" width="824" height="1099" loading="lazy" decoding="async" alt="Maquettes de design produit">
+        <div class="pc-badges"><span class="badge">1 vue</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Design et prototype</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/maquettes-design-produit">Maquettes de design produit</a></h3>
+        <p class="pc-text">Maquettes de design produit réalisées pour une présentation.</p>
+        <div class="pc-full"><p>Maquettes de design produit réalisées pour une présentation.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+
+    <li style="--i:5"><article class="pc" data-slug="formes-pedagogiques-sante">
+      <div class="pc-media"><img src="../../public/assets/real-15.webp" width="1600" height="1200" loading="lazy" decoding="async" alt="Formes pédagogiques multicolores imprimées pour le secteur santé">
+        <div class="pc-badges"><span class="badge">1 vue</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Pédagogie</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/formes-pedagogiques-sante">Formes pédagogiques</a></h3>
+        <p class="pc-text">Pièces d'illustration multicolores pour le secteur santé.</p>
+        <div class="pc-full"><p>Pièces d'illustration multicolores pour le secteur santé.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+
+    <li style="--i:6"><article class="pc" data-slug="piece-retro-concue">
+      <div class="pc-media"><img src="../../public/assets/real-12.webp" width="1200" height="1600" loading="lazy" decoding="async" alt="Pièce rétro-conçue : réducteur redessiné en CAO à côté de la pièce d'origine usée">
+        <div class="pc-badges"><span class="badge">1 vue</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Design et prototype</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/piece-retro-concue">Pièce rétro-conçue</a></h3>
+        <p class="pc-text">Réducteur redessiné en CAO à partir de la pièce d'origine usée.</p>
+        <div class="pc-full"><p>Réducteur redessiné en CAO à partir de la pièce d'origine usée.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+
+    <li style="--i:7"><article class="pc" data-slug="figurines-resine">
+      <div class="pc-media"><img src="../../public/assets/real-16.webp" width="824" height="517" loading="lazy" decoding="async" alt="Figurines en résine SLA imprimées en haute définition">
+        <div class="pc-badges"><span class="badge">1 vue</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Design et prototype</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/figurines-resine">Figurines en résine</a></h3>
+        <p class="pc-text">Impression résine haute définition, prête pour la peinture.</p>
+        <div class="pc-full"><p>Impression résine haute définition, prête pour la peinture.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+  </ul>
+
+  <!-- Repères (un par projet, cliquables) + compteur + flèches. Générés/animés par le JS ; sans JS : les cartes défilent au doigt. -->
+  <div class="pj-ctrl" id="pj-ctrl" hidden>
+    <p class="pj-label" aria-hidden="true"><span class="pj-num" id="pj-num"></span><span class="pj-name" id="pj-name"></span></p>
+    <div class="ticks" id="pj-ticks" role="group" aria-label="Aller à un projet"></div>
+    <div class="pj-arrows">
+      <button class="icon-btn" type="button" id="pj-prev" aria-label="Projets précédents" aria-controls="pj-track"><svg aria-hidden="true"><use href="#i-l"/></svg></button>
+      <button class="icon-btn" type="button" id="pj-next" aria-label="Projets suivants" aria-controls="pj-track"><svg aria-hidden="true"><use href="#i-r"/></svg></button>
+    </div>
+  </div>
+  <p class="sr-only" role="status" id="pj-sr"></p>
+  <p class="pj-all"><a href="/realisations">Toutes nos réalisations</a></p>
+</section>
+
+<!-- Photos du zoom (en prod : générées depuis src/data/realisations.ts ; chaque page /realisations/<slug> les montre aussi en HTML).
+     "spin:<dossier>" = visionneuse 360° (72 vues). -->
+<script type="application/json" id="pj-photos">
+{
+  "systeme-filtration-purification": [
+    ["../../public/assets/real-1.webp", 896, 1195, "Système de filtration et de purification : équipement de procédé biotechnologique, châssis imprimé, vraie tuyauterie transparente, roulettes et presse-étoupes en métal"],
+    ["spin:purification", 1200, 900, "Rendu 3D de la maquette du système de purification"],
+    ["../../public/assets/real-2.webp", 896, 1195, "Maquette d'équipement de procédé avec pompe et tuyauterie"],
+    ["../../public/assets/real-3.webp", 896, 1195, "Vue 3/4 : châssis, tubulures et raccords fonctionnels à l'échelle"],
+    ["../../public/assets/real-11.webp", 896, 1195, "Bloc fluidique : manomètres et vannes imprimés"]
+  ],
+  "maquette-bioreacteur": [
+    ["../../public/assets/real-19.webp", 896, 1195, "Maquette de bioréacteur en inox imprimée en 3D"],
+    ["../../public/assets/real-20.webp", 896, 1195, "Maquette de bioréacteur, vue de dessus"],
+    ["../../public/assets/real-21.webp", 896, 1195, "Détail de vannes, leviers et manomètres à l'échelle"]
+  ],
+  "maquette-cellule-biologique": [
+    ["../../public/assets/real-8.webp", 589, 643, "Cellule biologique : maquette pédagogique en coupe, coque imprimée puis peinte à la main"],
+    ["spin:cellule", 1200, 900, "Rendu 3D de la maquette de cellule"],
+    ["../../public/assets/real-9.webp", 595, 587, "Maquette de cellule, vue de trois quarts"]
+  ],
+  "caravane-de-presentation": [
+    ["../../public/assets/real-5.webp", 1200, 1600, "Caravanes de présentation miniatures imprimées en 3D, série de modèles réduits"],
+    ["spin:caravane", 1200, 900, "Rendu 3D de la caravane de présentation"]
+  ],
+  "maquettes-design-produit": [["../../public/assets/real-17.webp", 824, 1099, "Maquettes de design produit"]],
+  "formes-pedagogiques-sante": [["../../public/assets/real-15.webp", 1600, 1200, "Formes pédagogiques multicolores imprimées pour le secteur santé"]],
+  "piece-retro-concue": [["../../public/assets/real-12.webp", 1200, 1600, "Pièce rétro-conçue : réducteur redessiné en CAO à côté de la pièce d'origine usée"]],
+  "figurines-resine": [["../../public/assets/real-16.webp", 824, 517, "Figurines en résine SLA imprimées en haute définition"]]
+}
+</script>
+
+<dialog class="zoom" id="pj-zoom" aria-labelledby="z-title">
+  <button class="icon-btn z-close" type="button" id="z-close" aria-label="Fermer et revenir aux projets"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  <div class="z-grid">
+    <div class="z-media" id="z-media">
+      <div class="z-strip" id="z-strip" aria-roledescription="galerie" aria-label="Photos du projet"></div>
+      <button class="icon-btn z-ph prev" type="button" id="z-pprev" aria-label="Photo précédente"><svg aria-hidden="true"><use href="#i-l"/></svg></button>
+      <button class="icon-btn z-ph next" type="button" id="z-pnext" aria-label="Photo suivante"><svg aria-hidden="true"><use href="#i-r"/></svg></button>
+      <div class="z-foot"><div class="dots" id="z-dots"></div></div>
+      <p class="z-cap" id="z-cap" aria-live="polite"></p>
+    </div>
+    <div class="z-info" id="z-info">
+      <p class="pc-cat" id="z-cat"></p>
+      <h2 class="z-title" id="z-title"></h2>
+      <div class="z-text" id="z-text"></div>
+      <div class="z-ctas">
+        <a class="btn btn-primary" id="z-page" href="#">Voir la fiche projet <span aria-hidden="true">→</span></a>
+        <a class="btn" href="/contact">Un projet similaire ?</a>
+      </div>
+      <nav class="z-pager" aria-label="Autres projets">
+        <button type="button" id="z-prevp"></button>
+        <button type="button" id="z-nextp"></button>
+      </nav>
+    </div>
+  </div>
+</dialog>
+
+<section class="lp-section fake-faq" aria-hidden="true">
+  <h2 class="lp-h2">Questions fréquentes</h2>
+  <div></div><div></div>
+</section>
+
+<script>
+(() => {
+  const RM = matchMedia('(prefers-reduced-motion: reduce)');
+  const FINE = matchMedia('(hover: hover) and (pointer: fine)');
+  const $ = (id) => document.getElementById(id);
+  const sec = $('nos-maquettes'), track = $('pj-track');
+  const photos = JSON.parse($('pj-photos').textContent);
+  const cards = [...track.children].map((li) => li.querySelector('.pc'));
+  const N = cards.length, pad2 = (n) => String(n).padStart(2, '0');
+  const title = (art) => art.querySelector('.pj-link').textContent;
+
+  // Entrée douce
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { sec.classList.add('in'); io.disconnect(); } }, { threshold: .15 });
+    io.observe(sec);
+  } else sec.classList.add('in');
+
+  // ===== Rendus 3D : 72 vues par projet, chargées à la demande, des plus espacées aux plus fines =====
+  const MAQ = '../../public/assets/maquettes/', FR = 72, START = 10;
+  const pools = {};
+  const url = (dir, size, i) => `${MAQ}${dir}/${size}/e28_a${pad2(i).padStart(3, '0')}.avif`;
+  const pool = (dir, size) => pools[dir + size] ||= { imgs: new Array(FR), n: 0, started: false, cbs: [] };
+  const loadPool = (dir, size, cb) => {
+    const p = pool(dir, size); if (cb) p.cbs.push(cb);
+    if (p.started) return p; p.started = true;
+    const order = [...Array(FR).keys()].sort((a, b) => ((a % 6 ? (a % 2 ? 2 : 1) : 0) - (b % 6 ? (b % 2 ? 2 : 1) : 0)) || a - b);
+    let next = 0;
+    const pump = () => {
+      if (next >= order.length) return;
+      const i = order[next++], im = new Image();
+      im.decoding = 'async';
+      im.onload = () => { p.imgs[i] = im; p.n++; p.cbs.forEach((f) => f(p)); pump(); };
+      im.onerror = () => pump();
+      im.src = url(dir, size, i);
+    };
+    for (let k = 0; k < 6; k++) pump();
+    return p;
+  };
+  const nearest = (p, f) => { for (let d = 0; d < FR / 2; d++) { const a = p.imgs[(f + d) % FR] || p.imgs[(f - d + FR * 2) % FR]; if (a) return a; } return null; };
+  const wrap = (f) => ((Math.round(f) % FR) + FR) % FR;
+
+  // --- Cartes : la miniature 3D tourne au survol (souris = tourne avec la souris), ou toute seule sur tactile pour la carte de tête
+  const spinCards = cards.filter((a) => a.dataset.spin);
+  const cardSpin = new Map();
+  spinCards.forEach((art) => {
+    const media = art.querySelector('.pc-media'), ov = new Image();
+    ov.className = 'pc-spin'; ov.alt = ''; ov.setAttribute('aria-hidden', 'true'); ov.decoding = 'async';
+    art.style.setProperty('--rz', art.dataset.rz || 1.1);
+    media.classList.add('has-spin'); media.insertBefore(ov, media.querySelector('.pc-badges'));
+    cardSpin.set(art, { art, media, ov, f: START, on: false, raf: 0, last: 0, mode: 'auto', off: 0, p: null, shown: -1 });
+  });
+  const draw = (s) => { const f = wrap(s.f); if (f === s.shown) return; const im = s.p && nearest(s.p, f); if (im) { s.ov.src = im.src; s.shown = f; s.media.classList.add('spin-on'); } };
+  const loop = (s, t) => {
+    if (!s.on) return;
+    const dt = Math.min(48, t - (s.last || t)); s.last = t;
+    if (s.mode === 'auto') s.f += dt * 0.014; else s.f += (s.tgt - s.f) * Math.min(1, dt / 90);
+    draw(s); s.raf = requestAnimationFrame((x) => loop(s, x));
+  };
+  const spinOn = (art, how) => {
+    const s = cardSpin.get(art); if (!s || RM.matches || s.on) return;
+    s.on = true; s.mode = 'auto'; s.last = 0; s.how = how; s.p = loadPool(art.dataset.spin, 'sm', () => draw(s));
+    s.raf = requestAnimationFrame((x) => loop(s, x));
+  };
+  const spinOff = (art) => {
+    const s = cardSpin.get(art); if (!s || !s.on) return;
+    s.on = false; cancelAnimationFrame(s.raf); s.media.classList.remove('spin-on'); s.shown = -1;
+  };
+  spinCards.forEach((art) => {
+    const s = cardSpin.get(art);
+    art.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse' && FINE.matches) spinOn(art, 'hover'); });
+    art.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') spinOff(art); });
+    art.addEventListener('pointermove', (e) => {
+      if (!s.on || s.how !== 'hover') return;
+      const r = s.media.getBoundingClientRect(), x = (e.clientX - r.left) / r.width;
+      if (s.mode === 'auto') { if (!s._x0) { s._x0 = e.clientX; return; } if (Math.abs(e.clientX - s._x0) < 8) return; s.mode = 'scrub'; s.off = s.f - x * FR * 1.4; }
+      s.tgt = s.off + x * FR * 1.4;
+    });
+    art.addEventListener('pointerleave', () => { s._x0 = 0; });
+  });
+
+  // ===== Repères, compteur, flèches, parallaxe =====
+  const ticksEl = $('pj-ticks'), prev = $('pj-prev'), next = $('pj-next');
+  ticksEl.innerHTML = cards.map((a, i) => `<button type="button" class="tick" data-i="${i}" aria-label="Projet ${i + 1} sur ${N} : ${title(a).replace(/"/g, '&quot;')}" title="${title(a).replace(/"/g, '&quot;')}"></button>`).join('');
+  $('pj-ctrl').hidden = false;
+  const ticks = [...ticksEl.children];
+  const cardStep = () => { const li = track.children[0], gap = parseFloat(getComputedStyle(track).columnGap) || 16; return li.getBoundingClientRect().width + gap; };
+  let raf = 0, srT = 0, lastKey = '';
+  const sync = () => {
+    raf = 0;
+    const vw = innerWidth, vis = [];
+    [...track.children].forEach((li, i) => {
+      const r = li.getBoundingClientRect(), ov = Math.min(r.right, vw) - Math.max(r.left, 0);
+      if (ov / r.width >= .6) vis.push(i);
+      li.style.setProperty('--px', Math.max(-1.3, Math.min(1.3, ((r.left + r.width / 2) - vw / 2) / (vw / 2))).toFixed(3));
+    });
+    if (!vis.length) vis.push(Math.min(N - 1, Math.round(track.scrollLeft / cardStep())));
+    const a = vis[0], b = vis[vis.length - 1];
+    ticks.forEach((t, i) => { t.classList.toggle('vis', vis.includes(i)); t.classList.toggle('is-lead', i === a); });
+    const num = a === b ? `${pad2(a + 1)}<small>sur ${pad2(N)}</small>` : `${pad2(a + 1)}–${pad2(b + 1)}<small>sur ${pad2(N)}</small>`;
+    $('pj-num').innerHTML = num;
+    $('pj-name').textContent = a === b ? title(cards[a]) : title(cards[a]) + ' …';
+    const max = track.scrollWidth - track.clientWidth;
+    prev.disabled = track.scrollLeft <= 2; next.disabled = track.scrollLeft >= max - 2;
+    const key = a + '-' + b;
+    if (key !== lastKey) { lastKey = key; clearTimeout(srT); srT = setTimeout(() => { $('pj-sr').textContent = a === b ? `Projet ${a + 1} sur ${N} : ${title(cards[a])}` : `Projets ${a + 1} à ${b + 1} sur ${N}`; }, 400); }
+    // Tactile : la carte de tête (si 3D) tourne seule ; une seule à la fois
+    if (!FINE.matches) { const lead = vis.map((i) => cards[i]).find((c) => cardSpin.has(c)); spinCards.forEach((c) => c === lead ? spinOn(c, 'auto') : spinOff(c)); }
+  };
+  const queue = () => { raf ||= requestAnimationFrame(sync); };
+  track.addEventListener('scroll', queue, { passive: true });
+  addEventListener('resize', queue);
+  const smooth = () => (RM.matches ? 'auto' : 'smooth');
+  const goTo = (i) => track.scrollTo({ left: Math.max(0, Math.min(track.scrollWidth - track.clientWidth, i * cardStep())), behavior: smooth() });
+  const per = () => Math.max(1, Math.floor((track.clientWidth - (parseFloat(getComputedStyle(track).paddingLeft) || 0) + 16) / cardStep()));
+  prev.onclick = () => track.scrollBy({ left: -cardStep() * per(), behavior: smooth() });
+  next.onclick = () => track.scrollBy({ left: cardStep() * per(), behavior: smooth() });
+  ticksEl.addEventListener('click', (e) => { const t = e.target.closest('.tick'); if (t) goTo(+t.dataset.i); });
+  ticksEl.addEventListener('keydown', (e) => { const i = ticks.indexOf(document.activeElement); if (i < 0) return; const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (d && ticks[i + d]) { e.preventDefault(); ticks[i + d].focus(); } });
+  sync();
+
+  // Glisser à la souris (le tactile défile déjà seul)
+  let drag = null, justDragged = false;
+  track.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse' && e.button === 0) drag = { x: e.clientX, l: track.scrollLeft, moved: false }; });
+  addEventListener('pointermove', (e) => {
+    if (!drag) return; const dx = e.clientX - drag.x;
+    if (!drag.moved && Math.abs(dx) > 6) { drag.moved = true; track.classList.add('dragging'); }
+    if (drag.moved) track.scrollLeft = drag.l - dx;
+  });
+  const endDrag = () => { if (!drag) return; if (drag.moved) { justDragged = true; setTimeout(() => { justDragged = false; }, 0); } track.classList.remove('dragging'); drag = null; };
+  addEventListener('pointerup', endDrag); addEventListener('pointercancel', endDrag);
+  track.addEventListener('dragstart', (e) => e.preventDefault());
+
+  // ===== Zoom =====
+  const dlg = $('pj-zoom'), strip = $('z-strip'), dots = $('z-dots'), media = $('z-media');
+  let cur = null, origin = null, pushed = false;
+  const esc = (s) => s.replace(/"/g, '&quot;');
+
+  const PLAY = '<svg class="i-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><svg class="i-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>';
+  const slide = ([src, w, h, alt], i, n) => {
+    const lbl = `${i + 1} sur ${n}`;
+    if (src.startsWith('spin:')) {
+      return `<figure class="z-spin" role="group" aria-roledescription="visionneuse 3D" aria-label="${lbl} : ${esc(alt)}, à 360°. Faites glisser pour tourner, ou utilisez les flèches gauche et droite." data-spin="${src.slice(5)}" tabindex="0">
+        <div class="sp-stage"><img src="${url(src.slice(5), 'base', START)}" width="${w}" height="${h}" alt="${esc(alt)}" decoding="async"></div>
+        <span class="sp-pill"><svg aria-hidden="true"><use href="#i-3d"/></svg>360° · faites glisser</span><span class="sp-load">chargement…</span>
+        <div class="sp-ui"><button type="button" class="sp-play" aria-pressed="false" aria-label="Rotation automatique">${PLAY}</button><div class="sp-bar" aria-hidden="true"><i></i></div></div></figure>`;
+    }
+    return `<figure role="group" aria-roledescription="photo" aria-label="${lbl}"><img src="${src}" width="${w}" height="${h}" alt="${esc(alt)}" ${i ? 'loading="lazy"' : ''} decoding="async"></figure>`;
+  };
+
+  // Visionneuse : glisser, inertie, clavier, rotation auto
+  const viewer = { el: null, img: null, p: null, f: START, vel: 0, auto: false, drag: null, raf: 0, last: 0, shown: -1, active: false };
+  const vDraw = () => { const f = wrap(viewer.f); if (f === viewer.shown) return; const im = viewer.p && nearest(viewer.p, f); if (im) { viewer.img.src = im.src; viewer.shown = f; } viewer.el.style.setProperty('--p', (f / (FR - 1)).toFixed(3)); };
+  const vLoop = (t) => {
+    if (!viewer.active) return;
+    const dt = Math.min(48, t - (viewer.last || t)); viewer.last = t;
+    if (!viewer.drag) {
+      if (Math.abs(viewer.vel) > 0.002) { viewer.f += viewer.vel * dt; viewer.vel *= Math.pow(.94, dt / 16); }
+      else if (viewer.auto) viewer.f += dt * 0.01;
+    }
+    vDraw(); viewer.raf = requestAnimationFrame(vLoop);
+  };
+  const setAuto = (on) => { viewer.auto = on; const b = viewer.el?.querySelector('.sp-play'); if (b) { b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', on ? 'Arrêter la rotation automatique' : 'Rotation automatique'); } };
+  const viewerStop = () => { viewer.active = false; cancelAnimationFrame(viewer.raf); };
+  const viewerStart = (fig) => {
+    if (viewer.active && viewer.el === fig) return;
+    viewerStop();
+    Object.assign(viewer, { el: fig, img: fig.querySelector('img'), f: viewer.el === fig ? viewer.f : START, vel: 0, shown: -1, last: 0, drag: null, active: true });
+    const ld = fig.querySelector('.sp-load');
+    viewer.p = loadPool(fig.dataset.spin, 'base', (p) => { if (p.n >= FR) ld.classList.add('done'); else ld.textContent = `chargement ${Math.round(p.n / FR * 100)} %`; });
+    if (viewer.p.n >= FR) ld.classList.add('done');
+    setAuto(!RM.matches && !fig.classList.contains('touched'));
+    viewer.raf = requestAnimationFrame(vLoop);
+  };
+  strip.addEventListener('pointerdown', (e) => {
+    const st = e.target.closest('.sp-stage'); if (!st) return;
+    const fig = st.closest('.z-spin'); fig.classList.add('touched'); setAuto(false);
+    st.setPointerCapture(e.pointerId); st.classList.add('grab');
+    viewer.drag = { x: e.clientX, f: viewer.f, lx: e.clientX, lt: performance.now() }; viewer.vel = 0;
+  });
+  strip.addEventListener('pointermove', (e) => {
+    const d = viewer.drag; if (!d) return;
+    const w = viewer.img.clientWidth || 600, ppf = Math.max(3, w * 1.1 / FR), t = performance.now();
+    viewer.f = d.f - (e.clientX - d.x) / ppf;
+    const dt = t - d.lt; if (dt > 0) { viewer.vel = viewer.vel * .6 + (-(e.clientX - d.lx) / ppf / dt) * .4; } d.lx = e.clientX; d.lt = t;
+  });
+  const vUp = () => { if (!viewer.drag) return; viewer.drag = null; viewer.el?.querySelector('.sp-stage').classList.remove('grab'); if (RM.matches) viewer.vel = 0; };
+  strip.addEventListener('pointerup', vUp); strip.addEventListener('pointercancel', vUp);
+  strip.addEventListener('keydown', (e) => {
+    const fig = e.target.closest('.z-spin'); if (!fig || e.target.closest('.sp-play')) return;
+    const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (!d) return;
+    e.preventDefault(); e.stopPropagation(); fig.classList.add('touched'); setAuto(false); viewer.f += d * 2;
+  });
+  strip.addEventListener('click', (e) => { const b = e.target.closest('.sp-play'); if (!b) return; b.closest('.z-spin').classList.add('touched'); setAuto(!viewer.auto); });
+
+  const fill = (art) => {
+    viewerStop(); viewer.el = null; viewer.f = START;
+    const slug = art.dataset.slug, link = art.querySelector('.pj-link');
+    $('z-cat').textContent = art.querySelector('.pc-cat').textContent;
+    $('z-title').textContent = link.textContent;
+    $('z-text').innerHTML = art.querySelector('.pc-full').innerHTML;
+    $('z-page').href = link.getAttribute('href');
+    const ph = photos[slug] || [];
+    strip.innerHTML = ph.map((p, i) => slide(p, i, ph.length)).join('');
+    dots.innerHTML = ph.length > 1 ? ph.map((p, i) => `<button type="button" class="${p[0].startsWith('spin:') ? 'd3' : ''}" aria-label="${p[0].startsWith('spin:') ? 'Visionneuse 3D à 360°' : 'Photo ' + (i + 1)} (${i + 1} sur ${ph.length})" data-i="${i}"></button>`).join('') : '';
+    $('z-pprev').hidden = $('z-pnext').hidden = ph.length < 2;
+    strip.scrollLeft = 0; photoSync();
+    const k = cards.indexOf(art);
+    const p = cards[(k - 1 + N) % N], n = cards[(k + 1) % N];
+    $('z-prevp').textContent = '← ' + title(p); $('z-prevp').onclick = () => swap(p, -1);
+    $('z-nextp').textContent = title(n) + ' →'; $('z-nextp').onclick = () => swap(n, 1);
+    cur = art;
+  };
+  const photoIdx = () => Math.round(strip.scrollLeft / Math.max(1, strip.clientWidth));
+  const photoSync = () => {
+    const i = photoIdx(), figs = [...strip.children], f = figs[i], isSpin = !!f?.classList.contains('z-spin');
+    dots.querySelectorAll('button').forEach((b, j) => b.setAttribute('aria-current', j === i));
+    const im = f?.querySelector('img');
+    $('z-cap').textContent = im ? im.alt + (isSpin ? ' : faites-la tourner du doigt ou à la souris' : '') : '';
+    $('z-pprev').disabled = i <= 0; $('z-pnext').disabled = i >= figs.length - 1;
+    media.classList.toggle('on-spin', isSpin);
+    if (isSpin && dlg.open) viewerStart(f); else viewerStop();
+  };
+  const toPhoto = (i) => strip.scrollTo({ left: i * strip.clientWidth, behavior: smooth() });
+  let psT = 0;
+  strip.addEventListener('scroll', () => { requestAnimationFrame(photoSync); }, { passive: true });
+  dots.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) toPhoto(+b.dataset.i); });
+  $('z-pprev').onclick = () => toPhoto(photoIdx() - 1);
+  $('z-pnext').onclick = () => toPhoto(photoIdx() + 1);
+
+  // Animations d'ouverture : le panneau part de la carte, puis le contenu entre en cascade
+  const cascade = (dx = 0) => {
+    if (RM.matches || !dlg.animate) return;
+    [...$('z-info').children].forEach((el, i) => el.animate([{ opacity: 0, transform: `translate(${dx}px, 8px)` }, { opacity: 1, transform: 'none' }], { duration: 420, delay: 140 + i * 55, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' }));
+  };
+  const flipFrom = (rect) => {
+    const to = dlg.getBoundingClientRect();
+    if (RM.matches || !rect || !dlg.animate) { dlg.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 150 }); return; }
+    const sx = rect.width / to.width, sy = rect.height / to.height;
+    const dx = rect.left - to.left, dy = rect.top - to.top;
+    dlg.animate([
+      { transformOrigin: 'top left', transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`, opacity: .4, borderRadius: '12px' },
+      { transformOrigin: 'top left', transform: 'none', opacity: 1 }
+    ], { duration: 460, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    dlg.querySelector('.z-grid').animate([{ opacity: 0 }, { opacity: 0, offset: .3 }, { opacity: 1 }], { duration: 460 });
+    cascade();
+  };
+
+  const open = (art, { animate = true, push = true } = {}) => {
+    origin = art.querySelector('.pj-link');
+    spinCards.forEach(spinOff);
+    fill(art);
+    const rect = animate ? art.getBoundingClientRect() : null;
+    dlg.showModal();
+    document.documentElement.style.overflow = 'hidden';
+    photoSync();
+    $('z-close').focus();
+    if (animate) flipFrom(rect);
+    if (push) { try { history.pushState({ pj: art.dataset.slug }, '', '#projet-' + art.dataset.slug); pushed = true; } catch (_) { pushed = false; } }
+    // PROD : history.pushState({ pj: slug }, '', '/realisations/' + slug) ; + document.title du projet.
+  };
+  const swap = (art, dir = 1) => {
+    fill(art); photoSync(); origin = art.querySelector('.pj-link');
+    $('z-close').focus({ preventScroll: true }); $('z-info').scrollTop = 0;
+    if (!RM.matches && dlg.animate) { strip.animate([{ opacity: 0, transform: `translateX(${dir * 24}px)` }, { opacity: 1, transform: 'none' }], { duration: 360, easing: 'cubic-bezier(.2,.8,.2,1)' }); cascade(dir * 14); }
+    const li = art.closest('li'); track.scrollTo({ left: Math.max(0, li.offsetLeft - parseFloat(getComputedStyle(track).paddingLeft)), behavior: 'auto' });
+    try { history.replaceState({ pj: art.dataset.slug }, '', '#projet-' + art.dataset.slug); } catch (_) {}
+  };
+
+  const finishClose = () => {
+    viewerStop(); dlg.close();
+    document.documentElement.style.overflow = '';
+    origin?.focus({ preventScroll: true });
+    queue();
+  };
+  const close = (fromPop = false) => {
+    if (!dlg.open) return;
+    const a = (!RM.matches && dlg.animate) ? dlg.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.97)' }], { duration: 180, easing: 'ease-in' }) : null;
+    a ? a.finished.then(finishClose) : finishClose();
+    if (!fromPop && pushed) { pushed = false; history.back(); }
+    else { pushed = false; try { history.replaceState(null, '', location.pathname + location.search); } catch (_) {} }
+  };
+
+  track.addEventListener('click', (e) => {
+    const art = e.target.closest('.pc'); if (!art) return;
+    if (justDragged) { e.preventDefault(); return; }
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; // ouvrir dans un onglet = vraie page
+    e.preventDefault(); open(art);
+  });
+  $('z-close').onclick = () => close();
+  dlg.addEventListener('cancel', (e) => { e.preventDefault(); close(); }); // Échap
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) close(); });  // clic hors du panneau
+  dlg.addEventListener('keydown', (e) => {
+    if (e.target.closest('a,button') && e.target.closest('.z-info')) return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); toPhoto(photoIdx() + 1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); toPhoto(photoIdx() - 1); }
+  });
+  addEventListener('popstate', () => { if (dlg.open) close(true); else openFromHash(false); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) spinCards.forEach(spinOff); else queue(); });
+
+  const openFromHash = (anim) => {
+    const m = location.hash.match(/^#projet-(.+)$/); if (!m) return;
+    const art = track.querySelector(`.pc[data-slug="${CSS.escape(m[1])}"]`);
+    if (art) open(art, { animate: anim, push: false });
+  };
+  openFromHash(false);
+})();
+</script>
+</body>
+</html>
