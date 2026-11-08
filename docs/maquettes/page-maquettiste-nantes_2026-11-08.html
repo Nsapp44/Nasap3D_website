@@ -66,6 +66,15 @@
   .kpi{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:16px 16px 14px}
   .kpi b{display:block;font:700 clamp(24px,2.6vw,32px)/1.05 "Space Grotesk",sans-serif;color:var(--acc);margin-bottom:6px}
   .kpi span{font-size:13px;line-height:1.4;color:var(--mut)}
+  /* Hero : bandeau compact 2x2 (colonne droite etroite, ~384 px) ; le .kpi de l'aside garde son rendu */
+  div.kpis{gap:0;grid-template-columns:1fr 1fr;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+  .kpis .kpi{background:transparent;border:0;border-radius:0;padding:14px 16px;min-width:0}
+  .kpis .kpi:nth-child(even){border-left:1px solid var(--line)}
+  .kpis .kpi:nth-child(n+3){border-top:1px solid var(--line)}
+  .kpis .kpi b{display:block;white-space:nowrap;font:700 clamp(15px,1.5vw,18px)/1.2 "Space Grotesk",sans-serif;color:#fff;margin-bottom:4px}
+  .kpis .kpi b::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--acc);margin-right:8px;vertical-align:middle;position:relative;top:-1px}
+  .kpis .kpi span{font-size:12.5px;line-height:1.4;color:var(--mut)}
+  @media (max-width:420px){ .kpis .kpi{padding:12px} .kpis .kpi b::before{margin-right:6px} }
 
   /* STORYBOARD (placeholder) */
   .sb-ph{position:relative;margin:0 auto 18px;max-width:var(--wrap);padding:0 24px}
