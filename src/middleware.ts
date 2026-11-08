@@ -155,7 +155,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // Sous-domaine shop.nasap3d.com (même conteneur) : tant que la boutique n'est pas ouverte,
   // seule la page « à venir » est servie ; le reste redirige vers le site principal.
-  const reqHost = (context.request.headers.get("x-forwarded-host") || context.request.headers.get("host") || "").toLowerCase();
+  // Pages prérendues (build) : pas d'en-têtes de requête à lire (sinon avertissement Astro.request.headers).
+  const reqHost = context.isPrerendered ? "" : (context.request.headers.get("x-forwarded-host") || context.request.headers.get("host") || "").toLowerCase();
   if (reqHost.startsWith("shop.")) {
     const p = context.url.pathname;
     if (p === "/") return context.rewrite("/shop");

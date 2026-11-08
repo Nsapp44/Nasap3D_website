@@ -7,6 +7,9 @@
    body{overflow-x:hidden} (global.css:326 le fait ; sur .mqn il casserait animation-timeline:view()), margin:0 / text-size-adjust de html/body.
    Le CSS du carrousel (PJ:CSS) est dans src/styles/projets-carrousel.css. */
 
+/* body hors .mqn (global.css ne fixe pas de couleur de texte) : texte clair explicite, boutons natifs compris (specificite 0 : les classes gardent la main) */
+:where(body:has(.mqn)){color:#f3f1ec}
+:where(body:has(.mqn)) :where(button){color:#f3f1ec}
 .mqn,.mcta{
   color-scheme:dark;
   --bg:#161514; --bg2:#1a1917; --bg3:#201d1b; --fg:#f3f1ec; --mut:rgba(243,241,236,.72); --mut2:rgba(243,241,236,.6);
