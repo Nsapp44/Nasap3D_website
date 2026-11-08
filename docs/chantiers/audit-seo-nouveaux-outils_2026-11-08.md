@@ -46,6 +46,9 @@ Points à plus fort enjeu (classés « important » mais à traiter en premier) 
 4. Études de cas détaillées par réalisation (déjà porté par le gabarit `/realisations/<slug>` des maquettes 08).
 5. `/maquette-industrielle-3d` : voir `/maquette-industrielle` déjà prévu côté maquettes ; éviter de doubler `/maquette-impression-3d`.
 6. `/impression-3d-professionnels` (série, TPU 528 pièces) : à tester après les autres.
+## Décision de Nolann (08/11) : Cholet et Angers
+Jamais de client de là-bas, objectif = France : on les ENLÈVE (301 vers `/impression-3d-nantes`, retrait des liens du pied de page et du sitemap). Il vérifie d'abord les clics dans Search Console (Performances, pages, 3 mois), attendu ≈ 0. Remplace le point « différencier ou noindexFollow ». Redirections www/http : déjà en place [V, curl 08/11].
+
 ## Reste à faire hors site (backlinks) : le vrai manque
 Constat de Nolann (08/11) : pas assez de backlinks. Google Business Profile : déjà complet, rien à faire (retiré de la liste). Tout ce qui suit est préparé mais RIEN n'est envoyé ni payé sans son accord.
 1. **French Tech / French Fab** : c'est lui qui peut faire la demande. Nuance du plan du 27/10 (`docs/plan_3dnatives_frenchtech_2026-10-27.md`) : French Tech Nantes jugée peu adaptée (label d'écosystème, pas d'annuaire trouvé) [NV] ; French Fab (Bpifrance, `lafrenchfab.fr`) plausible pour un atelier qui produit en France [NV, site illisible par l'outil : 10 min dans un navigateur]. À confirmer avant de passer du temps.
