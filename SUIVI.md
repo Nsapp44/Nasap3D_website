@@ -18,9 +18,13 @@ Rappel Nolann (08/11) pour L2 : zoom = UNE vue 3D, rotation auto douce, pause à
 Décisions 08/11 : slug caravane `maquette-caravane` ; photo caravane légendée « illustration » ; polices via @fontsource ; on suit la maquette (liste des blocs retirés de la page en ligne montrée avant push).
 Leçon : `set_session_model` refuse sur la session courante → la passation « passe-toi sur Opus » ne marche pas (signalé à la conv Pipeline) ; Nolann a mis Opus à la main.
 
+## File des demandes (08/11 soir)
+1. [x] L8 contrôle + corrections L4 (93d97d6) : FAIT, rotation 3D OK, warning build corrigé.
+2. [x] Optimisation site (baa17c3, local) : Lighthouse avant/après 98-100 partout, CLS accueil desktop 0,068→0,024, devis −3 requêtes, admin polices locales. /machines 87 = bruit (3 re-mesures à 100). Reste : shop.astro (Barlow Google), panier scripts Boxtal bloquants, Leaflet unpkg, og:image:alt BaseLayout ; Caddy (compression, cache, HSTS, 301 /service-impression-3d et /retro-conception) = Nolann. À vérifier en navigateur : devis-instantane (client:visible), header (CartBadge idle).
+3. [ ] Boxtal : suivi AUTO Mondial Relay (NE RIEN CASSER). Dump JSON lecture seule de `order_status/{ref}/informations` sur une commande MR réelle, chercher le n° saisi à la main, l'ajouter à TRACKING_KEY_RE (`src/lib/server/boxtal.ts` ~576). `advisor` avant de figer l'approche (je ne peux pas choisir Fable : à Nolann de le régler).
+
 ## Prochain pas exact
-1. L8 contrôle (Sonnet + `testeur`, puis corrections `executant-ui` des écarts L4) (`testeur` : captures côte à côte 375/768/1440/1920 + 375×667, scroll horizontal, rideau, reduced-motion, sans JS, thème sombre, console, zoom, `seo_diff` ×2).
-2. Optimisation (Lighthouse build prod).
+Dire à Nolann « tout est prêt à vérifier », puis item 3 ; avant push : scan claude-security, OK de Nolann, liste des blocs retirés, 4 événements webhook Stripe cochés. Serveur prod local 4399 PID 49140 à arrêter en fin.
 
 ## À reporter au code Astro
 - « PETG HF » → « PETG » partout (`prisma/seed.ts:64` ; label en base/menu admin : migration à prévoir, accord de Nolann avant push).
