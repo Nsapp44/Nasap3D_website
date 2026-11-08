@@ -47,7 +47,7 @@ Points à plus fort enjeu (classés « important » mais à traiter en premier) 
 5. `/maquette-industrielle-3d` : voir `/maquette-industrielle` déjà prévu côté maquettes ; éviter de doubler `/maquette-impression-3d`.
 6. `/impression-3d-professionnels` (série, TPU 528 pièces) : à tester après les autres.
 ## Décision de Nolann (08/11) : Cholet et Angers
-Jamais de client de là-bas, objectif = France : on les ENLÈVE (301 vers `/impression-3d-nantes`, retrait des liens du pied de page et du sitemap). Il vérifie d'abord les clics dans Search Console (Performances, pages, 3 mois), attendu ≈ 0. Remplace le point « différencier ou noindexFollow ». Redirections www/http : déjà en place [V, curl 08/11].
+Jamais de client de là-bas, objectif = France : on les ENLÈVE (301 vers `/impression-3d-nantes`, retrait des liens du pied de page et du sitemap). Search Console lue le 08/11 (compte u/2, 7/08→6/11) [V] : `/impression-3d-cholet` 0 clic / 135 impressions, `/impression-3d-angers` 0 clic / 54. Confirmé : rien à perdre. Total site : 229 clics, 10,2 k impressions, position moyenne 11,9. Note : la plupart des impressions sont sur `www.nasap3d.com` (7,4 k) et `nasap3d.com` (3,3 k) : l'ancien `www` est encore dans l'index, la 301 va le regrouper. Remplace le point « différencier ou noindexFollow ». Redirections www/http : déjà en place [V, curl 08/11].
 
 ## Reste à faire hors site (backlinks) : le vrai manque
 Constat de Nolann (08/11) : pas assez de backlinks. Google Business Profile : déjà complet, rien à faire (retiré de la liste). Tout ce qui suit est préparé mais RIEN n'est envoyé ni payé sans son accord.
