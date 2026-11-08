@@ -326,12 +326,12 @@
   .z-strip figure { flex: 0 0 100%; margin: 0; scroll-snap-align: center; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); place-items: center; padding: 16px 16px 4px; min-height: 0; overflow: hidden; }
   .z-strip figure > img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border-radius: 8px; }
   /* Barre sous l'image : flèche · vignettes · flèche. Rien à faire défiler = pas de barre ; aux extrémités la flèche disparaît (place gardée) */
-  .z-bar { flex: none; display: flex; align-items: center; gap: 8px; padding: 8px 12px 0; }
+  .z-bar { flex: none; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 12px 0; }
   .z-bar[hidden] { display: none; }
   .z-ar:disabled, .pj-arrows .icon-btn:disabled { visibility: hidden; }
 
   /* Vignettes : photos, rendu 3D, 360° animée */
-  .z-thumbs { display: flex; gap: 8px; justify-content: safe center; padding: 4px 4px; overflow-x: auto; scrollbar-width: none; flex: 1; min-width: 0; }
+  .z-thumbs { display: flex; gap: 8px; justify-content: safe center; padding: 4px 4px; overflow-x: auto; scrollbar-width: none; flex: 0 1 auto; min-width: 0; }
   .z-thumbs::-webkit-scrollbar { display: none; }
   .z-thumbs[hidden] { display: none; }
   .zt { position: relative; flex: none; width: 64px; height: 48px; padding: 0; border: 0; border-radius: 8px; overflow: hidden; background: #2a2622; cursor: pointer; opacity: .55; outline: 2px solid transparent; outline-offset: 2px; transition: opacity .2s, outline-color .2s; }
@@ -339,7 +339,7 @@
   .zt[aria-current="true"] { opacity: 1; outline-color: var(--pj-acc); }
   .zt img, .zt canvas { display: block; width: 100%; height: 100%; object-fit: cover; }
   .zt-chip { position: absolute; left: 4px; bottom: 4px; font: 700 9px/1 "Inter", sans-serif; letter-spacing: .3px; padding: 3px 5px; border-radius: 99px; background: rgba(22,21,20,.82); color: #ffd9d0; border: 1px solid rgba(255,90,60,.55); pointer-events: none; }
-  .z-cap { margin: 0; padding: 6px 20px 12px; font-size: 12px; line-height: 1.4; color: var(--pj-faint); text-align: center; min-height: calc(2.8em + 18px); flex: none; }
+  .z-cap { margin: 0; padding: 6px 20px 12px; font-size: 13px; line-height: 1.4; color: var(--pj-muted); text-align: center; min-height: calc(2.8em + 18px); flex: none; }
 
   /* Visionneuse 360° (dernière diapo des projets qui ont un modèle 3D) */
   .z-strip figure.z-spin { position: relative; display: block; padding: 0; background: radial-gradient(ellipse at 50% 45%, #2b2724 0%, var(--pj-bg3) 72%); outline-offset: -6px; }
@@ -411,7 +411,7 @@
     .sp-stage { inset: 12px 16px 60px; }
     .sp-ui { left: 16px; right: 16px; }
     .sp-pill { top: 12px; }
-    .zt { width: 52px; height: 40px; }
+    .zt { width: 58px; height: 44px; }
     .z-bar { padding: 6px 8px 0; gap: 4px; }
     .z-title { font-size: 22px; }
     .z-info { padding: 4px 20px 28px; }
