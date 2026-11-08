@@ -12,7 +12,7 @@ Points à plus fort enjeu (classés « important » mais à traiter en premier) 
 2. **Cholet et Angers = pages jumelles** [A] : `impression-3d-cholet.astro:13` et `impression-3d-angers.astro:13` ont le même `sectionIntro`, mêmes statCards (hors distance), même FAQ de 2 questions. Risque doorway / contenu mince. Cholet : 62 impr., pos. 5, 0 clic. Angers est indexée (visible en `site:`).
 
 ## IMPORTANT
-3. **Compression et cache absents côté serveur** [V] : `curl -H "Accept-Encoding: gzip, br" https://nasap3d.com/` ne renvoie aucun `Content-Encoding` ; aucun `Cache-Control` sur le HTML ; images en `Cache-Control: public, max-age=0` (ex. `/assets/og-nasap3d.jpg`, 67 Ko) ; pas de HSTS. Impact perf (LCP) sur tout le site. Config Caddy hors dépôt : à transmettre à Nolann (déjà signalé pour les maquettes).
+3. **Compression et cache absents côté serveur** [V] : `curl -H "Accept-Encoding: gzip, br" https://nasap3d.com/` ne renvoie aucun `Content-Encoding` (confirmé en GET `curl --compressed`, pas seulement en HEAD) ; aucun `Cache-Control` sur le HTML ; images en `Cache-Control: public, max-age=0` (ex. `/assets/og-nasap3d.jpg`, 67 Ko) ; pas de HSTS. Impact perf (LCP) sur tout le site. Config Caddy hors dépôt : à transmettre à Nolann (déjà signalé pour les maquettes).
 4. **Titre de `/impression-3d-nantes` non mis à jour** [V prod] : « Impression 3D à Nantes — Atelier Local | Nasap3D » (`impression-3d-nantes.astro:10`) ; la proposition du chantier GSC (58 car.) n'est pas appliquée. Pas de `LocalBusiness` sur cette page [V : seuls FAQPage + BreadcrumbList en prod] ; l'accueil a LocalBusiness + Organization + WebSite + GeoCoordinates [V].
 5. **Meta descriptions trop longues** [A, estimées ±3 car.] : Cholet/Angers ≈185 (ligne 8), `devis-instantane.astro:85` ≈175, `maquette-impression-3d.astro:77` ≈170, Nantes ≈158, accueil `index.astro:70` ≈156. Viser 150-155.
 6. **Titres > 60** [A] : `maquette-impression-3d.astro:76` (≈66), `index.astro:69` (≈63), `shop.astro:19`. Ne pas toucher au titre de l'accueil avant ~30/11 (décision du chantier après passage à « France » le 01/11).
@@ -57,3 +57,9 @@ Ne pas toucher : ads, URLs, `/reparer-piece-3d` (Ads), titre de l'accueil avant 
 
 ## Non vérifié
 Contenu complet des 4 guides, de `/a-propos`, `/machines`, `/realisations`, `LocalSeoLayout.astro` (grep seulement) ; poids et Lighthouse réels ; citations IA ; longueurs de titres/descriptions estimées à la main.
+
+## Comparaison avec l'audit des maquettes 08
+- Nouveau ici : en-têtes réels de la prod (pas de compression, pas de cache, pas de HSTS), `favicon.ico` 404, cannibalisation accueil / `/impression-3d-nantes` (données GSC), pages jumelles Cholet/Angers, `?trk=` indexé, absence de `llms.txt`, JSON-LD par page, concurrents nantais et backlinks gratuits.
+- Recoupe l'audit précédent : polices Google à héberger, compression Caddy, pages `/realisations/<slug>`, lastmod du sitemap, légendes de `/realisations`.
+- Apport des « nouveaux outils » : les agents plugin `searchfit-seo` étaient indisponibles ; le travail est fait par `seo` + `chercheur-web` avec leurs consignes recopiées. Utiles surtout pour les concurrents et le positionnement ; le code et les en-têtes ont demandé des `curl` en plus. Pas de découverte critique que l'audit précédent aurait ratée sur les maquettes (périmètres différents).
+
