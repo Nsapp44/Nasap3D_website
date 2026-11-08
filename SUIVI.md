@@ -1,38 +1,38 @@
-# SUIVI : état courant (08/11/2026, fin d'après-midi)
+# SUIVI : état courant (08/11/2026, soir)
 
 Archives : `docs/chantiers/suivi-storyboard-v3_2026-11-04.md`, `storyboard-v3-rendus_2026-11-04.md`, `storyboard-v2-publie_2026-11-04.md`. Items 6-10 « faits, à valider » : `docs/chantiers/fait-a-valider_items-6-9_2026-11-05.md`.
 
 ## État global
-`origin/master` = 9d69d2f (en ligne). Branche locale `claude/maquettage-b2b` (~92 commits), NON poussée. Push seulement sur le « oui » de Nolann ; avant : scan `claude-security` (fil principal), tests/build, Nolann coche les 4 événements webhook Stripe.
-Dernier commit maquettes : **cb2ae8d** (retours n2/n3 appliqués par 2 executant-ui, blocs PJ resynchronisés).
+`origin/master` = 9d69d2f (en ligne). Branche locale `claude/maquettage-b2b` (~95 commits), NON poussée. Push seulement sur le « oui » de Nolann ; avant : scan `claude-security` (fil principal), tests/build, Nolann coche les 4 événements webhook Stripe.
+Commits maquettes : cb2ae8d (retours n2/n3), 3aa6a07 (bandeau chiffres 2×2), puis transition rideau (voir « Prochain pas »).
 
-## Organisation des conversations (fait le 08/11)
-Principale = « [P] NASAP [maquettes 08] flèches zoom + responsive » (groupe « Nasap3D site »). Fille SEO : `local_9225f6e4` « Nasap3D [SEO] suite audit + perf » (idle, à interroger pour SEO/perf ; NE PAS supprimer). Les 3 anciennes (B2B, carrousel Opus, SEO audit) sont SUPPRIMÉES ; leurs notes sont dans `docs/chantiers/notes-sessions_2026-11-08/local_5eab4690-.../` (commit e962f49).
-Liste de conversations à supprimer : aucune. L'ancienne principale a été supprimée le 08/11 ; la fille SEO a été archivée avec elle puis RESTAURÉE (elle n'avait presque pas travaillé) : à conserver. Règle : vérifier les forks avant tout delete_session d'une principale.
+## Organisation des conversations
+Principale = « [P] NASAP [maquettes 08] flèches zoom + responsive » (groupe « Nasap3D site »). Fille SEO `local_9225f6e4` : audit fini (commit 09b5904, notes `docs/chantiers/seo-perf-maquettes-08_2026-11-08.md` + `gabarit-seo_realisations-slug_2026-11-08.md`), ARCHIVÉE le 08/11, partage le worktree de la principale : à supprimer en fin de chantier. Règle : vérifier les forks avant tout `delete_session` d'une principale.
+Liste de conversations à supprimer : fille SEO (ci-dessus).
+Guide Google Ads « Maquettage B2B » (3 €/jour, 3 semaines) : `docs/ads_campagne_maquettage_2026-11-02.md`, envoyé à Nolann le 08/11 ; publication seulement après push et pages en 200.
 
-## Maquettes 08 (item 5) : où on en est
-Fichiers : `docs/maquettes/carrousel-projets_2026-11-08.html` (source unique des blocs PJ:CSS/DATA/TPL/JS) et `page-maquettiste-nantes_2026-11-08.html`. Synchro : `outils-maquettes-08/sync_pj.py --write` puis sans option (vérif) ; PJ:HTML à la main. Captures : `outils-maquettes-08/caps_serie.sh <dossier>` (dossier `apres-n23`), « avant » dans `planches-maquettes-08/avant-n23/`. Serveur `python -m http.server 4380` (PID 46448, mono-thread). **Fichiers de 56 et 109 Ko : lire par extraits (grep, offset/limit), jamais en entier (cause des boucles de compaction).** Page 05 = référence « avant », intouchable. Ne pas toucher `public/storyboard/cellule/preview-onde.html`, `src/`.
+## Maquettes 08 : où on en est
+Fichiers : `docs/maquettes/carrousel-projets_2026-11-08.html` (source unique des blocs PJ:CSS/DATA/TPL/JS) et `page-maquettiste-nantes_2026-11-08.html`. Synchro : `outils-maquettes-08/sync_pj.py --write` puis sans option ; PJ:HTML à la main. Captures : `outils-maquettes-08/cap.cjs`, `caps_serie.sh <dossier>`. Serveur `python -m http.server 4380` (PID 46448). **Fichiers de 56 et 109 Ko : extraits seulement (cause des boucles de compaction).** Ne pas toucher `public/storyboard/cellule/preview-onde.html`, `src/`.
 
-FAIT (cb2ae8d, non vérifié au navigateur) : carrousel centré dans la colonne, avance par blocs (MIN_CARD 240, pas de trou), badge unique « 360° », `#pj-fiches` (4 projets avec fiche : filtration, bioréacteur, cellule, caravane), icônes animées « Et encore plus » dans la section électronique, h2 « Maquettes interactives, intégration électronique et design produit », carte « Maquette industrielle » animée (translate), « Lire la suite » animé WAAPI, défauts « Blocs courts » + « Animé au scroll », « Le saviez-vous » retiré, `#types-cards` flex-wrap.
+FAIT : point 1 bandeau chiffres 2×2 (validé « plus propre ») ; point 2 transition « rideau » A choisie par Nolann : CSS natif `animation-timeline: view()` sur `.sb-frame` (clip-path), sous `@supports` + `no-preference`, +8 lignes l.81 de la page ; vérifié : 0 débordement 375/768/1440/1920, reduced-motion = rien, mi-course OK (`planches-maquettes-08/rideau/`), seo_diff 0 écart.
 
 RESTE :
-1. ~~Point 1 : cartes chiffres du hero~~ FAIT (bandeau 2x2 compact, 4 cellules visibles 375→1920, 0 débordement, vérifié par captures ; un premier essai en 4 colonnes rognait « France » dans la colonne de 384 px, corrigé). Ancien énoncé : (« 1 sem. – 1 mois » casse sur 2 lignes ; garder les 4 infos). Piste : bandeau compact, filets fins, valeur blanche nowrap ~17 px, légende ~12,5 px, orange en accent. Markup `<div class="kpis hero-in">` page-08 ~l.530, CSS `.kpi` l.65-68/205/216/224 ; ne pas casser `.aside-kpi .kpi` (~l.615). Conception `architecte` (design sans base) puis `executant-ui`.
-2. **Point 2 : transition hero → storyboard** : attend la réponse de Nolann (A rideau recommandée / B carte arrondie / C CSS natif ; refs dans `recherches-n2_animations-transitions_2026-11-08.md`), puis `architecte` + `executant-ui`.
-3. **Pop-up unique à Nolann** : transition A/B/C ; « Lire la suite » pour blocs longs en Blocs courts ? ; renommer le h2 « Quatre types… » ; caravane : une seule photo dans le dépôt, en fournir d'autres ? ; flèches du carrousel masquées aux extrémités OK ? ; SEO : outils A/B (reco A), qui parle au dev pour Caddy/301 www/compression, contraste du bouton devis ; confirmer « machines SP » = machines spéciales ; contenu de la fiche caravane (`docs/chantiers/fiche-projet-caravane_brouillon_2026-11-08.md`, à compléter : échelle, matériaux, délai, photos).
-4. **Vérifs** : `seo_diff.py`, 0 débordement à 375/768/1024/1180×820/1440/1920 (`caps_serie.sh apres-n23`), test carrousel N = 5, 7, 11, planches avant/après, regarder les captures. Puis commit local ciblé, advisor avant « fini », ligne dans `C:/bo-test/docs/conso_sessions.md`.
-5. Plus tard : scan `claude-security` avant push ; passe perf avec la fille SEO (`pistes-optimisation-perf.md`) ; reporter `.split > *{min-width:0}` dans le CSS Astro ; pages `/realisations/<slug>` (gabarit SEO dans les notes de session) ; arrêter le serveur 4380 en fin de chantier.
+1. Montrer en captures à Nolann puis redemander : « Lire la suite » en Blocs courts, h2 « Quatre types… », flèches du carrousel masquées aux extrémités, « machines SP » = machines spéciales.
+2. Caravane : la photo est un rendu ChatGPT, « on ment en fait » → la retirer ou la marquer illustration (à trancher) ; contenu fiche : `docs/chantiers/fiche-projet-caravane_brouillon_2026-11-08.md`.
+3. SEO : Plausible suffit (pas d'outil A/B) ; corriger le contraste du bouton devis ; à reporter au code Astro (liste de la fille SEO) : pas d'opacity:0 sur le H1, polices locales, fetchpriority image hero, `[data-rv]` masqué seulement si JS, retirer « (MAQUETTE 08/11/2026) » du titre + canonical + JSON-LD, pages `/realisations/<slug>` + sitemap, Caddy compression/301 www (dev de Nolann).
+4. Question de Nolann restée coupée (« Mais… ») : à redemander si besoin.
+5. Plus tard : scan `claude-security` avant push ; passe perf (Lighthouse prod) ; arrêter le serveur 4380 ; note « 1 sem. – 1 mois » (aside-kpi) sur 2 lignes à 375.
 
 ## Décisions de Nolann (en vigueur)
-Une page par projet = GO (seulement si ~300 mots uniques, sans nom de client, projets avec histoire et photos suffisantes ; pas les machines à tuyaux tant que les clients n'ont pas donné leur go) ; drapeau `fiche` dans PJ:DATA ; « Un projet similaire ? » → `/contact` ; « Quatre types » = flex-wrap, variante « Liste » retirée ; « Blocs courts » + « Animé au scroll » par défaut. Validé, ne pas toucher : zoom (fermeture, suivant/précédent), « De l'idée à la maquette », bouton devis, « Un bureau d'études… », « Usage », « Ce qui nous distingue », « De la maquette à la petite série », carte « Maquette de design produit ».
+Une page par projet = GO (~300 mots uniques, sans nom de client, projets avec histoire et photos ; pas les machines à tuyaux sans go client) ; drapeau `fiche` dans PJ:DATA ; « Un projet similaire ? » → `/contact` ; « Quatre types » = flex-wrap ; « Blocs courts » + « Animé au scroll » par défaut ; transition hero → storyboard = rideau A. Validé, ne pas toucher : zoom, « De l'idée à la maquette », bouton devis, « Un bureau d'études… », « Usage », « Ce qui nous distingue », « De la maquette à la petite série », carte « Maquette de design produit ».
 
 ## Autres items en file
-1. Bandeau LED plus souple (à confirmer sur captures). 11. Corrections SEO après accord. 12. Onde de choc : 5 previews A-E (`preview-onde.html`, non commité, à supprimer après choix), attendre le choix de Nolann. 13. Refonte /maquettiste-nantes = maquettes 08 (garder tout le texte SEO, 1 seul H1). 14. « N » animé de l'accueil à vérifier sur build prod. 15. Suites SEO : backlinks, Google Business Profile après mise en ligne B2B, perf « premier affichage rapide ».
+Bandeau LED plus souple ; onde de choc (5 previews, attendre le choix) ; refonte /maquettiste-nantes = maquettes 08 (tout le texte SEO, 1 seul H1) ; « N » animé de l'accueil à vérifier sur build prod ; suites SEO (backlinks, Google Business Profile).
 
 ## Ce qui n'a pas marché
-- Console dev worktree : 403 Vite `@fs` + hydratation React = connu.
-- Navigateur intégré peu fiable pour scroll/capture → Chrome headless / `cap.cjs`.
-- Lecture entière des maquettes → boucles de compaction (déjà 3 fois). Extraits seulement, écriture déléguée à executant-ui.
-- PowerShell 5.1 : `python -c` avec guillemets casse → petit script.
+- Console dev worktree : 403 Vite `@fs` + hydratation React = connu. Navigateur intégré peu fiable pour scroll/capture → Chrome headless / `cap.cjs`.
+- Lecture entière des maquettes → boucles de compaction (3 fois). Écriture déléguée à executant-ui.
+- Bandeau 4 colonnes rognait « France » → 2×2.
 
 ## Prochain pas exact
-Pop-up unique à Nolann (3), puis point 2 (transition) selon sa réponse. Vérifs (4) faites le 08/11 : seo_diff 0 écart, sync_pj OK, 0 débordement 6 largeurs, carrousel N=5/7/11 OK. Captures : planches-maquettes-08/apres-n23/. À noter : second « 1 sem. – 1 mois » (aside-kpi) sur 2 lignes à 375 ; aucun JSON-LD dans la maquette.
+Commit local de la transition rideau + SUIVI ; advisor avant « fini » ; montrer à Nolann les petits points restants (RESTE 1) en captures ; rapport final avec le commit en tête.
