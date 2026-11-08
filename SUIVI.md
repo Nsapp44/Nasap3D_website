@@ -8,7 +8,9 @@ Commits maquettes : cb2ae8d (retours n2/n3), 3aa6a07 (bandeau chiffres 2×2), pu
 
 ## Organisation des conversations
 Principale = « [P] NASAP [maquettes 08] flèches zoom + responsive » (groupe « Nasap3D site »). Fille SEO `local_9225f6e4` : audit fini (commit 09b5904, notes `docs/chantiers/seo-perf-maquettes-08_2026-11-08.md` + `gabarit-seo_realisations-slug_2026-11-08.md`), ARCHIVÉE le 08/11, partage le worktree de la principale : à supprimer en fin de chantier. Règle : vérifier les forks avant tout `delete_session` d'une principale.
-Liste de conversations à supprimer : fille SEO (ci-dessus).
+Liste de conversations à supprimer : fille SEO (ci-dessus) ; fork audit SEO `local_e1401fb4` : FINI, rapport commité 6f808d6 (`docs/chantiers/audit-seo-nouveaux-outils_2026-11-08.md`) ; supprimable en fin de chantier (vérifier qu'il n'a plus de tâche de fond).
+Rideau PLEINE PAGE appliqué (plan `docs/chantiers/rideau-page-entiere_2026-11-08.md`, captures avant/après `docs/chantiers/notes-sessions_2026-11-08/rideau-pleine-page/`) : hero épinglé par translate qui recule, `<div class="rideau">` (storyboard → fin de main) remonte avec coins 28px ; mesuré OK 375/768/1440/1920 + écrans courts + reduced-motion. À valider par Nolann ; jonction 2 (avant #nos-maquettes) optionnelle non faite ; Firefox = page normale, Safari 26 requis (non vérifié).
+Règle modèle (Nolann 08/11) : Sonnet 90 % ; restructuration/maquette/design complexe → Opus dans la même conversation (`set_session_model`), sans demander, retour à Sonnet pour le code (mémoire `opus-sonnet-bascule-site`).
 Guide Google Ads « Maquettage B2B » (3 €/jour, 3 semaines) : `docs/ads_campagne_maquettage_2026-11-02.md`, envoyé à Nolann le 08/11 ; publication seulement après push et pages en 200.
 
 ## Maquettes 08 : où on en est

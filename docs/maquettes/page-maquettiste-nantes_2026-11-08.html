@@ -14,6 +14,7 @@
   - v08 (08/11/2026, Opus) : section 08 « Nos maquettes » = carrousel réel (blocs PJ:CSS/HTML/DATA/TPL/JS recopiés tels quels
     de docs/maquettes/carrousel-projets_2026-11-08.html) ; placeholder <MaquetteCarousel /> remplacé par 3 tuiles « Faire tourner en 3D »
     qui ouvrent le zoom sur la vue 360° ; barre de maquette repliée au départ sur mobile. Aucun texte de la page retiré.
+  - v08b : rideau page entière (hero épinglé par translate).
   - Storyboard (StoryboardCellule.astro) = bloc PLACEHOLDER.
   - JSON-LD, BaseLayout (en-tête/pied) non reproduits : inchangés dans la vraie page.
   - Ajouter #static à l'URL pour couper les animations (captures).
@@ -78,12 +79,14 @@
 
   /* STORYBOARD (placeholder) */
   .sb-ph{position:relative;margin:0 auto 18px;max-width:var(--wrap);padding:0 24px}
-  /* Transition « rideau » hero -> storyboard : le cadre se révèle de bas en haut à l'entrée dans le viewport (CSS natif, piloté par le scroll).
-     Hors @supports ou sous reduced-motion : aucune règle, le storyboard reste visible normalement. Le clip-path ne change pas la hauteur (pas de saut). */
+  /* Rideau page entière : le hero recule et s'éteint sur place (épinglé par translate, sans sticky) pendant que .rideau
+     (storyboard -> fin de main) remonte par-dessus. Hors @supports ou reduced-motion : page normale, aucune règle. */
   @supports (animation-timeline: view()){
     @media (prefers-reduced-motion:no-preference){
-      .sb-frame{animation:sb-rideau linear both;animation-timeline:view();animation-range:entry 0% entry 60%}
-      @keyframes sb-rideau{from{clip-path:inset(100% 0 0 0 round var(--r))}to{clip-path:inset(0 round var(--r))}}
+      .motion header.hero{transform-origin:50% 0;animation:hero-recul linear both;animation-timeline:view();animation-range:exit 0% exit 100%}
+      @keyframes hero-recul{from{translate:0 0;scale:1;opacity:1}to{translate:0 min(100%,100svh);scale:.94;opacity:.25}}
+      .rideau{position:relative;background:var(--bg);border-radius:28px 28px 0 0;border-top:1px solid var(--line);
+              box-shadow:0 -28px 60px -12px rgba(0,0,0,.65);padding-top:28px}
     }
   }
   .sb-frame{position:relative;aspect-ratio:4/3;max-height:82vh;margin:0 auto;border-radius:var(--r);overflow:hidden;border:1px dashed rgba(255,90,60,.5);background:var(--bg)}
@@ -553,6 +556,7 @@
     </div>
   </header>
 
+  <div class="rideau">
   <!-- 2. STORYBOARD (bloc existant, placé tel quel) -->
   <div class="sb-ph" aria-label="Emplacement du storyboard">
     <div class="sb-frame">
@@ -826,6 +830,7 @@
       <a href="/contact" class="btn">Demander un devis sur mesure <span class="arr" aria-hidden="true">→</span></a>
     </section>
   </div>
+  </div><!-- /.rideau -->
 </main>
 
 <!-- MAQUETTE SEULEMENT : n'existe pas dans la page finale -->
