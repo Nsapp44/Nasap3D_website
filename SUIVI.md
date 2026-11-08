@@ -16,7 +16,7 @@ Guide Google Ads « Maquettage B2B » (3 €/jour, 3 semaines) : `docs/ads_campa
 ## Maquettes 08 : où on en est
 Fichiers : `docs/maquettes/carrousel-projets_2026-11-08.html` (source unique des blocs PJ:CSS/DATA/TPL/JS) et `page-maquettiste-nantes_2026-11-08.html`. Synchro : `outils-maquettes-08/sync_pj.py --write` puis sans option ; PJ:HTML à la main. Captures : `outils-maquettes-08/cap.cjs`, `caps_serie.sh <dossier>`. Serveur `python -m http.server 4380` (PID 46448). **Fichiers de 56 et 109 Ko : extraits seulement (cause des boucles de compaction).** Ne pas toucher `public/storyboard/cellule/preview-onde.html`, `src/`.
 
-FAIT : point 1 bandeau chiffres 2×2 (validé « plus propre ») ; point 2 transition « rideau » A choisie par Nolann : CSS natif `animation-timeline: view()` sur `.sb-frame` (clip-path), sous `@supports` + `no-preference`, +8 lignes l.81 de la page ; vérifié : 0 débordement 375/768/1440/1920, reduced-motion = rien, mi-course OK (`planches-maquettes-08/rideau/`), seo_diff 0 écart.
+FAIT : point 1 bandeau chiffres 2×2 (validé) ; point 2 transition hero → storyboard : rideau PLEINE PAGE (commit 044d47a, voir l.12), conçu par `architecte`, mesuré 4 largeurs + écrans courts + reduced-motion ; sync_pj identique, seo_diff 0 écart (vérifié 08/11). Écrans courts : hero épinglé coupé en haut (−27 px à 375×667, −178 px à 740×360) = à trancher par Nolann. Seules 1440 et 375×740 regardées à l'œil. 404 console préexistant non identifié. Outils : `docs/chantiers/notes-sessions_2026-11-08/local_5eab4690-e7a9-4711-827e-4e6ade9ac193/outils-maquettes-08/`. 12 PNG de captures commités (Nolann décide de les garder).
 
 RESTE :
 1. Montrer en captures à Nolann puis redemander : « Lire la suite » en Blocs courts, h2 « Quatre types… », flèches du carrousel masquées aux extrémités, « machines SP » = machines spéciales.
@@ -37,4 +37,4 @@ Bandeau LED plus souple ; onde de choc (5 previews, attendre le choix) ; refonte
 - Bandeau 4 colonnes rognait « France » → 2×2.
 
 ## Prochain pas exact
-Commit local de la transition rideau + SUIVI ; advisor avant « fini » ; montrer à Nolann les petits points restants (RESTE 1) en captures ; rapport final avec le commit en tête.
+Nolann valide le rideau (captures envoyées) ; sinon renforcer l'ombre ou ajouter la jonction 2. Puis RESTE 1-5 ; passation ensuite ; fin de chantier : pop-up pour supprimer fille SEO + fork SEO.
