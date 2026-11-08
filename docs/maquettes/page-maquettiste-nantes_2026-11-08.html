@@ -83,7 +83,7 @@
      (storyboard -> fin de main) remonte par-dessus. Hors @supports ou reduced-motion : page normale, aucune règle. */
   @supports (animation-timeline: view()){
     @media (prefers-reduced-motion:no-preference){
-      .motion header.hero{transform-origin:50% 0;animation:hero-recul linear both;animation-timeline:view();animation-range:exit 0% exit 100%}
+      @media (min-height:560px){.motion header.hero{transform-origin:50% 0;animation:hero-recul linear both;animation-timeline:view();animation-range:exit 0% exit 100%}}
       @keyframes hero-recul{from{translate:0 0;scale:1;opacity:1}to{translate:0 min(100%,100svh);scale:.94;opacity:.25}}
       .rideau{position:relative;background:var(--bg);border-radius:28px 28px 0 0;border-top:1px solid var(--line);
               box-shadow:0 -28px 60px -12px rgba(0,0,0,.65);padding-top:28px}
