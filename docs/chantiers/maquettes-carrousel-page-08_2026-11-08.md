@@ -6,7 +6,8 @@ Code écrit par le fil principal Opus (pas executant-ui), la mission exigeant un
 ## Fichiers
 - `docs/maquettes/carrousel-projets_2026-11-08.html` : maquette autonome, repart de la v05 validée par Nolann.
 - `docs/maquettes/page-maquettiste-nantes_2026-11-08.html` : page 05 + blocs PJ:CSS/HTML/DATA/TPL/JS du carrousel 08 recopiés tels quels.
-  Générée par `build_page_0811.py` (scratchpad de la session ; chaque ancre est vérifiée, rien d'autre de la page 05 ne change).
+  Générée au départ par `build_page_0811.py`. **Depuis le 08/11 (retours n2/n3) : ce script est OBSOLÈTE (garde `sys.exit` en tête, il écraserait les retours en repartant de la page 05).** La page-08 est la base, éditée directement ; carrousel-08 reste la source unique des blocs PJ:CSS/DATA/TPL/JS, recopiés par `outils-maquettes-08/sync_pj.py --write` (sans `--write` : compare). PJ:HTML n'est pas synchronisé (en-tête de section + tuiles 3D propres à la page) : toute retouche HTML du carrousel se reporte à la main dans les deux fichiers.
+- Captures : `outils-maquettes-08/caps_serie.sh <dossier>` (page-08 à 375/768/1024/1180×820/1440/1920 + t=short + carrousel, rapport scrollWidth). « Avant n2/n3 » : `planches-maquettes-08/avant-n23/` (0 débordement partout ; une 404 console = favicon).
 - Commit local d5b7044 (4 fichiers de docs/maquettes/, non poussé). Les v05 y sont ajoutées comme « avant » ; les v06 (commit 845fad7) servent de référence.
 - Serveur de maquette : `python -m http.server 4380 --bind 127.0.0.1` à la racine du worktree, puis `http://127.0.0.1:4380/docs/maquettes/…`.
 - Planches avant/après : dossier de notes partagé `local_5eab4690…/planches-maquettes-08/` (1 carrousel 1440, 2 carrousel 375+768, 3 page 1440, 4 page 375+768).
