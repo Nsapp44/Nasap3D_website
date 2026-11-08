@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Maquettiste à Nantes : conception et fabrication | Nasap3D (MAQUETTE 05/11/2026)</title>
+<meta name="description" content="Bureau d'études et maquettiste à Nantes : idéation, modélisation 3D, fabrication. Maquettes industrielles, de salon, interactives (écrans, LED).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<!--
+  MAQUETTE de la refonte /maquettiste-nantes (item 13 de SUIVI.md). Pas du code de production.
+  - Tout le texte de src/pages/maquettiste-nantes.astro est présent (mot pour mot) ; seul l'ordre change.
+  - Storyboard (StoryboardCellule.astro) et carrousel (docs/maquettes/carrousel-projets_2026-11-05.html) = blocs PLACEHOLDER.
+  - JSON-LD, BaseLayout (en-tête/pied) non reproduits : inchangés dans la vraie page.
+  - Ajouter #static à l'URL pour couper les animations (captures).
+-->
+<style>
+  :root{
+    --bg:#161514; --bg2:#1a1917; --bg3:#201d1b; --fg:#f3f1ec; --mut:rgba(243,241,236,.72); --mut2:rgba(243,241,236,.6);
+    --line:rgba(255,255,255,.1); --acc:#ff5a3c; --acc-soft:rgba(255,90,60,.1); --acc-line:rgba(255,90,60,.35);
+    --r:14px; --wrap:1120px;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html{background:var(--bg);color:var(--fg);-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);font:400 16px/1.65 Inter,system-ui,sans-serif;overflow-x:hidden}
+  img{max-width:100%;display:block}
+  a{color:var(--fg)}
+  h1,h2,h3{font-family:"Space Grotesk",Inter,system-ui,sans-serif;color:var(--fg);margin:0;text-wrap:balance;letter-spacing:-.01em}
+  strong,b{color:var(--fg);font-weight:600}
+  .hl{color:var(--acc);font-weight:600}
+  .wrap{max-width:var(--wrap);margin:0 auto;padding:0 24px}
+  .ico{width:22px;height:22px;flex:none;stroke:var(--acc);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .txtlink{color:var(--fg);text-decoration:underline;text-decoration-color:rgba(255,90,60,.6);text-underline-offset:3px}
+  .txtlink:hover{color:var(--acc)}
+  a:focus-visible,summary:focus-visible,button:focus-visible{outline:3px solid var(--fg);outline-offset:3px;border-radius:6px}
+
+  /* Faux en-tête (rappel du site, non refait) */
+  .fake-head{border-bottom:1px solid var(--line);background:var(--bg)}
+  .fake-head .wrap{display:flex;align-items:center;justify-content:space-between;height:60px;font:600 15px "Space Grotesk",sans-serif}
+  .fake-head span{color:var(--mut2);font:400 12px Inter,sans-serif}
+
+  /* Fil d'Ariane */
+  .crumb{font-size:13px;color:var(--mut2);padding-top:22px}
+  .crumb a{color:var(--mut);text-decoration:none}
+
+  /* HERO */
+  .hero{padding-top:28px;padding-bottom:36px;display:grid;grid-template-columns:1.25fr .75fr;gap:48px;align-items:end}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);margin-bottom:18px}
+  .eyebrow::before{content:"";width:22px;height:2px;background:var(--acc);border-radius:2px}
+  h1{font-weight:700;font-size:clamp(30px,4.2vw,50px);line-height:1.08}
+  .lead{font-size:clamp(16px,1.5vw,19px);color:var(--mut);margin:18px 0 26px;max-width:46ch}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;font:700 17px/1.2 Inter,sans-serif;padding:19px 30px;border-radius:12px;background:var(--acc);color:#161514;box-shadow:0 8px 26px rgba(255,90,60,.35),0 0 0 1px rgba(255,90,60,.5);transition:transform .2s ease,background .2s ease}
+  .btn:hover{background:#ff7155;transform:translateY(-2px)}
+  .btn .arr{transition:transform .25s ease}
+  .btn:hover .arr{transform:translateX(5px)}
+  .btn-ghost{background:transparent;color:var(--fg);box-shadow:none;border:1px solid var(--line);font-weight:600;font-size:15px;padding:17px 22px}
+  .btn-ghost:hover{background:var(--bg3);border-color:var(--acc-line)}
+  .ctas{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .reassure{display:flex;gap:8px;align-items:center;color:var(--mut2);font-size:13px;margin-top:14px}
+  .reassure .ico{width:16px;height:16px}
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .kpi{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:16px 16px 14px}
+  .kpi b{display:block;font:700 clamp(24px,2.6vw,32px)/1.05 "Space Grotesk",sans-serif;color:var(--acc);margin-bottom:6px}
+  .kpi span{font-size:13px;line-height:1.4;color:var(--mut)}
+
+  /* STORYBOARD (placeholder) */
+  .sb-ph{position:relative;margin:0 auto 18px;max-width:var(--wrap);padding:0 24px}
+  .sb-frame{position:relative;aspect-ratio:4/3;max-height:82vh;margin:0 auto;border-radius:var(--r);overflow:hidden;border:1px dashed rgba(255,90,60,.5);background:var(--bg)}
+  .sb-frame img{width:100%;height:100%;object-fit:contain;opacity:.9}
+  .sb-tag{position:absolute;left:14px;top:14px;background:rgba(22,21,20,.85);border:1px solid var(--acc-line);color:var(--fg);font:600 12px/1.3 Inter,sans-serif;padding:8px 10px;border-radius:8px;max-width:calc(100% - 28px)}
+  .sb-tag em{display:block;font-style:normal;font-weight:400;color:var(--mut)}
+
+  /* SECTIONS */
+  section.sec{padding-top:clamp(56px,7vw,96px)}
+  .sec-head{margin-bottom:28px;max-width:760px}
+  .sec-label{display:flex;align-items:center;gap:12px;font:600 13px/1 "Space Grotesk",sans-serif;color:var(--acc);letter-spacing:.06em;margin-bottom:14px}
+  .sec-label::after{content:"";height:2px;width:48px;background:var(--acc);border-radius:2px}
+  .sec h2{font-size:clamp(25px,2.8vw,36px);line-height:1.12;font-weight:700}
+  .chapo{font:500 clamp(19px,1.9vw,24px)/1.4 "Space Grotesk",sans-serif;color:var(--fg);margin:16px 0 0;max-width:34ch}
+  .p{color:var(--mut);margin:14px 0 0;max-width:62ch}
+  .more{margin-top:12px;max-width:62ch}
+  .more summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:6px;color:var(--fg);font:600 14px Inter,sans-serif;padding:6px 0;text-decoration:underline;text-decoration-color:rgba(255,90,60,.6);text-underline-offset:4px}
+  .more summary::-webkit-details-marker{display:none}
+  .more summary::after{content:"+";color:var(--acc);font-size:18px;line-height:1}
+  .more[open] summary::after{content:"–"}
+  .more[open] summary .lbl-open{display:none}
+  .more:not([open]) summary .lbl-close{display:none}
+  .more p{color:var(--mut);margin:8px 0 0}
+
+  /* Le saviez-vous */
+  .know{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:start;border:1px solid var(--acc-line);background:linear-gradient(135deg,rgba(255,90,60,.12),rgba(255,90,60,.03));border-radius:var(--r);padding:22px 24px;max-width:860px;margin:8px auto 0}
+  .know .bub{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:rgba(255,90,60,.16)}
+  .know .bub .ico{width:24px;height:24px}
+  .know small{display:block;font:600 12px Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);margin-bottom:6px}
+  .know p{margin:0;font:500 clamp(17px,1.6vw,20px)/1.45 "Space Grotesk",sans-serif;color:var(--fg)}
+
+  /* Mise en page alternée */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,4vw,56px);align-items:center}
+  .split.rev > .media{order:-1}
+  .media figure{margin:0;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:var(--bg3)}
+  .media img{width:100%;aspect-ratio:4/5;object-fit:cover}
+  .media.wide img{aspect-ratio:4/3}
+  figcaption{padding:12px 14px;font:600 13px/1.45 "Space Grotesk",sans-serif;color:var(--fg);background:var(--bg2);border-top:1px solid var(--line)}
+
+  /* Mosaïque des visuels (section interactive) */
+  .mosaic{display:grid;grid-template-columns:1.3fr 1fr 1fr;grid-template-rows:auto auto;gap:14px;margin-bottom:28px}
+  .mosaic figure{margin:0;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:var(--bg3);display:flex;flex-direction:column}
+  .mosaic img{width:100%;flex:1;object-fit:cover;min-height:0;aspect-ratio:4/3}
+  .mosaic .big{grid-row:span 2}
+  .mosaic .w{grid-column:2/-1}
+  .mosaic .big img{aspect-ratio:auto;height:100%}
+  .mosaic figcaption{font-size:12.5px}
+
+  /* Cartes à icônes */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px}
+  .cards.c2{grid-template-columns:repeat(2,1fr)}
+  .card{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:20px;transition:border-color .25s ease,transform .25s ease}
+  .card:hover{border-color:var(--acc-line)}
+  .card .ib{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;background:var(--acc-soft);margin-bottom:14px}
+  .card h3{font-size:17px;font-weight:600;line-height:1.3;margin:0 0 8px}
+  .card p{margin:0;font-size:14.5px;line-height:1.6;color:var(--mut)}
+  a.card{display:block;text-decoration:none;border-color:var(--acc-line);background:linear-gradient(180deg,rgba(255,90,60,.1),var(--bg2))}
+  a.card:hover{border-color:var(--acc);transform:translateY(-2px)}
+  a.card h3 .arr{color:var(--acc)}
+  .card .tag{display:inline-block;margin-top:12px;font:600 12px Inter,sans-serif;color:var(--acc)}
+  .usages{margin-top:22px;padding:18px 20px;border-left:3px solid var(--acc);background:var(--bg2);border-radius:0 var(--r) var(--r) 0;color:var(--mut);font-size:15px}
+  .usages b{color:var(--fg)}
+
+  /* Étapes : ligne verticale */
+  .steps{list-style:none;margin:0;padding:0;position:relative;max-width:820px}
+  .steps::before{content:"";position:absolute;left:21px;top:22px;bottom:22px;width:2px;background:linear-gradient(var(--acc),rgba(255,90,60,.15));border-radius:2px}
+  .steps li{position:relative;display:grid;grid-template-columns:44px 1fr;gap:18px;padding-bottom:22px}
+  .steps li:last-child{padding-bottom:0}
+  .steps .n{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--bg);border:2px solid var(--acc);font:700 17px "Space Grotesk",sans-serif;color:var(--fg);position:relative;z-index:1}
+  .steps .body{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+  .steps h3{font-size:17px;font-weight:600;margin:0 0 6px;display:flex;align-items:center;gap:10px}
+  .steps p{margin:0;color:var(--mut);font-size:14.5px}
+  .steps-grid{display:grid;grid-template-columns:1.4fr .6fr;gap:40px;align-items:start}
+  .aside-kpi{position:sticky;top:24px;display:grid;gap:12px}
+
+  /* Placeholders */
+  .ph{border:1px dashed rgba(255,90,60,.55);border-radius:var(--r);background:repeating-linear-gradient(135deg,var(--bg2) 0 14px,var(--bg) 14px 28px);padding:28px;text-align:center;color:var(--mut)}
+  .ph b{display:block;color:var(--fg);font:600 16px "Space Grotesk",sans-serif;margin-bottom:6px}
+  .ph .row{display:flex;gap:12px;justify-content:center;margin:18px 0 0;overflow:hidden}
+  .ph .row i{flex:0 0 22%;aspect-ratio:4/5;border-radius:10px;background:var(--bg3);border:1px solid var(--line)}
+
+  /* FAQ */
+  .faq{max-width:860px;border-top:1px solid var(--line)}
+  .faq details{border-bottom:1px solid var(--line)}
+  .faq summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:16px;align-items:center;padding:18px 4px;font:600 16.5px/1.4 "Space Grotesk",sans-serif;color:var(--fg)}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary .pm{flex:none;width:28px;height:28px;border-radius:50%;border:1px solid var(--acc-line);display:grid;place-items:center;color:var(--acc);transition:transform .25s ease}
+  .faq details[open] summary .pm{transform:rotate(45deg)}
+  .faq details p{margin:0;padding:0 44px 20px 4px;color:var(--mut);font-size:15px}
+
+  /* CTA final */
+  .final{margin:clamp(56px,7vw,96px) 0 64px;border:1px solid var(--acc-line);background:radial-gradient(120% 140% at 0% 0%,rgba(255,90,60,.2),rgba(255,90,60,.05) 60%);border-radius:18px;padding:clamp(28px,4vw,48px);display:grid;grid-template-columns:1fr auto;gap:28px;align-items:center}
+  .final h2{font-size:clamp(26px,3vw,38px)}
+  .final p{margin:10px 0 0;color:var(--mut);font-size:16px}
+
+  /* Barre CTA mobile collante (défaut relevé par l'audit : bouton devis quasi invisible) */
+  .mcta{display:none}
+
+  /* Entrées sobres (bloc par bloc). Sans JS, #static ou reduced-motion : tout visible. */
+  .motion [data-rv]{opacity:0;transform:translateY(6px);transition:opacity .5s ease,transform .5s ease;transition-delay:calc(var(--i,0) * 80ms)}
+  .motion [data-rv].in{opacity:1;transform:none}
+  .hero-in{animation:up .5s ease both}
+  @keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){
+    .hero-in{animation:none}
+    .motion [data-rv]{opacity:1;transform:none;transition:none}
+    .btn,.btn .arr,.card,.faq summary .pm{transition:none}
+    .btn:hover,a.card:hover,.btn:hover .arr{transform:none}
+  }
+
+  /* Tablette */
+  @media (max-width:1023px){
+    .hero{grid-template-columns:1fr;gap:28px}
+    .kpis{grid-template-columns:repeat(4,1fr)}
+    .steps-grid{grid-template-columns:1fr}
+    .aside-kpi{position:static;grid-template-columns:repeat(3,1fr)}
+    .mosaic{grid-template-columns:1fr 1fr}
+    .mosaic .big{grid-row:auto;grid-column:1/-1}
+    .mosaic .w{grid-column:1/-1}
+    .mosaic .big img{aspect-ratio:16/10;height:auto}
+  }
+  /* Mobile */
+  @media (max-width:640px){
+    .wrap,.sb-ph{padding:0 16px}
+    .kpis{grid-template-columns:1fr 1fr}
+    .split,.cards.c2{grid-template-columns:1fr}
+    .split.rev > .media{order:0}
+    .media img{aspect-ratio:4/3}
+    .mosaic{grid-template-columns:1fr}
+    .mosaic .w{grid-column:auto}
+    .aside-kpi{grid-template-columns:1fr 1fr}
+    .aside-kpi .kpi:last-child{grid-column:1/-1}
+    .btn{width:100%}
+    .final{grid-template-columns:1fr}
+    .faq details p{padding-right:4px}
+    .know{grid-template-columns:1fr;gap:12px;padding:18px}
+    .ph .row i{flex-basis:42%}
+    .mcta{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:20;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(22,21,20,.94);border-top:1px solid var(--line);backdrop-filter:blur(8px)}
+    .mcta .btn{padding:15px 18px;font-size:16px}
+    body{padding-bottom:80px}
+  }
+
+  /* ===== MAQUETTE SEULEMENT : barre Variantes + ancien rendu ===== */
+  .vbar{position:fixed;right:16px;bottom:16px;z-index:50;width:290px;background:#0f0e0d;color:#f3f1ec;border:1px solid rgba(255,90,60,.6);border-radius:12px;padding:12px 14px;font:500 12.5px/1.35 Inter,sans-serif;box-shadow:0 12px 40px rgba(0,0,0,.6)}
+  .vbar b.t{display:flex;justify-content:space-between;align-items:center;font:700 12px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#ff5a3c;margin-bottom:8px}
+  .vbar b.t button{background:none;border:0;color:#f3f1ec;font:600 12px Inter,sans-serif;cursor:pointer;padding:2px 4px}
+  .vbar fieldset{border:0;margin:0 0 8px;padding:0}
+  .vbar legend{padding:0;margin-bottom:4px;color:rgba(243,241,236,.7)}
+  .vbar .seg{display:flex;border:1px solid rgba(255,255,255,.15);border-radius:8px;overflow:hidden}
+  .vbar .seg label{flex:1;text-align:center;padding:6px 4px;cursor:pointer;background:#1a1917;color:#f3f1ec}
+  .vbar .seg input{position:absolute;opacity:0;pointer-events:none}
+  .vbar .seg label:has(input:checked){background:#ff5a3c;color:#161514;font-weight:700}
+  .vbar .seg label:has(input:focus-visible){outline:2px solid #f3f1ec;outline-offset:-2px}
+  .vbar .old{display:flex;align-items:center;gap:8px;margin-top:4px;cursor:pointer}
+  .vbar.min fieldset,.vbar.min .old{display:none}
+  .vbar.min{width:auto}
+  body.t-full .more summary,body.t-short .more summary{display:none}
+  body.t-short .p,body.t-short .more p,body.t-short .usages{border-left:3px solid #ff5a3c;background:#1a1917;border-radius:0 10px 10px 0;padding:10px 14px;max-width:52ch}
+  body.t-short .chapo{font-size:clamp(22px,2.3vw,30px);max-width:24ch}
+  body.l-list #types-cards{grid-template-columns:1fr}
+  body.l-list #types-cards .card{display:grid;grid-template-columns:42px 1fr;column-gap:16px}
+  body.l-list #types-cards .card .ib{margin:0;grid-row:span 2}
+  #old{display:none;max-width:800px;margin:0 auto;padding:40px 24px 60px}
+  body.old main{display:none}
+  body.old #old{display:block}
+  #old .ob{display:inline-block;background:#ff5a3c;color:#161514;padding:16px 26px;border-radius:10px;font:700 16px Inter,sans-serif;text-decoration:none;margin:4px 0 30px}
+  #old .oh{font:700 32px/1.15 "Space Grotesk",sans-serif;margin:0 0 14px}
+  #old .ot{font:700 20px "Space Grotesk",sans-serif;margin:0 0 16px}
+  #old .os{padding-bottom:44px}
+  #old .on{font:400 14px/1.6 Inter,sans-serif;color:rgba(255,255,255,.65);margin:16px 0 0}
+  #old .og{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+  #old .oc{border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:18px;background:#1a1917}
+  #old .oc b{display:block;font:600 14px "Space Grotesk",sans-serif;margin:0 0 6px}
+  #old .oc p{font:400 12px/1.6 Inter,sans-serif;color:rgba(255,255,255,.55);margin:0}
+  #old .oc .n{font:700 18px "Space Grotesk",sans-serif;color:#ff5a3c}
+  #old .oimg{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  #old .oimg img{aspect-ratio:4/5;object-fit:cover;border-radius:10px}
+  #old .ophs{border:1px dashed rgba(255,90,60,.5);border-radius:10px;aspect-ratio:4/3;display:grid;place-items:center;color:rgba(243,241,236,.6);margin-bottom:40px}
+  @media (max-width:640px){.vbar{left:8px;right:8px;width:auto;bottom:86px}#old .og,#old .oimg{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-screen" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+    <symbol id="i-led" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></symbol>
+    <symbol id="i-touch" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></symbol>
+    <symbol id="i-ruler" viewBox="0 0 24 24"><path d="M3 17 17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/></symbol>
+    <symbol id="i-factory" viewBox="0 0 24 24"><path d="M3 21V10l6 4V10l6 4V6h6v15z"/><path d="M7 18h2M12 18h2M17 18h2"/></symbol>
+    <symbol id="i-building" viewBox="0 0 24 24"><path d="M4 21V5l8-2v18M12 9l8 2v10M3 21h18M7 8h2M7 12h2M7 16h2M15 14h2M15 17h2"/></symbol>
+    <symbol id="i-stand" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="11" rx="1.5"/><path d="M8 21l4-6 4 6M7 8h6M7 11h10"/></symbol>
+    <symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L4.5 18.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3M7 15h10"/></symbol>
+    <symbol id="i-rocket" viewBox="0 0 24 24"><path d="M5 15c-1.5 1.5-2 5-2 5s3.5-.5 5-2M14 4c3-1 6-1 6-1s0 3-1 6l-7 7-5-5z"/><circle cx="15" cy="9" r="1.5"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></symbol>
+    <symbol id="i-chip" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></symbol>
+    <symbol id="i-360" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="9" ry="4"/><path d="M12 3v18"/><path d="M19 15.5l2-1.5-2.4-.8"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 7l3 3"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-cube" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5M3 17l9 5 9-5"/></symbol>
+    <symbol id="i-cell" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="9" ry="7"/><circle cx="13" cy="11" r="2.6"/><path d="M6 13c1 .8 2 .8 3 0M15 16c1 .6 2 .4 2.6-.4"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/></symbol>
+  </defs>
+</svg>
+
+<div class="fake-head"><div class="wrap">Nasap3D <span>(en-tête du site, inchangé)</span></div></div>
+
+<main>
+  <div class="wrap crumb" data-rv><a href="/">Accueil</a> / Maquettes</div>
+
+  <!-- 1. HERO -->
+  <header class="wrap hero">
+    <div>
+      <div class="eyebrow hero-in">Atelier de maquettiste · Nantes</div>
+      <h1 class="hero-in" style="animation-delay:.05s">Maquettiste à Nantes : maquettes industrielles, d'architecture et de présentation</h1>
+      <p class="lead hero-in" style="animation-delay:.12s">Bureau d'études et atelier de maquettiste à Nantes. De l'idée à l'objet : conception, modélisation 3D, fabrication, électronique intégrée.</p>
+      <div class="ctas hero-in" style="animation-delay:.2s">
+        <a href="/contact" class="btn">Demander un devis sur mesure <span class="arr" aria-hidden="true">→</span></a>
+        <a href="#process" class="btn btn-ghost">Comment ça se passe</a>
+      </div>
+    </div>
+    <!-- Chiffres clés : tous tirés du texte de la page, aucun inventé -->
+    <div class="kpis hero-in" style="animation-delay:.28s" aria-label="En bref">
+      <div class="kpi"><b>1 sem. – 1 mois</b><span>de délai selon le projet, urgences possibles</span></div>
+      <div class="kpi"><b>6 étapes</b><span>de l'idée à la livraison</span></div>
+      <div class="kpi"><b>360°</b><span>maquette visible en ligne</span></div>
+      <div class="kpi"><b>France</b><span>livraison partout, retrait à Nantes</span></div>
+    </div>
+  </header>
+
+  <!-- 2. STORYBOARD (bloc existant, placé tel quel) -->
+  <div class="sb-ph" aria-label="Emplacement du storyboard">
+    <div class="sb-frame">
+      <img src="../../public/storyboard/cellule/eclate3/f_000.webp" alt="" width="960" height="720">
+      <div class="sb-tag">&lt;StoryboardCellule /&gt; : composant existant, inchangé<em>Scène 4:3 épinglée au scroll (éclaté, électronique, finition, aimants, bouton). Non refait dans cette maquette.</em></div>
+    </div>
+  </div>
+
+  <!-- 3. Le saviez-vous (phrase pédagogique/scientifique, relie le storyboard à la suite) -->
+  <div class="wrap" data-rv>
+    <aside class="know" aria-label="Le saviez-vous">
+      <div class="bub"><svg class="ico"><use href="#i-cell"/></svg></div>
+      <div><small>Le saviez-vous</small><p>Nous avons réalisé, par exemple, une <span class="hl">cellule biologique à chenille lumineuse LED</span>.</p></div>
+    </aside>
+  </div>
+
+  <!-- 4. Interactive + visuels remontés -->
+  <section class="sec wrap" aria-labelledby="s-inter">
+    <div class="sec-head" data-rv>
+      <div class="sec-label">01</div>
+      <h2 id="s-inter">Maquettes interactives et intégration électronique</h2>
+      <p class="chapo">Les maquettes interactives sont notre force :</p>
+      <p class="p">nous intégrons <strong>l'électronique directement dans la maquette</strong> pour qu'elle <strong>se manipule et se démontre</strong>.</p>
+    </div>
+
+    <div class="mosaic" data-rv>
+      <figure class="big"><img src="../../public/assets/real-8.webp" alt="Cellule biologique : maquette pédagogique en coupe, coque imprimée puis peinte à la main" width="600" height="750"><figcaption>Cellule biologique : maquette pédagogique en coupe, coque imprimée puis peinte à la main</figcaption></figure>
+      <figure><img src="../../public/assets/real-1.webp" alt="Système de filtration et de purification : équipement de procédé biotechnologique, châssis imprimé, vraie tuyauterie transparente, roulettes et presse-étoupes en métal" width="600" height="750"><figcaption>Système de filtration et de purification : équipement de procédé biotechnologique, châssis imprimé, vraie tuyauterie transparente, roulettes et presse-étoupes en métal</figcaption></figure>
+      <figure><img src="../../public/assets/real-19.webp" alt="Maquette de bioréacteur en inox imprimée en 3D" width="600" height="750"><figcaption>Maquette de bioréacteur en inox imprimée en 3D</figcaption></figure>
+      <figure class="w"><img src="../../public/assets/real-21.webp" alt="Détail de vannes, leviers et manomètres à l'échelle" width="600" height="750" style="aspect-ratio:16/7"><figcaption>Détail de vannes, leviers et manomètres à l'échelle</figcaption></figure>
+    </div>
+
+    <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))">
+      <article class="card" data-rv style="--i:0"><div class="ib"><svg class="ico"><use href="#i-screen"/></svg></div><h3>Écrans et affichages</h3><p>Un <strong>écran intégré</strong> pour afficher un schéma, une animation ou une vidéo de démonstration directement dans la maquette.</p></article>
+      <article class="card" data-rv style="--i:1"><div class="ib"><svg class="ico"><use href="#i-led"/></svg></div><h3>LED et animations lumineuses</h3><p>Éclairage, <strong>chenille lumineuse</strong>, séquences qui guident le regard ou montrent le fonctionnement d'un procédé.</p></article>
+      <article class="card" data-rv style="--i:2"><div class="ib"><svg class="ico"><use href="#i-touch"/></svg></div><h3>Boutons et capteurs</h3><p>Le visiteur appuie, approche la main ou tourne un bouton : <strong>la maquette réagit</strong> et déclenche lumière, écran ou mouvement.</p></article>
+      <article class="card" data-rv style="--i:3"><div class="ib"><svg class="ico"><use href="#i-gear"/></svg></div><h3>Pièces mobiles</h3><p>Éléments qui <strong>tournent, coulissent ou s'ouvrent</strong>, pour montrer un mécanisme ou découvrir l'intérieur d'un équipement.</p></article>
+    </div>
+    <p class="usages" data-rv><b>Usages :</b> retail et PLV (présentoir, magasin, vitrine), salon et stand, démonstrateur industriel (voir nos <a class="txtlink" href="/maquette-industrielle">maquettes industrielles</a>), médiation scientifique et musée. Nous réalisons aussi des maquettes d'architecture, de design produit et pédagogiques ou scientifiques.</p>
+  </section>
+
+  <!-- 5. Bureau d'études : chapeau + Lire la suite, visuel à droite -->
+  <section class="sec wrap" aria-labelledby="s-be">
+    <div class="split">
+      <div data-rv>
+        <div class="sec-label">02</div>
+        <h2 id="s-be">Un bureau d'études et un atelier de maquettiste sous le même toit</h2>
+        <p class="chapo">Nous faisons plus que des maquettes.</p>
+        <p class="p"><strong>Design produit</strong>, <strong>modélisation 3D</strong> et maîtrise de nos machines (impression multi-matériaux, résine, laser, peinture, électronique) se retrouvent <span class="hl">dans le même atelier</span>.</p>
+        <details class="more">
+          <summary><span class="lbl-open">Lire la suite</span><span class="lbl-close">Réduire</span></summary>
+          <p>Vous pouvez venir avec un plan, avec une idée à rendre faisable, ou seulement avec une idée sans dessin. Nous vous accompagnons de l'idéation jusqu'à la production.</p>
+        </details>
+      </div>
+      <div class="media" data-rv style="--i:1"><figure><img src="../../public/assets/real-2.webp" alt="Maquette d'équipement de procédé avec pompe et tuyauterie" width="600" height="750"><figcaption>Maquette d'équipement de procédé avec pompe et tuyauterie</figcaption></figure></div>
+    </div>
+  </section>
+
+  <!-- 6. Pour qui -->
+  <section class="sec wrap" aria-labelledby="s-qui">
+    <div class="sec-head" data-rv><div class="sec-label">03</div><h2 id="s-qui">Pour qui travaille notre atelier de maquettes</h2></div>
+    <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))">
+      <article class="card" data-rv style="--i:0"><div class="ib"><svg class="ico"><use href="#i-ruler"/></svg></div><h3>Bureaux d'études et designers produit</h3><p><strong>Valider</strong> une forme, un encombrement ou un principe avant de lancer la fabrication.</p></article>
+      <article class="card" data-rv style="--i:1"><div class="ib"><svg class="ico"><use href="#i-factory"/></svg></div><h3>Industriels</h3><p>Présenter une machine ou un procédé <strong>trop gros, trop cher ou trop sensible à déplacer</strong>.</p></article>
+      <article class="card" data-rv style="--i:2"><div class="ib"><svg class="ico"><use href="#i-building"/></svg></div><h3>Architectes et promoteurs</h3><p>Rendre un projet <strong>lisible</strong> pour un jury, une collectivité ou des acquéreurs.</p></article>
+      <article class="card" data-rv style="--i:3"><div class="ib"><svg class="ico"><use href="#i-stand"/></svg></div><h3>Équipes commerciales et exposants</h3><p>Un objet qui <strong>attire l'œil sur le stand</strong>, appuie la vente et se transporte sans souci.</p></article>
+      <article class="card" data-rv style="--i:4"><div class="ib"><svg class="ico"><use href="#i-flask"/></svg></div><h3>Laboratoires, écoles et médiation scientifique</h3><p>Des modèles pédagogiques qui rendent un phénomène ou un appareil <strong>compréhensible d'un coup d'œil</strong>.</p></article>
+      <article class="card" data-rv style="--i:5"><div class="ib"><svg class="ico"><use href="#i-rocket"/></svg></div><h3>Porteurs de projet et start-up</h3><p>Passer de l'idée à <strong>un objet que l'on montre</strong> à un investisseur, un partenaire ou un client.</p></article>
+    </div>
+  </section>
+
+  <!-- 7. Étapes -->
+  <section class="sec wrap" id="process" aria-labelledby="s-proc">
+    <div class="sec-head" data-rv><div class="sec-label">04</div><h2 id="s-proc">De l'idée à la maquette : comment ça se passe</h2></div>
+    <div class="steps-grid">
+      <ol class="steps">
+        <li data-rv style="--i:0"><span class="n">1</span><div class="body"><h3>Vous décrivez le projet</h3><p><strong>Plans, fichier 3D, photos, croquis ou simple idée</strong> : tout point de départ convient. Dites-nous aussi à qui la maquette est destinée et pour quand.</p></div></li>
+        <li data-rv style="--i:1"><span class="n">2</span><div class="body"><h3>Étude de faisabilité</h3><p>Nous étudions votre projet et vous disons ce qui est faisable, à quelle échelle et avec quelles contraintes (taille, détail, transport).</p></div></li>
+        <li data-rv style="--i:2"><span class="n">3</span><div class="body"><h3>Idéation</h3><p>Nous définissons avec vous ce que la maquette doit montrer, son échelle, <strong>ce qui s'allume ou bouge</strong>, et pour quel public.</p></div></li>
+        <li data-rv style="--i:3"><span class="n">4</span><div class="body"><h3>Conception et modélisation 3D</h3><p>Découpe en pièces, assemblage, démontage pour le transport : nous modélisons la maquette en 3D, avec un <strong>regard de design produit</strong> sur les proportions, les couleurs et la lisibilité.</p></div></li>
+        <li data-rv style="--i:4"><span class="n">5</span><div class="body"><h3>Fabrication</h3><p>Dans notre <strong>atelier à Nantes</strong> : impression 3D, ponçage, peinture, puis intégration de l'électronique (écrans, LED) et des pièces mobiles.</p></div></li>
+        <li data-rv style="--i:5"><span class="n">6</span><div class="body"><h3>Livraison en France</h3><p>Retrait sur place à Nantes ou <strong>livraison partout en France</strong>, avec un emballage adapté si la maquette est démontable.</p></div></li>
+      </ol>
+      <div class="aside-kpi" data-rv style="--i:2">
+        <div class="kpi"><b>1 sem. – 1 mois</b><span>selon le projet ; urgences possibles</span></div>
+        <div class="kpi"><b>Sans fichier 3D</b><span>plans, photos, cotes ou description suffisent</span></div>
+        <a href="/contact" class="btn" style="font-size:15px;padding:16px 18px">Demander un devis <span class="arr" aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. Quatre types -->
+  <section class="sec wrap" aria-labelledby="s-types">
+    <div class="sec-head" data-rv><div class="sec-label">05</div><h2 id="s-types">Quatre types de maquettes sur mesure</h2></div>
+    <div class="cards c2" id="types-cards">
+      <article class="card" data-rv style="--i:0"><div class="ib"><svg class="ico"><use href="#i-building"/></svg></div><h3>Maquette d'architecture</h3><p>Bâtiment, quartier ou aménagement intérieur, <strong>à l'échelle de votre choix</strong>, pour un concours, une promotion immobilière ou une présentation client.</p></article>
+      <a class="card" href="/maquette-industrielle" data-rv style="--i:1"><div class="ib"><svg class="ico"><use href="#i-factory"/></svg></div><h3>Maquette industrielle, commerciale et de salon <span class="arr" aria-hidden="true">→</span></h3><p>Machine, équipement, procédé (filtration, bioréacteur), stand ou produit reproduit fidèlement, avec <strong>électronique intégrée</strong> (écrans, LED), éléments interactifs et pièces mobiles si besoin, <strong>démontable et facile à transporter</strong>, pour une démonstration, un appel d'offres, un salon ou une présentation client.</p></a>
+      <article class="card" data-rv style="--i:2"><div class="ib"><svg class="ico"><use href="#i-cell"/></svg></div><h3>Maquette pédagogique et scientifique</h3><p>Modèle <strong>en coupe, multicolore et peint</strong>, pour expliquer une cellule, un mécanisme ou un procédé en laboratoire, en école ou en médiation scientifique.</p></article>
+      <article class="card" data-rv style="--i:3"><div class="ib"><svg class="ico"><use href="#i-pen"/></svg></div><h3>Maquette de design produit</h3><p>Prototype d'aspect ou maquette de gamme pour <strong>valider une forme, une couleur, une ergonomie</strong> avant l'industrialisation.</p></article>
+    </div>
+  </section>
+
+  <!-- 9. Au-delà : alterné visuel à gauche -->
+  <section class="sec wrap" aria-labelledby="s-beyond">
+    <div class="split rev">
+      <div>
+        <div class="sec-head" data-rv><div class="sec-label">06</div><h2 id="s-beyond">Au-delà de la maquette : prototypes, objets pour marques, petites séries</h2></div>
+        <div class="cards" style="grid-template-columns:1fr">
+          <article class="card" data-rv style="--i:0;display:grid;grid-template-columns:42px 1fr;gap:14px"><div class="ib" style="margin:0"><svg class="ico"><use href="#i-cube"/></svg></div><div><h3>Prototype fonctionnel ou d'aspect</h3><p>Un objet pour <strong>tester</strong> une forme, un mécanisme ou un usage, ou pour <strong>montrer le rendu final</strong> avant l'industrialisation.</p></div></article>
+          <article class="card" data-rv style="--i:1;display:grid;grid-template-columns:42px 1fr;gap:14px"><div class="ib" style="margin:0"><svg class="ico"><use href="#i-tag"/></svg></div><div><h3>Objets et petits produits pour marques</h3><p>Exposition, PLV, événementiel, présentation marketing, édition limitée : des objets conçus et fabriqués sur mesure pour <strong>porter votre image</strong>.</p></div></article>
+          <article class="card" data-rv style="--i:2;display:grid;grid-template-columns:42px 1fr;gap:14px"><div class="ib" style="margin:0"><svg class="ico"><use href="#i-layers"/></svg></div><div><h3>De la maquette à la petite série</h3><p>Une maquette validée peut devenir une <strong>petite série</strong> fabriquée dans notre atelier. Découvrez nos <a class="txtlink" href="/services">services de fabrication</a>.</p></div></article>
+        </div>
+      </div>
+      <div class="media" data-rv><figure><img src="../../public/assets/real-17.webp" alt="Maquettes de design produit" width="600" height="750"><figcaption>Maquettes de design produit</figcaption></figure></div>
+    </div>
+  </section>
+
+  <!-- 10. Ce qui distingue -->
+  <section class="sec wrap" aria-labelledby="s-dist">
+    <div class="sec-head" data-rv><div class="sec-label">07</div><h2 id="s-dist">Ce qui distingue notre atelier de maquettiste</h2></div>
+    <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))">
+      <article class="card" data-rv style="--i:0"><div class="ib"><svg class="ico"><use href="#i-pin"/></svg></div><h3>Un atelier réel à Nantes</h3><p>Modélisation, fabrication et finitions sont faites <strong>sur place, au quartier Canclaux</strong>. Vous pouvez passer voir le travail.</p></article>
+      <article class="card" data-rv style="--i:1"><div class="ib"><svg class="ico"><use href="#i-chip"/></svg></div><h3>Maquettes interactives et électronique intégrée</h3><p>Écrans, LED, chenille lumineuse, éléments qui bougent : nous intégrons l'électronique pour une <strong>maquette interactive</strong>, qui se manipule et se démontre.</p></article>
+      <article class="card" data-rv style="--i:2"><div class="ib"><svg class="ico"><use href="#i-360"/></svg></div><h3>Visible en 360° en ligne</h3><p>Vos clients <strong>font tourner la maquette sur écran</strong> avant même de la voir en vrai.</p></article>
+      <article class="card" data-rv style="--i:3"><div class="ib"><svg class="ico"><use href="#i-bolt"/></svg></div><h3>Réactivité</h3><p>Nous savons prendre une demande en charge rapidement et répondre vite, <strong>urgences comprises</strong> : indiquez-nous l'échéance dès le premier message.</p></article>
+      <article class="card" data-rv style="--i:4"><div class="ib"><svg class="ico"><use href="#i-pen"/></svg></div><h3>Un regard de bureau d'études et de design produit</h3><p>Nous rendons faisable une idée qui existe déjà, ou nous partons d'une <strong>simple idée sans dessin</strong> pour la concevoir avec vous, de l'idéation à la fabrication.</p></article>
+      <article class="card" data-rv style="--i:5"><div class="ib"><svg class="ico"><use href="#i-lock"/></svg></div><h3>Confidentialité</h3><p>Vos plans et projets restent chez nous. Nous signons un <strong>accord de confidentialité</strong> si vous le demandez.</p></article>
+    </div>
+  </section>
+
+  <!-- 11. Carrousel (placeholder) + blocs existants conservés -->
+  <section class="sec wrap" aria-labelledby="s-proj">
+    <div class="sec-head" data-rv><div class="sec-label">08</div><h2 id="s-proj">Nos maquettes</h2></div>
+    <div class="ph" data-rv>
+      <b>Carrousel de projets (dessiné à part)</b>
+      Voir docs/maquettes/carrousel-projets_2026-11-05.html : clic = projet agrandi, croix = retour ; remplace la grille de 6 photos (les 6 photos et leurs légendes sont remontées dans les sections 01, 02 et 06).
+      <div class="row" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    </div>
+    <div class="sec-head" data-rv style="margin:40px 0 18px"><h2 id="s-3d" style="font-size:clamp(21px,2.2vw,27px)">Explorez nos maquettes en 3D</h2>
+      <p class="p">Caravane de présentation : maquette de vitrine pour le secteur du loisir, carrosserie imprimée en plusieurs couleurs dans la masse, vitres et feux en plexiglas.</p></div>
+    <div class="ph" data-rv style="padding:18px"><b>&lt;MaquetteCarousel /&gt; : visualiseur 360° existant (ou intégré au carrousel ci-dessus, à trancher)</b></div>
+    <div class="ph" data-rv style="margin-top:14px;padding:18px"><b>&lt;MachinesStrip /&gt; : bandeau machines existant, inchangé</b></div>
+  </section>
+
+  <!-- 12. FAQ -->
+  <section class="sec wrap" aria-labelledby="s-faq">
+    <div class="sec-head" data-rv><div class="sec-label">09</div><h2 id="s-faq">Questions fréquentes</h2></div>
+    <div class="faq" data-rv>
+      <details><summary>Pouvez-vous nous aider à concevoir la maquette à partir d'une simple idée ?<span class="pm" aria-hidden="true">+</span></summary><p>Oui. Nous menons l'idéation et la conception avec vous : ce que la maquette doit montrer, l'échelle, les parties mobiles ou lumineuses, puis nous la modélisons en 3D et la fabriquons dans notre atelier à Nantes.</p></details>
+      <details><summary>Êtes-vous un maquettiste ou un service d'impression 3D ?<span class="pm" aria-hidden="true">+</span></summary><p>Un maquettiste : l'impression 3D est l'un de nos outils, à côté de la découpe, du ponçage, de la peinture et de l'électronique. Notre métier, c'est la conception de la maquette (modélisation 3D, design produit, choix des finitions) jusqu'à sa livraison.</p></details>
+      <details><summary>Réalisez-vous des maquettes d'architecture, industrielles, commerciales, de design produit, pédagogiques ou scientifiques ?<span class="pm" aria-hidden="true">+</span></summary><p>Oui : maquette d'architecture, maquette industrielle, commerciale et de salon (démonstration, présentation client), maquette de design produit, maquette pédagogique et scientifique. Chaque maquette est conçue sur mesure à partir de vos plans, fichiers, photos ou d'une simple idée.</p></details>
+      <details><summary>Quels matériaux et quelles finitions pour une maquette ?<span class="pm" aria-hidden="true">+</span></summary><p>Nous choisissons la matière selon l'usage de la maquette (présentation, manipulation, démonstration). Ponçage, apprêt et peinture sont possibles selon le rendu attendu ; décrivez votre projet et nous vous conseillons dès l'étude de votre projet.</p></details>
+      <details><summary>Quelle échelle et quelles dimensions maximales ?<span class="pm" aria-hidden="true">+</span></summary><p>L'échelle se choisit librement selon votre projet. Une pièce unique est limitée par le volume de nos machines ; au-delà, la maquette est découpée en plusieurs parties puis assemblée.</p></details>
+      <details><summary>Faut-il un fichier 3D pour commander une maquette ?<span class="pm" aria-hidden="true">+</span></summary><p>Non. Avec des plans, des photos, des cotes ou même une simple description, nous pouvons modéliser la maquette nous-mêmes avant de la fabriquer.</p></details>
+      <details><summary>Quels sont les délais ?<span class="pm" aria-hidden="true">+</span></summary><p>Les délais vont d'une semaine à un mois selon le projet. Nous sommes très réactifs et les urgences sont possibles : chaque projet est sur devis sur mesure, demandez-nous le vôtre en précisant votre échéance.</p></details>
+      <details><summary>Peut-on avoir une maquette peinte ou multicolore ?<span class="pm" aria-hidden="true">+</span></summary><p>Oui. Une maquette peut être imprimée en plusieurs couleurs ou peinte après impression, par exemple pour distinguer les parties d'un modèle pédagogique.</p></details>
+      <details><summary>Livrez-vous les maquettes hors de Nantes ?<span class="pm" aria-hidden="true">+</span></summary><p>Oui, partout en France. Vous pouvez aussi retirer votre maquette à Nantes (Canclaux).</p></details>
+      <details><summary>Mon projet est confidentiel : signez-vous un accord de confidentialité ?<span class="pm" aria-hidden="true">+</span></summary><p>Oui, sur demande nous signons un accord de confidentialité (NDA) avant que vous nous transmettiez plans et fichiers. Vos documents ne sont utilisés que pour votre maquette.</p></details>
+      <details><summary>La maquette peut-elle être démontable et transportable pour un salon ?<span class="pm" aria-hidden="true">+</span></summary><p>Oui. Nous pouvons concevoir la maquette en plusieurs modules démontables, avec un emballage adapté, pour qu'elle voyage et se remonte facilement sur votre stand. Précisez-le dans votre demande.</p></details>
+      <details><summary>Fabriquez-vous aussi des objets ou des produits pour une marque ?<span class="pm" aria-hidden="true">+</span></summary><p>Oui : objets et petits produits pour l'exposition, le marketing, le retail et les petites séries. Décrivez votre idée, même sans dessin, nous la rendons faisable et la fabriquons dans notre atelier à Nantes.</p></details>
+      <details><summary>Combien coûte une maquette sur mesure ?<span class="pm" aria-hidden="true">+</span></summary><p>Chaque maquette est unique : le devis est sur mesure et gratuit, après étude de votre projet. Nous n'affichons pas de tarif public, car il dépend de la taille, du niveau de détail et des options (LED, pièces mobiles, finitions). Décrivez votre besoin, nous vous répondons rapidement.</p></details>
+    </div>
+  </section>
+
+  <!-- 13. CTA final -->
+  <div class="wrap">
+    <section class="final" data-rv aria-labelledby="s-final">
+      <div><h2 id="s-final">Un projet de maquette ?</h2><p>Décrivez-nous votre besoin et votre échéance, nous vous répondons rapidement.</p></div>
+      <a href="/contact" class="btn">Demander un devis sur mesure <span class="arr" aria-hidden="true">→</span></a>
+    </section>
+  </div>
+</main>
+
+<!-- MAQUETTE SEULEMENT : n'existe pas dans la page finale -->
+<div id="old" aria-label="Ancien rendu (comparaison)"></div>
+<div class="vbar" id="vbar" role="region" aria-label="Variantes de la maquette">
+  <b class="t">Maquette · Variantes <button type="button" id="vmin" aria-expanded="true">Réduire</button></b>
+  <fieldset><legend>Texte</legend><div class="seg">
+    <label><input type="radio" name="vt" value="chapo" checked><span>Chapeau + suite</span></label>
+    <label><input type="radio" name="vt" value="full"><span>Complet</span></label>
+    <label><input type="radio" name="vt" value="short"><span>Blocs courts</span></label></div></fieldset>
+  <fieldset><legend>Rythme</legend><div class="seg">
+    <label><input type="radio" name="vr" value="sobre"><span>Sobre</span></label>
+    <label><input type="radio" name="vr" value="anime" checked><span>Animé au scroll</span></label></div></fieldset>
+  <fieldset><legend>Cartes « Quatre types »</legend><div class="seg">
+    <label><input type="radio" name="vl" value="grid" checked><span>Grille 2×2</span></label>
+    <label><input type="radio" name="vl" value="list"><span>Liste</span></label></div></fieldset>
+  <label class="old"><input type="checkbox" id="vold"> Voir l'ancien rendu (mur de texte)</label>
+</div>
+
+<div class="mcta" aria-hidden="false"><a href="/contact" class="btn">Demander un devis sur mesure <span class="arr" aria-hidden="true">→</span></a></div>
+
+<script>
+  (function(){
+    var B=document.body, H=document.documentElement;
+    var rm=matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window);
+    var io=null;
+    function motionOn(){
+      if(rm) return; H.classList.add("motion");
+      io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target);}});},{rootMargin:"0px 0px -8% 0px"});
+      document.querySelectorAll("main [data-rv]").forEach(function(el){var r=el.getBoundingClientRect(); if(r.top<innerHeight) el.classList.add("in"); else {el.classList.remove("in"); io.observe(el);}});
+    }
+    function motionOff(){ if(io) io.disconnect(); H.classList.remove("motion"); document.querySelectorAll("[data-rv]").forEach(function(el){el.classList.add("in");}); }
+    // Captures : ?t=full|short  &r=sobre  &l=list  &old=1  &bar=0  (#static = sobre)
+    var q=new URLSearchParams(location.search);
+    function setText(v){ B.classList.remove("t-full","t-short"); if(v!=="chapo") B.classList.add("t-"+v);
+      document.querySelectorAll("details.more").forEach(function(d){d.open = v!=="chapo";}); }
+    function setRythme(v){ if(v==="sobre") motionOff(); else motionOn(); }
+    function setList(v){ B.classList.toggle("l-list", v==="list"); }
+    function txt(el){return el?el.textContent.replace(/\s+/g," ").trim():"";}
+    function S(id){return document.querySelector("section[aria-labelledby="+id+"]");}
+    // Ancien rendu : reconstruit depuis le texte de la page, dans l'ORDRE et le STYLE d'origine (sans h1/h2 en double).
+    function buildOld(){
+      var o=document.getElementById("old"); if(o.dataset.done) return; o.dataset.done="1";
+      var h="";
+      function sec(t,inner){h+='<div class="os"><div class="ot">'+t+'</div>'+inner+'</div>';}
+      function cards(list,num){return '<div class="og">'+[].map.call(list,function(c,k){return '<div class="oc">'+(num?'<div class="n">'+(k+1)+'</div>':'')+'<b>'+txt(c.querySelector("h3")).replace(" →","")+'</b><p>'+c.querySelector("p").innerHTML.replace(/<\/?strong>/g,"")+'</p></div>';}).join("")+'</div>';}
+      h+='<div class="oh">'+txt(document.querySelector("h1"))+'</div><p class="on">'+txt(document.querySelector(".lead"))+'</p><a class="ob" href="/contact">Demander un devis sur mesure →</a>';
+      h+='<div class="ophs">Storyboard</div>';
+      var be=S("s-be"); sec(txt(be.querySelector("h2")),'<p class="on">'+txt(be.querySelector(".chapo"))+" "+txt(be.querySelector(".p"))+" "+txt(be.querySelector(".more p"))+'</p>');
+      var qu=S("s-qui"); sec(txt(qu.querySelector("h2")),cards(qu.querySelectorAll(".card")));
+      var it=S("s-inter"); sec(txt(it.querySelector("h2")),'<p class="on">'+txt(it.querySelector(".chapo"))+" "+txt(it.querySelector(".p"))+" "+txt(document.querySelector(".know p"))+'</p>'+cards(it.querySelectorAll(".card"))+'<p class="on">'+it.querySelector(".usages").innerHTML.replace(/<\/?b>/g,"")+'</p>');
+      var pr=S("s-proc"); sec(txt(pr.querySelector("h2")),cards(pr.querySelectorAll(".steps li"),true));
+      var ty=S("s-types"); sec(txt(ty.querySelector("h2")),cards(ty.querySelectorAll(".card")));
+      var by=S("s-beyond"); sec(txt(by.querySelector("h2")),cards(by.querySelectorAll(".card")));
+      var di=S("s-dist"); sec(txt(di.querySelector("h2")),cards(di.querySelectorAll(".card")));
+      sec("Nos maquettes",'<div class="oimg">'+[].map.call(document.querySelectorAll("main figure img"),function(i){return '<img src="'+i.getAttribute("src")+'" alt="">';}).join("")+'</div>');
+      sec("Questions fréquentes",'<p class="on">13 questions (accordéon)</p>');
+      o.innerHTML=h;
+    }
+    function setOld(on){ if(on) buildOld(); B.classList.toggle("old",on); scrollTo(0,0); }
+    document.querySelectorAll("input[name=vt]").forEach(function(i){i.onchange=function(){setText(i.value);};});
+    document.querySelectorAll("input[name=vr]").forEach(function(i){i.onchange=function(){setRythme(i.value);};});
+    document.querySelectorAll("input[name=vl]").forEach(function(i){i.onchange=function(){setList(i.value);};});
+    document.getElementById("vold").onchange=function(){setOld(this.checked);};
+    document.getElementById("vmin").onclick=function(){var b=document.getElementById("vbar");var m=b.classList.toggle("min");this.textContent=m?"Ouvrir":"Réduire";this.setAttribute("aria-expanded",String(!m));};
+    function pick(n,v){var el=document.querySelector("input[name="+n+"][value="+v+"]"); if(el) el.checked=true;}
+    var t=q.get("t")||"chapo", r=q.get("r")||(location.hash==="#static"?"sobre":"anime"), l=q.get("l")||"grid";
+    pick("vt",t); pick("vr",r); pick("vl",l); setText(t); setRythme(r); setList(l);
+    if(q.get("old")==="1"){document.getElementById("vold").checked=true; setOld(true);}
+    if(q.get("bar")==="0") document.getElementById("vbar").style.display="none";
+  })();
+</script>
+</body>
+</html>

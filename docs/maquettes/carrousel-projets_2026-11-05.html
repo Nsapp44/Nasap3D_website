@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette : carrousel de projets /maquettiste-nantes (2026-11-05)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<!--
+  MAQUETTE autonome (pas du code de production).
+  Branchement prévu : src/data/realisations.ts (données) + src/components/ProjectsCarousel.astro (HTML serveur + <script> inline, sans React).
+  Les liens pointent vers /realisations/<slug> (pages à créer). Ici, ouvrir le zoom pousse #projet-<slug> (file:// interdit un autre chemin) ;
+  en production : history.pushState vers /realisations/<slug>.
+  Images : chemins relatifs vers public/assets (en prod : <Image> Astro, srcset 400/800/1200).
+-->
+<style>
+  :root {
+    --bg: #161514; --bg2: #1a1917; --bg3: #201d1b;
+    --ink: #f3f1ec; --muted: rgba(255,255,255,.65); --faint: rgba(255,255,255,.5);
+    --line: rgba(255,255,255,.1); --accent: #ff5a3c;
+    --ease: cubic-bezier(.2,.8,.2,1);
+    --wrap: 800px; --pad: 24px;
+    --edge: max(var(--pad), calc((100vw - var(--wrap)) / 2 + var(--pad)));
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); color: var(--ink); }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.6 "Inter", system-ui, sans-serif; overflow-x: clip; }
+  a { color: inherit; }
+  button { font: inherit; color: inherit; }
+
+  /* Contexte de page (factice) */
+  .fake-head { height: 56px; border-bottom: 1px solid var(--line); background: var(--bg); display: flex; align-items: center; padding: 0 var(--edge); font: 700 15px "Space Grotesk", sans-serif; color: var(--ink); }
+  .fake-head span { color: var(--accent); }
+  .lp-section { max-width: var(--wrap); margin: 0 auto; padding: 0 var(--pad) 44px; }
+  .lp-h2 { font: 700 20px "Space Grotesk", sans-serif; color: var(--ink); margin: 0 0 16px; }
+  .lp-note { font: 400 14px/1.6 "Inter", sans-serif; color: var(--muted); margin: 0; }
+  .fake-faq { opacity: .35; }
+  .fake-faq div { height: 52px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 10px; background: var(--bg2); }
+
+  /* ===== Section carrousel ===== */
+  .pj { padding: 40px 0 44px; background: var(--bg); color: var(--ink); }
+  .pj-head { max-width: var(--wrap); margin: 0 auto; padding: 0 var(--pad); display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+  .pj-kicker { font: 600 12px "Inter", sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--accent); margin: 0 0 6px; }
+  .pj-head .lp-h2 { margin: 0 0 6px; font-size: 24px; }
+  .pj-nav { display: flex; align-items: center; gap: 8px; flex: none; }
+  .pj-count { font: 500 13px "Inter", sans-serif; color: var(--faint); min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
+  .pj-count b { color: var(--ink); font-weight: 600; }
+  .icon-btn { width: 44px; height: 44px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg2); color: var(--ink); display: grid; place-items: center; cursor: pointer; transition: border-color .2s, background .2s, opacity .2s; }
+  .icon-btn:hover { border-color: rgba(255,90,60,.6); background: var(--bg3); }
+  .icon-btn:disabled { opacity: .35; cursor: default; border-color: var(--line); }
+  .icon-btn:focus-visible, .chip:focus-visible, .pj-link:focus-visible, .btn:focus-visible, .dots button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  .icon-btn svg { width: 18px; height: 18px; }
+
+  .chips { max-width: var(--wrap); margin: 18px auto 0; padding: 0 var(--pad); display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg2); color: var(--muted); font: 500 13px "Inter", sans-serif; cursor: pointer; transition: border-color .2s, color .2s, background .2s; }
+  .chip[aria-pressed="true"] { background: rgba(255,90,60,.12); border-color: rgba(255,90,60,.55); color: var(--ink); }
+  .chip:hover { color: var(--ink); }
+  .chip small { color: var(--faint); margin-left: 4px; font-size: 12px; }
+
+  .track { list-style: none; margin: 18px 0 0; padding: 4px var(--edge) 18px; display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--edge); overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .track::-webkit-scrollbar { display: none; }
+  .track > li { flex: 0 0 clamp(250px, 30vw, 300px); scroll-snap-align: start; display: flex; }
+  .track > li[hidden] { display: none; }
+
+  .pc { position: relative; width: 100%; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 12px; background: var(--bg2); color: var(--ink); overflow: hidden; transition: scale .25s ease, border-color .25s ease, box-shadow .25s ease; }
+  .pc:hover { scale: 1.02; border-color: rgba(255,90,60,.45); box-shadow: 0 10px 28px rgba(0,0,0,.35); }
+  .pc-media { position: relative; aspect-ratio: 4 / 5; background: var(--bg3); overflow: hidden; }
+  .pc-media img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .4s var(--ease); }
+  .pc:hover .pc-media img { transform: scale(1.05); }
+  .pc-media::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(22,21,20,.65), transparent 40%); pointer-events: none; }
+  .pc-badges { position: absolute; left: 10px; right: 10px; bottom: 10px; display: flex; gap: 6px; z-index: 1; }
+  .badge { font: 600 11px "Inter", sans-serif; letter-spacing: .3px; padding: 4px 8px; border-radius: 999px; background: rgba(22,21,20,.78); color: var(--ink); border: 1px solid var(--line); backdrop-filter: blur(4px); }
+  .badge.b3d { border-color: rgba(255,90,60,.6); color: #ffd9d0; }
+  .pc-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .pc-cat { font: 600 11px "Inter", sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); margin: 0; }
+  .pc-title { font: 600 16px/1.3 "Space Grotesk", sans-serif; margin: 0; color: var(--ink); }
+  .pj-link { text-decoration: none; color: inherit; }
+  .pj-link::after { content: ""; position: absolute; inset: 0; z-index: 2; border-radius: 12px; }
+  .pj-link:focus-visible { outline: none; }
+  .pc:has(.pj-link:focus-visible) { outline: 3px solid var(--ink); outline-offset: 3px; }
+  .pc-text { margin: 0; font: 400 13px/1.55 "Inter", sans-serif; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .pc-more { margin-top: auto; padding-top: 6px; font: 500 13px "Inter", sans-serif; color: var(--ink); display: inline-flex; align-items: center; gap: 6px; }
+  .pc-more span { color: var(--accent); transition: transform .25s var(--ease); }
+  .pc:hover .pc-more span { transform: translateX(3px); }
+  .pc-full { display: none; } /* copie détaillée pour le zoom ; le texte complet visible reste .pc-text + la page /realisations/<slug> */
+
+  .progress { max-width: var(--wrap); margin: 2px auto 0; padding: 0 var(--pad); }
+  .progress div { height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; }
+  .progress i { display: block; height: 100%; width: 30%; background: var(--accent); border-radius: 2px; transform-origin: left; transition: transform .2s linear; }
+  .pj-all { max-width: var(--wrap); margin: 16px auto 0; padding: 0 var(--pad); font: 500 14px "Inter", sans-serif; }
+  .pj-all a { color: var(--ink); text-decoration: underline; text-decoration-color: rgba(255,90,60,.6); text-underline-offset: 3px; display: inline-flex; min-height: 44px; align-items: center; }
+
+  /* Entrée douce */
+  .js .track > li { opacity: 0; transform: translateY(6px); }
+  .js .pj.in .track > li { opacity: 1; transform: none; transition: opacity .5s ease, transform .5s ease; transition-delay: calc(var(--i) * 60ms); }
+
+  /* ===== Zoom (dialog) ===== */
+  dialog.zoom { padding: 0; border: 1px solid var(--line); border-radius: 16px; background: var(--bg2); color: var(--ink); width: min(1080px, calc(100vw - 48px)); max-height: calc(100dvh - 48px); overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.6); }
+  dialog.zoom::backdrop { background: rgba(10,9,8,.82); backdrop-filter: blur(6px); }
+  .z-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); height: min(calc(100dvh - 48px), 760px); }
+  .z-media { position: relative; background: var(--bg3); min-height: 0; display: flex; flex-direction: column; }
+  .z-strip { flex: 1; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; min-height: 0; }
+  .z-strip::-webkit-scrollbar { display: none; }
+  .z-strip figure { margin: 0; flex: 0 0 100%; min-height: 0; scroll-snap-align: center; display: block; padding: 16px; }
+  .z-strip img { width: 100%; height: 100%; object-fit: contain; border-radius: 8px; }
+  .z-ph { position: absolute; top: 50%; translate: 0 -50%; }
+  .z-ph.prev { left: 12px; } .z-ph.next { right: 12px; }
+  .z-foot { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 8px 12px 12px; }
+  .dots { display: flex; gap: 2px; }
+  .dots button { width: 44px; height: 44px; border: 0; background: none; cursor: pointer; display: grid; place-items: center; padding: 0; }
+  .dots button::before { content: ""; width: 8px; height: 8px; border-radius: 99px; background: rgba(255,255,255,.3); transition: width .25s var(--ease), background .25s; }
+  .dots button[aria-current="true"]::before { width: 22px; background: var(--accent); }
+  .z-cap { font: 400 12px/1.4 "Inter", sans-serif; color: var(--faint); text-align: center; padding: 0 16px 12px; min-height: 2.8em; }
+  .z-info { padding: 28px 28px 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+  .z-info .pc-cat { padding-right: 52px; }
+  .z-title { font: 700 26px/1.2 "Space Grotesk", sans-serif; margin: 0; color: var(--ink); padding-right: 40px; }
+  .z-text p { margin: 0 0 10px; font: 400 15px/1.65 "Inter", sans-serif; color: rgba(255,255,255,.78); }
+  .z-facts { margin: 4px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+  .z-facts li { display: grid; grid-template-columns: 96px 1fr; gap: 10px; font: 400 13px/1.5 "Inter", sans-serif; color: var(--muted); padding-top: 8px; border-top: 1px solid var(--line); }
+  .z-facts b { color: var(--faint); font-weight: 500; }
+  .z-ctas { margin-top: auto; padding-top: 12px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .btn { min-height: 44px; padding: 0 18px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font: 600 14px "Inter", sans-serif; border: 1px solid var(--line); background: var(--bg3); color: var(--ink); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #161514; }
+  .btn:hover { border-color: rgba(255,90,60,.6); }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .z-pager { display: flex; justify-content: space-between; gap: 10px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .z-pager button { min-height: 44px; background: none; border: 0; color: var(--muted); cursor: pointer; font: 500 13px "Inter", sans-serif; padding: 0 4px; text-align: left; max-width: 48%; }
+  .z-pager button:last-child { text-align: right; }
+  .z-pager button:hover { color: var(--ink); }
+  .z-pager button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; border-radius: 6px; }
+  .z-close { position: absolute; top: 14px; right: 14px; z-index: 3; background: rgba(22,21,20,.85); }
+
+  /* Tablette */
+  @media (max-width: 900px) {
+    dialog.zoom { width: calc(100vw - 32px); max-height: calc(100dvh - 32px); }
+    .z-grid { grid-template-columns: 1fr; grid-template-rows: auto; height: auto; max-height: calc(100dvh - 32px); overflow-y: auto; }
+    .z-strip { flex: none; height: min(52dvh, 520px); }
+    .z-info { overflow: visible; padding: 8px 24px 24px; }
+  }
+  /* Mobile */
+  @media (max-width: 640px) {
+    .pj { padding-top: 28px; }
+    .pj-head { align-items: center; }
+    .pj-head .lp-h2 { font-size: 21px; }
+    .pj-nav .icon-btn { display: none; } /* au doigt : swipe ; le compteur reste */
+    .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+    .chips::-webkit-scrollbar { display: none; }
+    .chip { flex: none; }
+    .track { gap: 12px; }
+    .track > li { flex-basis: 78vw; }
+    dialog.zoom { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; border: 0; margin: 0; }
+    .z-grid { max-height: 100dvh; height: auto; }
+    .z-strip { height: 50dvh; }
+    .z-strip figure { padding: 8px; }
+    .z-ph { display: none; }
+    .z-title { font-size: 22px; }
+    .z-info { padding: 4px 20px 28px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .track, .z-strip { scroll-behavior: auto; }
+    .js .track > li, .js .pj.in .track > li { opacity: 1; transform: none; transition: none; }
+    .pc, .pc-media img, .pc-more span, .progress i { transition: none; }
+    .pc:hover { scale: none; }
+    .pc:hover .pc-media img, .pc:hover .pc-more span { transform: none; }
+  }
+</style>
+</head>
+<body>
+<script>document.documentElement.classList.add('js'); document.body.classList.add('js');</script>
+
+<header class="fake-head">Nasap<span>3D</span>&nbsp;· maquette carrousel (fin de /maquettiste-nantes)</header>
+
+<!-- ===================== SECTION À BRANCHER (remplace « Nos maquettes ») ===================== -->
+<section class="pj" id="nos-maquettes" aria-labelledby="pj-title">
+  <div class="pj-head">
+    <div>
+      <p class="pj-kicker">Réalisations</p>
+      <h2 class="lp-h2" id="pj-title">Nos maquettes</h2>
+      <p class="lp-note">Touchez un projet pour l'agrandir : photos, détails et fiche complète.</p>
+    </div>
+    <div class="pj-nav">
+      <span class="pj-count" aria-live="polite"><b id="pj-cur">1</b> / <span id="pj-tot">8</span></span>
+      <button class="icon-btn" type="button" id="pj-prev" aria-label="Projets précédents" aria-controls="pj-track"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <button class="icon-btn" type="button" id="pj-next" aria-label="Projets suivants" aria-controls="pj-track"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+  </div>
+
+  <div class="chips" role="group" aria-label="Filtrer les projets" hidden>
+    <button class="chip" type="button" aria-pressed="true" data-f="tous">Tous <small>8</small></button>
+    <button class="chip" type="button" aria-pressed="false" data-f="industrie">Industrie et salon <small>2</small></button>
+    <button class="chip" type="button" aria-pressed="false" data-f="pedagogie">Pédagogie <small>2</small></button>
+    <button class="chip" type="button" aria-pressed="false" data-f="design">Design et prototype <small>3</small></button>
+    <button class="chip" type="button" aria-pressed="false" data-f="vitrine">Vitrine <small>1</small></button>
+  </div>
+
+  <ul class="track" id="pj-track" aria-label="Projets de maquettes" tabindex="-1">
+    <li style="--i:0" data-f="industrie"><article class="pc" data-slug="systeme-filtration-purification">
+      <div class="pc-media"><img src="../../public/assets/real-1.webp" width="896" height="1195" loading="lazy" decoding="async" alt="Système de filtration et de purification : équipement de procédé biotechnologique, châssis imprimé, vraie tuyauterie transparente, roulettes et presse-étoupes en métal">
+        <div class="pc-badges"><span class="badge">5 vues</span><span class="badge b3d">3D 360°</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Industrie et salon</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/systeme-filtration-purification">Système de filtration et de purification</a></h3>
+        <p class="pc-text">Équipement de procédé biotechnologique reproduit à l'échelle : châssis imprimé, vraie tuyauterie transparente, roulettes et presse-étoupes en métal. Panneau fluidique, vannes et tubulures fonctionnels à l'échelle.</p>
+        <div class="pc-full"><p>Équipement de procédé biotechnologique reproduit à l'échelle : châssis imprimé, vraie tuyauterie transparente, roulettes et presse-étoupes en métal.</p><p>Panneau fluidique, vannes et tubulures fonctionnels à l'échelle ; manomètres et vannes imprimés.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+
+    <li style="--i:1" data-f="industrie"><article class="pc" data-slug="maquette-bioreacteur">
+      <div class="pc-media"><img src="../../public/assets/real-19.webp" width="896" height="1195" loading="lazy" decoding="async" alt="Maquette de bioréacteur en inox imprimée en 3D">
+        <div class="pc-badges"><span class="badge">3 vues</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Industrie et salon</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/maquette-bioreacteur">Maquette de bioréacteur</a></h3>
+        <p class="pc-text">Reproduction détaillée d'une cuve en inox, de ses tubulures et raccords. Bloc de vannes, leviers et manomètres imprimés à l'échelle, avec stickers intégrés.</p>
+        <div class="pc-full"><p>Reproduction détaillée d'une cuve en inox, de ses tubulures et raccords.</p><p>Bloc de vannes, leviers et manomètres imprimés à l'échelle, avec stickers intégrés.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+
+    <li style="--i:2" data-f="pedagogie"><article class="pc" data-slug="maquette-cellule-biologique">
+      <div class="pc-media"><img src="../../public/assets/real-8.webp" width="589" height="643" loading="lazy" decoding="async" alt="Cellule biologique : maquette pédagogique en coupe, coque imprimée puis peinte à la main">
+        <div class="pc-badges"><span class="badge">3 vues</span><span class="badge b3d">3D 360°</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Pédagogie</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/maquette-cellule-biologique">Cellule biologique en coupe</a></h3>
+        <p class="pc-text">Maquette pédagogique en coupe : coque imprimée puis peinte à la main, organites en pièces multicolores.</p>
+        <div class="pc-full"><p>Maquette pédagogique en coupe : coque imprimée puis peinte à la main, organites en pièces multicolores.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+
+    <li style="--i:3" data-f="vitrine"><article class="pc" data-slug="caravane-de-presentation">
+      <div class="pc-media"><img src="../../public/assets/real-5.webp" width="1200" height="1600" loading="lazy" decoding="async" alt="Caravanes de présentation miniatures imprimées en 3D, série de modèles réduits">
+        <div class="pc-badges"><span class="badge">2 vues</span><span class="badge b3d">3D 360°</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Vitrine</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/caravane-de-presentation">Caravane de présentation</a></h3>
+        <p class="pc-text">Maquette de vitrine pour le secteur du loisir : carrosserie imprimée en plusieurs couleurs dans la masse, vitres et feux en plexiglas. Série de modèles réduits imprimés et détaillés.</p>
+        <div class="pc-full"><p>Maquette de vitrine pour le secteur du loisir : carrosserie imprimée en plusieurs couleurs dans la masse, vitres et feux en plexiglas.</p><p>Série de modèles réduits imprimés et détaillés.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+
+    <li style="--i:4" data-f="design"><article class="pc" data-slug="maquettes-design-produit">
+      <div class="pc-media"><img src="../../public/assets/real-17.webp" width="824" height="1099" loading="lazy" decoding="async" alt="Maquettes de design produit">
+        <div class="pc-badges"><span class="badge">1 vue</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Design et prototype</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/maquettes-design-produit">Maquettes de design produit</a></h3>
+        <p class="pc-text">Maquettes de design produit réalisées pour une présentation.</p>
+        <div class="pc-full"><p>Maquettes de design produit réalisées pour une présentation.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+
+    <li style="--i:5" data-f="pedagogie"><article class="pc" data-slug="formes-pedagogiques-sante">
+      <div class="pc-media"><img src="../../public/assets/real-15.webp" width="1600" height="1200" loading="lazy" decoding="async" alt="Formes pédagogiques multicolores imprimées pour le secteur santé">
+        <div class="pc-badges"><span class="badge">1 vue</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Pédagogie</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/formes-pedagogiques-sante">Formes pédagogiques</a></h3>
+        <p class="pc-text">Pièces d'illustration multicolores pour le secteur santé.</p>
+        <div class="pc-full"><p>Pièces d'illustration multicolores pour le secteur santé.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+
+    <li style="--i:6" data-f="design"><article class="pc" data-slug="piece-retro-concue">
+      <div class="pc-media"><img src="../../public/assets/real-12.webp" width="1200" height="1600" loading="lazy" decoding="async" alt="Pièce rétro-conçue : réducteur redessiné en CAO à côté de la pièce d'origine usée">
+        <div class="pc-badges"><span class="badge">1 vue</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Design et prototype</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/piece-retro-concue">Pièce rétro-conçue</a></h3>
+        <p class="pc-text">Réducteur redessiné en CAO à partir de la pièce d'origine usée.</p>
+        <div class="pc-full"><p>Réducteur redessiné en CAO à partir de la pièce d'origine usée.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+
+    <li style="--i:7" data-f="design"><article class="pc" data-slug="figurines-resine">
+      <div class="pc-media"><img src="../../public/assets/real-16.webp" width="824" height="517" loading="lazy" decoding="async" alt="Figurines en résine SLA imprimées en haute définition">
+        <div class="pc-badges"><span class="badge">1 vue</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Design et prototype</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/figurines-resine">Figurines en résine</a></h3>
+        <p class="pc-text">Impression résine haute définition, prête pour la peinture.</p>
+        <div class="pc-full"><p>Impression résine haute définition, prête pour la peinture.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+  </ul>
+
+  <div class="progress" aria-hidden="true"><div><i id="pj-bar"></i></div></div>
+  <p class="pj-all"><a href="/realisations">Toutes nos réalisations</a></p>
+</section>
+
+<!-- Photos supplémentaires du zoom (en prod : générées depuis src/data/realisations.ts ; chaque page /realisations/<slug> les montre aussi en HTML). -->
+<script type="application/json" id="pj-photos">
+{
+  "systeme-filtration-purification": [
+    ["../../public/assets/real-1.webp", 896, 1195, "Système de filtration et de purification : équipement de procédé biotechnologique, châssis imprimé, vraie tuyauterie transparente, roulettes et presse-étoupes en métal"],
+    ["../../public/assets/real-2.webp", 896, 1195, "Maquette d'équipement de procédé avec pompe et tuyauterie"],
+    ["../../public/assets/real-3.webp", 896, 1195, "Vue 3/4 : châssis, tubulures et raccords fonctionnels à l'échelle"],
+    ["../../public/assets/real-11.webp", 896, 1195, "Bloc fluidique : manomètres et vannes imprimés"],
+    ["../../public/assets/maquettes/purification/base/e28_a010.avif", 1600, 1200, "Rendu 3D de la maquette du système de purification"]
+  ],
+  "maquette-bioreacteur": [
+    ["../../public/assets/real-19.webp", 896, 1195, "Maquette de bioréacteur en inox imprimée en 3D"],
+    ["../../public/assets/real-20.webp", 896, 1195, "Maquette de bioréacteur, vue de dessus"],
+    ["../../public/assets/real-21.webp", 896, 1195, "Détail de vannes, leviers et manomètres à l'échelle"]
+  ],
+  "maquette-cellule-biologique": [
+    ["../../public/assets/real-8.webp", 589, 643, "Cellule biologique : maquette pédagogique en coupe, coque imprimée puis peinte à la main"],
+    ["../../public/assets/real-9.webp", 595, 587, "Maquette de cellule, vue de trois quarts"],
+    ["../../public/assets/maquettes/cellule/base/e28_a010.avif", 1600, 1200, "Rendu 3D de la maquette de cellule"]
+  ],
+  "caravane-de-presentation": [
+    ["../../public/assets/real-5.webp", 1200, 1600, "Caravanes de présentation miniatures imprimées en 3D, série de modèles réduits"],
+    ["../../public/assets/maquettes/caravane/base/e28_a010.avif", 1600, 1200, "Rendu 3D de la caravane de présentation"]
+  ],
+  "maquettes-design-produit": [["../../public/assets/real-17.webp", 824, 1099, "Maquettes de design produit"]],
+  "formes-pedagogiques-sante": [["../../public/assets/real-15.webp", 1600, 1200, "Formes pédagogiques multicolores imprimées pour le secteur santé"]],
+  "piece-retro-concue": [["../../public/assets/real-12.webp", 1200, 1600, "Pièce rétro-conçue : réducteur redessiné en CAO à côté de la pièce d'origine usée"]],
+  "figurines-resine": [["../../public/assets/real-16.webp", 824, 517, "Figurines en résine SLA imprimées en haute définition"]]
+}
+</script>
+
+<dialog class="zoom" id="pj-zoom" aria-labelledby="z-title">
+  <button class="icon-btn z-close" type="button" id="z-close" aria-label="Fermer et revenir aux projets"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  <div class="z-grid">
+    <div class="z-media">
+      <div class="z-strip" id="z-strip" aria-roledescription="galerie" aria-label="Photos du projet"></div>
+      <button class="icon-btn z-ph prev" type="button" id="z-pprev" aria-label="Photo précédente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <button class="icon-btn z-ph next" type="button" id="z-pnext" aria-label="Photo suivante"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+      <div class="z-foot"><div class="dots" id="z-dots"></div></div>
+      <p class="z-cap" id="z-cap" aria-live="polite"></p>
+    </div>
+    <div class="z-info">
+      <p class="pc-cat" id="z-cat"></p>
+      <h2 class="z-title" id="z-title"></h2>
+      <div class="z-text" id="z-text"></div>
+      <div class="z-ctas">
+        <a class="btn btn-primary" id="z-page" href="#">Voir la fiche projet <span aria-hidden="true">→</span></a>
+        <a class="btn" href="/contact">Un projet similaire ?</a>
+      </div>
+      <nav class="z-pager" aria-label="Autres projets">
+        <button type="button" id="z-prevp"></button>
+        <button type="button" id="z-nextp"></button>
+      </nav>
+    </div>
+  </div>
+</dialog>
+
+<section class="lp-section fake-faq" aria-hidden="true">
+  <h2 class="lp-h2">Questions fréquentes</h2>
+  <div></div><div></div>
+</section>
+
+<script>
+(() => {
+  const RM = matchMedia('(prefers-reduced-motion: reduce)');
+  const $ = (id) => document.getElementById(id);
+  const sec = $('nos-maquettes'), track = $('pj-track'), bar = $('pj-bar');
+  const photos = JSON.parse($('pj-photos').textContent);
+  const items = () => [...track.children].filter((li) => !li.hidden);
+
+  // Entrée douce
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { sec.classList.add('in'); io.disconnect(); } }, { threshold: .15 });
+    io.observe(sec);
+  } else sec.classList.add('in');
+
+  // Compteur, barre, flèches
+  const step = () => { const li = items()[0]; return li ? li.getBoundingClientRect().width + parseFloat(getComputedStyle(track).columnGap || 16) : 300; };
+  let raf = 0;
+  const sync = () => {
+    raf = 0;
+    const list = items(), max = track.scrollWidth - track.clientWidth;
+    const idx = max <= 1 ? 0 : Math.round(track.scrollLeft / step());
+    $('pj-cur').textContent = Math.min(idx + 1, list.length);
+    $('pj-tot').textContent = list.length;
+    const vis = Math.max(track.clientWidth / track.scrollWidth, .12);
+    bar.style.width = (vis * 100) + '%';
+    bar.style.transform = `translateX(${max > 0 ? (track.scrollLeft / max) * ((1 - vis) / vis) * 100 : 0}%)`;
+    $('pj-prev').disabled = track.scrollLeft <= 2;
+    $('pj-next').disabled = track.scrollLeft >= max - 2;
+  };
+  track.addEventListener('scroll', () => { raf ||= requestAnimationFrame(sync); }, { passive: true });
+  addEventListener('resize', () => { raf ||= requestAnimationFrame(sync); });
+  const go = (dir) => track.scrollBy({ left: dir * step() * Math.max(1, Math.floor(track.clientWidth / step()) - 0), behavior: RM.matches ? 'auto' : 'smooth' });
+  $('pj-prev').onclick = () => go(-1);
+  $('pj-next').onclick = () => go(1);
+  sync();
+
+  // Filtres (le contenu reste dans le HTML ; le JS ne fait que masquer)
+  const chips = document.querySelector('.chips'); chips.hidden = false;
+  chips.addEventListener('click', (e) => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    chips.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', c === b));
+    const f = b.dataset.f;
+    [...track.children].forEach((li) => { li.hidden = f !== 'tous' && li.dataset.f !== f; });
+    track.scrollTo({ left: 0 }); sync();
+  });
+
+  // ===== Zoom =====
+  const dlg = $('pj-zoom'), strip = $('z-strip'), dots = $('z-dots');
+  let cur = null, origin = null, pushed = false;
+
+  const fill = (art) => {
+    const slug = art.dataset.slug, link = art.querySelector('.pj-link');
+    $('z-cat').textContent = art.querySelector('.pc-cat').textContent;
+    $('z-title').textContent = link.textContent;
+    $('z-text').innerHTML = art.querySelector('.pc-full').innerHTML;
+    $('z-page').href = link.getAttribute('href');
+    const ph = photos[slug] || [];
+    strip.innerHTML = ph.map(([src, w, h, alt], i) => `<figure role="group" aria-roledescription="photo" aria-label="${i + 1} sur ${ph.length}"><img src="${src}" width="${w}" height="${h}" alt="${alt.replace(/"/g, '&quot;')}" ${i ? 'loading="lazy"' : ''} decoding="async"></figure>`).join('');
+    dots.innerHTML = ph.length > 1 ? ph.map((_, i) => `<button type="button" aria-label="Photo ${i + 1} sur ${ph.length}" data-i="${i}"></button>`).join('') : '';
+    $('z-pprev').hidden = $('z-pnext').hidden = ph.length < 2;
+    strip.scrollLeft = 0; photoSync();
+    const list = items().map((li) => li.querySelector('.pc')), k = list.indexOf(art);
+    const p = list[(k - 1 + list.length) % list.length], n = list[(k + 1) % list.length];
+    $('z-prevp').textContent = '← ' + p.querySelector('.pj-link').textContent; $('z-prevp').onclick = () => swap(p);
+    $('z-nextp').textContent = n.querySelector('.pj-link').textContent + ' →'; $('z-nextp').onclick = () => swap(n);
+    cur = art;
+  };
+  const photoIdx = () => Math.round(strip.scrollLeft / Math.max(1, strip.clientWidth));
+  const photoSync = () => {
+    const i = photoIdx(), figs = strip.querySelectorAll('img');
+    dots.querySelectorAll('button').forEach((b, j) => b.setAttribute('aria-current', j === i));
+    $('z-cap').textContent = figs[i] ? figs[i].alt : '';
+    $('z-pprev').disabled = i <= 0; $('z-pnext').disabled = i >= figs.length - 1;
+  };
+  const toPhoto = (i) => strip.scrollTo({ left: i * strip.clientWidth, behavior: RM.matches ? 'auto' : 'smooth' });
+  strip.addEventListener('scroll', () => requestAnimationFrame(photoSync), { passive: true });
+  dots.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) toPhoto(+b.dataset.i); });
+  $('z-pprev').onclick = () => toPhoto(photoIdx() - 1);
+  $('z-pnext').onclick = () => toPhoto(photoIdx() + 1);
+
+  const flipFrom = (rect) => {
+    const to = dlg.getBoundingClientRect();
+    if (RM.matches || !rect || !dlg.animate) { dlg.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 150 }); return; }
+    const sx = rect.width / to.width, sy = rect.height / to.height;
+    const dx = rect.left - to.left, dy = rect.top - to.top;
+    dlg.animate([
+      { transformOrigin: 'top left', transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`, opacity: .4, borderRadius: '12px' },
+      { transformOrigin: 'top left', transform: 'none', opacity: 1 }
+    ], { duration: 420, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    dlg.querySelector('.z-grid').animate([{ opacity: 0 }, { opacity: 0, offset: .35 }, { opacity: 1 }], { duration: 420 });
+  };
+
+  const open = (art, { animate = true, push = true } = {}) => {
+    origin = art.querySelector('.pj-link');
+    fill(art);
+    const rect = animate ? art.getBoundingClientRect() : null;
+    dlg.showModal();
+    document.documentElement.style.overflow = 'hidden';
+    $('z-close').focus();
+    if (animate) flipFrom(rect);
+    if (push) { try { history.pushState({ pj: art.dataset.slug }, '', '#projet-' + art.dataset.slug); pushed = true; } catch (_) { pushed = false; } }
+    // PROD : history.pushState({ pj: slug }, '', '/realisations/' + slug) ; + document.title du projet.
+  };
+  const swap = (art) => { fill(art); $('z-close').focus(); origin = art.querySelector('.pj-link'); art.scrollIntoView({ inline: 'start', block: 'nearest' });
+    try { history.replaceState({ pj: art.dataset.slug }, '', '#projet-' + art.dataset.slug); } catch (_) {} };
+
+  const finishClose = () => {
+    dlg.close();
+    document.documentElement.style.overflow = '';
+    origin?.focus({ preventScroll: true });
+  };
+  const close = (fromPop = false) => {
+    if (!dlg.open) return;
+    const a = (!RM.matches && dlg.animate) ? dlg.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.97)' }], { duration: 180, easing: 'ease-in' }) : null;
+    a ? a.finished.then(finishClose) : finishClose();
+    if (!fromPop && pushed) { pushed = false; history.back(); }
+    else { pushed = false; try { history.replaceState(null, '', location.pathname + location.search); } catch (_) {} }
+  };
+
+  track.addEventListener('click', (e) => {
+    const art = e.target.closest('.pc'); if (!art) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; // ouvrir dans un onglet = vraie page
+    e.preventDefault(); open(art);
+  });
+  $('z-close').onclick = () => close();
+  dlg.addEventListener('cancel', (e) => { e.preventDefault(); close(); }); // Échap
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) close(); });  // clic hors du panneau
+  dlg.addEventListener('keydown', (e) => {
+    if (e.target.closest('a,button') && e.target.closest('.z-info')) return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); toPhoto(photoIdx() + 1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); toPhoto(photoIdx() - 1); }
+  });
+  addEventListener('popstate', () => { if (dlg.open) close(true); else openFromHash(false); });
+
+  const openFromHash = (anim) => {
+    const m = location.hash.match(/^#projet-(.+)$/); if (!m) return;
+    const art = track.querySelector(`.pc[data-slug="${CSS.escape(m[1])}"]`);
+    if (art) open(art, { animate: anim, push: false });
+  };
+  openFromHash(false);
+})();
+</script>
+</body>
+</html>

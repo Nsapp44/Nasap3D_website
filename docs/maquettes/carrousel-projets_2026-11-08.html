@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette : carrousel de projets /maquettiste-nantes (2026-11-08)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<!--
+  MAQUETTE autonome (pas du code de production). v08 (Opus) : repart de la v05 validée par Nolann.
+  Changements v08 : filtres retirés ; compteur « 01–03 sur 08 » + repères cliquables (un par projet) ; zoom avec vignettes
+  (photos, rendu 3D, vue 360°) et visionneuse 360° (glisser, flèches, rotation auto) ; projet suivant/précédent avec miniature.
+  Branchement prévu : src/data/realisations.ts (données) + src/components/ProjectsCarousel.astro (HTML serveur + <script> inline, sans React).
+  Les liens pointent vers /realisations/<slug> (pages à créer). Ici, ouvrir le zoom pousse #projet-<slug> (file:// interdit un autre chemin) ;
+  en production : history.pushState vers /realisations/<slug>.
+  Images : chemins relatifs vers public/assets (en prod : <Image> Astro, srcset 400/800/1200).
+  Blocs PJ:CSS / PJ:HTML / PJ:DATA / PJ:TPL / PJ:JS : recopiés tels quels dans page-maquettiste-nantes_2026-11-08.html.
+-->
+<style>
+  :root {
+    --bg: #161514; --bg2: #1a1917; --bg3: #201d1b;
+    --ink: #f3f1ec; --muted: rgba(255,255,255,.65); --faint: rgba(255,255,255,.5);
+    --line: rgba(255,255,255,.1); --accent: #ff5a3c;
+    --ease: cubic-bezier(.2,.8,.2,1);
+    --wrap: 800px; --pad: 24px;
+    --edge: max(var(--pad), calc((100vw - var(--wrap)) / 2 + var(--pad)));
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); color: var(--ink); }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.6 "Inter", system-ui, sans-serif; overflow-x: clip; }
+  a { color: inherit; }
+  button { font: inherit; color: inherit; }
+
+  /* Contexte de page (factice) */
+  .fake-head { height: 56px; border-bottom: 1px solid var(--line); background: var(--bg); display: flex; align-items: center; padding: 0 var(--edge); font: 700 15px "Space Grotesk", sans-serif; color: var(--ink); }
+  .fake-head span { color: var(--accent); }
+  .lp-section { max-width: var(--wrap); margin: 0 auto; padding: 0 var(--pad) 44px; }
+  .lp-h2 { font: 700 20px "Space Grotesk", sans-serif; color: var(--ink); margin: 0 0 16px; }
+  .lp-note { font: 400 14px/1.6 "Inter", sans-serif; color: var(--muted); margin: 0; }
+  .fake-faq { opacity: .35; }
+  .fake-faq div { height: 52px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 10px; background: var(--bg2); }
+
+  /* PJ:CSS ===== Section carrousel + zoom (bloc autonome : variables --pj-* , aucune dépendance au reste de la page) ===== */
+  .pj, dialog.zoom {
+    --pj-bg: #161514; --pj-bg2: #1a1917; --pj-bg3: #201d1b;
+    --pj-ink: #f3f1ec; --pj-muted: rgba(255,255,255,.65); --pj-faint: rgba(255,255,255,.5);
+    --pj-line: rgba(255,255,255,.1); --pj-acc: #ff5a3c; --pj-ease: cubic-bezier(.2,.8,.2,1);
+    --pj-wrap: 800px; --pj-pad: 24px;
+    /* bord gauche du contenu = bord de la colonne de texte (100cqw = largeur de .pj, sans la barre de défilement) */
+    --pj-edge: max(var(--pj-pad), calc((100cqw - var(--pj-wrap)) / 2 + var(--pj-pad)));
+  }
+  .pj { container-type: inline-size; padding: 40px 0 44px; background: var(--pj-bg); color: var(--pj-ink); }
+  .pj-head { max-width: var(--pj-wrap); margin: 0 auto; padding: 0 var(--pj-pad); display: flex; align-items: flex-end; justify-content: space-between; gap: 16px 24px; }
+  .pj-kicker { font: 600 12px "Inter", sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--pj-acc); margin: 0 0 6px; }
+  .pj-head .lp-h2 { margin: 0 0 6px; font-size: 24px; }
+
+  /* Repères + compteur + flèches, sur une ligne */
+  .pj-ctrl { display: flex; align-items: center; gap: 14px; flex: none; }
+  .pj-ctrl[hidden], .z-meta[hidden] { display: none; }
+  .pj-ticks { display: flex; align-items: center; }
+  .pj-tick { width: 22px; height: 32px; padding: 0; border: 0; background: none; display: grid; place-items: center; cursor: pointer; border-radius: 6px; }
+  .pj-tick i { display: block; width: 10px; height: 3px; border-radius: 3px; background: rgba(255,255,255,.22); transition: width .3s var(--pj-ease), background-color .3s; }
+  .pj-tick:hover i { background: rgba(255,255,255,.55); }
+  .pj-tick.on i { width: 18px; background: var(--pj-acc); }
+  .pj-count { margin: 0; display: flex; align-items: baseline; gap: 6px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .pj-count b { font: 600 18px/1 "Space Grotesk", sans-serif; letter-spacing: .2px; color: var(--pj-ink); }
+  .pj-count span { font: 500 13px/1 "Inter", sans-serif; color: var(--pj-faint); }
+  .pj-arrows { display: flex; gap: 8px; }
+  .icon-btn { width: 44px; height: 44px; border-radius: 999px; border: 1px solid var(--pj-line); background: var(--pj-bg2); color: var(--pj-ink); display: grid; place-items: center; cursor: pointer; transition: border-color .2s, background .2s, opacity .2s; }
+  .icon-btn:hover { border-color: rgba(255,90,60,.6); background: var(--pj-bg3); }
+  .icon-btn:disabled { opacity: .35; cursor: default; border-color: var(--pj-line); background: var(--pj-bg2); }
+  .icon-btn svg { width: 18px; height: 18px; }
+  .icon-btn:focus-visible, .pj-tick:focus-visible, .pj-link:focus-visible, .pj-btn:focus-visible, .pj-all a:focus-visible,
+  .zt:focus-visible, .z-chip:focus-visible, .zp:focus-visible, .sp-play:focus-visible { outline: 3px solid var(--pj-ink); outline-offset: 3px; }
+  .pj-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+  .track { list-style: none; margin: 20px 0 0; padding: 4px var(--pj-edge) 18px; display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--pj-edge); overscroll-behavior-x: contain; scrollbar-width: none; }
+  .track::-webkit-scrollbar { display: none; }
+  .track > li { flex: 0 0 clamp(250px, 30vw, 300px); scroll-snap-align: start; display: flex; }
+
+  .pc { position: relative; width: 100%; display: flex; flex-direction: column; border: 1px solid var(--pj-line); border-radius: 12px; background: var(--pj-bg2); color: var(--pj-ink); overflow: hidden; transition: scale .25s ease, border-color .25s ease, box-shadow .25s ease; }
+  .pc:hover { scale: 1.02; border-color: rgba(255,90,60,.45); box-shadow: 0 10px 28px rgba(0,0,0,.35); }
+  .pc-media { position: relative; aspect-ratio: 4 / 5; background: var(--pj-bg3); overflow: hidden; }
+  .pc-media img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .4s var(--pj-ease); }
+  .pc:hover .pc-media img { transform: scale(1.05); }
+  .pc-media::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(22,21,20,.65), transparent 40%); pointer-events: none; }
+  .pc-badges { position: absolute; left: 10px; right: 10px; bottom: 10px; display: flex; gap: 6px; z-index: 1; }
+  .badge { font: 600 11px "Inter", sans-serif; letter-spacing: .3px; padding: 4px 8px; border-radius: 999px; background: rgba(22,21,20,.78); color: var(--pj-ink); border: 1px solid var(--pj-line); backdrop-filter: blur(4px); display: inline-flex; align-items: center; gap: 5px; }
+  .badge.b3d { border-color: rgba(255,90,60,.6); color: #ffd9d0; }
+  .spin-ico { width: 12px; height: 12px; flex: none; animation: pj-spin 6s linear infinite; }
+  @keyframes pj-spin { to { rotate: 360deg; } }
+  .pc-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .pc-cat { font: 600 11px "Inter", sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--pj-acc); margin: 0; }
+  .pc-title { font: 600 16px/1.3 "Space Grotesk", sans-serif; margin: 0; color: var(--pj-ink); }
+  .pj-link { text-decoration: none; color: inherit; }
+  .pj-link::after { content: ""; position: absolute; inset: 0; z-index: 2; border-radius: 12px; }
+  .pj-link:focus-visible { outline: none; }
+  .pc:has(.pj-link:focus-visible) { outline: 3px solid var(--pj-ink); outline-offset: 3px; }
+  .pc-text { margin: 0; font: 400 13px/1.55 "Inter", sans-serif; color: var(--pj-muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .pc-more { margin-top: auto; padding-top: 6px; font: 500 13px "Inter", sans-serif; color: var(--pj-ink); display: inline-flex; align-items: center; gap: 6px; }
+  .pc-more span { color: var(--pj-acc); transition: transform .25s var(--pj-ease); }
+  .pc:hover .pc-more span { transform: translateX(3px); }
+  .pc-full { display: none; } /* copie détaillée pour le zoom ; le texte complet visible reste .pc-text + la page /realisations/<slug> */
+
+  .pj-all { max-width: var(--pj-wrap); margin: 6px auto 0; padding: 0 var(--pj-pad); font: 500 14px "Inter", sans-serif; }
+  .pj-all a { color: var(--pj-ink); text-decoration: underline; text-decoration-color: rgba(255,90,60,.6); text-underline-offset: 3px; display: inline-flex; min-height: 44px; align-items: center; }
+
+  /* Entrée douce (même courbe que le site : translateY(6px), 0,5 s) */
+  .js .track > li { opacity: 0; transform: translateY(6px); }
+  .js .pj.in .track > li { opacity: 1; transform: none; transition: opacity .5s ease, transform .5s ease; transition-delay: calc(var(--i) * 60ms); }
+
+  /* ===== Zoom ===== */
+  dialog.zoom { padding: 0; border: 1px solid var(--pj-line); border-radius: 16px; background: var(--pj-bg2); color: var(--pj-ink); width: min(1120px, calc(100vw - 48px)); max-width: none; max-height: calc(100dvh - 48px); overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.6); font: 400 15px/1.6 "Inter", sans-serif; }
+  dialog.zoom::backdrop { background: rgba(10,9,8,.82); backdrop-filter: blur(6px); }
+  .z-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); height: min(calc(100dvh - 48px), 760px); }
+  .z-media { position: relative; background: var(--pj-bg3); display: flex; flex-direction: column; min-height: 0; }
+  .z-stage { position: relative; flex: 1; min-height: 0; display: flex; }
+  .z-strip { flex: 1; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; }
+  .z-strip::-webkit-scrollbar { display: none; }
+  .z-strip figure { flex: 0 0 100%; margin: 0; scroll-snap-align: center; display: grid; place-items: center; padding: 16px 16px 4px; min-height: 0; }
+  .z-strip figure > img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border-radius: 8px; }
+  .z-ph { position: absolute; top: 50%; translate: 0 -50%; z-index: 2; background: rgba(22,21,20,.78); backdrop-filter: blur(4px); }
+  .z-ph.prev { left: 12px; } .z-ph.next { right: 12px; }
+  .z-ph[hidden] { display: none; }
+
+  /* Vignettes : photos, rendu 3D, 360° animée */
+  .z-thumbs { display: flex; gap: 8px; justify-content: center; padding: 10px 16px 2px; overflow-x: auto; scrollbar-width: none; flex: none; }
+  .z-thumbs::-webkit-scrollbar { display: none; }
+  .z-thumbs[hidden] { display: none; }
+  .zt { position: relative; flex: none; width: 64px; height: 48px; padding: 0; border: 0; border-radius: 8px; overflow: hidden; background: #2a2622; cursor: pointer; opacity: .55; outline: 2px solid transparent; outline-offset: 2px; transition: opacity .2s, outline-color .2s; }
+  .zt:hover { opacity: .9; }
+  .zt[aria-current="true"] { opacity: 1; outline-color: var(--pj-acc); }
+  .zt img, .zt canvas { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .zt-chip { position: absolute; left: 4px; bottom: 4px; font: 700 9px/1 "Inter", sans-serif; letter-spacing: .3px; padding: 3px 5px; border-radius: 99px; background: rgba(22,21,20,.82); color: #ffd9d0; border: 1px solid rgba(255,90,60,.55); pointer-events: none; }
+  .z-cap { margin: 0; padding: 6px 20px 12px; font-size: 12px; line-height: 1.4; color: var(--pj-faint); text-align: center; min-height: calc(2.8em + 18px); flex: none; }
+
+  /* Visionneuse 360° (dernière diapo des projets qui ont un modèle 3D) */
+  .z-strip figure.z-spin { position: relative; display: block; padding: 0; background: radial-gradient(ellipse at 50% 45%, #2b2724 0%, var(--pj-bg3) 72%); outline-offset: -6px; }
+  .sp-stage { position: absolute; inset: 16px 64px 60px; touch-action: pan-y pinch-zoom; cursor: grab; user-select: none; -webkit-user-select: none; }
+  .sp-stage.grab { cursor: grabbing; }
+  .sp-stage img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; -webkit-user-drag: none; }
+  .sp-ui { position: absolute; left: 64px; right: 64px; bottom: 10px; display: flex; align-items: center; gap: 12px; }
+  .sp-play { width: 44px; height: 44px; border-radius: 99px; border: 1px solid var(--pj-line); background: rgba(22,21,20,.7); color: var(--pj-ink); display: grid; place-items: center; cursor: pointer; flex: none; transition: border-color .2s, background .2s; }
+  .sp-play:hover { border-color: rgba(255,90,60,.6); }
+  .sp-play svg { width: 16px; height: 16px; }
+  .sp-play .i-pause { display: none; } .sp-play[aria-pressed="true"] .i-play { display: none; } .sp-play[aria-pressed="true"] .i-pause { display: block; }
+  .sp-bar { flex: 1; height: 3px; border-radius: 3px; background: rgba(255,255,255,.14); position: relative; overflow: hidden; }
+  .sp-bar i { position: absolute; top: 0; bottom: 0; left: 0; width: 18%; background: var(--pj-acc); border-radius: 3px; translate: calc(var(--p, 0) * 455%) 0; }
+  .sp-pill { position: absolute; left: 50%; top: 18px; translate: -50% 0; font: 600 12px "Inter", sans-serif; letter-spacing: .3px; padding: 6px 12px; border-radius: 99px; background: rgba(22,21,20,.78); border: 1px solid rgba(255,90,60,.5); color: #ffd9d0; display: inline-flex; gap: 7px; align-items: center; pointer-events: none; transition: opacity .5s; z-index: 1; white-space: nowrap; }
+  .sp-pill .spin-ico { width: 14px; height: 14px; }
+  .z-spin.touched .sp-pill { opacity: 0; }
+  .sp-load { position: absolute; right: 18px; bottom: 64px; font: 500 11px "Inter", sans-serif; color: var(--pj-faint); transition: opacity .4s; }
+  .sp-load.done { opacity: 0; }
+
+  /* Colonne texte */
+  .z-info { padding: 28px 28px 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+  .z-info .pc-cat { padding-right: 52px; }
+  .z-title { margin: 0; font: 700 26px/1.2 "Space Grotesk", sans-serif; color: var(--pj-ink); padding-right: 40px; text-wrap: balance; }
+  .z-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+  .z-chip { min-height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 11px; border-radius: 999px; border: 1px solid var(--pj-line); background: var(--pj-bg3); color: var(--pj-muted); font: 500 12px "Inter", sans-serif; cursor: pointer; transition: border-color .2s, color .2s; }
+  .z-chip:hover { color: var(--pj-ink); border-color: rgba(255,255,255,.25); }
+  .z-chip.c3d { border-color: rgba(255,90,60,.5); color: #ffd9d0; }
+  .z-chip.c3d:hover { border-color: var(--pj-acc); }
+  .z-text p { margin: 0 0 10px; font-size: 15px; line-height: 1.65; color: rgba(255,255,255,.78); }
+  .z-ctas { margin-top: auto; padding-top: 8px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .pj-btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 18px; border-radius: 999px; font: 600 14px "Inter", sans-serif; text-decoration: none; border: 1px solid var(--pj-line); background: var(--pj-bg3); color: var(--pj-ink); transition: border-color .2s, background .2s, filter .2s; }
+  .pj-btn:hover { border-color: rgba(255,90,60,.6); }
+  .pj-btn-primary { background: var(--pj-acc); border-color: var(--pj-acc); color: #161514; }
+  .pj-btn-primary:hover { filter: brightness(1.08); border-color: var(--pj-acc); }
+  .z-pager { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-top: 14px; border-top: 1px solid var(--pj-line); }
+  .zp { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 6px; border: 1px solid transparent; border-radius: 12px; background: none; color: var(--pj-ink); text-align: left; cursor: pointer; transition: border-color .2s, background .2s; min-width: 0; }
+  .zp.next { flex-direction: row-reverse; text-align: right; }
+  .zp:hover { background: var(--pj-bg3); border-color: var(--pj-line); }
+  .zp img { width: 44px; height: 44px; flex: none; border-radius: 8px; object-fit: cover; background: var(--pj-bg3); }
+  .zp span { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .zp small { font: 500 11px/1.2 "Inter", sans-serif; color: var(--pj-faint); letter-spacing: .3px; }
+  .zp b { font: 600 13px/1.3 "Space Grotesk", sans-serif; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; hyphens: auto; overflow-wrap: anywhere; }
+  .z-close { position: absolute; top: 14px; right: 14px; z-index: 3; background: rgba(22,21,20,.85); }
+
+  /* Tablette */
+  @media (max-width: 900px) {
+    dialog.zoom { width: calc(100vw - 32px); max-height: calc(100dvh - 32px); }
+    .z-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; height: auto; max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain; }
+    .z-grid { align-content: start; }
+    .z-media, .z-info { min-height: auto; }
+    .z-stage { flex: none; height: min(52dvh, 520px); }
+    .z-info { padding: 8px 24px 24px; overflow: visible; }
+    .z-info .pc-cat { padding-right: 0; }
+    .z-title { padding-right: 0; }
+  }
+  /* Mobile */
+  @media (max-width: 640px) {
+    .pj { padding-top: 28px; }
+    .pj-head { flex-direction: column; align-items: stretch; gap: 14px; }
+    .pj-head .lp-h2 { font-size: 21px; }
+    .pj-ctrl { justify-content: space-between; margin-left: -5px; }
+    .pj-arrows { display: none; }
+    .track { gap: 12px; margin-top: 14px; }
+    .track > li { flex-basis: 78vw; }
+    dialog.zoom { width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; border: 0; }
+    .z-grid { height: 100dvh; max-height: 100dvh; }
+    .z-stage { height: 50dvh; }
+    .z-strip figure { padding: 8px 8px 2px; }
+    .z-ph { display: none; }
+    .sp-stage { inset: 12px 16px 60px; }
+    .sp-ui { left: 16px; right: 16px; }
+    .sp-pill { top: 12px; }
+    .zt { width: 52px; height: 40px; }
+    .z-thumbs { justify-content: flex-start; padding: 10px 16px 2px; }
+    .z-title { font-size: 22px; }
+    .z-info { padding: 4px 20px 28px; }
+    .z-close { top: 10px; right: 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pc, .pc-media img, .pc-more span, .pj-tick i, .zt, .sp-pill { transition: none; }
+    .pc:hover { scale: none; } .pc:hover .pc-media img { transform: none; }
+    .js .track > li { opacity: 1; transform: none; }
+    .spin-ico { animation: none; }
+  }
+  /* /PJ:CSS */
+</style>
+</head>
+<body>
+<script>document.documentElement.classList.add('js'); document.body.classList.add('js');</script>
+
+<header class="fake-head">Nasap<span>3D</span>&nbsp;· maquette carrousel (fin de /maquettiste-nantes)</header>
+
+<!-- PJ:HTML -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-3d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3.2-6.9"/><path d="M21 4v5h-5"/></symbol></svg>
+<!-- ===================== SECTION À BRANCHER (remplace « Nos maquettes ») ===================== -->
+<section class="pj" id="nos-maquettes" aria-labelledby="pj-title">
+  <div class="pj-head">
+    <div>
+      <p class="pj-kicker">Réalisations</p>
+      <h2 class="lp-h2" id="pj-title">Nos maquettes</h2>
+      <p class="lp-note">Touchez un projet pour l'agrandir : photos, détails et fiche complète.</p>
+    </div>
+    <div class="pj-ctrl" id="pj-ctrl" hidden>
+      <div class="pj-ticks" id="pj-ticks" role="group" aria-label="Aller au projet"></div>
+      <p class="pj-count" id="pj-count" aria-hidden="true"><b>01–03</b> <span>sur 08</span></p>
+      <span class="pj-sr" id="pj-live" aria-live="polite"></span>
+      <div class="pj-arrows">
+        <button class="icon-btn" type="button" id="pj-prev" aria-label="Projets précédents" aria-controls="pj-track"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <button class="icon-btn" type="button" id="pj-next" aria-label="Projets suivants" aria-controls="pj-track"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <ul class="track" id="pj-track" aria-label="Projets de maquettes" tabindex="-1">
+    <li style="--i:0" data-f="industrie"><article class="pc" data-slug="systeme-filtration-purification">
+      <div class="pc-media"><img src="../../public/assets/real-1.webp" width="896" height="1195" loading="lazy" decoding="async" alt="Système de filtration et de purification : équipement de procédé biotechnologique, châssis imprimé, vraie tuyauterie transparente, roulettes et presse-étoupes en métal">
+        <div class="pc-badges"><span class="badge">5 vues</span><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>3D 360°</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Industrie et salon</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/systeme-filtration-purification">Système de filtration et de purification</a></h3>
+        <p class="pc-text">Équipement de procédé biotechnologique reproduit à l'échelle : châssis imprimé, vraie tuyauterie transparente, roulettes et presse-étoupes en métal. Panneau fluidique, vannes et tubulures fonctionnels à l'échelle.</p>
+        <div class="pc-full"><p>Équipement de procédé biotechnologique reproduit à l'échelle : châssis imprimé, vraie tuyauterie transparente, roulettes et presse-étoupes en métal.</p><p>Panneau fluidique, vannes et tubulures fonctionnels à l'échelle ; manomètres et vannes imprimés.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+
+    <li style="--i:1" data-f="industrie"><article class="pc" data-slug="maquette-bioreacteur">
+      <div class="pc-media"><img src="../../public/assets/real-19.webp" width="896" height="1195" loading="lazy" decoding="async" alt="Maquette de bioréacteur en inox imprimée en 3D">
+        <div class="pc-badges"><span class="badge">3 vues</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Industrie et salon</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/maquette-bioreacteur">Maquette de bioréacteur</a></h3>
+        <p class="pc-text">Reproduction détaillée d'une cuve en inox, de ses tubulures et raccords. Bloc de vannes, leviers et manomètres imprimés à l'échelle, avec stickers intégrés.</p>
+        <div class="pc-full"><p>Reproduction détaillée d'une cuve en inox, de ses tubulures et raccords.</p><p>Bloc de vannes, leviers et manomètres imprimés à l'échelle, avec stickers intégrés.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+
+    <li style="--i:2" data-f="pedagogie"><article class="pc" data-slug="maquette-cellule-biologique">
+      <div class="pc-media"><img src="../../public/assets/real-8.webp" width="589" height="643" loading="lazy" decoding="async" alt="Cellule biologique : maquette pédagogique en coupe, coque imprimée puis peinte à la main">
+        <div class="pc-badges"><span class="badge">3 vues</span><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>3D 360°</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Pédagogie</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/maquette-cellule-biologique">Cellule biologique en coupe</a></h3>
+        <p class="pc-text">Maquette pédagogique en coupe : coque imprimée puis peinte à la main, organites en pièces multicolores.</p>
+        <div class="pc-full"><p>Maquette pédagogique en coupe : coque imprimée puis peinte à la main, organites en pièces multicolores.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+
+    <li style="--i:3" data-f="vitrine"><article class="pc" data-slug="caravane-de-presentation">
+      <div class="pc-media"><img src="../../public/assets/real-5.webp" width="1200" height="1600" loading="lazy" decoding="async" alt="Caravanes de présentation miniatures imprimées en 3D, série de modèles réduits">
+        <div class="pc-badges"><span class="badge">2 vues</span><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>3D 360°</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Vitrine</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/caravane-de-presentation">Caravane de présentation</a></h3>
+        <p class="pc-text">Maquette de vitrine pour le secteur du loisir : carrosserie imprimée en plusieurs couleurs dans la masse, vitres et feux en plexiglas. Série de modèles réduits imprimés et détaillés.</p>
+        <div class="pc-full"><p>Maquette de vitrine pour le secteur du loisir : carrosserie imprimée en plusieurs couleurs dans la masse, vitres et feux en plexiglas.</p><p>Série de modèles réduits imprimés et détaillés.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+
+    <li style="--i:4" data-f="design"><article class="pc" data-slug="maquettes-design-produit">
+      <div class="pc-media"><img src="../../public/assets/real-17.webp" width="824" height="1099" loading="lazy" decoding="async" alt="Maquettes de design produit">
+        <div class="pc-badges"><span class="badge">1 vue</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Design et prototype</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/maquettes-design-produit">Maquettes de design produit</a></h3>
+        <p class="pc-text">Maquettes de design produit réalisées pour une présentation.</p>
+        <div class="pc-full"><p>Maquettes de design produit réalisées pour une présentation.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+
+    <li style="--i:5" data-f="pedagogie"><article class="pc" data-slug="formes-pedagogiques-sante">
+      <div class="pc-media"><img src="../../public/assets/real-15.webp" width="1600" height="1200" loading="lazy" decoding="async" alt="Formes pédagogiques multicolores imprimées pour le secteur santé">
+        <div class="pc-badges"><span class="badge">1 vue</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Pédagogie</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/formes-pedagogiques-sante">Formes pédagogiques</a></h3>
+        <p class="pc-text">Pièces d'illustration multicolores pour le secteur santé.</p>
+        <div class="pc-full"><p>Pièces d'illustration multicolores pour le secteur santé.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+
+    <li style="--i:6" data-f="design"><article class="pc" data-slug="piece-retro-concue">
+      <div class="pc-media"><img src="../../public/assets/real-12.webp" width="1200" height="1600" loading="lazy" decoding="async" alt="Pièce rétro-conçue : réducteur redessiné en CAO à côté de la pièce d'origine usée">
+        <div class="pc-badges"><span class="badge">1 vue</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Design et prototype</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/piece-retro-concue">Pièce rétro-conçue</a></h3>
+        <p class="pc-text">Réducteur redessiné en CAO à partir de la pièce d'origine usée.</p>
+        <div class="pc-full"><p>Réducteur redessiné en CAO à partir de la pièce d'origine usée.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+
+    <li style="--i:7" data-f="design"><article class="pc" data-slug="figurines-resine">
+      <div class="pc-media"><img src="../../public/assets/real-16.webp" width="824" height="517" loading="lazy" decoding="async" alt="Figurines en résine SLA imprimées en haute définition">
+        <div class="pc-badges"><span class="badge">1 vue</span></div></div>
+      <div class="pc-body">
+        <p class="pc-cat">Design et prototype</p>
+        <h3 class="pc-title"><a class="pj-link" href="/realisations/figurines-resine">Figurines en résine</a></h3>
+        <p class="pc-text">Impression résine haute définition, prête pour la peinture.</p>
+        <div class="pc-full"><p>Impression résine haute définition, prête pour la peinture.</p></div>
+        <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+      </div></article></li>
+  </ul>
+
+  <p class="pj-all"><a href="/realisations">Toutes nos réalisations</a></p>
+</section>
+<!-- /PJ:HTML -->
+
+<!-- Photos et vues du zoom (en prod : générées depuis src/data/realisations.ts ; chaque page /realisations/<slug> les montre aussi en HTML).
+     "spin:<dossier>" = visionneuse 360° (72 vues public/assets/maquettes/<dossier>/{sm,base}/e28_aNNN.avif). -->
+<!-- PJ:DATA -->
+<script type="application/json" id="pj-photos">
+{
+  "systeme-filtration-purification": [
+    ["../../public/assets/real-1.webp", 896, 1195, "Système de filtration et de purification : équipement de procédé biotechnologique, châssis imprimé, vraie tuyauterie transparente, roulettes et presse-étoupes en métal"],
+    ["../../public/assets/real-2.webp", 896, 1195, "Maquette d'équipement de procédé avec pompe et tuyauterie"],
+    ["../../public/assets/real-3.webp", 896, 1195, "Vue 3/4 : châssis, tubulures et raccords fonctionnels à l'échelle"],
+    ["../../public/assets/real-11.webp", 896, 1195, "Bloc fluidique : manomètres et vannes imprimés"],
+    ["../../public/assets/maquettes/purification/base/e55_a010.avif", 1600, 1200, "Rendu 3D de la maquette du système de purification"],
+    ["spin:purification", 1600, 1200, "Maquette du système de purification en 3D"]
+  ],
+  "maquette-bioreacteur": [
+    ["../../public/assets/real-19.webp", 896, 1195, "Maquette de bioréacteur en inox imprimée en 3D"],
+    ["../../public/assets/real-20.webp", 896, 1195, "Maquette de bioréacteur, vue de dessus"],
+    ["../../public/assets/real-21.webp", 896, 1195, "Détail de vannes, leviers et manomètres à l'échelle"]
+  ],
+  "maquette-cellule-biologique": [
+    ["../../public/assets/real-8.webp", 589, 643, "Cellule biologique : maquette pédagogique en coupe, coque imprimée puis peinte à la main"],
+    ["../../public/assets/real-9.webp", 595, 587, "Maquette de cellule, vue de trois quarts"],
+    ["../../public/assets/maquettes/cellule/base/e55_a010.avif", 1600, 1200, "Rendu 3D de la maquette de cellule"],
+    ["spin:cellule", 1600, 1200, "Maquette de cellule en 3D"]
+  ],
+  "caravane-de-presentation": [
+    ["../../public/assets/real-5.webp", 1200, 1600, "Caravanes de présentation miniatures imprimées en 3D, série de modèles réduits"],
+    ["../../public/assets/maquettes/caravane/base/e55_a010.avif", 1600, 1200, "Rendu 3D de la caravane de présentation"],
+    ["spin:caravane", 1600, 1200, "Caravane de présentation en 3D"]
+  ],
+  "maquettes-design-produit": [["../../public/assets/real-17.webp", 824, 1099, "Maquettes de design produit"]],
+  "formes-pedagogiques-sante": [["../../public/assets/real-15.webp", 1600, 1200, "Formes pédagogiques multicolores imprimées pour le secteur santé"]],
+  "piece-retro-concue": [["../../public/assets/real-12.webp", 1200, 1600, "Pièce rétro-conçue : réducteur redessiné en CAO à côté de la pièce d'origine usée"]],
+  "figurines-resine": [["../../public/assets/real-16.webp", 824, 517, "Figurines en résine SLA imprimées en haute définition"]]
+}
+</script>
+<!-- /PJ:DATA -->
+
+<!-- Zoom : gabarit cloné par le script à la première ouverture (le HTML initial ne contient donc aucun titre vide). -->
+<!-- PJ:TPL -->
+<template id="pj-zoom-tpl">
+<dialog class="zoom" id="pj-zoom" aria-labelledby="z-title">
+  <button class="icon-btn z-close" type="button" id="z-close" aria-label="Fermer et revenir aux projets"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  <div class="z-grid">
+    <div class="z-media">
+      <div class="z-stage">
+        <div class="z-strip" id="z-strip" role="region" aria-roledescription="galerie" aria-label="Photos et vues 3D du projet" tabindex="-1"></div>
+        <button class="icon-btn z-ph prev" type="button" id="z-pprev" aria-label="Photo précédente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <button class="icon-btn z-ph next" type="button" id="z-pnext" aria-label="Photo suivante"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
+      <div class="z-thumbs" id="z-thumbs" role="group" aria-label="Choisir une vue"></div>
+      <p class="z-cap" id="z-cap" aria-live="polite"></p>
+    </div>
+    <div class="z-info">
+      <p class="pc-cat" id="z-cat"></p>
+      <h2 class="z-title" id="z-title"></h2>
+      <div class="z-meta" id="z-meta"></div>
+      <div class="z-text" id="z-text"></div>
+      <div class="z-ctas">
+        <a class="pj-btn pj-btn-primary" id="z-page" href="#">Voir la fiche projet <span aria-hidden="true">→</span></a>
+        <a class="pj-btn" href="/contact">Un projet similaire ?</a>
+      </div>
+      <nav class="z-pager" aria-label="Autres projets">
+        <button class="zp prev" type="button" id="z-prevp"></button>
+        <button class="zp next" type="button" id="z-nextp"></button>
+      </nav>
+    </div>
+  </div>
+</dialog>
+</template>
+<!-- /PJ:TPL -->
+
+<section class="lp-section fake-faq" aria-hidden="true">
+  <h2 class="lp-h2">Questions fréquentes</h2>
+  <div></div><div></div>
+</section>
+
+<!-- PJ:JS -->
+<script>
+(() => {
+  const RM = matchMedia('(prefers-reduced-motion: reduce)');
+  const $ = (id) => document.getElementById(id);
+  const sec = $('nos-maquettes'), track = $('pj-track');
+  const photos = JSON.parse($('pj-photos').textContent);
+  const lis = [...track.children], cards = lis.map((li) => li.querySelector('.pc')), N = cards.length;
+  const title = (art) => art.querySelector('.pj-link').textContent;
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  const how = () => (RM.matches ? 'auto' : 'smooth');
+
+  // Entrée douce + images des cartes chargées dès que la section approche
+  // (le chargement différé natif ignore les cartes hors champ dans un défilement horizontal : image vide au premier glissé)
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { sec.classList.add('in'); io.disconnect(); } }, { threshold: .15 });
+    io.observe(sec);
+    const pre = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { track.querySelectorAll('img[loading="lazy"]').forEach((im) => { im.loading = 'eager'; }); pre.disconnect(); } }, { rootMargin: '300px 0px' });
+    pre.observe(sec);
+  } else sec.classList.add('in');
+
+  // ===== Repères, compteur « 01–03 sur 08 », flèches =====
+  const ctrl = $('pj-ctrl'), ticks = $('pj-ticks'), countB = $('pj-count').querySelector('b'), live = $('pj-live');
+  ticks.innerHTML = cards.map((a, i) => `<button type="button" class="pj-tick" data-i="${i}" aria-label="Projet ${i + 1} : ${esc(title(a))}" aria-controls="pj-track"><i></i></button>`).join('');
+  const tickEls = [...ticks.children];
+  $('pj-count').querySelector('span').textContent = 'sur ' + pad2(N);
+  ctrl.hidden = false;
+  const geo = () => {
+    const a = lis[0].getBoundingClientRect(), b = lis[1].getBoundingClientRect(), step = b.left - a.left;
+    const padL = parseFloat(getComputedStyle(track).paddingLeft) || 0;
+    // cartes entières visibles entre le bord de la colonne de texte et le bord de l'écran
+    const k = Math.max(1, Math.floor((track.clientWidth - padL + (step - a.width) + 1) / step));
+    return { step, padL, k };
+  };
+  const range = () => {
+    const { step, k } = geo(), max = track.scrollWidth - track.clientWidth;
+    if (track.scrollLeft >= max - 2) return [Math.max(0, N - k), N - 1];
+    const first = Math.min(N - 1, Math.max(0, Math.round(track.scrollLeft / step)));
+    return [first, Math.min(N - 1, first + k - 1)];
+  };
+  let shown = '', liveT = 0, raf = 0, ready = false;
+  const sync = () => {
+    raf = 0;
+    const [a, b] = range(), max = track.scrollWidth - track.clientWidth, key = a + '-' + b;
+    $('pj-prev').disabled = track.scrollLeft <= 2;
+    $('pj-next').disabled = track.scrollLeft >= max - 2;
+    if (key === shown) return;
+    shown = key;
+    countB.textContent = a === b ? pad2(a + 1) : `${pad2(a + 1)}–${pad2(b + 1)}`;
+    tickEls.forEach((t, i) => t.classList.toggle('on', i >= a && i <= b));
+    if (ready) { clearTimeout(liveT); liveT = setTimeout(() => { live.textContent = a === b ? `Projet ${a + 1} sur ${N}` : `Projets ${a + 1} à ${b + 1} sur ${N}`; }, 400); }
+  };
+  const toCard = (i, behavior = how()) => {
+    const li = lis[Math.max(0, Math.min(N - 1, i))];
+    track.scrollTo({ left: track.scrollLeft + li.getBoundingClientRect().left - track.getBoundingClientRect().left - geo().padL, behavior });
+  };
+  const go = (dir) => { const [a] = range(), { k } = geo(); toCard(a + dir * k); };
+  track.addEventListener('scroll', () => { raf ||= requestAnimationFrame(sync); }, { passive: true });
+  addEventListener('resize', () => { raf ||= requestAnimationFrame(sync); });
+  $('pj-prev').onclick = () => go(-1);
+  $('pj-next').onclick = () => go(1);
+  ticks.addEventListener('click', (e) => { const t = e.target.closest('.pj-tick'); if (t) toCard(+t.dataset.i); });
+  sync(); ready = true;
+
+  // ===== Rendus 3D : 72 vues par projet, chargées à la demande (des plus espacées aux plus fines, 6 à la fois) =====
+  const MAQ = '../../public/assets/maquettes/', FR = 72, START = 10;
+  const pools = {};
+  const url = (dir, size, i) => `${MAQ}${dir}/${size}/e28_a${String(i).padStart(3, '0')}.avif`;
+  const rank = (i) => (i % 6 ? (i % 2 ? 2 : 1) : 0);
+  const loadPool = (dir, size, step = 1) => {
+    const p = pools[dir + size] ||= { imgs: new Array(FR), n: 0, fin: 0, req: new Set(), queue: [], active: 0 };
+    const add = [...Array(FR).keys()].filter((i) => i % step === 0 && !p.req.has(i)).sort((a, b) => rank(a) - rank(b) || a - b);
+    add.forEach((i) => p.req.add(i)); p.queue.push(...add);
+    const pump = () => {
+      while (p.active < 6 && p.queue.length) {
+        const i = p.queue.shift(), im = new Image(); p.active++;
+        im.decoding = 'async';
+        im.onload = () => { p.imgs[i] = im; p.n++; p.fin++; p.active--; pump(); };
+        im.onerror = () => { p.fin++; p.active--; pump(); };
+        im.src = url(dir, size, i);
+      }
+    };
+    pump(); return p;
+  };
+  const nearest = (p, f) => { for (let d = 0; d < FR / 2; d++) { const a = p.imgs[(f + d) % FR] || p.imgs[(f - d + FR * 2) % FR]; if (a) return a; } return null; };
+  const wrapF = (f) => ((Math.round(f) % FR) + FR) % FR;
+  // taille des vues : 640 px suffit jusqu'à ~800 px affichés (écran x densité), sinon 1600 px
+  const vSize = () => { const w = innerWidth <= 900 ? innerWidth : Math.min(innerWidth - 48, 1120) * .574; return w * Math.min(devicePixelRatio || 1, 2) > 800 ? 'base' : 'sm'; };
+
+  // ===== Zoom : le gabarit est cloné à la première ouverture (aucun titre vide dans le HTML initial) =====
+  let dlg = null, strip, thumbs, grid, cur = null, origin = null, pushed = false, closing = false;
+  const kind = (src) => (src.startsWith('spin:') ? 'spin' : src.includes('/maquettes/') ? 'render' : 'photo');
+  const PLAY = '<svg class="i-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><svg class="i-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>';
+  const ICO = '<svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>';
+  const slide = ([src, w, h, alt], i, n, size) => {
+    const lbl = `${i + 1} sur ${n}`;
+    if (kind(src) === 'spin') {
+      const dir = src.slice(5);
+      return `<figure class="z-spin" role="group" aria-roledescription="visionneuse 3D" aria-label="${lbl} : ${esc(alt)}, à 360°. Faites glisser pour tourner, ou utilisez les flèches gauche et droite." data-spin="${dir}" data-size="${size}" tabindex="0">
+        <div class="sp-stage"><img src="${url(dir, size, START)}" width="${w}" height="${h}" alt="${esc(alt)}" decoding="sync"></div>
+        <span class="sp-pill">${ICO}360° · faites glisser</span><span class="sp-load" aria-hidden="true">chargement…</span>
+        <div class="sp-ui"><button type="button" class="sp-play" aria-pressed="false" aria-label="Rotation automatique">${PLAY}</button><div class="sp-bar" aria-hidden="true"><i></i></div></div></figure>`;
+    }
+    return `<figure role="group" aria-roledescription="photo" aria-label="${lbl}"><img src="${src}" width="${w}" height="${h}" alt="${esc(alt)}" ${i ? 'loading="lazy"' : ''} decoding="async"></figure>`;
+  };
+  // Vignettes (en prod : miniatures 128 px générées par Astro)
+  const thumb = ([src], i, n, nPh) => {
+    const k = kind(src), lbl = k === 'spin' ? 'Vue 3D à 360°' : k === 'render' ? 'Rendu 3D' : `Photo ${nPh}`;
+    const inner = k === 'spin' ? `<canvas width="128" height="96" data-spin="${src.slice(5)}"></canvas><span class="zt-chip">360°</span>`
+      : k === 'render' ? `<img src="${src.replace('/base/', '/sm/')}" alt="" decoding="async"><span class="zt-chip">3D</span>`
+      : `<img src="${src}" alt="" decoding="async">`;
+    return `<button type="button" class="zt" data-i="${i}" aria-label="${lbl} (${i + 1} sur ${n})">${inner}</button>`;
+  };
+  const metaHtml = (ph) => {
+    const nP = ph.filter((p) => kind(p[0]) === 'photo').length, iR = ph.findIndex((p) => kind(p[0]) === 'render'), iS = ph.findIndex((p) => kind(p[0]) === 'spin');
+    return (nP > 1 ? `<button type="button" class="z-chip" data-i="0">${nP} photos</button>` : '')
+      + (iR >= 0 ? `<button type="button" class="z-chip" data-i="${iR}">Rendu 3D</button>` : '')
+      + (iS >= 0 ? `<button type="button" class="z-chip c3d" data-i="${iS}">${ICO}Vue 360°</button>` : '');
+  };
+  const pager = (b, art, lbl) => {
+    b.innerHTML = `<img src="${art.querySelector('.pc-media img').getAttribute('src')}" alt="" decoding="async"><span><small>${lbl}</small><b>${esc(title(art))}</b></span>`;
+    b.onclick = () => swap(art);
+  };
+
+  // Visionneuse 360° : glisser, inertie, clavier, rotation auto
+  const viewer = { el: null, img: null, ld: null, p: null, f: START, vel: 0, auto: false, drag: null, raf: 0, last: 0, shown: -1, active: false };
+  const vDraw = () => { const f = wrapF(viewer.f); if (f === viewer.shown) return; const im = viewer.p && nearest(viewer.p, f); if (im) { viewer.img.src = im.src; viewer.shown = f; } viewer.el.style.setProperty('--p', (f / (FR - 1)).toFixed(3)); };
+  const vLoop = (t) => {
+    if (!viewer.active) return;
+    const dt = Math.min(48, t - (viewer.last || t)); viewer.last = t;
+    if (!viewer.drag) {
+      if (Math.abs(viewer.vel) > 0.002) { viewer.f += viewer.vel * dt; viewer.vel *= Math.pow(.94, dt / 16); }
+      else if (viewer.auto) viewer.f += dt * 0.01;
+    }
+    const ld = viewer.ld, p = viewer.p;
+    if (ld && !ld.classList.contains('done')) { if (p.fin >= FR) ld.classList.add('done'); else ld.textContent = `chargement ${Math.round(p.fin / FR * 100)} %`; }
+    vDraw(); viewer.raf = requestAnimationFrame(vLoop);
+  };
+  const setAuto = (on) => { viewer.auto = on; const b = viewer.el?.querySelector('.sp-play'); if (b) { b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', on ? 'Arrêter la rotation automatique' : 'Rotation automatique'); } };
+  const viewerStop = () => { viewer.active = false; cancelAnimationFrame(viewer.raf); };
+  const viewerStart = (fig) => {
+    if (viewer.active && viewer.el === fig) return;
+    const same = viewer.el === fig; viewerStop();
+    Object.assign(viewer, { el: fig, img: fig.querySelector('.sp-stage img'), ld: fig.querySelector('.sp-load'), f: same ? viewer.f : START, vel: 0, shown: -1, last: 0, drag: null, active: true });
+    viewer.p = loadPool(fig.dataset.spin, fig.dataset.size, 1);
+    setAuto(!RM.matches && !fig.classList.contains('touched'));
+    viewer.raf = requestAnimationFrame(vLoop);
+  };
+
+  // Vignette 360° : petite boucle (1 vue sur 3, ~8 images/s) ; arrêtée zoom fermé, onglet caché, diapo 360° affichée ou mouvement réduit
+  const ta = { cv: null, raf: 0 };
+  const thumbStop = () => { cancelAnimationFrame(ta.raf); ta.raf = 0; };
+  const thumbSetup = () => {
+    thumbStop(); const cv = thumbs.querySelector('canvas'); ta.cv = cv; if (!cv) return;
+    const ctx = cv.getContext('2d');
+    Object.assign(ta, { dir: cv.dataset.spin, f: 0, t: 0, draw: (im) => { const w = im.naturalWidth, h = im.naturalHeight; ctx.drawImage(im, w * .1, h * .1, w * .8, h * .8, 0, 0, cv.width, cv.height); } });
+    const po = new Image(); po.onload = () => { if (ta.cv === cv && !ta.f) ta.draw(po); }; po.src = `${MAQ}${ta.dir}/sm/e28_a000.webp`;
+  };
+  const thumbPlay = () => {
+    if (!ta.cv || ta.raf || RM.matches || document.hidden || !dlg.open) return;
+    const p = loadPool(ta.dir, 'sm', 3);
+    const tick = (t) => {
+      if (t - ta.t >= 125) { const nf = (ta.f + 3) % FR, im = p.imgs[nf]; if (im) { ta.f = nf; ta.t = t; ta.draw(im); } }
+      ta.raf = requestAnimationFrame(tick);
+    };
+    ta.raf = requestAnimationFrame(tick);
+  };
+
+  const fill = (art) => {
+    viewerStop(); viewer.el = null; viewer.f = START;
+    const slug = art.dataset.slug, link = art.querySelector('.pj-link'), ph = photos[slug] || [], size = vSize();
+    $('z-cat').textContent = art.querySelector('.pc-cat').textContent;
+    $('z-title').textContent = link.textContent;
+    $('z-text').innerHTML = art.querySelector('.pc-full').innerHTML;
+    $('z-page').href = link.getAttribute('href');
+    strip.innerHTML = ph.map((p, i) => slide(p, i, ph.length, size)).join('');
+    let nPh = 0;
+    thumbs.innerHTML = ph.length > 1 ? ph.map((p, i) => thumb(p, i, ph.length, kind(p[0]) === 'photo' ? ++nPh : 0)).join('') : '';
+    thumbs.hidden = $('z-pprev').hidden = $('z-pnext').hidden = ph.length < 2;
+    $('z-meta').innerHTML = metaHtml(ph); $('z-meta').hidden = ph.length < 2;
+    strip.scrollLeft = 0;
+    const k = cards.indexOf(art);
+    pager($('z-prevp'), cards[(k - 1 + N) % N], 'Projet précédent');
+    pager($('z-nextp'), cards[(k + 1) % N], 'Projet suivant');
+    thumbSetup();
+    cur = art;
+  };
+  const photoIdx = () => Math.round(strip.scrollLeft / Math.max(1, strip.clientWidth));
+  const photoSync = () => {
+    const i = photoIdx(), figs = strip.children, fig = figs[i], tb = thumbs.children[i];
+    [...thumbs.children].forEach((b, j) => b.setAttribute('aria-current', j === i));
+    $('z-cap').textContent = fig ? fig.querySelector('img').alt : '';
+    $('z-pprev').disabled = i <= 0; $('z-pnext').disabled = i >= figs.length - 1;
+    if (tb && thumbs.scrollWidth > thumbs.clientWidth) { const a = thumbs.getBoundingClientRect(), b = tb.getBoundingClientRect(); thumbs.scrollBy({ left: b.left - a.left - (a.width - b.width) / 2, behavior: how() }); }
+    const spin = fig && fig.classList.contains('z-spin');
+    if (spin && dlg.open) { viewerStart(fig); thumbStop(); } else { viewerStop(); thumbPlay(); }
+  };
+  const toPhoto = (i) => strip.scrollTo({ left: i * strip.clientWidth, behavior: how() });
+
+  const flipFrom = (rect) => {
+    const to = dlg.getBoundingClientRect();
+    if (RM.matches || !rect || !dlg.animate) { dlg.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 150 }); return; }
+    const sx = rect.width / to.width, sy = rect.height / to.height;
+    const dx = rect.left - to.left, dy = rect.top - to.top;
+    dlg.animate([
+      { transformOrigin: 'top left', transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`, opacity: .4, borderRadius: '12px' },
+      { transformOrigin: 'top left', transform: 'none', opacity: 1 }
+    ], { duration: 420, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    grid.animate([{ opacity: 0 }, { opacity: 0, offset: .35 }, { opacity: 1 }], { duration: 420 });
+  };
+
+  const ensure = () => {
+    if (dlg) return;
+    dlg = $('pj-zoom-tpl').content.firstElementChild.cloneNode(true);
+    document.body.append(dlg);
+    strip = $('z-strip'); thumbs = $('z-thumbs'); grid = dlg.querySelector('.z-grid');
+    let sr = 0;
+    strip.addEventListener('scroll', () => { sr ||= requestAnimationFrame(() => { sr = 0; photoSync(); }); }, { passive: true });
+    thumbs.addEventListener('click', (e) => { const b = e.target.closest('.zt'); if (b) toPhoto(+b.dataset.i); });
+    $('z-meta').addEventListener('click', (e) => { const b = e.target.closest('.z-chip'); if (b) toPhoto(+b.dataset.i); });
+    $('z-pprev').onclick = () => toPhoto(photoIdx() - 1);
+    $('z-pnext').onclick = () => toPhoto(photoIdx() + 1);
+    $('z-close').onclick = () => close();
+    dlg.addEventListener('cancel', (e) => { e.preventDefault(); close(); }); // Échap
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) close(); }); // clic hors du panneau
+    // fermeture effective (aussi quand le navigateur ferme seul, ex. Échap répété)
+    dlg.addEventListener('close', () => {
+      viewerStop(); thumbStop(); closing = false;
+      document.documentElement.style.overflow = '';
+      if (pushed) { pushed = false; history.back(); }
+      origin?.focus({ preventScroll: true });
+    });
+    dlg.addEventListener('keydown', (e) => {
+      if (e.target.closest('a,button') && e.target.closest('.z-info')) return;
+      if (e.key === 'ArrowRight') { e.preventDefault(); toPhoto(photoIdx() + 1); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); toPhoto(photoIdx() - 1); }
+    });
+    // visionneuse
+    strip.addEventListener('pointerdown', (e) => {
+      const st = e.target.closest('.sp-stage'); if (!st) return;
+      const fig = st.closest('.z-spin'); fig.classList.add('touched'); viewerStart(fig); setAuto(false);
+      st.setPointerCapture(e.pointerId); st.classList.add('grab');
+      viewer.drag = { x: e.clientX, f: viewer.f, lx: e.clientX, lt: performance.now() }; viewer.vel = 0;
+    });
+    strip.addEventListener('pointermove', (e) => {
+      const d = viewer.drag; if (!d) return;
+      const w = viewer.img.clientWidth || 600, ppf = Math.max(3, w * 1.1 / FR), t = performance.now();
+      viewer.f = d.f - (e.clientX - d.x) / ppf;
+      const dt = t - d.lt; if (dt > 0) viewer.vel = viewer.vel * .6 + (-(e.clientX - d.lx) / ppf / dt) * .4;
+      d.lx = e.clientX; d.lt = t;
+    });
+    const vUp = () => { if (!viewer.drag) return; viewer.drag = null; viewer.el?.querySelector('.sp-stage').classList.remove('grab'); if (RM.matches) viewer.vel = 0; };
+    strip.addEventListener('pointerup', vUp); strip.addEventListener('pointercancel', vUp);
+    strip.addEventListener('keydown', (e) => {
+      const fig = e.target.closest('.z-spin'); if (!fig || e.target.closest('.sp-play')) return;
+      const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (!d) return;
+      e.preventDefault(); e.stopPropagation(); fig.classList.add('touched'); viewerStart(fig); setAuto(false); viewer.f += d * 2;
+    });
+    strip.addEventListener('click', (e) => { const b = e.target.closest('.sp-play'); if (!b) return; b.closest('.z-spin').classList.add('touched'); setAuto(!viewer.auto); });
+  };
+
+  const open = (art, { animate = true, push = true, at = 0, from = null } = {}) => {
+    ensure();
+    if (dlg.open) return;
+    origin = from || art.querySelector('.pj-link');
+    fill(art);
+    const rect = animate ? (from || art).getBoundingClientRect() : null;
+    dlg.showModal();
+    document.documentElement.style.overflow = 'hidden';
+    if (at > 0) strip.scrollLeft = at * strip.clientWidth;
+    photoSync();
+    $('z-close').focus({ preventScroll: true });
+    if (animate) flipFrom(rect);
+    if (push) { try { history.pushState({ pj: art.dataset.slug }, '', '#projet-' + art.dataset.slug); pushed = true; } catch (_) { pushed = false; } }
+    // PROD : history.pushState({ pj: slug }, '', '/realisations/' + slug) ; + document.title du projet.
+  };
+  const swap = (art) => {
+    fill(art); photoSync();
+    grid.scrollTop = 0; dlg.querySelector('.z-info').scrollTop = 0;
+    if (!RM.matches) grid.animate([{ opacity: .4, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 250, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    origin = art.querySelector('.pj-link'); toCard(cards.indexOf(art), 'auto');
+    try { history.replaceState({ pj: art.dataset.slug }, '', '#projet-' + art.dataset.slug); } catch (_) {}
+  };
+  const close = (fromPop = false) => {
+    if (!dlg || !dlg.open || closing) return;
+    closing = true; viewerStop(); thumbStop();
+    const a = (!RM.matches && dlg.animate) ? dlg.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.97)' }], { duration: 180, easing: 'ease-in' }) : null;
+    const done = () => dlg.close();
+    a ? a.finished.then(done, done) : done();
+    if (!fromPop && pushed) { pushed = false; history.back(); }
+    else { pushed = false; try { history.replaceState(null, '', location.pathname + location.search); } catch (_) {} }
+  };
+  document.addEventListener('visibilitychange', () => { if (document.hidden) thumbStop(); else if (dlg?.open) photoSync(); });
+
+  track.addEventListener('click', (e) => {
+    const art = e.target.closest('.pc'); if (!art) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; // ouvrir dans un onglet = vraie page
+    e.preventDefault(); open(art);
+  });
+  // Liens « Faire tourner en 3D » ailleurs dans la page : <a href="/realisations/<slug>" data-pj-spin="<slug>">
+  document.addEventListener('click', (e) => {
+    const l = e.target.closest('[data-pj-spin]'); if (!l || e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
+    const art = cards.find((c) => c.dataset.slug === l.dataset.pjSpin); if (!art) return;
+    e.preventDefault();
+    open(art, { at: (photos[art.dataset.slug] || []).findIndex((p) => kind(p[0]) === 'spin'), from: l });
+  });
+  addEventListener('popstate', () => { if (dlg?.open) close(true); else openFromHash(false); });
+
+  const openFromHash = (anim) => {
+    const m = location.hash.match(/^#projet-(.+)$/); if (!m) return;
+    const art = track.querySelector(`.pc[data-slug="${CSS.escape(decodeURIComponent(m[1]))}"]`);
+    if (art) open(art, { animate: anim, push: false });
+  };
+  openFromHash(false);
+})();
+</script>
+<!-- /PJ:JS -->
+</body>
+</html>
