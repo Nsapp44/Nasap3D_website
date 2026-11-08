@@ -1,0 +1,16 @@
+---
+// 09 : FAQ en <details> natifs (maquette l.768-785). Même source que le JSON-LD FAQPage.
+import { MAQUETTISTE_FAQ } from "../../data/maquettiste-faq";
+---
+
+<section class="sec wrap" aria-labelledby="s-faq">
+  <div class="sec-head" data-rv><div class="sec-label">09</div><h2 id="s-faq">Questions fréquentes</h2></div>
+  <div class="faq" data-rv>
+    {MAQUETTISTE_FAQ.map((f) => (
+      <details>
+        <summary>{f.q}<span class="pm" aria-hidden="true">+</span></summary>
+        {f.html ? <p set:html={f.html} /> : <p>{f.a}</p>}
+      </details>
+    ))}
+  </div>
+</section>

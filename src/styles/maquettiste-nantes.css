@@ -86,6 +86,9 @@ html :where(.mqn) h2,html :where(.mqn) h3{font-weight:700}
   .mqn .sec h2{font-size:clamp(25px,2.8vw,36px);line-height:1.12;font-weight:700}
   .mqn .chapo{font:500 clamp(19px,1.9vw,24px)/1.4 "Space Grotesk",sans-serif;color:var(--fg);margin:16px 0 0;max-width:34ch}
   .mqn .p{color:var(--mut);margin:14px 0 0;max-width:62ch}
+  /* Titre et note du carrousel (classes partagees avec projets-carrousel.css, dont .pj-head .lp-h2 garde la priorite) */
+  .mqn :where(.lp-h2){font:700 clamp(25px,2.8vw,36px)/1.12 "Space Grotesk",sans-serif;color:var(--fg);margin:0}
+  .mqn :where(.lp-note){color:var(--mut);margin:14px 0 0}
   .mqn .more{margin-top:12px;max-width:62ch}
   .mqn .more summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:6px;min-height:44px;color:var(--fg);font:600 14px Inter,sans-serif;padding:6px 0;text-decoration:underline;text-decoration-color:rgba(255,90,60,.6);text-underline-offset:4px}
   .mqn .more summary::-webkit-details-marker{display:none}

@@ -1,0 +1,79 @@
+---
+// Comportements de la page (maquette l.813-823 motionOn, 865-923). Script bundlé par Astro (module, différé) :
+// sans JS, tout reste visible car [data-rv] n'est masqué que sous html.motion.
+---
+
+<script>
+  (function () {
+    var H = document.documentElement;
+
+    /* 1. Apparition au scroll : html.motion + .in sur [data-rv] (sauf mouvement réduit / pas d'IntersectionObserver) */
+    var rm = matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window);
+    if (!rm) {
+      H.classList.add("motion");
+      var rv = new IntersectionObserver(
+        function (es) {
+          es.forEach(function (e) {
+            if (e.isIntersecting) {
+              e.target.classList.add("in");
+              rv.unobserve(e.target);
+            }
+          });
+        },
+        { rootMargin: "0px 0px -8% 0px" }
+      );
+      document.querySelectorAll("main [data-rv]").forEach(function (el) {
+        if (el.getBoundingClientRect().top < innerHeight) el.classList.add("in");
+        else rv.observe(el);
+      });
+    }
+
+    /* 2. Icônes animées : .live ajouté quand la carte est visible */
+    var ai = document.querySelectorAll(".aicard");
+    if ("IntersectionObserver" in window) {
+      var io = new IntersectionObserver(
+        function (es) {
+          es.forEach(function (e) {
+            e.target.classList.toggle("live", e.isIntersecting);
+          });
+        },
+        { threshold: 0.35 }
+      );
+      ai.forEach(function (c) {
+        io.observe(c);
+      });
+    } else {
+      ai.forEach(function (c) {
+        c.classList.add("live");
+      });
+    }
+
+    /* 3. Cartes « types » : lignes équilibrées (5 -> 3+2, 7 -> 4+3...), jamais une carte orpheline si possible */
+    var box = document.getElementById("types-cards");
+    if (box) {
+      var GAP = 14,
+        MIN = 280;
+      var layout = function () {
+        var cards = box!.children,
+          n = cards.length,
+          w = box!.clientWidth;
+        if (!n || !w) return;
+        var maxCols = Math.max(1, Math.floor((w + GAP) / (MIN + GAP)));
+        var rows = Math.ceil(n / maxCols),
+          base = Math.floor(n / rows),
+          extra = n % rows,
+          i = 0;
+        for (var r = 0; r < rows; r++) {
+          var size = base + (r < extra ? 1 : 0);
+          for (var k = 0; k < size; k++, i++) {
+            (cards[i] as HTMLElement).style.flex =
+              "1 1 calc((100% - " + (size - 1) * GAP + "px) / " + size + " - .5px)";
+          }
+        }
+      };
+      layout();
+      if ("ResizeObserver" in window) new ResizeObserver(layout).observe(box);
+      else window.addEventListener("resize", layout);
+    }
+  })();
+</script>
