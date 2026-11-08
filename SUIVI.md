@@ -11,9 +11,16 @@ Fichiers : `docs/maquettes/carrousel-projets_2026-11-08.html` (source unique des
 
 FAIT (commités en local) : bandeau chiffres 2×2 ; rideau pleine page (044d47a, à valider par Nolann) ; textes (délais, France / International, Réactivité) ; « 360° » → « 3D » ; **zoom = UNE seule visionneuse 3D par projet, rotation auto douce, pause pendant la manipulation, vignette statique (68682fd)** ; **section « Autres réalisations » retirée, carrousel « Nos maquettes » = 5 cartes, bouton « Toutes nos réalisations » sous le carrousel (3558066)**. Nolann : la maquette est très bonne, prochaine étape = coder la vraie page Astro + grosse optimisation.
 
+## Portage Astro (conversation « [P] NASAP [page maquettiste Astro] », Opus)
+Plan : `docs/chantiers/plan-portage-astro-maquettiste_2026-11-08.md` (f153436) : pas d'îlot React (JS vanilla de la maquette), CSS préfixé `.mqn`, lots L1-L8.
+L1 données FAIT (4df8c01) : 4 textes de fiche `// BROUILLON à valider par Nolann` (caravane cite « une concession allemande », « près d'une centaine de caravanes »). L3 CSS FAIT (8d34123) : page = `<main class="mqn">` avec `<header class="hero">` dedans, `.mcta` hors main, `html.motion` posé par JS ; `.sb-frame`/`.sb-tag` gardés (à retirer si inutiles). L6 polices FAIT (25c3311, OFL 1.1, latin, preload SG 600/700) ; reste Google Fonts dans `admin.astro` et `shop.astro` (pages hors BaseLayout, lot à part). L2 carrousel FAIT (91b86cb) : `src/components/maquettiste/ProjectsCarousel.astro` + `projets-carrousel.css`, zoom = pop-up (scroll de page bloqué, molette = zoom ×1-×3), rotation auto reprend 2 s après le dernier geste. L5 fiches FAIT (3f3f720) : 4 pages `/realisations/<slug>` prérendues, sitemap +4 URLs, libellés `/realisations`. Build vert après `npx prisma generate` (le prérendu a besoin du client Prisma, cause : middleware). `astro check` plante (mémoire V8), pas de résultat complet. L4 page FAIT (619a1bb) : `src/pages/maquettiste-nantes.astro` réécrite (même title/description/path, JSON-LD Service+FAQPage+Breadcrumb), sections en `src/components/maquettiste/Sec*.astro`, `PageMotion.astro` (script bundlé : motion, [data-rv], .live, #types-cards), StoryboardCellule frame 0 `fetchpriority="high"`. Build vert, 1 H1, 13 details FAQ, JSON-LD valide. **Écarts L4 à vérifier en capture (L8)** : en-tête carrousel sans « 08 » et `h2#pj-title` au lieu de `#s-proj` ; h2 carrousel 24 px (règle `.pj-head .lp-h2` prioritaire) vs h2 des autres sections ; section `.pj` sans `sec`/`wrap` (largeur, espacement avec la 07) ; MachinesStrip dans un `div.wrap` après le carrousel ; `.more summary` masqué à toutes les largeurs ? ; avertissement build `Astro.request.headers` sur `/realisations/[slug]` (prérendu, à corriger).
+Rappel Nolann (08/11) pour L2 : zoom = UNE vue 3D, rotation auto douce, pause à la prise en main (déjà en maquette) ; zoom = pop-up : page derrière bloquée, molette sur la 3D = zoom seulement, jamais de scroll de page.
+Décisions 08/11 : slug caravane `maquette-caravane` ; photo caravane légendée « illustration » ; polices via @fontsource ; on suit la maquette (liste des blocs retirés de la page en ligne montrée avant push).
+Leçon : `set_session_model` refuse sur la session courante → la passation « passe-toi sur Opus » ne marche pas (signalé à la conv Pipeline) ; Nolann a mis Opus à la main.
+
 ## Prochain pas exact
-1. Passation (hook boucle de compaction) : nouvelle conversation autonome avec ce SUIVI.
-2. Coder la page Astro depuis la maquette 08 (Sonnet + `executant-ui`), puis optimisation (Lighthouse).
+1. L8 contrôle (Sonnet + `testeur`, puis corrections `executant-ui` des écarts L4) (`testeur` : captures côte à côte 375/768/1440/1920 + 375×667, scroll horizontal, rideau, reduced-motion, sans JS, thème sombre, console, zoom, `seo_diff` ×2).
+2. Optimisation (Lighthouse build prod).
 
 ## À reporter au code Astro
 - « PETG HF » → « PETG » partout (`prisma/seed.ts:64` ; label en base/menu admin : migration à prévoir, accord de Nolann avant push).
@@ -23,6 +30,7 @@ FAIT (commités en local) : bandeau chiffres 2×2 ; rideau pleine page (044d47a,
 
 ## Reste à montrer / trancher (Nolann)
 Captures : « Lire la suite » Blocs courts, h2 « Quatre types… », flèches masquées aux extrémités, « machines SP » = machines spéciales, lien « Toutes nos réalisations ». Caravane : photo = rendu ChatGPT → retirer ou marquer illustration. Contraste bouton devis. Pager du zoom (5 cartes). Écrans courts : hero épinglé coupé (−27 px à 375×667). Jonction 2 du rideau optionnelle. 12 PNG de captures commités (Nolann décide). Passe responsive 375/768/1440/1920 + thème sombre Windows.
+Questions en attente (pop-up au retour) : real-17 renommé « Objets liturgiques » → « Maquettes de design produit » (image non vue, à confirmer) ; reprise de la rotation auto 2 s après le geste (garder ?) ; textes BROUILLON des 4 fiches (caravane : « concession allemande », « centaine de caravanes ») ; og:image:alt figé dans BaseLayout faux (« Objets liturgiques… ») ; Google Fonts restant dans admin/shop (lot à part).
 Idée écartée : SMS au client (payant, Nolann le fait à la main, 08/11).
 
 ## Conversations à supprimer
