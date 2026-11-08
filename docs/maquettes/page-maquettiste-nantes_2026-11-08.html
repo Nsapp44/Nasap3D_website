@@ -1147,8 +1147,10 @@
     layout();
     track.addEventListener('scroll', () => { raf ||= requestAnimationFrame(sync); }, { passive: true });
     addEventListener('resize', () => { const i = range()[0]; layout(); toPage(pageOf(i), 'auto'); shown = ''; raf ||= requestAnimationFrame(sync); });
-    prev.onclick = () => toPage(curPage() - 1);
-    next.onclick = () => toPage(curPage() + 1);
+    // flèches : décalage d'UNE carte à la fois (décision Nolann 08/11)
+    const toCard = (i) => track.scrollTo({ left: track.scrollLeft + lis[Math.max(0, Math.min(n - K, i))].getBoundingClientRect().left - track.getBoundingClientRect().left - PADL, behavior: how() });
+    prev.onclick = () => toCard(range()[0] - 1);
+    next.onclick = () => toCard(range()[0] + 1);
     ticks.addEventListener('click', (e) => { const t = e.target.closest('.pj-tick'); if (t) toPage(+t.dataset.i); });
     sync(); ready = true;
     // utilisé par le zoom : amener la carte ouverte dans la fenêtre de SON carrousel
