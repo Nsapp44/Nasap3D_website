@@ -1,0 +1,252 @@
+/* Page /maquettiste-nantes : CSS portee depuis docs/maquettes/page-maquettiste-nantes_2026-11-08.html
+   (<style> l.22-289 et l.470-503). Tout est prefixe .mqn (classe du <main>).
+   Exceptions voulues : .mcta (barre CTA mobile, hors <main>, nus ou doubles avec .btn), @keyframes, regles d'elements (a, h1-h3, img...)
+   en :where(.mqn) pour garder la specificite de la maquette (les classes du carrousel PJ ne doivent pas etre ecrasees).
+   Blocs courts (D3) = seul rendu : les regles body.t-short de la maquette sont inconditionnelles ici.
+   Non porte : .fake-head, .vbar, #old, .ph de maquette, .sb-ph, tuiles « Faire tourner en 3D » (.t3d*, l.475-490),
+   body{overflow-x:hidden} (global.css:326 le fait ; sur .mqn il casserait animation-timeline:view()), margin:0 / text-size-adjust de html/body.
+   Le CSS du carrousel (PJ:CSS) est dans src/styles/projets-carrousel.css. */
+
+.mqn,.mcta{
+  color-scheme:dark;
+  --bg:#161514; --bg2:#1a1917; --bg3:#201d1b; --fg:#f3f1ec; --mut:rgba(243,241,236,.72); --mut2:rgba(243,241,236,.6);
+  --line:rgba(255,255,255,.1); --acc:#ff5a3c; --acc-soft:rgba(255,90,60,.1); --acc-line:rgba(255,90,60,.35);
+  --r:14px; --wrap:1120px;
+}
+:where(.mqn,.mcta) *,:where(.mqn,.mcta) *::before,:where(.mqn,.mcta) *::after{box-sizing:border-box}
+.mqn{background:var(--bg);color:var(--fg);font:400 16px/1.65 Inter,system-ui,sans-serif}
+html :where(.mqn) a{color:var(--fg)}
+html :where(.mqn) strong,html :where(.mqn) b{color:var(--fg);font-weight:600}
+html :where(.mqn) a:hover{color:var(--fg)}  /* neutralise a:hover orange de global.css (0,1,1) sans depasser les regles a classe */
+html :where(.mqn) img{max-width:100%;display:block}
+html :where(.mqn) h1,html :where(.mqn) h2,html :where(.mqn) h3{font-family:"Space Grotesk",Inter,system-ui,sans-serif;color:var(--fg);margin:0;text-wrap:balance;letter-spacing:-.01em}
+/* global.css:14-16 remet h1-h3 a plat (font-size/weight: inherit) : les tailles viennent des classes ci-dessous, le poids par defaut des titres est reaffirme */
+html :where(.mqn) h2,html :where(.mqn) h3{font-weight:700}
+
+  .mqn .hl{color:var(--acc);font-weight:600}
+  .mqn .wrap{max-width:var(--wrap);margin:0 auto;padding:0 24px}
+  .mqn .ico{width:22px;height:22px;flex:none;stroke:var(--acc);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .mqn .txtlink{color:var(--fg);text-decoration:underline;text-decoration-color:rgba(255,90,60,.6);text-underline-offset:3px}
+  .mqn .txtlink:hover{color:var(--acc)}
+  .mqn a:focus-visible,.mqn summary:focus-visible,.mqn button:focus-visible{outline:3px solid var(--fg);outline-offset:3px;border-radius:6px}
+  /* Fil d'Ariane */
+  .mqn .crumb{font-size:13px;color:var(--mut2);padding-top:22px}
+  .mqn .crumb a{color:var(--mut);text-decoration:none}
+
+  /* HERO */
+  .mqn .hero{padding-top:28px;padding-bottom:36px;display:grid;grid-template-columns:1.25fr .75fr;gap:48px;align-items:end}
+  .mqn .eyebrow{display:inline-flex;align-items:center;gap:8px;font:600 12px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);margin-bottom:18px}
+  .mqn .eyebrow::before{content:"";width:22px;height:2px;background:var(--acc);border-radius:2px}
+  html :where(.mqn) h1{font-weight:700;font-size:clamp(30px,4.2vw,50px);line-height:1.08}
+  .mqn .lead{font-size:clamp(16px,1.5vw,19px);color:var(--mut);margin:18px 0 26px;max-width:46ch}
+  .mqn .btn,.mcta .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;font:700 17px/1.2 Inter,sans-serif;padding:19px 30px;border-radius:12px;background:var(--acc);color:#161514;box-shadow:0 8px 26px rgba(255,90,60,.35),0 0 0 1px rgba(255,90,60,.5);transition:transform .2s ease,background .2s ease}
+  .mqn .btn:hover,.mcta .btn:hover{background:#ff7155;transform:translateY(-2px)}
+  .mqn .btn .arr,.mcta .btn .arr{transition:transform .25s ease}
+  .mqn .btn:hover .arr,.mcta .btn:hover .arr{transform:translateX(5px)}
+  .mqn .btn-ghost{background:transparent;color:var(--fg);box-shadow:none;border:1px solid var(--line);font-weight:600;font-size:15px;padding:17px 22px}
+  .mqn .btn-ghost:hover{background:var(--bg3);border-color:var(--acc-line)}
+  .mqn .ctas{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .mqn .reassure{display:flex;gap:8px;align-items:center;color:var(--mut2);font-size:13px;margin-top:14px}
+  .mqn .reassure .ico{width:16px;height:16px}
+  .mqn .kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .mqn .kpi{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:16px 16px 14px}
+  .mqn .kpi b{display:block;font:700 clamp(24px,2.6vw,32px)/1.05 "Space Grotesk",sans-serif;color:var(--acc);margin-bottom:6px}
+  .mqn .kpi span{font-size:13px;line-height:1.4;color:var(--mut)}
+  /* Hero : bandeau compact 2x2 (colonne droite etroite, ~384 px) ; le .kpi de l'aside garde son rendu */
+  .mqn div.kpis{gap:0;grid-template-columns:1fr 1fr;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+  .mqn .kpis .kpi{background:transparent;border:0;border-radius:0;padding:14px 16px;min-width:0}
+  .mqn .kpis .kpi:nth-child(even){border-left:1px solid var(--line)}
+  .mqn .kpis .kpi:nth-child(n+3){border-top:1px solid var(--line)}
+  .mqn .kpis .kpi b{display:block;white-space:nowrap;font:700 clamp(15px,1.5vw,18px)/1.2 "Space Grotesk",sans-serif;color:#fff;margin-bottom:4px}
+  .mqn .kpis .kpi b::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--acc);margin-right:8px;vertical-align:middle;position:relative;top:-1px}
+  .mqn .kpis .kpi span{font-size:12.5px;line-height:1.4;color:var(--mut)}
+  @media (max-width:420px){ .mqn .kpis .kpi{padding:12px} .mqn .kpis .kpi b::before{margin-right:6px} }
+  @media (max-width:359px){ .mqn .kpis .kpi b{white-space:normal;overflow-wrap:anywhere;font-size:14px} }
+
+  /* Rideau page entière : le hero recule et s'éteint sur place (épinglé par translate, sans sticky) pendant que .rideau
+     (storyboard -> fin de main) remonte par-dessus. Hors @supports ou reduced-motion : page normale, aucune règle. */
+  @supports (animation-timeline: view()){
+    @media (prefers-reduced-motion:no-preference){
+      @media (min-height:560px){.motion .mqn header.hero{transform-origin:50% 0;animation:hero-recul linear both;animation-timeline:view();animation-range:exit 0% exit 100%}}
+      @keyframes hero-recul{from{translate:0 0;scale:1;opacity:1}to{translate:0 min(100%,100svh);scale:.94;opacity:.25}}
+      .mqn .rideau{position:relative;background:var(--bg);border-radius:28px 28px 0 0;border-top:1px solid var(--line);
+              box-shadow:0 -28px 60px -12px rgba(0,0,0,.65);padding-top:28px}
+    }
+  }
+  .mqn .sb-frame{position:relative;aspect-ratio:4/3;max-height:82vh;margin:0 auto;border-radius:var(--r);overflow:hidden;border:1px dashed rgba(255,90,60,.5);background:var(--bg)}
+  .mqn .sb-frame img{width:100%;height:100%;object-fit:contain;opacity:.9}
+  .mqn .sb-tag{position:absolute;left:14px;top:14px;background:rgba(22,21,20,.85);border:1px solid var(--acc-line);color:var(--fg);font:600 12px/1.3 Inter,sans-serif;padding:8px 10px;border-radius:8px;max-width:calc(100% - 28px)}
+  .mqn .sb-tag em{display:block;font-style:normal;font-weight:400;color:var(--mut)}
+
+  /* SECTIONS */
+  .mqn section.sec{padding-top:clamp(56px,7vw,96px)}
+  .mqn .sec-head{margin-bottom:28px;max-width:760px}
+  .mqn .sec-label{display:flex;align-items:center;gap:12px;font:600 13px/1 "Space Grotesk",sans-serif;color:var(--acc);letter-spacing:.06em;margin-bottom:14px}
+  .mqn .sec-label::after{content:"";height:2px;width:48px;background:var(--acc);border-radius:2px}
+  .mqn .sec h2{font-size:clamp(25px,2.8vw,36px);line-height:1.12;font-weight:700}
+  .mqn .chapo{font:500 clamp(19px,1.9vw,24px)/1.4 "Space Grotesk",sans-serif;color:var(--fg);margin:16px 0 0;max-width:34ch}
+  .mqn .p{color:var(--mut);margin:14px 0 0;max-width:62ch}
+  .mqn .more{margin-top:12px;max-width:62ch}
+  .mqn .more summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:6px;min-height:44px;color:var(--fg);font:600 14px Inter,sans-serif;padding:6px 0;text-decoration:underline;text-decoration-color:rgba(255,90,60,.6);text-underline-offset:4px}
+  .mqn .more summary::-webkit-details-marker{display:none}
+  .mqn .more summary::after{content:"+";color:var(--acc);font-size:18px;line-height:1}
+  .mqn .more[open] summary::after{content:"–"}
+  .mqn .more[open] summary .lbl-open{display:none}
+  .mqn .more:not([open]) summary .lbl-close{display:none}
+  .mqn .more p{color:var(--mut);margin:8px 0 0}
+  .mqn .more.anim{overflow:hidden}  /* pendant l'animation de hauteur (JS) */
+
+  /* Mise en page alternée */
+  .mqn .split{display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,4vw,56px);align-items:center}
+  .mqn .split.rev > .media{order:-1}
+  .mqn .media figure{margin:0;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:var(--bg3)}
+  .mqn .media img{width:100%;aspect-ratio:4/5;object-fit:cover}
+  .mqn .media.wide img{aspect-ratio:4/3}
+  :where(.mqn) figcaption{padding:12px 14px;font:600 13px/1.45 "Space Grotesk",sans-serif;color:var(--fg);background:var(--bg2);border-top:1px solid var(--line)}
+
+  /* Mosaïque des visuels (section interactive) */
+  .mqn .mosaic{display:grid;grid-template-columns:1.3fr 1fr 1fr;grid-template-rows:auto auto;gap:14px;margin-bottom:28px}
+  .mqn .mosaic figure{margin:0;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:var(--bg3);display:flex;flex-direction:column}
+  .mqn .mosaic img{width:100%;flex:1;object-fit:cover;min-height:0;aspect-ratio:4/3}
+  .mqn .mosaic .big{grid-row:span 2}
+  .mqn .mosaic .w{grid-column:2/-1}
+  .mqn .mosaic .big img{aspect-ratio:auto;height:100%}
+  .mqn .mosaic figcaption{font-size:12.5px}
+
+  /* Cartes à icônes */
+  .mqn .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px}
+  /* « Types de maquettes » : flex-wrap, le nombre de cartes peut grandir (5, 6, 7…) ; le script répartit les lignes de façon équilibrée, repli CSS = 350 px mini */
+  .mqn #types-cards{display:flex;flex-wrap:wrap;justify-content:center;gap:14px}
+  .mqn #types-cards > .card{flex:1 1 350px;min-width:0}
+  .mqn .card{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:20px;transition:border-color .25s ease,transform .25s ease}
+  .mqn .card:hover{border-color:var(--acc-line)}
+  .mqn .card .ib{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;background:var(--acc-soft);margin-bottom:14px}
+  .mqn .card h3{font-size:17px;font-weight:600;line-height:1.3;margin:0 0 8px}
+  .mqn .card p{margin:0;font-size:14.5px;line-height:1.6;color:var(--mut)}
+  .mqn a.card{display:block;text-decoration:none;color:inherit;border-color:var(--acc-line);background:linear-gradient(180deg,rgba(255,90,60,.1),var(--bg2));transition:border-color .25s ease,translate .25s ease,box-shadow .25s ease}
+  .mqn a.card h3 .arr{color:var(--acc);display:inline-block;transition:transform .25s ease}
+  /* Survol via la propriété `translate` (indépendante de `transform`) : .motion [data-rv].in{transform:none} (0,3,0) écrasait le transform du survol (0,2,1) et son transition écrasait celui de .card */
+  .motion .mqn a.card[data-rv]{transition:opacity .5s ease,transform .5s ease,border-color .25s ease,translate .25s ease,box-shadow .25s ease;transition-delay:calc(var(--i,0) * 80ms),calc(var(--i,0) * 80ms),0s,0s,0s}
+  .mqn a.card:focus-visible{border-color:var(--acc);translate:0 -3px}
+  @media (hover:hover){
+    .mqn a.card:hover{border-color:var(--acc);translate:0 -4px;box-shadow:0 14px 32px rgba(0,0,0,.4),0 0 0 1px var(--acc-line)}
+    .mqn a.card:hover h3 .arr{transform:translateX(5px)}
+  }
+  .mqn .card-go{display:none;align-items:center;gap:8px;min-height:44px;margin-top:12px;padding:0 16px;border-radius:999px;border:1px solid var(--acc-line);background:var(--acc-soft);color:var(--fg);font:600 14px Inter,sans-serif}
+  .mqn .card-go span{color:var(--acc)}
+  @media (hover:none){.mqn .card-go{display:inline-flex}}  /* tactile : pas de survol, l'indice « cliquable » reste visible */
+  .mqn .card .tag{display:inline-block;margin-top:12px;font:600 12px Inter,sans-serif;color:var(--acc)}
+  /* Icônes animées des 4 cartes « interactives » (reprises du storyboard cellule, commit e5d52b3). Lancées par .live (IntersectionObserver) ou au survol ; figées sous prefers-reduced-motion. */
+  .mqn .ai{width:30px;height:30px;flex:none;stroke:var(--acc);stroke-width:2.3;fill:none;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+  .mqn .ai .dot{fill:var(--acc);stroke:none}
+  @keyframes ai-dash{to{stroke-dashoffset:-16}}
+  @keyframes ai-spin{to{transform:rotate(360deg)}}
+  @keyframes ai-wave{from{transform:scale(.3);opacity:1}to{transform:scale(1.9);opacity:0}}
+  @keyframes ai-chase{0%,100%{opacity:.18}30%,50%{opacity:1}}
+  @media (prefers-reduced-motion:no-preference){
+    .mqn .ai .row{stroke-dasharray:5 3;animation:ai-dash 2s linear infinite}
+    .mqn .ai .gear{transform-origin:20px 20px;animation:ai-spin 6s linear infinite}
+    .mqn .ai .wave{transform-origin:20px 20px;animation:ai-wave 2s ease-out infinite}
+    .mqn .ai .led{animation:ai-chase 1.5s ease-in-out infinite}
+    .mqn .aicard .ai .a{animation-play-state:paused}  /* après le raccourci animation (qui remet running) */
+    .mqn .aicard.live .ai .a,.mqn .aicard:hover .ai .a{animation-play-state:running}
+  }
+  .mqn .usages{margin-top:22px;padding:18px 20px;border-left:3px solid var(--acc);background:var(--bg2);border-radius:0 var(--r) var(--r) 0;color:var(--mut);font-size:15px}
+  .mqn .usages b{color:var(--fg)}
+
+  /* Étapes : ligne verticale */
+  .mqn .steps{list-style:none;margin:0;padding:0;position:relative;max-width:820px}
+  .mqn .steps::before{content:"";position:absolute;left:21px;top:22px;bottom:22px;width:2px;background:linear-gradient(var(--acc),rgba(255,90,60,.15));border-radius:2px}
+  .mqn .steps li{position:relative;display:grid;grid-template-columns:44px 1fr;gap:18px;padding-bottom:22px}
+  .mqn .steps li:last-child{padding-bottom:0}
+  .mqn .steps .n{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--bg);border:2px solid var(--acc);font:700 17px "Space Grotesk",sans-serif;color:var(--fg);position:relative;z-index:1}
+  .mqn .steps .body{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+  .mqn .steps h3{font-size:17px;font-weight:600;margin:0 0 6px;display:flex;align-items:center;gap:10px}
+  .mqn .steps p{margin:0;color:var(--mut);font-size:14.5px}
+  .mqn .steps-grid{display:grid;grid-template-columns:1.4fr .6fr;gap:40px;align-items:start}
+  .mqn .aside-kpi{position:sticky;top:24px;display:grid;gap:12px}
+
+  /* FAQ */
+  .mqn .faq{max-width:860px;border-top:1px solid var(--line)}
+  .mqn .faq details{border-bottom:1px solid var(--line)}
+  .mqn .faq summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:16px;align-items:center;padding:18px 4px;font:600 16.5px/1.4 "Space Grotesk",sans-serif;color:var(--fg)}
+  .mqn .faq summary::-webkit-details-marker{display:none}
+  .mqn .faq summary .pm{flex:none;width:28px;height:28px;border-radius:50%;border:1px solid var(--acc-line);display:grid;place-items:center;color:var(--acc);transition:transform .25s ease}
+  .mqn .faq details[open] summary .pm{transform:rotate(45deg)}
+  .mqn .faq details p{margin:0;padding:0 44px 20px 4px;color:var(--mut);font-size:15px}
+
+  /* CTA final */
+  .mqn .final{margin:clamp(56px,7vw,96px) 0 64px;border:1px solid var(--acc-line);background:radial-gradient(120% 140% at 0% 0%,rgba(255,90,60,.2),rgba(255,90,60,.05) 60%);border-radius:18px;padding:clamp(28px,4vw,48px);display:grid;grid-template-columns:1fr auto;gap:28px;align-items:center}
+  .mqn .final h2{font-size:clamp(26px,3vw,38px)}
+  .mqn .final p{margin:10px 0 0;color:var(--mut);font-size:16px}
+
+  /* Barre CTA mobile collante (défaut relevé par l'audit : bouton devis quasi invisible) */
+  .mcta{display:none}
+
+  /* Entrées sobres (bloc par bloc). Sans JS, #static ou reduced-motion : tout visible. */
+  .motion .mqn [data-rv]{opacity:0;transform:translateY(6px);transition:opacity .5s ease,transform .5s ease;transition-delay:calc(var(--i,0) * 80ms)}
+  .motion .mqn [data-rv].in{opacity:1;transform:none}
+  .mqn .hero-in{animation:up .5s ease both}
+  @keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  /* H1 (LCP) : translateY seul, jamais opacity:0 */
+  .mqn h1.hero-in{animation-name:up-y}
+  @keyframes up-y{from{transform:translateY(6px)}to{transform:none}}
+  @media (prefers-reduced-motion:reduce){
+    .mqn .hero-in,.mqn h1.hero-in{animation:none}
+    .motion .mqn [data-rv]{opacity:1;transform:none;transition:none}
+    .mqn .btn,.mcta .btn,.mqn .btn .arr,.mcta .btn .arr,.mqn .card,.mqn .faq summary .pm,.mqn a.card h3 .arr,.motion .mqn a.card[data-rv]{transition:none}
+    .mqn .btn:hover,.mcta .btn:hover,.mqn .btn:hover .arr,.mcta .btn:hover .arr{transform:none}
+    .mqn a.card:hover,.mqn a.card:focus-visible{translate:none}
+    .mqn a.card:hover h3 .arr{transform:none}
+  }
+
+  /* Tablette */
+  @media (max-width:1023px){
+    .mqn .hero{grid-template-columns:1fr;gap:28px}
+    .mqn .kpis{grid-template-columns:repeat(4,1fr)}
+    .mqn .steps-grid{grid-template-columns:1fr}
+    .mqn .aside-kpi{position:static;grid-template-columns:repeat(3,1fr)}
+    .mqn .mosaic{grid-template-columns:1fr 1fr}
+    .mqn .mosaic .big{grid-row:auto;grid-column:1/-1}
+    .mqn .mosaic .w{grid-column:1/-1}
+    .mqn .mosaic .big img{aspect-ratio:16/10;height:auto}
+  }
+  /* Mobile */
+  @media (max-width:640px){
+    .mqn .wrap{padding:0 16px}
+    .mqn .kpis{grid-template-columns:1fr 1fr}
+    .mqn .split{grid-template-columns:1fr}
+    .mqn #types-cards > .card{flex-basis:100% !important}
+    .mqn .split.rev > .media{order:0}
+    .mqn .media img{aspect-ratio:4/3}
+    .mqn .mosaic{grid-template-columns:1fr}
+    .mqn .mosaic .w{grid-column:auto}
+    .mqn .aside-kpi{grid-template-columns:1fr 1fr}
+    .mqn .aside-kpi .kpi:last-child{grid-column:1/-1}
+    .mqn .btn,.mcta .btn{width:100%}
+    .mqn .final{grid-template-columns:1fr}
+    .mqn .faq details p{padding-right:4px}
+    
+    .mcta{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:20;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(22,21,20,.94);border-top:1px solid var(--line);backdrop-filter:blur(8px)}
+    .mcta .btn{padding:15px 18px;font-size:16px}
+    body:has(.mqn){padding-bottom:80px}
+  }
+
+  .mqn .more summary{display:none}
+  .mqn .p,.mqn .more,.mqn .more p,.mqn .usages{max-width:none}  /* les blocs suivent la largeur de leur colonne (retrait du 52ch) */
+  .mqn .p,.mqn .more p,.mqn .usages{border-left:3px solid #ff5a3c;background:#1a1917;border-radius:0 10px 10px 0;padding:10px 14px}
+  .mqn .chapo{font-size:clamp(22px,2.3vw,30px);max-width:24ch}
+
+  .mqn .sec.pj{--pj-wrap:var(--wrap);padding-bottom:0;background:none}  /* colonne du carrousel = colonne de la page (1120 px) */
+  .mqn .pj-head .sec-head{margin:0}
+  .mqn .split > *{min-width:0}  /* page 05 : une image qui ne charge pas (alt affiché) élargissait la colonne 1fr → scrollWidth 1018 à 375 (vu le 06/11) */
+  html:not(.motion) .mqn .pj .track > li{opacity:1;transform:none;transition:none}  /* réglage « Sobre » de la barre de maquette */
+
+  @media (max-width:640px){
+    .mqn .sec.pj{--pj-pad:16px}  /* même marge que .wrap de la page sur mobile */
+  }
+  
+
+/* Ajouts accessibilite / mobile (checklist web-design-guidelines), sans changer une valeur de la maquette */
+.mcta a:focus-visible,.mcta button:focus-visible{outline:3px solid var(--fg);outline-offset:3px}
+.mqn a,.mqn button,.mqn summary,.mcta a{touch-action:manipulation}
