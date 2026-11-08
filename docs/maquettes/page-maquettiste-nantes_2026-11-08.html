@@ -323,14 +323,15 @@
   .z-stage { position: relative; flex: 1; min-height: 0; display: flex; }
   .z-strip { flex: 1; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; }
   .z-strip::-webkit-scrollbar { display: none; }
-  .z-strip figure { flex: 0 0 100%; margin: 0; scroll-snap-align: center; display: grid; place-items: center; padding: 16px 16px 4px; min-height: 0; }
+  .z-strip figure { flex: 0 0 100%; margin: 0; scroll-snap-align: center; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); place-items: center; padding: 16px 16px 4px; min-height: 0; overflow: hidden; }
   .z-strip figure > img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border-radius: 8px; }
-  .z-ph { position: absolute; top: 50%; translate: 0 -50%; z-index: 2; background: rgba(22,21,20,.78); backdrop-filter: blur(4px); }
-  .z-ph.prev { left: 12px; } .z-ph.next { right: 12px; }
-  .z-ph[hidden] { display: none; }
+  /* Barre sous l'image : flèche · vignettes · flèche. Rien à faire défiler = pas de barre ; aux extrémités la flèche disparaît (place gardée) */
+  .z-bar { flex: none; display: flex; align-items: center; gap: 8px; padding: 8px 12px 0; }
+  .z-bar[hidden] { display: none; }
+  .z-ar:disabled, .pj-arrows .icon-btn:disabled { visibility: hidden; }
 
   /* Vignettes : photos, rendu 3D, 360° animée */
-  .z-thumbs { display: flex; gap: 8px; justify-content: center; padding: 10px 16px 2px; overflow-x: auto; scrollbar-width: none; flex: none; }
+  .z-thumbs { display: flex; gap: 8px; justify-content: safe center; padding: 4px 4px; overflow-x: auto; scrollbar-width: none; flex: 1; min-width: 0; }
   .z-thumbs::-webkit-scrollbar { display: none; }
   .z-thumbs[hidden] { display: none; }
   .zt { position: relative; flex: none; width: 64px; height: 48px; padding: 0; border: 0; border-radius: 8px; overflow: hidden; background: #2a2622; cursor: pointer; opacity: .55; outline: 2px solid transparent; outline-offset: 2px; transition: opacity .2s, outline-color .2s; }
@@ -407,12 +408,11 @@
     .z-grid { height: 100dvh; max-height: 100dvh; }
     .z-stage { height: 50dvh; }
     .z-strip figure { padding: 8px 8px 2px; }
-    .z-ph { display: none; }
     .sp-stage { inset: 12px 16px 60px; }
     .sp-ui { left: 16px; right: 16px; }
     .sp-pill { top: 12px; }
     .zt { width: 52px; height: 40px; }
-    .z-thumbs { justify-content: flex-start; padding: 10px 16px 2px; }
+    .z-bar { padding: 6px 8px 0; gap: 4px; }
     .z-title { font-size: 22px; }
     .z-info { padding: 4px 20px 28px; }
     .z-close { top: 10px; right: 10px; }
@@ -917,10 +917,12 @@
     <div class="z-media">
       <div class="z-stage">
         <div class="z-strip" id="z-strip" role="region" aria-roledescription="galerie" aria-label="Photos et vues 3D du projet" tabindex="-1"></div>
-        <button class="icon-btn z-ph prev" type="button" id="z-pprev" aria-label="Photo précédente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
-        <button class="icon-btn z-ph next" type="button" id="z-pnext" aria-label="Photo suivante"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
       </div>
-      <div class="z-thumbs" id="z-thumbs" role="group" aria-label="Choisir une vue"></div>
+      <div class="z-bar" id="z-bar">
+        <button class="icon-btn z-ar" type="button" id="z-pprev" aria-label="Photo précédente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <div class="z-thumbs" id="z-thumbs" role="group" aria-label="Choisir une vue"></div>
+        <button class="icon-btn z-ar" type="button" id="z-pnext" aria-label="Photo suivante"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
       <p class="z-cap" id="z-cap" aria-live="polite"></p>
     </div>
     <div class="z-info">
@@ -1121,7 +1123,7 @@
     strip.innerHTML = ph.map((p, i) => slide(p, i, ph.length, size)).join('');
     let nPh = 0;
     thumbs.innerHTML = ph.length > 1 ? ph.map((p, i) => thumb(p, i, ph.length, kind(p[0]) === 'photo' ? ++nPh : 0)).join('') : '';
-    thumbs.hidden = $('z-pprev').hidden = $('z-pnext').hidden = ph.length < 2;
+    $('z-bar').hidden = ph.length < 2;
     $('z-meta').innerHTML = metaHtml(ph); $('z-meta').hidden = ph.length < 2;
     strip.scrollLeft = 0;
     const k = cards.indexOf(art);
