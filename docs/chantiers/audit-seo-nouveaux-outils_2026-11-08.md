@@ -57,6 +57,16 @@ Constat de Nolann (08/11) : pas assez de backlinks. Google Business Profile : d�
 4. **« L'autre chose »** évoquée par Nolann : non identifiée avec certitude (3Dnatives ? French Fab ?) : à confirmer.
 5. Mesure : citation par ChatGPT/Perplexity non testée ; suivre les liens entrants dans Search Console (Liens) et Bing Webmaster.
 
+## Search Console, lecture complète (08/11) [V]
+- **Liens** : seulement 4 liens externes, tous vers l'accueil (hardware.fr, linkedin.com, service-impression-3d.com, zoominfo.com) ; 187 liens internes, dont 14 vers /impression-3d-cholet (à retirer avec la page).
+- **Requêtes** (515) : dominées par la marque (« nasap3d » 42 clics) et « impression 3d nantes » (31 clics, 843 impr.) ; « impression 3d » 363 impr. / 4 clics, « imprimante 3d » 1 428 impr. / 3 clics : le national est visible mais ne clique pas.
+- **Sitemap** : `https://nasap3d.com/sitemap.xml`, lu le 30/10, 15 pages découvertes = 15 indexées. RAS.
+- **Indexation** : 15 indexées, 17 non indexées, sans gravité :
+  - 9 × 404 : `www.…/retro-conception`, `/initiation-impression-3d`, `/maintenance-machine`, `/conditions-d-utilisation`, `/service-impression-3d` ; `api.nasap3d.com/`, `/panier`, `/machines` ; **`nasap3d.com/{{ nav.href }}`** (lien à gabarit non rendu, vu le 7/09 : chercher dans le code ou l'ancien site un `{{ nav.href }}` resté en clair).
+  - 3 × bloquées par robots.txt (voulu) : `/compte`, `/compte?view=settings`, `/panier`.
+  - 3 × redirection (anciens www/http, normal), 2 × « explorée, non indexée » (une `nasap3d.com`, une `www`, anciennes, 4/08 et 31/05).
+  - Les 404 `www` et `api` sont d'anciennes URL : rien à faire côté code, sauf le `{{ nav.href }}`. Possible : redirections 301 pour `/service-impression-3d` et `/retro-conception` vers les pages équivalentes (dev de Nolann / Caddy) [S].
+
 ## Ordre d'action conseillé
 1. Lien de l'accueil vers `/impression-3d-nantes` + nouveau titre Nantes (+ LocalBusiness sur cette page).
 2. Compression, Cache-Control, HSTS dans Caddy (dev de Nolann) ; polices locales.
