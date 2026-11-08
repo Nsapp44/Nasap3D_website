@@ -1,0 +1,437 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { REALISATIONS } from "../../data/realisations";
+
+interface Props {
+  slug: string;
+}
+
+const SITE = "https://nasap3d.com";
+const { slug } = Astro.props;
+const projet = REALISATIONS.find((r) => r.slug === slug);
+if (!projet || !projet.page) {
+  throw new Error(`ProjectPage : fiche introuvable pour « ${slug} »`);
+}
+const page = projet.page;
+
+// Pas de vue 3D sur la fiche : on écarte les entrées « spin:… ».
+const photos = projet.photos.filter((p) => !p[0].startsWith("spin:"));
+const ILLU = /\(illustration\)\s*$/i;
+
+const related = page.related
+  .map((s) => REALISATIONS.find((r) => r.slug === s))
+  .filter((r): r is NonNullable<typeof r> => !!r && r.fiche && !!r.page);
+
+const url = `${SITE}/realisations/${projet.slug}`;
+const ogImage = page.ogImage ?? photos[0]?.[0] ?? "/assets/og-nasap3d.jpg";
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "CreativeWork",
+      "@id": `${url}#projet`,
+      name: page.h1,
+      description: page.description,
+      url,
+      image: photos.map((p) => `${SITE}${p[0]}`),
+      creator: { "@id": `${SITE}/#projet-atelier` },
+      about: projet.title,
+      ...(page.dateCreated ? { dateCreated: page.dateCreated } : {}),
+      inLanguage: "fr-FR",
+    },
+    {
+      "@type": "Organization",
+      "@id": `${SITE}/#projet-atelier`,
+      name: "Nasap3D",
+      url: `${SITE}/`,
+      address: { "@type": "PostalAddress", addressLocality: "Nantes", addressCountry: "FR" },
+    },
+    ...photos.slice(0, 1).map((p) => ({
+      "@type": "ImageObject",
+      contentUrl: `${SITE}${p[0]}`,
+      name: p[3].replace(ILLU, "").trim(),
+      width: p[1],
+      height: p[2],
+      creator: { "@id": `${SITE}/#projet-atelier` },
+    })),
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Accueil", item: `${SITE}/` },
+        { "@type": "ListItem", position: 2, name: "Maquettiste Nantes", item: `${SITE}/maquettiste-nantes` },
+        { "@type": "ListItem", position: 3, name: page.h1, item: url },
+      ],
+    },
+  ],
+};
+---
+
+<BaseLayout title={page.title} description={page.description} path={`/realisations/${projet.slug}`} ogImage={ogImage}>
+  <Fragment slot="head">
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
+  </Fragment>
+
+  <main class="fiche">
+    <nav class="fiche-crumbs" aria-label="Fil d’Ariane">
+      <ol>
+        <li><a href="/">Accueil</a></li>
+        <li><a href="/maquettiste-nantes">Maquettiste Nantes</a></li>
+        <li aria-current="page"><span>{projet.title}</span></li>
+      </ol>
+    </nav>
+
+    <header class="fiche-head">
+      <div class="fiche-kicker">{projet.cat}</div>
+      <h1>{page.h1}</h1>
+      <p class="fiche-chapo">{page.chapo}</p>
+    </header>
+
+    {
+      photos.length > 0 && (
+        <section class="fiche-gallery" aria-label="Photos du projet">
+          {photos.map((p, i) => (
+            <figure class={i === 0 ? "is-main" : undefined}>
+              <img
+                src={p[0]}
+                width={p[1]}
+                height={p[2]}
+                alt={p[3]}
+                loading={i === 0 ? "eager" : "lazy"}
+                fetchpriority={i === 0 ? "high" : undefined}
+                decoding={i === 0 ? "sync" : "async"}
+              />
+              {ILLU.test(p[3]) && <figcaption>Illustration</figcaption>}
+            </figure>
+          ))}
+        </section>
+      )
+    }
+
+    <div class="fiche-body">
+      {
+        page.sections.map((s) => (
+          <section class="fiche-section">
+            <h2>{s.h2}</h2>
+            <div class="fiche-prose" set:html={s.html} />
+          </section>
+        ))
+      }
+
+      {
+        page.specs.length > 0 && (
+          <section class="fiche-section">
+            <h2>En bref</h2>
+            <dl class="fiche-specs">
+              {page.specs.map((s) => (
+                <div>
+                  <dt>{s.k}</dt>
+                  <dd>{s.v}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        )
+      }
+    </div>
+
+    <section class="fiche-cta" aria-labelledby="fiche-cta-title">
+      <h2 id="fiche-cta-title">Un projet similaire ?</h2>
+      <p>
+        Décrivez-nous votre besoin, même à partir d’une simple idée ou de quelques photos. Nous commençons par une
+        expertise humaine de votre demande et un devis gratuit : rien n’est à payer avant que le projet soit validé
+        ensemble.
+      </p>
+      <a class="fiche-btn" href="/contact">Demander un devis gratuit</a>
+    </section>
+
+    {
+      related.length > 0 && (
+        <section class="fiche-related" aria-labelledby="fiche-related-title">
+          <h2 id="fiche-related-title">Autres réalisations</h2>
+          <ul>
+            {related.map((r) => (
+              <li>
+                <a href={`/realisations/${r.slug}`}>
+                  <span class="fiche-related-cat">{r.cat}</span>
+                  <span class="fiche-related-title">{r.title}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    <p class="fiche-back"><a href="/maquettiste-nantes">← Retour à Maquettiste Nantes</a></p>
+  </main>
+</BaseLayout>
+
+<style>
+  .fiche {
+    background: #161514;
+    color: #f3f1ec;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px 24px 64px;
+    font-family: "Inter", sans-serif;
+    overflow-wrap: break-word;
+    animation: fiche-in 0.5s ease both;
+  }
+  @keyframes fiche-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fiche {
+      animation: none;
+    }
+  }
+
+  .fiche a {
+    color: #ff5a3c;
+  }
+  .fiche a:focus-visible {
+    outline: 2px solid #ff5a3c;
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  .fiche-crumbs ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.65);
+  }
+  .fiche-crumbs li + li::before {
+    content: "›";
+    margin: 0 8px;
+    color: rgba(255, 255, 255, 0.4);
+  }
+  .fiche-crumbs a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.75);
+  }
+  .fiche-crumbs a:hover {
+    color: #ff5a3c;
+  }
+
+  .fiche-head {
+    padding: 8px 0 28px;
+  }
+  .fiche-kicker {
+    font: 600 12px "Inter", sans-serif;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #ff5a3c;
+    margin-bottom: 10px;
+  }
+  .fiche h1 {
+    font: 700 clamp(26px, 5vw, 38px) / 1.15 "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin: 0 0 14px;
+    text-wrap: balance;
+  }
+  .fiche h2 {
+    font: 700 22px / 1.25 "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin: 0 0 12px;
+    text-wrap: balance;
+  }
+  .fiche-chapo {
+    font: 400 16px / 1.65 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.78);
+    max-width: 70ch;
+    margin: 0;
+  }
+
+  .fiche-gallery {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+  .fiche-gallery figure {
+    margin: 0;
+    background: #1a1917;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .fiche-gallery .is-main {
+    grid-column: 1 / -1;
+  }
+  .fiche-gallery img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 640px;
+    object-fit: contain;
+    background: #201d1b;
+  }
+  .fiche-gallery figcaption {
+    padding: 8px 14px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.65);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .fiche-body {
+    display: grid;
+    gap: 28px;
+    max-width: 760px;
+    margin-bottom: 44px;
+  }
+  .fiche-prose :global(p) {
+    font: 400 16px / 1.7 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0 0 12px;
+  }
+  .fiche-prose :global(p:last-child) {
+    margin-bottom: 0;
+  }
+  .fiche-prose :global(strong) {
+    color: #f3f1ec;
+  }
+
+  .fiche-specs {
+    margin: 0;
+    background: #1a1917;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 6px 18px;
+  }
+  .fiche-specs > div {
+    display: grid;
+    grid-template-columns: minmax(0, 11rem) minmax(0, 1fr);
+    gap: 16px;
+    padding: 12px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .fiche-specs > div:first-child {
+    border-top: 0;
+  }
+  .fiche-specs dt {
+    font: 600 13px / 1.5 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.65);
+  }
+  .fiche-specs dd {
+    margin: 0;
+    font: 400 15px / 1.5 "Inter", sans-serif;
+    color: #f3f1ec;
+  }
+
+  .fiche-cta {
+    background: #201d1b;
+    border: 1px solid rgba(255, 90, 60, 0.3);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 44px;
+  }
+  .fiche-cta p {
+    font: 400 15px / 1.65 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.78);
+    max-width: 62ch;
+    margin: 0 0 18px;
+  }
+  .fiche .fiche-btn {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 20px;
+    border-radius: 8px;
+    background: #ff5a3c;
+    color: #161514;
+    font: 600 15px "Inter", sans-serif;
+    text-decoration: none;
+    transition:
+      background-color 0.2s ease,
+      transform 0.2s ease;
+  }
+  .fiche .fiche-btn:hover {
+    background: #ff7258;
+    transform: translateY(-1px);
+  }
+
+  .fiche-related {
+    margin-bottom: 28px;
+  }
+  .fiche-related ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+    gap: 14px;
+  }
+  .fiche .fiche-related a {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 44px;
+    padding: 16px 18px;
+    background: #1a1917;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    text-decoration: none;
+    color: #f3f1ec;
+    transition:
+      border-color 0.2s ease,
+      transform 0.2s ease;
+  }
+  .fiche .fiche-related a:hover {
+    border-color: #ff5a3c;
+    transform: translateY(-2px);
+  }
+  .fiche-related-cat {
+    font: 600 12px "Inter", sans-serif;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #ff5a3c;
+  }
+  .fiche-related-title {
+    font: 600 17px / 1.3 "Space Grotesk", sans-serif;
+  }
+
+  .fiche-back {
+    margin: 0;
+  }
+  .fiche-back a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    text-decoration: none;
+  }
+  .fiche-back a:hover {
+    text-decoration: underline;
+  }
+
+  @media (max-width: 640px) {
+    .fiche {
+      padding: 16px 16px 48px;
+    }
+    .fiche-gallery {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .fiche-specs > div {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 2px;
+    }
+    .fiche-cta {
+      padding: 20px;
+    }
+  }
+</style>
