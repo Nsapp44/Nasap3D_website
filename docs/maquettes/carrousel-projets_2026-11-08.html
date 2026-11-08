@@ -51,6 +51,7 @@
     --pj-edge: max(var(--pj-pad), calc((100cqw - var(--pj-wrap)) / 2 + var(--pj-pad)));
   }
   .pj { container-type: inline-size; padding: 40px 0 44px; background: var(--pj-bg); color: var(--pj-ink); }
+  .pj + .pj { padding-top: 24px; } /* sections de carrousel enchaînées : pas de double marge */
   .pj-head { max-width: var(--pj-wrap); margin: 0 auto; padding: 0 var(--pj-pad); display: flex; align-items: flex-end; justify-content: space-between; gap: 16px 24px; }
   .pj-kicker { font: 600 12px "Inter", sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--pj-acc); margin: 0 0 6px; }
   .pj-head .lp-h2 { margin: 0 0 6px; font-size: 24px; }
@@ -236,13 +237,13 @@
       <h2 class="lp-h2" id="pj-title">Nos maquettes</h2>
       <p class="lp-note">Touchez un projet pour l'agrandir : photos, détails et fiche complète.</p>
     </div>
-    <div class="pj-ctrl" id="pj-ctrl" hidden>
-      <div class="pj-ticks" id="pj-ticks" role="group" aria-label="Aller au projet"></div>
-      <p class="pj-count" id="pj-count" aria-hidden="true"><b>01–03</b> <span>sur 08</span></p>
-      <span class="pj-sr" id="pj-live" aria-live="polite"></span>
+    <div class="pj-ctrl" hidden>
+      <div class="pj-ticks" role="group" aria-label="Aller au projet"></div>
+      <p class="pj-count" aria-hidden="true"><b>01–03</b> <span>sur 08</span></p>
+      <span class="pj-sr pj-live" aria-live="polite"></span>
       <div class="pj-arrows">
-        <button class="icon-btn" type="button" id="pj-prev" aria-label="Projets précédents" aria-controls="pj-track"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
-        <button class="icon-btn" type="button" id="pj-next" aria-label="Projets suivants" aria-controls="pj-track"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+        <button class="icon-btn pj-prev" type="button" aria-label="Projets précédents" aria-controls="pj-track"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <button class="icon-btn pj-next" type="button" aria-label="Projets suivants" aria-controls="pj-track"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
       </div>
     </div>
   </div>
@@ -302,8 +303,29 @@
         <div class="pc-full"><p>Maquettes de design produit réalisées pour une présentation.</p></div>
         <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
       </div></article></li>
+  </ul>
+</section>
 
-    <li style="--i:5" data-f="pedagogie"><article class="pc" data-slug="formes-pedagogiques-sante">
+<section class="pj" id="autres-realisations" aria-labelledby="pj2-title">
+  <div class="pj-head">
+    <div>
+      <p class="pj-kicker">Réalisations</p>
+      <h2 class="lp-h2" id="pj2-title">Autres réalisations</h2>
+      <p class="lp-note">Pièces et séries réalisées en dehors des maquettes.</p>
+    </div>
+    <div class="pj-ctrl" hidden>
+      <div class="pj-ticks" role="group" aria-label="Aller au projet"></div>
+      <p class="pj-count" aria-hidden="true"><b>01–03</b> <span>sur 08</span></p>
+      <span class="pj-sr pj-live" aria-live="polite"></span>
+      <div class="pj-arrows">
+        <button class="icon-btn pj-prev" type="button" aria-label="Projets précédents" aria-controls="pj2-track"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <button class="icon-btn pj-next" type="button" aria-label="Projets suivants" aria-controls="pj2-track"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <ul class="track" id="pj2-track" aria-label="Autres réalisations" tabindex="-1">
+    <li style="--i:0" data-f="pedagogie"><article class="pc" data-slug="formes-pedagogiques-sante">
       <div class="pc-media"><img src="../../public/assets/real-15.webp" width="1600" height="1200" loading="lazy" decoding="async" alt="Formes pédagogiques multicolores imprimées pour le secteur santé">
         <div class="pc-badges"><span class="badge">1 vue</span></div></div>
       <div class="pc-body">
@@ -314,7 +336,7 @@
         <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
       </div></article></li>
 
-    <li style="--i:6" data-f="design"><article class="pc" data-slug="piece-retro-concue">
+    <li style="--i:1" data-f="design"><article class="pc" data-slug="piece-retro-concue">
       <div class="pc-media"><img src="../../public/assets/real-12.webp" width="1200" height="1600" loading="lazy" decoding="async" alt="Pièce rétro-conçue : réducteur redessiné en CAO à côté de la pièce d'origine usée">
         <div class="pc-badges"><span class="badge">1 vue</span></div></div>
       <div class="pc-body">
@@ -325,7 +347,7 @@
         <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
       </div></article></li>
 
-    <li style="--i:7" data-f="design"><article class="pc" data-slug="figurines-resine">
+    <li style="--i:2" data-f="design"><article class="pc" data-slug="figurines-resine">
       <div class="pc-media"><img src="../../public/assets/real-16.webp" width="824" height="517" loading="lazy" decoding="async" alt="Figurines en résine SLA imprimées en haute définition">
         <div class="pc-badges"><span class="badge">1 vue</span></div></div>
       <div class="pc-body">
@@ -437,86 +459,97 @@
 (() => {
   const RM = matchMedia('(prefers-reduced-motion: reduce)');
   const $ = (id) => document.getElementById(id);
-  const sec = $('nos-maquettes'), track = $('pj-track');
+  const secs = [...document.querySelectorAll('section.pj')];
   const photos = JSON.parse($('pj-photos').textContent), fiches = JSON.parse($('pj-fiches').textContent);
-  const lis = [...track.children], cards = lis.map((li) => li.querySelector('.pc')), N = cards.length;
+  const cards = secs.flatMap((s) => [...s.querySelectorAll('.track .pc')]), N = cards.length;
   const title = (art) => art.querySelector('.pj-link').textContent;
   const pad2 = (n) => String(n).padStart(2, '0');
   const esc = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
   const how = () => (RM.matches ? 'auto' : 'smooth');
 
-  // Entrée douce + images des cartes chargées dès que la section approche
-  // (le chargement différé natif ignore les cartes hors champ dans un défilement horizontal : image vide au premier glissé)
-  if ('IntersectionObserver' in window) {
-    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { sec.classList.add('in'); io.disconnect(); } }, { threshold: .15 });
-    io.observe(sec);
-    const pre = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { track.querySelectorAll('img[loading="lazy"]').forEach((im) => { im.loading = 'eager'; }); pre.disconnect(); } }, { rootMargin: '300px 0px' });
-    pre.observe(sec);
-  } else sec.classList.add('in');
-
-  // ===== Repères, compteur « 01–03 sur 08 », flèches =====
-  const ctrl = $('pj-ctrl'), ticks = $('pj-ticks'), countB = $('pj-count').querySelector('b'), live = $('pj-live');
-  $('pj-count').querySelector('span').textContent = 'sur ' + pad2(N);
-  // k cartes entières remplissent exactement la colonne ; le carrousel avance par pages de k cartes
-  // (première page calée à gauche, dernière calée à droite : dernier pas raccourci). Rien ne dépend de N.
+  // ===== Carrousels : un composant par <section class="pj"> (1, 2, 3 ou n sections ; 1, 2, 3 ou n cartes par section) =====
+  const carousels = new Map();
   const MIN_CARD = 240;
-  let K = 1, STEP = 0, PADL = 0, PAGES = 1, tickN = -1;
-  const pageStart = (j) => Math.min(j * K, Math.max(0, N - K));
-  const pageOf = (i) => Math.min(PAGES - 1, Math.floor(i / K));
-  const layout = () => {
-    const cs = getComputedStyle(track), gap = parseFloat(cs.columnGap) || 0;
-    PADL = parseFloat(cs.paddingLeft) || 0;
-    const w = track.clientWidth - PADL - (parseFloat(cs.paddingRight) || 0);
-    K = Math.max(1, Math.min(N, Math.floor((w + gap) / (MIN_CARD + gap))));
-    track.style.setProperty('--k', K);
-    STEP = (w - (K - 1) * gap) / K + gap;
-    PAGES = Math.ceil(N / K);
-    ctrl.hidden = PAGES < 2;
-    if (tickN !== PAGES) {
-      tickN = PAGES;
-      ticks.innerHTML = Array.from({ length: PAGES }, (_, j) => {
-        const a = pageStart(j), b = Math.min(N - 1, a + K - 1);
-        return `<button type="button" class="pj-tick" data-i="${j}" aria-label="${a === b ? 'Projet ' + (a + 1) : 'Projets ' + (a + 1) + ' à ' + (b + 1)}" aria-controls="pj-track"><i></i></button>`;
-      }).join('');
-      tickEls = [...ticks.children];
-    }
+  const carousel = (sec) => {
+    const track = sec.querySelector('.track'), lis = [...track.children], n = lis.length;
+    if (!n) { sec.hidden = true; return; }
+
+    // Entrée douce + images des cartes chargées dès que la section approche
+    // (le chargement différé natif ignore les cartes hors champ dans un défilement horizontal : image vide au premier glissé)
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { sec.classList.add('in'); io.disconnect(); } }, { threshold: .15 });
+      io.observe(sec);
+      const pre = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { track.querySelectorAll('img[loading="lazy"]').forEach((im) => { im.loading = 'eager'; }); pre.disconnect(); } }, { rootMargin: '300px 0px' });
+      pre.observe(sec);
+    } else sec.classList.add('in');
+
+    // ===== Repères, compteur « 01–03 sur 08 », flèches (cachés s'il n'y a qu'une page) =====
+    const ctrl = sec.querySelector('.pj-ctrl'), ticks = sec.querySelector('.pj-ticks'), countB = sec.querySelector('.pj-count b'), live = sec.querySelector('.pj-live');
+    const prev = sec.querySelector('.pj-prev'), next = sec.querySelector('.pj-next');
+    sec.querySelector('.pj-count span').textContent = 'sur ' + pad2(n);
+    [prev, next].forEach((b) => b.setAttribute('aria-controls', track.id));
+    // k cartes entières remplissent exactement la colonne ; le carrousel avance par pages de k cartes
+    // (première page calée à gauche, dernière calée à droite : dernier pas raccourci).
+    // k ne dépend que de la largeur : avec moins de cartes que k, elles gardent la largeur normale et sont centrées.
+    let K = 1, STEP = 0, PADL = 0, PAGES = 1, tickN = -1, tickEls = [];
+    const pageStart = (j) => Math.min(j * K, Math.max(0, n - K));
+    const pageOf = (i) => Math.min(PAGES - 1, Math.floor(i / K));
+    const layout = () => {
+      const cs = getComputedStyle(track), gap = parseFloat(cs.columnGap) || 0;
+      PADL = parseFloat(cs.paddingLeft) || 0;
+      const w = track.clientWidth - PADL - (parseFloat(cs.paddingRight) || 0);
+      K = Math.max(1, Math.floor((w + gap) / (MIN_CARD + gap)));
+      track.style.setProperty('--k', K);
+      STEP = (w - (K - 1) * gap) / K + gap;
+      PAGES = Math.ceil(n / K);
+      ctrl.hidden = PAGES < 2;
+      if (tickN !== PAGES) {
+        tickN = PAGES;
+        ticks.innerHTML = Array.from({ length: PAGES }, (_, j) => {
+          const a = pageStart(j), b = Math.min(n - 1, a + K - 1);
+          return `<button type="button" class="pj-tick" data-i="${j}" aria-label="${a === b ? 'Projet ' + (a + 1) : 'Projets ' + (a + 1) + ' à ' + (b + 1)}" aria-controls="${track.id}"><i></i></button>`;
+        }).join('');
+        tickEls = [...ticks.children];
+      }
+    };
+    const range = () => {
+      const max = track.scrollWidth - track.clientWidth;
+      if (track.scrollLeft >= max - 2) return [Math.max(0, n - K), n - 1];
+      const first = Math.min(n - 1, Math.max(0, Math.round(track.scrollLeft / STEP)));
+      return [first, Math.min(n - 1, first + K - 1)];
+    };
+    let shown = '', liveT = 0, raf = 0, ready = false;
+    const sync = () => {
+      raf = 0;
+      const [a, b] = range(), max = track.scrollWidth - track.clientWidth, key = a + '-' + b + '-' + PAGES;
+      prev.disabled = track.scrollLeft <= 2;
+      next.disabled = track.scrollLeft >= max - 2;
+      // flèches masquées aux extrémités (la place reste réservée : rien ne bouge)
+      prev.style.visibility = prev.disabled ? 'hidden' : '';
+      next.style.visibility = next.disabled ? 'hidden' : '';
+      if (key === shown) return;
+      shown = key;
+      countB.textContent = a === b ? pad2(a + 1) : `${pad2(a + 1)}–${pad2(b + 1)}`;
+      const pg = track.scrollLeft >= max - 2 ? PAGES - 1 : pageOf(a);
+      tickEls.forEach((t, i) => { t.classList.toggle('on', i === pg); if (i === pg) t.setAttribute('aria-current', 'true'); else t.removeAttribute('aria-current'); });
+      if (ready) { clearTimeout(liveT); liveT = setTimeout(() => { live.textContent = a === b ? `Projet ${a + 1} sur ${n}` : `Projets ${a + 1} à ${b + 1} sur ${n}`; }, 400); }
+    };
+    const toPage = (j, behavior = how()) => {
+      const i = pageStart(Math.max(0, Math.min(PAGES - 1, j)));
+      track.scrollTo({ left: track.scrollLeft + lis[i].getBoundingClientRect().left - track.getBoundingClientRect().left - PADL, behavior });
+    };
+    const curPage = () => (track.scrollLeft >= track.scrollWidth - track.clientWidth - 2 ? PAGES - 1 : pageOf(range()[0]));
+    layout();
+    track.addEventListener('scroll', () => { raf ||= requestAnimationFrame(sync); }, { passive: true });
+    addEventListener('resize', () => { const i = range()[0]; layout(); toPage(pageOf(i), 'auto'); shown = ''; raf ||= requestAnimationFrame(sync); });
+    prev.onclick = () => toPage(curPage() - 1);
+    next.onclick = () => toPage(curPage() + 1);
+    ticks.addEventListener('click', (e) => { const t = e.target.closest('.pj-tick'); if (t) toPage(+t.dataset.i); });
+    sync(); ready = true;
+    // utilisé par le zoom : amener la carte ouverte dans la fenêtre de SON carrousel
+    carousels.set(sec, { reveal: (art) => toPage(pageOf(lis.findIndex((li) => li.contains(art))), 'auto') });
   };
-  let tickEls = [];
-  const range = () => {
-    const max = track.scrollWidth - track.clientWidth;
-    if (track.scrollLeft >= max - 2) return [Math.max(0, N - K), N - 1];
-    const first = Math.min(N - 1, Math.max(0, Math.round(track.scrollLeft / STEP)));
-    return [first, Math.min(N - 1, first + K - 1)];
-  };
-  let shown = '', liveT = 0, raf = 0, ready = false;
-  const sync = () => {
-    raf = 0;
-    const [a, b] = range(), max = track.scrollWidth - track.clientWidth, key = a + '-' + b + '-' + PAGES;
-    $('pj-prev').disabled = track.scrollLeft <= 2;
-    $('pj-next').disabled = track.scrollLeft >= max - 2;
-    // flèches masquées aux extrémités (la place reste réservée : rien ne bouge)
-    $('pj-prev').style.visibility = $('pj-prev').disabled ? 'hidden' : '';
-    $('pj-next').style.visibility = $('pj-next').disabled ? 'hidden' : '';
-    if (key === shown) return;
-    shown = key;
-    countB.textContent = a === b ? pad2(a + 1) : `${pad2(a + 1)}–${pad2(b + 1)}`;
-    const pg = track.scrollLeft >= max - 2 ? PAGES - 1 : pageOf(a);
-    tickEls.forEach((t, i) => { t.classList.toggle('on', i === pg); if (i === pg) t.setAttribute('aria-current', 'true'); else t.removeAttribute('aria-current'); });
-    if (ready) { clearTimeout(liveT); liveT = setTimeout(() => { live.textContent = a === b ? `Projet ${a + 1} sur ${N}` : `Projets ${a + 1} à ${b + 1} sur ${N}`; }, 400); }
-  };
-  const toPage = (j, behavior = how()) => {
-    const i = pageStart(Math.max(0, Math.min(PAGES - 1, j)));
-    track.scrollTo({ left: track.scrollLeft + lis[i].getBoundingClientRect().left - track.getBoundingClientRect().left - PADL, behavior });
-  };
-  const curPage = () => (track.scrollLeft >= track.scrollWidth - track.clientWidth - 2 ? PAGES - 1 : pageOf(range()[0]));
-  const go = (dir) => toPage(curPage() + dir);
-  layout();
-  track.addEventListener('scroll', () => { raf ||= requestAnimationFrame(sync); }, { passive: true });
-  addEventListener('resize', () => { const i = range()[0]; layout(); toPage(pageOf(i), 'auto'); shown = ''; raf ||= requestAnimationFrame(sync); });
-  $('pj-prev').onclick = () => go(-1);
-  $('pj-next').onclick = () => go(1);
-  ticks.addEventListener('click', (e) => { const t = e.target.closest('.pj-tick'); if (t) toPage(+t.dataset.i); });
-  sync(); ready = true;
+  secs.forEach(carousel);
 
   // ===== Rendus 3D : 72 vues par projet, chargées à la demande (des plus espacées aux plus fines, 6 à la fois) =====
   const MAQ = '../../public/assets/maquettes/', FR = 72, START = 10;
@@ -734,7 +767,7 @@
     fill(art); photoSync();
     grid.scrollTop = 0; dlg.querySelector('.z-info').scrollTop = 0;
     if (!RM.matches) grid.animate([{ opacity: .4, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 250, easing: 'cubic-bezier(.2,.8,.2,1)' });
-    origin = art.querySelector('.pj-link'); toPage(pageOf(cards.indexOf(art)), 'auto');
+    origin = art.querySelector('.pj-link'); carousels.get(art.closest('.pj'))?.reveal(art);
     try { history.replaceState({ pj: art.dataset.slug }, '', '#projet-' + art.dataset.slug); } catch (_) {}
   };
   const close = (fromPop = false) => {
@@ -748,11 +781,11 @@
   };
   document.addEventListener('visibilitychange', () => { if (document.hidden) thumbStop(); else if (dlg?.open) photoSync(); });
 
-  track.addEventListener('click', (e) => {
+  secs.forEach((sc) => sc.querySelector('.track').addEventListener('click', (e) => {
     const art = e.target.closest('.pc'); if (!art) return;
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; // ouvrir dans un onglet = vraie page
     e.preventDefault(); open(art);
-  });
+  }));
   // Liens « Faire tourner en 3D » ailleurs dans la page : <a href="/realisations/<slug>" data-pj-spin="<slug>">
   document.addEventListener('click', (e) => {
     const l = e.target.closest('[data-pj-spin]'); if (!l || e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
@@ -764,7 +797,7 @@
 
   const openFromHash = (anim) => {
     const m = location.hash.match(/^#projet-(.+)$/); if (!m) return;
-    const art = track.querySelector(`.pc[data-slug="${CSS.escape(decodeURIComponent(m[1]))}"]`);
+    const slug = decodeURIComponent(m[1]), art = cards.find((c) => c.dataset.slug === slug);
     if (art) open(art, { animate: anim, push: false });
   };
   openFromHash(false);

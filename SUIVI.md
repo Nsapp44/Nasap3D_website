@@ -27,6 +27,9 @@ RESTE :
 
 6. SEO ordre du rapport (`docs/chantiers/audit-seo-nouveaux-outils_2026-11-08.md`, validé par Nolann) : lien accueil → /impression-3d-nantes (titre accueil figé jusqu'au ~30/11) ; Caddy (dev de Nolann) ; Cholet/Angers contenu local ou noindex (à valider) ; pages « pièce cassée », matériaux, 1 commune, llms.txt, favicon, lastmod ; hors site : French Tech/French Fab, 3Dnatives, annuaires. Meta descriptions : ne pas raccourcir (Bing les veut plus longues) ; ?trk=/UTM voulus. Rien envoyé sans accord.
 
+## Fait le 08/11 soir (non poussé)
+Textes : délais « 2 sem. – 3 mois… » (pas un maximum), « France / International » (livraison monde entier), carte Réactivité réécrite (bureau d'études intégré), « urgence » retiré. Section « Explorez nos maquettes en 3D » supprimée, « 360° » → « 3D » partout. Responsive : bandeau France / International corrigé à 320 px (retour à la ligne < 360 px). Carrousel scindé : « Nos maquettes » = 5 vraies maquettes (filtration, bioréacteur, cellule, caravane, design produit) + « Autres réalisations » = 3 (formes pédagogiques, pièce rétro-conçue, figurines) ; composant OK avec 1 à 4+ cartes (Nolann en ajoutera). À trancher : pager du zoom traverse les 8 cartes. Nolann : la maquette est très bonne, prochaine étape = coder la vraie page Astro + grosse optimisation.
+
 ## Décisions de Nolann (en vigueur)
 Une page par projet = GO (~300 mots uniques, sans nom de client, projets avec histoire et photos ; pas les machines à tuyaux sans go client) ; drapeau `fiche` dans PJ:DATA ; « Un projet similaire ? » → `/contact` ; « Quatre types » = flex-wrap ; « Blocs courts » + « Animé au scroll » par défaut ; transition hero → storyboard = rideau A. Validé, ne pas toucher : zoom, « De l'idée à la maquette », bouton devis, « Un bureau d'études… », « Usage », « Ce qui nous distingue », « De la maquette à la petite série », carte « Maquette de design produit ».
 
