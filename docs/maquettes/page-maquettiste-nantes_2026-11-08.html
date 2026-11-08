@@ -83,20 +83,14 @@
   .chapo{font:500 clamp(19px,1.9vw,24px)/1.4 "Space Grotesk",sans-serif;color:var(--fg);margin:16px 0 0;max-width:34ch}
   .p{color:var(--mut);margin:14px 0 0;max-width:62ch}
   .more{margin-top:12px;max-width:62ch}
-  .more summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:6px;color:var(--fg);font:600 14px Inter,sans-serif;padding:6px 0;text-decoration:underline;text-decoration-color:rgba(255,90,60,.6);text-underline-offset:4px}
+  .more summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:6px;min-height:44px;color:var(--fg);font:600 14px Inter,sans-serif;padding:6px 0;text-decoration:underline;text-decoration-color:rgba(255,90,60,.6);text-underline-offset:4px}
   .more summary::-webkit-details-marker{display:none}
   .more summary::after{content:"+";color:var(--acc);font-size:18px;line-height:1}
   .more[open] summary::after{content:"–"}
   .more[open] summary .lbl-open{display:none}
   .more:not([open]) summary .lbl-close{display:none}
   .more p{color:var(--mut);margin:8px 0 0}
-
-  /* Le saviez-vous */
-  .know{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:start;border:1px solid var(--acc-line);background:linear-gradient(135deg,rgba(255,90,60,.12),rgba(255,90,60,.03));border-radius:var(--r);padding:22px 24px;max-width:860px;margin:8px auto 0}
-  .know .bub{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:rgba(255,90,60,.16)}
-  .know .bub .ico{width:24px;height:24px}
-  .know small{display:block;font:600 12px Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);margin-bottom:6px}
-  .know p{margin:0;font:500 clamp(17px,1.6vw,20px)/1.45 "Space Grotesk",sans-serif;color:var(--fg)}
+  .more.anim{overflow:hidden}  /* pendant l'animation de hauteur (JS) */
 
   /* Mise en page alternée */
   .split{display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,4vw,56px);align-items:center}
@@ -117,16 +111,42 @@
 
   /* Cartes à icônes */
   .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px}
-  .cards.c2{grid-template-columns:repeat(2,1fr)}
+  /* « Types de maquettes » : flex-wrap, le nombre de cartes peut grandir (5, 6, 7…) ; le script répartit les lignes de façon équilibrée, repli CSS = 350 px mini */
+  #types-cards{display:flex;flex-wrap:wrap;justify-content:center;gap:14px}
+  #types-cards > .card{flex:1 1 350px;min-width:0}
   .card{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:20px;transition:border-color .25s ease,transform .25s ease}
   .card:hover{border-color:var(--acc-line)}
   .card .ib{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;background:var(--acc-soft);margin-bottom:14px}
   .card h3{font-size:17px;font-weight:600;line-height:1.3;margin:0 0 8px}
   .card p{margin:0;font-size:14.5px;line-height:1.6;color:var(--mut)}
-  a.card{display:block;text-decoration:none;border-color:var(--acc-line);background:linear-gradient(180deg,rgba(255,90,60,.1),var(--bg2))}
-  a.card:hover{border-color:var(--acc);transform:translateY(-2px)}
-  a.card h3 .arr{color:var(--acc)}
+  a.card{display:block;text-decoration:none;color:inherit;border-color:var(--acc-line);background:linear-gradient(180deg,rgba(255,90,60,.1),var(--bg2));transition:border-color .25s ease,translate .25s ease,box-shadow .25s ease}
+  a.card h3 .arr{color:var(--acc);display:inline-block;transition:transform .25s ease}
+  /* Survol via la propriété `translate` (indépendante de `transform`) : .motion [data-rv].in{transform:none} (0,3,0) écrasait le transform du survol (0,2,1) et son transition écrasait celui de .card */
+  .motion a.card[data-rv]{transition:opacity .5s ease,transform .5s ease,border-color .25s ease,translate .25s ease,box-shadow .25s ease;transition-delay:calc(var(--i,0) * 80ms),calc(var(--i,0) * 80ms),0s,0s,0s}
+  a.card:focus-visible{border-color:var(--acc);translate:0 -3px}
+  @media (hover:hover){
+    a.card:hover{border-color:var(--acc);translate:0 -4px;box-shadow:0 14px 32px rgba(0,0,0,.4),0 0 0 1px var(--acc-line)}
+    a.card:hover h3 .arr{transform:translateX(5px)}
+  }
+  .card-go{display:none;align-items:center;gap:8px;min-height:44px;margin-top:12px;padding:0 16px;border-radius:999px;border:1px solid var(--acc-line);background:var(--acc-soft);color:var(--fg);font:600 14px Inter,sans-serif}
+  .card-go span{color:var(--acc)}
+  @media (hover:none){.card-go{display:inline-flex}}  /* tactile : pas de survol, l'indice « cliquable » reste visible */
   .card .tag{display:inline-block;margin-top:12px;font:600 12px Inter,sans-serif;color:var(--acc)}
+  /* Icônes animées des 4 cartes « interactives » (reprises du storyboard cellule, commit e5d52b3). Lancées par .live (IntersectionObserver) ou au survol ; figées sous prefers-reduced-motion. */
+  .ai{width:30px;height:30px;flex:none;stroke:var(--acc);stroke-width:2.3;fill:none;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+  .ai .dot{fill:var(--acc);stroke:none}
+  @keyframes ai-dash{to{stroke-dashoffset:-16}}
+  @keyframes ai-spin{to{transform:rotate(360deg)}}
+  @keyframes ai-wave{from{transform:scale(.3);opacity:1}to{transform:scale(1.9);opacity:0}}
+  @keyframes ai-chase{0%,100%{opacity:.18}30%,50%{opacity:1}}
+  @media (prefers-reduced-motion:no-preference){
+    .ai .row{stroke-dasharray:5 3;animation:ai-dash 2s linear infinite}
+    .ai .gear{transform-origin:20px 20px;animation:ai-spin 6s linear infinite}
+    .ai .wave{transform-origin:20px 20px;animation:ai-wave 2s ease-out infinite}
+    .ai .led{animation:ai-chase 1.5s ease-in-out infinite}
+    .aicard .ai .a{animation-play-state:paused}  /* après le raccourci animation (qui remet running) */
+    .aicard.live .ai .a,.aicard:hover .ai .a{animation-play-state:running}
+  }
   .usages{margin-top:22px;padding:18px 20px;border-left:3px solid var(--acc);background:var(--bg2);border-radius:0 var(--r) var(--r) 0;color:var(--mut);font-size:15px}
   .usages b{color:var(--fg)}
 
@@ -173,8 +193,10 @@
   @media (prefers-reduced-motion:reduce){
     .hero-in{animation:none}
     .motion [data-rv]{opacity:1;transform:none;transition:none}
-    .btn,.btn .arr,.card,.faq summary .pm{transition:none}
-    .btn:hover,a.card:hover,.btn:hover .arr{transform:none}
+    .btn,.btn .arr,.card,.faq summary .pm,a.card h3 .arr,.motion a.card[data-rv]{transition:none}
+    .btn:hover,.btn:hover .arr{transform:none}
+    a.card:hover,a.card:focus-visible{translate:none}
+    a.card:hover h3 .arr{transform:none}
   }
 
   /* Tablette */
@@ -192,7 +214,8 @@
   @media (max-width:640px){
     .wrap,.sb-ph{padding:0 16px}
     .kpis{grid-template-columns:1fr 1fr}
-    .split,.cards.c2{grid-template-columns:1fr}
+    .split{grid-template-columns:1fr}
+    #types-cards > .card{flex-basis:100% !important}
     .split.rev > .media{order:0}
     .media img{aspect-ratio:4/3}
     .mosaic{grid-template-columns:1fr}
@@ -202,7 +225,6 @@
     .btn{width:100%}
     .final{grid-template-columns:1fr}
     .faq details p{padding-right:4px}
-    .know{grid-template-columns:1fr;gap:12px;padding:18px}
     .ph .row i{flex-basis:42%}
     .mcta{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:20;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(22,21,20,.94);border-top:1px solid var(--line);backdrop-filter:blur(8px)}
     .mcta .btn{padding:15px 18px;font-size:16px}
@@ -224,11 +246,9 @@
   .vbar.min fieldset,.vbar.min .old{display:none}
   .vbar.min{width:auto}
   body.t-full .more summary,body.t-short .more summary{display:none}
-  body.t-short .p,body.t-short .more p,body.t-short .usages{border-left:3px solid #ff5a3c;background:#1a1917;border-radius:0 10px 10px 0;padding:10px 14px;max-width:52ch}
+  body.t-short .p,body.t-short .more,body.t-short .more p,body.t-short .usages{max-width:none}  /* les blocs suivent la largeur de leur colonne (retrait du 52ch) */
+  body.t-short .p,body.t-short .more p,body.t-short .usages{border-left:3px solid #ff5a3c;background:#1a1917;border-radius:0 10px 10px 0;padding:10px 14px}
   body.t-short .chapo{font-size:clamp(22px,2.3vw,30px);max-width:24ch}
-  body.l-list #types-cards{grid-template-columns:1fr}
-  body.l-list #types-cards .card{display:grid;grid-template-columns:42px 1fr;column-gap:16px}
-  body.l-list #types-cards .card .ib{margin:0;grid-row:span 2}
   #old{display:none;max-width:800px;margin:0 auto;padding:40px 24px 60px}
   body.old main{display:none}
   body.old #old{display:block}
@@ -262,7 +282,7 @@
 
   /* Repères + compteur + flèches, sur une ligne */
   .pj-ctrl { display: flex; align-items: center; gap: 14px; flex: none; }
-  .pj-ctrl[hidden], .z-meta[hidden] { display: none; }
+  .pj-ctrl[hidden], .z-meta[hidden], .pj-btn[hidden] { display: none; }
   .pj-ticks { display: flex; align-items: center; }
   .pj-tick { width: 22px; height: 32px; padding: 0; border: 0; background: none; display: grid; place-items: center; cursor: pointer; border-radius: 6px; }
   .pj-tick i { display: block; width: 10px; height: 3px; border-radius: 3px; background: rgba(255,255,255,.22); transition: width .3s var(--pj-ease), background-color .3s; }
@@ -280,9 +300,10 @@
   .zt:focus-visible, .z-chip:focus-visible, .zp:focus-visible, .sp-play:focus-visible { outline: 3px solid var(--pj-ink); outline-offset: 3px; }
   .pj-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
-  .track { list-style: none; margin: 20px 0 0; padding: 4px var(--pj-edge) 18px; display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--pj-edge); overscroll-behavior-x: contain; scrollbar-width: none; }
+  /* Fenêtre = la colonne de texte (+4 px de chaque côté pour le survol) ; --k (cartes entières visibles) est posé par le script */
+  .track { --k: 3; --pj-gap: 16px; list-style: none; margin: 20px auto 0; width: calc(min(100cqw - 2 * var(--pj-pad), var(--pj-wrap) - 2 * var(--pj-pad)) + 8px); padding: 4px 4px 18px; display: flex; gap: var(--pj-gap); justify-content: safe center; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 4px; overscroll-behavior-x: contain; scrollbar-width: none; }
   .track::-webkit-scrollbar { display: none; }
-  .track > li { flex: 0 0 clamp(250px, 30vw, 300px); scroll-snap-align: start; display: flex; }
+  .track > li { flex: 0 0 calc((100% - (var(--k) - 1) * var(--pj-gap)) / var(--k)); scroll-snap-align: start; display: flex; }
 
   .pc { position: relative; width: 100%; display: flex; flex-direction: column; border: 1px solid var(--pj-line); border-radius: 12px; background: var(--pj-bg2); color: var(--pj-ink); overflow: hidden; transition: scale .25s ease, border-color .25s ease, box-shadow .25s ease; }
   .pc:hover { scale: 1.02; border-color: rgba(255,90,60,.45); box-shadow: 0 10px 28px rgba(0,0,0,.35); }
@@ -402,8 +423,7 @@
     .pj-head .lp-h2 { font-size: 21px; }
     .pj-ctrl { justify-content: space-between; margin-left: -5px; }
     .pj-arrows { display: none; }
-    .track { gap: 12px; margin-top: 14px; }
-    .track > li { flex-basis: 78vw; }
+    .track { --pj-gap: 12px; margin-top: 14px; }
     dialog.zoom { width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; border: 0; }
     .z-grid { height: 100dvh; max-height: 100dvh; }
     .z-stage { height: 50dvh; }
@@ -524,35 +544,27 @@
     </div>
   </div>
 
-  <!-- 3. Le saviez-vous (phrase pédagogique/scientifique, relie le storyboard à la suite) -->
-  <div class="wrap" data-rv>
-    <aside class="know" aria-label="Le saviez-vous">
-      <div class="bub"><svg class="ico"><use href="#i-cell"/></svg></div>
-      <div><small>Le saviez-vous</small><p>Nous avons réalisé, par exemple, une <span class="hl">cellule biologique à chenille lumineuse LED</span>.</p></div>
-    </aside>
-  </div>
-
   <!-- 4. Interactive + visuels remontés -->
   <section class="sec wrap" aria-labelledby="s-inter">
     <div class="sec-head" data-rv>
       <div class="sec-label">01</div>
-      <h2 id="s-inter">Maquettes interactives et intégration électronique</h2>
-      <p class="chapo">Les maquettes interactives sont notre force :</p>
-      <p class="p">nous intégrons <strong>l'électronique directement dans la maquette</strong> pour qu'elle <strong>se manipule et se démontre</strong>.</p>
+      <h2 id="s-inter">Maquettes interactives, intégration électronique et design produit</h2>
+      <p class="chapo">Les maquettes interactives sont notre force.</p>
+      <p class="p">Nous intégrons <strong>l'électronique directement dans la maquette</strong> pour qu'elle <strong>se manipule et se démontre</strong>.</p>
     </div>
 
     <div class="mosaic" data-rv>
-      <figure class="big"><img src="../../public/assets/real-8.webp" alt="Cellule biologique : maquette pédagogique en coupe, coque imprimée puis peinte à la main" width="600" height="750"><figcaption>Cellule biologique : maquette pédagogique en coupe, coque imprimée puis peinte à la main</figcaption></figure>
+      <figure class="big"><img src="../../public/assets/real-8.webp" alt="Cellule biologique à chenille lumineuse LED : maquette pédagogique en coupe, coque imprimée puis peinte à la main" width="600" height="750"><figcaption>Cellule biologique à chenille lumineuse LED : maquette pédagogique en coupe, coque imprimée puis peinte à la main</figcaption></figure>
       <figure><img src="../../public/assets/real-1.webp" alt="Système de filtration et de purification : équipement de procédé biotechnologique, châssis imprimé, vraie tuyauterie transparente, roulettes et presse-étoupes en métal" width="600" height="750"><figcaption>Système de filtration et de purification : équipement de procédé biotechnologique, châssis imprimé, vraie tuyauterie transparente, roulettes et presse-étoupes en métal</figcaption></figure>
       <figure><img src="../../public/assets/real-19.webp" alt="Maquette de bioréacteur en inox imprimée en 3D" width="600" height="750"><figcaption>Maquette de bioréacteur en inox imprimée en 3D</figcaption></figure>
       <figure class="w"><img src="../../public/assets/real-21.webp" alt="Détail de vannes, leviers et manomètres à l'échelle" width="600" height="750" style="aspect-ratio:16/7"><figcaption>Détail de vannes, leviers et manomètres à l'échelle</figcaption></figure>
     </div>
 
     <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))">
-      <article class="card" data-rv style="--i:0"><div class="ib"><svg class="ico"><use href="#i-screen"/></svg></div><h3>Écrans et affichages</h3><p>Un <strong>écran intégré</strong> pour afficher un schéma, une animation ou une vidéo de démonstration directement dans la maquette.</p></article>
-      <article class="card" data-rv style="--i:1"><div class="ib"><svg class="ico"><use href="#i-led"/></svg></div><h3>LED et animations lumineuses</h3><p>Éclairage, <strong>chenille lumineuse</strong>, séquences qui guident le regard ou montrent le fonctionnement d'un procédé.</p></article>
-      <article class="card" data-rv style="--i:2"><div class="ib"><svg class="ico"><use href="#i-touch"/></svg></div><h3>Boutons et capteurs</h3><p>Le visiteur appuie, approche la main ou tourne un bouton : <strong>la maquette réagit</strong> et déclenche lumière, écran ou mouvement.</p></article>
-      <article class="card" data-rv style="--i:3"><div class="ib"><svg class="ico"><use href="#i-gear"/></svg></div><h3>Pièces mobiles</h3><p>Éléments qui <strong>tournent, coulissent ou s'ouvrent</strong>, pour montrer un mécanisme ou découvrir l'intérieur d'un équipement.</p></article>
+      <article class="card aicard" data-rv style="--i:0"><div class="ib"><svg class="ai" viewBox="0 0 40 40" aria-hidden="true"><rect x="4" y="6" width="32" height="22" rx="3"/><line class="a row" x1="10" y1="13" x2="30" y2="13"/><line class="a row" x1="10" y1="17" x2="30" y2="17" style="animation-delay:-.7s"/><line class="a row" x1="10" y1="21" x2="26" y2="21" style="animation-delay:-1.3s"/><path d="M15 34h10M20 28v6"/></svg></div><h3>Écrans et affichages</h3><p>Un <strong>écran intégré</strong> pour afficher un schéma, une animation ou une vidéo de démonstration.</p></article>
+      <article class="card aicard" data-rv style="--i:1"><div class="ib"><svg class="ai" viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="12" width="34" height="16" rx="8"/><circle class="a led dot" cx="9" cy="20" r="2.4"/><circle class="a led dot" cx="14.5" cy="20" r="2.4" style="animation-delay:-1.2s"/><circle class="a led dot" cx="20" cy="20" r="2.4" style="animation-delay:-.9s"/><circle class="a led dot" cx="25.5" cy="20" r="2.4" style="animation-delay:-.6s"/><circle class="a led dot" cx="31" cy="20" r="2.4" style="animation-delay:-.3s"/></svg></div><h3>LED et animations lumineuses</h3><p>Éclairage et <strong>chenille lumineuse</strong> pour guider le regard ou montrer le fonctionnement d'un procédé.</p></article>
+      <article class="card aicard" data-rv style="--i:2"><div class="ib"><svg class="ai" viewBox="0 0 40 40" aria-hidden="true"><circle class="dot" cx="20" cy="20" r="3.4"/><circle class="a wave" cx="20" cy="20" r="9"/><circle class="a wave" cx="20" cy="20" r="9" style="animation-delay:-1s"/></svg></div><h3>Boutons et capteurs</h3><p>Le visiteur appuie ou approche la main : <strong>la maquette réagit</strong> (lumière, écran, mouvement).</p></article>
+      <article class="card aicard" data-rv style="--i:3"><div class="ib"><svg class="ai" viewBox="0 0 40 40" aria-hidden="true"><g class="a gear"><circle cx="20" cy="20" r="5"/><circle cx="20" cy="20" r="11"/><path d="M20 4v5M20 31v5M4 20h5M31 20h5M8.7 8.7l3.5 3.5M27.8 27.8l3.5 3.5M8.7 31.3l3.5-3.5M27.8 12.2l3.5-3.5"/></g></svg></div><h3>Pièces mobiles</h3><p>Éléments qui <strong>tournent, coulissent ou s'ouvrent</strong> pour montrer un mécanisme ou découvrir l'intérieur.</p></article>
     </div>
     <p class="usages" data-rv><b>Usages :</b> retail et PLV (présentoir, magasin, vitrine), salon et stand, démonstrateur industriel (voir nos <a class="txtlink" href="/maquette-industrielle">maquettes industrielles</a>), médiation scientifique et musée. Nous réalisons aussi des maquettes d'architecture, de design produit et pédagogiques ou scientifiques.</p>
   </section>
@@ -610,9 +622,9 @@
   <!-- 8. Quatre types -->
   <section class="sec wrap" aria-labelledby="s-types">
     <div class="sec-head" data-rv><div class="sec-label">05</div><h2 id="s-types">Quatre types de maquettes sur mesure</h2></div>
-    <div class="cards c2" id="types-cards">
+    <div class="cards" id="types-cards">
       <article class="card" data-rv style="--i:0"><div class="ib"><svg class="ico"><use href="#i-building"/></svg></div><h3>Maquette d'architecture</h3><p>Bâtiment, quartier ou aménagement intérieur, <strong>à l'échelle de votre choix</strong>, pour un concours, une promotion immobilière ou une présentation client.</p></article>
-      <a class="card" href="/maquette-industrielle" data-rv style="--i:1"><div class="ib"><svg class="ico"><use href="#i-factory"/></svg></div><h3>Maquette industrielle, commerciale et de salon <span class="arr" aria-hidden="true">→</span></h3><p>Machine, équipement, procédé (filtration, bioréacteur), stand ou produit reproduit fidèlement, avec <strong>électronique intégrée</strong> (écrans, LED), éléments interactifs et pièces mobiles si besoin, <strong>démontable et facile à transporter</strong>, pour une démonstration, un appel d'offres, un salon ou une présentation client.</p></a>
+      <a class="card" href="/maquette-industrielle" data-rv style="--i:1"><div class="ib"><svg class="ico"><use href="#i-factory"/></svg></div><h3>Maquette industrielle, commerciale et de salon <span class="arr" aria-hidden="true">→</span></h3><p>Machine, équipement, procédé (filtration, bioréacteur), stand ou produit reproduit fidèlement, avec <strong>électronique intégrée</strong> (écrans, LED), éléments interactifs et pièces mobiles si besoin, <strong>démontable et facile à transporter</strong>, pour une démonstration, un appel d'offres, un salon ou une présentation client.</p><span class="card-go">Voir nos maquettes industrielles <span aria-hidden="true">→</span></span></a>
       <article class="card" data-rv style="--i:2"><div class="ib"><svg class="ico"><use href="#i-cell"/></svg></div><h3>Maquette pédagogique et scientifique</h3><p>Modèle <strong>en coupe, multicolore et peint</strong>, pour expliquer une cellule, un mécanisme ou un procédé en laboratoire, en école ou en médiation scientifique.</p></article>
       <article class="card" data-rv style="--i:3"><div class="ib"><svg class="ico"><use href="#i-pen"/></svg></div><h3>Maquette de design produit</h3><p>Prototype d'aspect ou maquette de gamme pour <strong>valider une forme, une couleur, une ergonomie</strong> avant l'industrialisation.</p></article>
     </div>
@@ -667,7 +679,7 @@
   <ul class="track" id="pj-track" aria-label="Projets de maquettes" tabindex="-1">
     <li style="--i:0" data-f="industrie"><article class="pc" data-slug="systeme-filtration-purification">
       <div class="pc-media"><img src="../../public/assets/real-1.webp" width="896" height="1195" loading="lazy" decoding="async" alt="Système de filtration et de purification : équipement de procédé biotechnologique, châssis imprimé, vraie tuyauterie transparente, roulettes et presse-étoupes en métal">
-        <div class="pc-badges"><span class="badge">5 vues</span><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>3D 360°</span></div></div>
+        <div class="pc-badges"><span class="badge">5 vues</span><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>360°</span></div></div>
       <div class="pc-body">
         <p class="pc-cat">Industrie et salon</p>
         <h3 class="pc-title"><a class="pj-link" href="/realisations/systeme-filtration-purification">Système de filtration et de purification</a></h3>
@@ -689,7 +701,7 @@
 
     <li style="--i:2" data-f="pedagogie"><article class="pc" data-slug="maquette-cellule-biologique">
       <div class="pc-media"><img src="../../public/assets/real-8.webp" width="589" height="643" loading="lazy" decoding="async" alt="Cellule biologique : maquette pédagogique en coupe, coque imprimée puis peinte à la main">
-        <div class="pc-badges"><span class="badge">3 vues</span><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>3D 360°</span></div></div>
+        <div class="pc-badges"><span class="badge">3 vues</span><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>360°</span></div></div>
       <div class="pc-body">
         <p class="pc-cat">Pédagogie</p>
         <h3 class="pc-title"><a class="pj-link" href="/realisations/maquette-cellule-biologique">Cellule biologique en coupe</a></h3>
@@ -700,7 +712,7 @@
 
     <li style="--i:3" data-f="vitrine"><article class="pc" data-slug="caravane-de-presentation">
       <div class="pc-media"><img src="../../public/assets/real-5.webp" width="1200" height="1600" loading="lazy" decoding="async" alt="Caravanes de présentation miniatures imprimées en 3D, série de modèles réduits">
-        <div class="pc-badges"><span class="badge">2 vues</span><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>3D 360°</span></div></div>
+        <div class="pc-badges"><span class="badge">2 vues</span><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>360°</span></div></div>
       <div class="pc-body">
         <p class="pc-cat">Vitrine</p>
         <h3 class="pc-title"><a class="pj-link" href="/realisations/caravane-de-presentation">Caravane de présentation</a></h3>
@@ -761,9 +773,9 @@
       <p class="p">Caravane de présentation : maquette de vitrine pour le secteur du loisir, carrosserie imprimée en plusieurs couleurs dans la masse, vitres et feux en plexiglas.</p></div>
     <!-- Remplace le placeholder <MaquetteCarousel /> : chaque tuile ouvre le zoom du projet sur sa vue 360° (lien réel vers la fiche si JS absent). -->
     <ul class="t3d-grid">
-        <li data-rv style="--i:0"><a class="t3d" href="/realisations/caravane-de-presentation" data-pj-spin="caravane-de-presentation"><span class="t3d-img"><img src="../../public/assets/maquettes/caravane/sm/e28_a010.avif" width="640" height="480" loading="lazy" decoding="async" alt=""><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>3D 360°</span></span><span class="t3d-txt"><span class="t3d-name">Caravane de présentation</span><span class="t3d-cta">Faire tourner en 3D <span aria-hidden="true">→</span></span></span></a></li>
-        <li data-rv style="--i:1"><a class="t3d" href="/realisations/maquette-cellule-biologique" data-pj-spin="maquette-cellule-biologique"><span class="t3d-img"><img src="../../public/assets/maquettes/cellule/sm/e28_a010.avif" width="640" height="480" loading="lazy" decoding="async" alt=""><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>3D 360°</span></span><span class="t3d-txt"><span class="t3d-name">Cellule biologique en coupe</span><span class="t3d-cta">Faire tourner en 3D <span aria-hidden="true">→</span></span></span></a></li>
-        <li data-rv style="--i:2"><a class="t3d" href="/realisations/systeme-filtration-purification" data-pj-spin="systeme-filtration-purification"><span class="t3d-img"><img src="../../public/assets/maquettes/purification/sm/e28_a010.avif" width="640" height="480" loading="lazy" decoding="async" alt=""><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>3D 360°</span></span><span class="t3d-txt"><span class="t3d-name">Système de filtration et de purification</span><span class="t3d-cta">Faire tourner en 3D <span aria-hidden="true">→</span></span></span></a></li>
+        <li data-rv style="--i:0"><a class="t3d" href="/realisations/caravane-de-presentation" data-pj-spin="caravane-de-presentation"><span class="t3d-img"><img src="../../public/assets/maquettes/caravane/sm/e28_a010.avif" width="640" height="480" loading="lazy" decoding="async" alt=""><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>360°</span></span><span class="t3d-txt"><span class="t3d-name">Caravane de présentation</span><span class="t3d-cta">Faire tourner en 3D <span aria-hidden="true">→</span></span></span></a></li>
+        <li data-rv style="--i:1"><a class="t3d" href="/realisations/maquette-cellule-biologique" data-pj-spin="maquette-cellule-biologique"><span class="t3d-img"><img src="../../public/assets/maquettes/cellule/sm/e28_a010.avif" width="640" height="480" loading="lazy" decoding="async" alt=""><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>360°</span></span><span class="t3d-txt"><span class="t3d-name">Cellule biologique en coupe</span><span class="t3d-cta">Faire tourner en 3D <span aria-hidden="true">→</span></span></span></a></li>
+        <li data-rv style="--i:2"><a class="t3d" href="/realisations/systeme-filtration-purification" data-pj-spin="systeme-filtration-purification"><span class="t3d-img"><img src="../../public/assets/maquettes/purification/sm/e28_a010.avif" width="640" height="480" loading="lazy" decoding="async" alt=""><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>360°</span></span><span class="t3d-txt"><span class="t3d-name">Système de filtration et de purification</span><span class="t3d-cta">Faire tourner en 3D <span aria-hidden="true">→</span></span></span></a></li>
     </ul>
     <div class="ph" data-rv style="margin-top:14px;padding:18px"><b>&lt;MachinesStrip /&gt; : bandeau machines existant, inchangé</b></div>
   </div>
@@ -804,15 +816,12 @@
 <div class="vbar" id="vbar" role="region" aria-label="Variantes de la maquette">
   <b class="t">Maquette · Variantes <button type="button" id="vmin" aria-expanded="true">Réduire</button></b>
   <fieldset><legend>Texte</legend><div class="seg">
-    <label><input type="radio" name="vt" value="chapo" checked><span>Chapeau + suite</span></label>
+    <label><input type="radio" name="vt" value="chapo"><span>Chapeau + suite</span></label>
     <label><input type="radio" name="vt" value="full"><span>Complet</span></label>
-    <label><input type="radio" name="vt" value="short"><span>Blocs courts</span></label></div></fieldset>
+    <label><input type="radio" name="vt" value="short" checked><span>Blocs courts</span></label></div></fieldset>
   <fieldset><legend>Rythme</legend><div class="seg">
     <label><input type="radio" name="vr" value="sobre"><span>Sobre</span></label>
     <label><input type="radio" name="vr" value="anime" checked><span>Animé au scroll</span></label></div></fieldset>
-  <fieldset><legend>Cartes « Quatre types »</legend><div class="seg">
-    <label><input type="radio" name="vl" value="grid" checked><span>Grille 2×2</span></label>
-    <label><input type="radio" name="vl" value="list"><span>Liste</span></label></div></fieldset>
   <label class="old"><input type="checkbox" id="vold"> Voir l'ancien rendu (mur de texte)</label>
 </div>
 
@@ -832,9 +841,8 @@
     // Captures : ?t=full|short  &r=sobre  &l=list  &old=1  &bar=0  (#static = sobre)
     var q=new URLSearchParams(location.search);
     function setText(v){ B.classList.remove("t-full","t-short"); if(v!=="chapo") B.classList.add("t-"+v);
-      document.querySelectorAll("details.more").forEach(function(d){d.open = v!=="chapo";}); }
+      document.querySelectorAll("details.more").forEach(function(d){d.open = v!=="chapo"; var sm=d.querySelector("summary"); if(sm) sm.setAttribute("aria-expanded",String(d.open));}); }
     function setRythme(v){ if(v==="sobre") motionOff(); else motionOn(); }
-    function setList(v){ B.classList.toggle("l-list", v==="list"); }
     function txt(el){return el?el.textContent.replace(/\s+/g," ").trim():"";}
     function S(id){return document.querySelector("section[aria-labelledby="+id+"]");}
     // Ancien rendu : reconstruit depuis le texte de la page, dans l'ORDRE et le STYLE d'origine (sans h1/h2 en double).
@@ -847,7 +855,7 @@
       h+='<div class="ophs">Storyboard</div>';
       var be=S("s-be"); sec(txt(be.querySelector("h2")),'<p class="on">'+txt(be.querySelector(".chapo"))+" "+txt(be.querySelector(".p"))+" "+txt(be.querySelector(".more p"))+'</p>');
       var qu=S("s-qui"); sec(txt(qu.querySelector("h2")),cards(qu.querySelectorAll(".card")));
-      var it=S("s-inter"); sec(txt(it.querySelector("h2")),'<p class="on">'+txt(it.querySelector(".chapo"))+" "+txt(it.querySelector(".p"))+" "+txt(document.querySelector(".know p"))+'</p>'+cards(it.querySelectorAll(".card"))+'<p class="on">'+it.querySelector(".usages").innerHTML.replace(/<\/?b>/g,"")+'</p>');
+      var it=S("s-inter"); sec(txt(it.querySelector("h2")),'<p class="on">'+txt(it.querySelector(".chapo"))+" "+txt(it.querySelector(".p"))+'</p>'+cards(it.querySelectorAll(".card"))+'<p class="on">'+it.querySelector(".usages").innerHTML.replace(/<\/?b>/g,"")+'</p>');
       var pr=S("s-proc"); sec(txt(pr.querySelector("h2")),cards(pr.querySelectorAll(".steps li"),true));
       var ty=S("s-types"); sec(txt(ty.querySelector("h2")),cards(ty.querySelectorAll(".card")));
       var by=S("s-beyond"); sec(txt(by.querySelector("h2")),cards(by.querySelectorAll(".card")));
@@ -859,16 +867,76 @@
     function setOld(on){ if(on) buildOld(); B.classList.toggle("old",on); scrollTo(0,0); }
     document.querySelectorAll("input[name=vt]").forEach(function(i){i.onchange=function(){setText(i.value);};});
     document.querySelectorAll("input[name=vr]").forEach(function(i){i.onchange=function(){setRythme(i.value);};});
-    document.querySelectorAll("input[name=vl]").forEach(function(i){i.onchange=function(){setList(i.value);};});
     document.getElementById("vold").onchange=function(){setOld(this.checked);};
     document.getElementById("vmin").onclick=function(){var b=document.getElementById("vbar");var m=b.classList.toggle("min");this.textContent=m?"Ouvrir":"Réduire";this.setAttribute("aria-expanded",String(!m));};
     if(matchMedia("(max-width:640px)").matches){var vb=document.getElementById("vbar"),vm=document.getElementById("vmin"); vb.classList.add("min"); vm.textContent="Ouvrir"; vm.setAttribute("aria-expanded","false");}  // mobile : barre de maquette repliée au départ
     function pick(n,v){var el=document.querySelector("input[name="+n+"][value="+v+"]"); if(el) el.checked=true;}
-    var t=q.get("t")||"chapo", r=q.get("r")||(location.hash==="#static"?"sobre":"anime"), l=q.get("l")||"grid";
-    pick("vt",t); pick("vr",r); pick("vl",l); setText(t); setRythme(r); setList(l);
+    var t=q.get("t")||"short", r=q.get("r")||(location.hash==="#static"?"sobre":"anime");
+    pick("vt",t); pick("vr",r); setText(t); setRythme(r);
     if(q.get("old")==="1"){document.getElementById("vold").checked=true; setOld(true);}
     if(q.get("bar")==="0") document.getElementById("vbar").style.display="none";
   })();
+</script>
+
+<!-- Comportements de la page (hors carrousel) : icônes animées, « Lire la suite » animé, répartition des cartes « types » -->
+<script>
+(function(){
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  /* 1. Icônes animées : .live ajouté quand la carte est visible (l'animation tourne aussi au survol, voir CSS) */
+  var ai = document.querySelectorAll(".aicard");
+  if("IntersectionObserver" in window){
+    var io = new IntersectionObserver(function(es){ es.forEach(function(e){ e.target.classList.toggle("live", e.isIntersecting); }); }, {threshold:.35});
+    ai.forEach(function(c){ io.observe(c); });
+  } else { ai.forEach(function(c){ c.classList.add("live"); }); }
+
+  /* 2. « Lire la suite / Réduire » : hauteur animée à l'ouverture et à la fermeture (instantané si mouvement réduit) */
+  document.querySelectorAll("details.more").forEach(function(d){
+    var sm = d.querySelector("summary"), p = d.querySelector("p"), anim = null, want = d.open;
+    sm.setAttribute("aria-expanded", String(want));
+    sm.addEventListener("click", function(e){
+      e.preventDefault();
+      want = !want;
+      sm.setAttribute("aria-expanded", String(want));
+      if(reduce.matches || !d.animate){
+        if(anim){ anim.onfinish = anim.oncancel = null; anim.cancel(); anim = null; }
+        d.classList.remove("anim"); d.open = want; return;
+      }
+      var from = d.offsetHeight;
+      if(anim){ anim.onfinish = anim.oncancel = null; anim.cancel(); anim = null; }
+      p.getAnimations().forEach(function(x){ x.cancel(); });
+      d.classList.add("anim");
+      d.open = true;                       /* le contenu existe pendant toute l'animation */
+      var mt = parseFloat(getComputedStyle(p).marginTop) || 0;
+      var full = d.offsetHeight;
+      var to = want ? full : full - p.offsetHeight - mt;
+      anim = d.animate([{height: from + "px"}, {height: to + "px"}], {duration: 320, easing: "cubic-bezier(.2,.7,.2,1)"});
+      p.animate([{opacity: want ? 0 : 1}, {opacity: want ? 1 : 0}], {duration: 320, easing: "ease"});
+      var a = anim;
+      a.onfinish = function(){ anim = null; d.open = want; d.classList.remove("anim"); };
+    });
+  });
+
+  /* 3. Cartes « types » : lignes équilibrées (5 -> 3+2, 7 -> 4+3...), jamais une carte orpheline si on peut l'éviter */
+  var box = document.getElementById("types-cards");
+  if(box){
+    var GAP = 14, MIN = 280;
+    var layout = function(){
+      var cards = box.children, n = cards.length, w = box.clientWidth;
+      if(!n || !w) return;
+      var maxCols = Math.max(1, Math.floor((w + GAP) / (MIN + GAP)));
+      var rows = Math.ceil(n / maxCols), base = Math.floor(n / rows), extra = n % rows, i = 0;
+      for(var r = 0; r < rows; r++){
+        var size = base + (r < extra ? 1 : 0);
+        for(var k = 0; k < size; k++, i++){
+          cards[i].style.flex = "1 1 calc((100% - " + ((size - 1) * GAP) + "px) / " + size + " - .5px)";
+        }
+      }
+    };
+    layout();
+    if("ResizeObserver" in window) new ResizeObserver(layout).observe(box); else window.addEventListener("resize", layout);
+  }
+})();
 </script>
 
 <!-- Photos et vues du zoom (en prod : générées depuis src/data/realisations.ts ; chaque page /realisations/<slug> les montre aussi en HTML).
@@ -904,6 +972,19 @@
   "formes-pedagogiques-sante": [["../../public/assets/real-15.webp", 1600, 1200, "Formes pédagogiques multicolores imprimées pour le secteur santé"]],
   "piece-retro-concue": [["../../public/assets/real-12.webp", 1200, 1600, "Pièce rétro-conçue : réducteur redessiné en CAO à côté de la pièce d'origine usée"]],
   "figurines-resine": [["../../public/assets/real-16.webp", 824, 517, "Figurines en résine SLA imprimées en haute définition"]]
+}
+</script>
+<!-- Drapeau fiche : true = le zoom montre « Voir la fiche projet » (page /realisations/<slug> assez riche, ~300 mots) ; false = lien masqué tant que le texte n'existe pas. -->
+<script type="application/json" id="pj-fiches">
+{
+  "systeme-filtration-purification": true,
+  "maquette-bioreacteur": true,
+  "maquette-cellule-biologique": true,
+  "caravane-de-presentation": true,
+  "maquettes-design-produit": false,
+  "formes-pedagogiques-sante": false,
+  "piece-retro-concue": false,
+  "figurines-resine": false
 }
 </script>
 <!-- /PJ:DATA -->
@@ -950,7 +1031,7 @@
   const RM = matchMedia('(prefers-reduced-motion: reduce)');
   const $ = (id) => document.getElementById(id);
   const sec = $('nos-maquettes'), track = $('pj-track');
-  const photos = JSON.parse($('pj-photos').textContent);
+  const photos = JSON.parse($('pj-photos').textContent), fiches = JSON.parse($('pj-fiches').textContent);
   const lis = [...track.children], cards = lis.map((li) => li.querySelector('.pc')), N = cards.length;
   const title = (art) => art.querySelector('.pj-link').textContent;
   const pad2 = (n) => String(n).padStart(2, '0');
@@ -968,45 +1049,66 @@
 
   // ===== Repères, compteur « 01–03 sur 08 », flèches =====
   const ctrl = $('pj-ctrl'), ticks = $('pj-ticks'), countB = $('pj-count').querySelector('b'), live = $('pj-live');
-  ticks.innerHTML = cards.map((a, i) => `<button type="button" class="pj-tick" data-i="${i}" aria-label="Projet ${i + 1} : ${esc(title(a))}" aria-controls="pj-track"><i></i></button>`).join('');
-  const tickEls = [...ticks.children];
   $('pj-count').querySelector('span').textContent = 'sur ' + pad2(N);
-  ctrl.hidden = false;
-  const geo = () => {
-    const a = lis[0].getBoundingClientRect(), b = lis[1].getBoundingClientRect(), step = b.left - a.left;
-    const padL = parseFloat(getComputedStyle(track).paddingLeft) || 0;
-    // cartes entières visibles entre le bord de la colonne de texte et le bord de l'écran
-    const k = Math.max(1, Math.floor((track.clientWidth - padL + (step - a.width) + 1) / step));
-    return { step, padL, k };
+  // k cartes entières remplissent exactement la colonne ; le carrousel avance par pages de k cartes
+  // (première page calée à gauche, dernière calée à droite : dernier pas raccourci). Rien ne dépend de N.
+  const MIN_CARD = 240;
+  let K = 1, STEP = 0, PADL = 0, PAGES = 1, tickN = -1;
+  const pageStart = (j) => Math.min(j * K, Math.max(0, N - K));
+  const pageOf = (i) => Math.min(PAGES - 1, Math.floor(i / K));
+  const layout = () => {
+    const cs = getComputedStyle(track), gap = parseFloat(cs.columnGap) || 0;
+    PADL = parseFloat(cs.paddingLeft) || 0;
+    const w = track.clientWidth - PADL - (parseFloat(cs.paddingRight) || 0);
+    K = Math.max(1, Math.min(N, Math.floor((w + gap) / (MIN_CARD + gap))));
+    track.style.setProperty('--k', K);
+    STEP = (w - (K - 1) * gap) / K + gap;
+    PAGES = Math.ceil(N / K);
+    ctrl.hidden = PAGES < 2;
+    if (tickN !== PAGES) {
+      tickN = PAGES;
+      ticks.innerHTML = Array.from({ length: PAGES }, (_, j) => {
+        const a = pageStart(j), b = Math.min(N - 1, a + K - 1);
+        return `<button type="button" class="pj-tick" data-i="${j}" aria-label="${a === b ? 'Projet ' + (a + 1) : 'Projets ' + (a + 1) + ' à ' + (b + 1)}" aria-controls="pj-track"><i></i></button>`;
+      }).join('');
+      tickEls = [...ticks.children];
+    }
   };
+  let tickEls = [];
   const range = () => {
-    const { step, k } = geo(), max = track.scrollWidth - track.clientWidth;
-    if (track.scrollLeft >= max - 2) return [Math.max(0, N - k), N - 1];
-    const first = Math.min(N - 1, Math.max(0, Math.round(track.scrollLeft / step)));
-    return [first, Math.min(N - 1, first + k - 1)];
+    const max = track.scrollWidth - track.clientWidth;
+    if (track.scrollLeft >= max - 2) return [Math.max(0, N - K), N - 1];
+    const first = Math.min(N - 1, Math.max(0, Math.round(track.scrollLeft / STEP)));
+    return [first, Math.min(N - 1, first + K - 1)];
   };
   let shown = '', liveT = 0, raf = 0, ready = false;
   const sync = () => {
     raf = 0;
-    const [a, b] = range(), max = track.scrollWidth - track.clientWidth, key = a + '-' + b;
+    const [a, b] = range(), max = track.scrollWidth - track.clientWidth, key = a + '-' + b + '-' + PAGES;
     $('pj-prev').disabled = track.scrollLeft <= 2;
     $('pj-next').disabled = track.scrollLeft >= max - 2;
+    // flèches masquées aux extrémités (la place reste réservée : rien ne bouge)
+    $('pj-prev').style.visibility = $('pj-prev').disabled ? 'hidden' : '';
+    $('pj-next').style.visibility = $('pj-next').disabled ? 'hidden' : '';
     if (key === shown) return;
     shown = key;
     countB.textContent = a === b ? pad2(a + 1) : `${pad2(a + 1)}–${pad2(b + 1)}`;
-    tickEls.forEach((t, i) => t.classList.toggle('on', i >= a && i <= b));
+    const pg = track.scrollLeft >= max - 2 ? PAGES - 1 : pageOf(a);
+    tickEls.forEach((t, i) => { t.classList.toggle('on', i === pg); if (i === pg) t.setAttribute('aria-current', 'true'); else t.removeAttribute('aria-current'); });
     if (ready) { clearTimeout(liveT); liveT = setTimeout(() => { live.textContent = a === b ? `Projet ${a + 1} sur ${N}` : `Projets ${a + 1} à ${b + 1} sur ${N}`; }, 400); }
   };
-  const toCard = (i, behavior = how()) => {
-    const li = lis[Math.max(0, Math.min(N - 1, i))];
-    track.scrollTo({ left: track.scrollLeft + li.getBoundingClientRect().left - track.getBoundingClientRect().left - geo().padL, behavior });
+  const toPage = (j, behavior = how()) => {
+    const i = pageStart(Math.max(0, Math.min(PAGES - 1, j)));
+    track.scrollTo({ left: track.scrollLeft + lis[i].getBoundingClientRect().left - track.getBoundingClientRect().left - PADL, behavior });
   };
-  const go = (dir) => { const [a] = range(), { k } = geo(); toCard(a + dir * k); };
+  const curPage = () => (track.scrollLeft >= track.scrollWidth - track.clientWidth - 2 ? PAGES - 1 : pageOf(range()[0]));
+  const go = (dir) => toPage(curPage() + dir);
+  layout();
   track.addEventListener('scroll', () => { raf ||= requestAnimationFrame(sync); }, { passive: true });
-  addEventListener('resize', () => { raf ||= requestAnimationFrame(sync); });
+  addEventListener('resize', () => { const i = range()[0]; layout(); toPage(pageOf(i), 'auto'); shown = ''; raf ||= requestAnimationFrame(sync); });
   $('pj-prev').onclick = () => go(-1);
   $('pj-next').onclick = () => go(1);
-  ticks.addEventListener('click', (e) => { const t = e.target.closest('.pj-tick'); if (t) toCard(+t.dataset.i); });
+  ticks.addEventListener('click', (e) => { const t = e.target.closest('.pj-tick'); if (t) toPage(+t.dataset.i); });
   sync(); ready = true;
 
   // ===== Rendus 3D : 72 vues par projet, chargées à la demande (des plus espacées aux plus fines, 6 à la fois) =====
@@ -1119,7 +1221,7 @@
     $('z-cat').textContent = art.querySelector('.pc-cat').textContent;
     $('z-title').textContent = link.textContent;
     $('z-text').innerHTML = art.querySelector('.pc-full').innerHTML;
-    $('z-page').href = link.getAttribute('href');
+    $('z-page').href = link.getAttribute('href'); $('z-page').hidden = fiches[slug] === false;
     strip.innerHTML = ph.map((p, i) => slide(p, i, ph.length, size)).join('');
     let nPh = 0;
     thumbs.innerHTML = ph.length > 1 ? ph.map((p, i) => thumb(p, i, ph.length, kind(p[0]) === 'photo' ? ++nPh : 0)).join('') : '';
@@ -1225,7 +1327,7 @@
     fill(art); photoSync();
     grid.scrollTop = 0; dlg.querySelector('.z-info').scrollTop = 0;
     if (!RM.matches) grid.animate([{ opacity: .4, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 250, easing: 'cubic-bezier(.2,.8,.2,1)' });
-    origin = art.querySelector('.pj-link'); toCard(cards.indexOf(art), 'auto');
+    origin = art.querySelector('.pj-link'); toPage(pageOf(cards.indexOf(art)), 'auto');
     try { history.replaceState({ pj: art.dataset.slug }, '', '#projet-' + art.dataset.slug); } catch (_) {}
   };
   const close = (fromPop = false) => {

@@ -57,7 +57,7 @@
 
   /* Repères + compteur + flèches, sur une ligne */
   .pj-ctrl { display: flex; align-items: center; gap: 14px; flex: none; }
-  .pj-ctrl[hidden], .z-meta[hidden] { display: none; }
+  .pj-ctrl[hidden], .z-meta[hidden], .pj-btn[hidden] { display: none; }
   .pj-ticks { display: flex; align-items: center; }
   .pj-tick { width: 22px; height: 32px; padding: 0; border: 0; background: none; display: grid; place-items: center; cursor: pointer; border-radius: 6px; }
   .pj-tick i { display: block; width: 10px; height: 3px; border-radius: 3px; background: rgba(255,255,255,.22); transition: width .3s var(--pj-ease), background-color .3s; }
@@ -75,9 +75,10 @@
   .zt:focus-visible, .z-chip:focus-visible, .zp:focus-visible, .sp-play:focus-visible { outline: 3px solid var(--pj-ink); outline-offset: 3px; }
   .pj-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
-  .track { list-style: none; margin: 20px 0 0; padding: 4px var(--pj-edge) 18px; display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--pj-edge); overscroll-behavior-x: contain; scrollbar-width: none; }
+  /* Fenêtre = la colonne de texte (+4 px de chaque côté pour le survol) ; --k (cartes entières visibles) est posé par le script */
+  .track { --k: 3; --pj-gap: 16px; list-style: none; margin: 20px auto 0; width: calc(min(100cqw - 2 * var(--pj-pad), var(--pj-wrap) - 2 * var(--pj-pad)) + 8px); padding: 4px 4px 18px; display: flex; gap: var(--pj-gap); justify-content: safe center; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 4px; overscroll-behavior-x: contain; scrollbar-width: none; }
   .track::-webkit-scrollbar { display: none; }
-  .track > li { flex: 0 0 clamp(250px, 30vw, 300px); scroll-snap-align: start; display: flex; }
+  .track > li { flex: 0 0 calc((100% - (var(--k) - 1) * var(--pj-gap)) / var(--k)); scroll-snap-align: start; display: flex; }
 
   .pc { position: relative; width: 100%; display: flex; flex-direction: column; border: 1px solid var(--pj-line); border-radius: 12px; background: var(--pj-bg2); color: var(--pj-ink); overflow: hidden; transition: scale .25s ease, border-color .25s ease, box-shadow .25s ease; }
   .pc:hover { scale: 1.02; border-color: rgba(255,90,60,.45); box-shadow: 0 10px 28px rgba(0,0,0,.35); }
@@ -197,8 +198,7 @@
     .pj-head .lp-h2 { font-size: 21px; }
     .pj-ctrl { justify-content: space-between; margin-left: -5px; }
     .pj-arrows { display: none; }
-    .track { gap: 12px; margin-top: 14px; }
-    .track > li { flex-basis: 78vw; }
+    .track { --pj-gap: 12px; margin-top: 14px; }
     dialog.zoom { width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; border: 0; }
     .z-grid { height: 100dvh; max-height: 100dvh; }
     .z-stage { height: 50dvh; }
@@ -250,7 +250,7 @@
   <ul class="track" id="pj-track" aria-label="Projets de maquettes" tabindex="-1">
     <li style="--i:0" data-f="industrie"><article class="pc" data-slug="systeme-filtration-purification">
       <div class="pc-media"><img src="../../public/assets/real-1.webp" width="896" height="1195" loading="lazy" decoding="async" alt="Système de filtration et de purification : équipement de procédé biotechnologique, châssis imprimé, vraie tuyauterie transparente, roulettes et presse-étoupes en métal">
-        <div class="pc-badges"><span class="badge">5 vues</span><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>3D 360°</span></div></div>
+        <div class="pc-badges"><span class="badge">5 vues</span><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>360°</span></div></div>
       <div class="pc-body">
         <p class="pc-cat">Industrie et salon</p>
         <h3 class="pc-title"><a class="pj-link" href="/realisations/systeme-filtration-purification">Système de filtration et de purification</a></h3>
@@ -272,7 +272,7 @@
 
     <li style="--i:2" data-f="pedagogie"><article class="pc" data-slug="maquette-cellule-biologique">
       <div class="pc-media"><img src="../../public/assets/real-8.webp" width="589" height="643" loading="lazy" decoding="async" alt="Cellule biologique : maquette pédagogique en coupe, coque imprimée puis peinte à la main">
-        <div class="pc-badges"><span class="badge">3 vues</span><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>3D 360°</span></div></div>
+        <div class="pc-badges"><span class="badge">3 vues</span><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>360°</span></div></div>
       <div class="pc-body">
         <p class="pc-cat">Pédagogie</p>
         <h3 class="pc-title"><a class="pj-link" href="/realisations/maquette-cellule-biologique">Cellule biologique en coupe</a></h3>
@@ -283,7 +283,7 @@
 
     <li style="--i:3" data-f="vitrine"><article class="pc" data-slug="caravane-de-presentation">
       <div class="pc-media"><img src="../../public/assets/real-5.webp" width="1200" height="1600" loading="lazy" decoding="async" alt="Caravanes de présentation miniatures imprimées en 3D, série de modèles réduits">
-        <div class="pc-badges"><span class="badge">2 vues</span><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>3D 360°</span></div></div>
+        <div class="pc-badges"><span class="badge">2 vues</span><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>360°</span></div></div>
       <div class="pc-body">
         <p class="pc-cat">Vitrine</p>
         <h3 class="pc-title"><a class="pj-link" href="/realisations/caravane-de-presentation">Caravane de présentation</a></h3>
@@ -376,6 +376,19 @@
   "figurines-resine": [["../../public/assets/real-16.webp", 824, 517, "Figurines en résine SLA imprimées en haute définition"]]
 }
 </script>
+<!-- Drapeau fiche : true = le zoom montre « Voir la fiche projet » (page /realisations/<slug> assez riche, ~300 mots) ; false = lien masqué tant que le texte n'existe pas. -->
+<script type="application/json" id="pj-fiches">
+{
+  "systeme-filtration-purification": true,
+  "maquette-bioreacteur": true,
+  "maquette-cellule-biologique": true,
+  "caravane-de-presentation": true,
+  "maquettes-design-produit": false,
+  "formes-pedagogiques-sante": false,
+  "piece-retro-concue": false,
+  "figurines-resine": false
+}
+</script>
 <!-- /PJ:DATA -->
 
 <!-- Zoom : gabarit cloné par le script à la première ouverture (le HTML initial ne contient donc aucun titre vide). -->
@@ -425,7 +438,7 @@
   const RM = matchMedia('(prefers-reduced-motion: reduce)');
   const $ = (id) => document.getElementById(id);
   const sec = $('nos-maquettes'), track = $('pj-track');
-  const photos = JSON.parse($('pj-photos').textContent);
+  const photos = JSON.parse($('pj-photos').textContent), fiches = JSON.parse($('pj-fiches').textContent);
   const lis = [...track.children], cards = lis.map((li) => li.querySelector('.pc')), N = cards.length;
   const title = (art) => art.querySelector('.pj-link').textContent;
   const pad2 = (n) => String(n).padStart(2, '0');
@@ -443,45 +456,66 @@
 
   // ===== Repères, compteur « 01–03 sur 08 », flèches =====
   const ctrl = $('pj-ctrl'), ticks = $('pj-ticks'), countB = $('pj-count').querySelector('b'), live = $('pj-live');
-  ticks.innerHTML = cards.map((a, i) => `<button type="button" class="pj-tick" data-i="${i}" aria-label="Projet ${i + 1} : ${esc(title(a))}" aria-controls="pj-track"><i></i></button>`).join('');
-  const tickEls = [...ticks.children];
   $('pj-count').querySelector('span').textContent = 'sur ' + pad2(N);
-  ctrl.hidden = false;
-  const geo = () => {
-    const a = lis[0].getBoundingClientRect(), b = lis[1].getBoundingClientRect(), step = b.left - a.left;
-    const padL = parseFloat(getComputedStyle(track).paddingLeft) || 0;
-    // cartes entières visibles entre le bord de la colonne de texte et le bord de l'écran
-    const k = Math.max(1, Math.floor((track.clientWidth - padL + (step - a.width) + 1) / step));
-    return { step, padL, k };
+  // k cartes entières remplissent exactement la colonne ; le carrousel avance par pages de k cartes
+  // (première page calée à gauche, dernière calée à droite : dernier pas raccourci). Rien ne dépend de N.
+  const MIN_CARD = 240;
+  let K = 1, STEP = 0, PADL = 0, PAGES = 1, tickN = -1;
+  const pageStart = (j) => Math.min(j * K, Math.max(0, N - K));
+  const pageOf = (i) => Math.min(PAGES - 1, Math.floor(i / K));
+  const layout = () => {
+    const cs = getComputedStyle(track), gap = parseFloat(cs.columnGap) || 0;
+    PADL = parseFloat(cs.paddingLeft) || 0;
+    const w = track.clientWidth - PADL - (parseFloat(cs.paddingRight) || 0);
+    K = Math.max(1, Math.min(N, Math.floor((w + gap) / (MIN_CARD + gap))));
+    track.style.setProperty('--k', K);
+    STEP = (w - (K - 1) * gap) / K + gap;
+    PAGES = Math.ceil(N / K);
+    ctrl.hidden = PAGES < 2;
+    if (tickN !== PAGES) {
+      tickN = PAGES;
+      ticks.innerHTML = Array.from({ length: PAGES }, (_, j) => {
+        const a = pageStart(j), b = Math.min(N - 1, a + K - 1);
+        return `<button type="button" class="pj-tick" data-i="${j}" aria-label="${a === b ? 'Projet ' + (a + 1) : 'Projets ' + (a + 1) + ' à ' + (b + 1)}" aria-controls="pj-track"><i></i></button>`;
+      }).join('');
+      tickEls = [...ticks.children];
+    }
   };
+  let tickEls = [];
   const range = () => {
-    const { step, k } = geo(), max = track.scrollWidth - track.clientWidth;
-    if (track.scrollLeft >= max - 2) return [Math.max(0, N - k), N - 1];
-    const first = Math.min(N - 1, Math.max(0, Math.round(track.scrollLeft / step)));
-    return [first, Math.min(N - 1, first + k - 1)];
+    const max = track.scrollWidth - track.clientWidth;
+    if (track.scrollLeft >= max - 2) return [Math.max(0, N - K), N - 1];
+    const first = Math.min(N - 1, Math.max(0, Math.round(track.scrollLeft / STEP)));
+    return [first, Math.min(N - 1, first + K - 1)];
   };
   let shown = '', liveT = 0, raf = 0, ready = false;
   const sync = () => {
     raf = 0;
-    const [a, b] = range(), max = track.scrollWidth - track.clientWidth, key = a + '-' + b;
+    const [a, b] = range(), max = track.scrollWidth - track.clientWidth, key = a + '-' + b + '-' + PAGES;
     $('pj-prev').disabled = track.scrollLeft <= 2;
     $('pj-next').disabled = track.scrollLeft >= max - 2;
+    // flèches masquées aux extrémités (la place reste réservée : rien ne bouge)
+    $('pj-prev').style.visibility = $('pj-prev').disabled ? 'hidden' : '';
+    $('pj-next').style.visibility = $('pj-next').disabled ? 'hidden' : '';
     if (key === shown) return;
     shown = key;
     countB.textContent = a === b ? pad2(a + 1) : `${pad2(a + 1)}–${pad2(b + 1)}`;
-    tickEls.forEach((t, i) => t.classList.toggle('on', i >= a && i <= b));
+    const pg = track.scrollLeft >= max - 2 ? PAGES - 1 : pageOf(a);
+    tickEls.forEach((t, i) => { t.classList.toggle('on', i === pg); if (i === pg) t.setAttribute('aria-current', 'true'); else t.removeAttribute('aria-current'); });
     if (ready) { clearTimeout(liveT); liveT = setTimeout(() => { live.textContent = a === b ? `Projet ${a + 1} sur ${N}` : `Projets ${a + 1} à ${b + 1} sur ${N}`; }, 400); }
   };
-  const toCard = (i, behavior = how()) => {
-    const li = lis[Math.max(0, Math.min(N - 1, i))];
-    track.scrollTo({ left: track.scrollLeft + li.getBoundingClientRect().left - track.getBoundingClientRect().left - geo().padL, behavior });
+  const toPage = (j, behavior = how()) => {
+    const i = pageStart(Math.max(0, Math.min(PAGES - 1, j)));
+    track.scrollTo({ left: track.scrollLeft + lis[i].getBoundingClientRect().left - track.getBoundingClientRect().left - PADL, behavior });
   };
-  const go = (dir) => { const [a] = range(), { k } = geo(); toCard(a + dir * k); };
+  const curPage = () => (track.scrollLeft >= track.scrollWidth - track.clientWidth - 2 ? PAGES - 1 : pageOf(range()[0]));
+  const go = (dir) => toPage(curPage() + dir);
+  layout();
   track.addEventListener('scroll', () => { raf ||= requestAnimationFrame(sync); }, { passive: true });
-  addEventListener('resize', () => { raf ||= requestAnimationFrame(sync); });
+  addEventListener('resize', () => { const i = range()[0]; layout(); toPage(pageOf(i), 'auto'); shown = ''; raf ||= requestAnimationFrame(sync); });
   $('pj-prev').onclick = () => go(-1);
   $('pj-next').onclick = () => go(1);
-  ticks.addEventListener('click', (e) => { const t = e.target.closest('.pj-tick'); if (t) toCard(+t.dataset.i); });
+  ticks.addEventListener('click', (e) => { const t = e.target.closest('.pj-tick'); if (t) toPage(+t.dataset.i); });
   sync(); ready = true;
 
   // ===== Rendus 3D : 72 vues par projet, chargées à la demande (des plus espacées aux plus fines, 6 à la fois) =====
@@ -594,7 +628,7 @@
     $('z-cat').textContent = art.querySelector('.pc-cat').textContent;
     $('z-title').textContent = link.textContent;
     $('z-text').innerHTML = art.querySelector('.pc-full').innerHTML;
-    $('z-page').href = link.getAttribute('href');
+    $('z-page').href = link.getAttribute('href'); $('z-page').hidden = fiches[slug] === false;
     strip.innerHTML = ph.map((p, i) => slide(p, i, ph.length, size)).join('');
     let nPh = 0;
     thumbs.innerHTML = ph.length > 1 ? ph.map((p, i) => thumb(p, i, ph.length, kind(p[0]) === 'photo' ? ++nPh : 0)).join('') : '';
@@ -700,7 +734,7 @@
     fill(art); photoSync();
     grid.scrollTop = 0; dlg.querySelector('.z-info').scrollTop = 0;
     if (!RM.matches) grid.animate([{ opacity: .4, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 250, easing: 'cubic-bezier(.2,.8,.2,1)' });
-    origin = art.querySelector('.pj-link'); toCard(cards.indexOf(art), 'auto');
+    origin = art.querySelector('.pj-link'); toPage(pageOf(cards.indexOf(art)), 'auto');
     try { history.replaceState({ pj: art.dataset.slug }, '', '#projet-' + art.dataset.slug); } catch (_) {}
   };
   const close = (fromPop = false) => {
