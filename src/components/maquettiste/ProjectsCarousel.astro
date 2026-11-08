@@ -3,6 +3,7 @@
 // HTML des cartes rendu côté serveur depuis REALISATIONS (visible et indexable sans JS) ; JS vanilla (pas d'îlot React).
 // Une seule instance par page (ids #pj-track, #pj-photos, #pj-zoom-tpl).
 import { REALISATIONS } from "../../data/realisations";
+import { MAQUETTES } from "../../data/maquettes";
 import "../../styles/projets-carrousel.css";
 
 interface Props {
@@ -28,6 +29,8 @@ const isSpin = (src: string) => src.startsWith("spin:");
 // Données pour le JS : { slug: [[src, w, h, alt], ...] } et { slug: fiche }
 const photosJson = JSON.stringify(Object.fromEntries(items.map((r) => [r.slug, r.photos]))).replace(/</g, "\\u003c");
 const fichesJson = JSON.stringify(Object.fromEntries(items.map((r) => [r.slug, r.fiche]))).replace(/</g, "\\u003c");
+// Dossiers de rendus 3D avec calques LED (rank/glow), d'apres src/data/maquettes.ts (led:true)
+const ledJson = JSON.stringify(MAQUETTES.filter((m) => m.enabled && m.led).map((m) => (m.dir ?? m.id).split("/").pop()));
 ---
 
 <script is:inline>if ('IntersectionObserver' in window) document.documentElement.classList.add('js');</script>
@@ -113,6 +116,7 @@ const fichesJson = JSON.stringify(Object.fromEntries(items.map((r) => [r.slug, r
 
 <script is:inline type="application/json" id="pj-photos" set:html={photosJson} />
 <script is:inline type="application/json" id="pj-fiches" set:html={fichesJson} />
+<script is:inline type="application/json" id="pj-led" set:html={ledJson} />
 
 <script is:inline>
 (() => {
@@ -212,43 +216,97 @@ const fichesJson = JSON.stringify(Object.fromEntries(items.map((r) => [r.slug, r
   };
   secs.forEach(carousel);
 
-  // ===== Rendus 3D : 72 vues par projet, chargées à la demande (des plus espacées aux plus fines, 6 à la fois) =====
-  const MAQ = '/assets/maquettes/', FR = 72, START = 10;
-  const pools = {};
-  const url = (dir, size, i) => `${MAQ}${dir}/${size}/e28_a${String(i).padStart(3, '0')}.avif`;
+  // ===== Rendus 3D : 72 azimuts x 3 hauteurs de vue (12, 28, 55 degres) ; la hauteur de depart se charge seule, les autres au premier geste =====
+  // Un seul ordonnanceur (6 requetes a la fois) : seuls les rendus de la visionneuse ouverte sont telecharges (plus de file « fantome » d'un autre projet).
+  const MAQ = '/assets/maquettes/', FR = 72, START = 10, ELEVS = [12, 28, 55], EL0 = 1, MAXC = 6;
+  const LEDS = new Set(JSON.parse($('pj-led').textContent));
   const rank = (i) => (i % 6 ? (i % 2 ? 2 : 1) : 0);
-  const loadPool = (dir, size, step = 1) => {
-    const p = pools[dir + size] ||= { imgs: new Array(FR), n: 0, fin: 0, req: new Set(), queue: [], active: 0 };
-    const add = [...Array(FR).keys()].filter((i) => i % step === 0 && !p.req.has(i)).sort((a, b) => rank(a) - rank(b) || a - b);
-    add.forEach((i) => p.req.add(i)); p.queue.push(...add);
-    const pump = () => {
-      while (p.active < 6 && p.queue.length) {
-        const i = p.queue.shift(), im = new Image(); p.active++;
-        im.decoding = 'async';
-        im.onload = () => { p.imgs[i] = im; p.n++; p.fin++; p.active--; pump(); };
-        im.onerror = () => { p.fin++; p.active--; pump(); };
-        im.src = url(dir, size, i);
-      }
-    };
-    pump(); return p;
+  const ORDER = [START, ...[...Array(FR).keys()].filter((i) => i !== START).sort((a, b) => rank(a) - rank(b) || a - b)];
+  const url = (dir, kind, ei, i) => `${MAQ}${dir}/${kind}/e${ELEVS[ei]}_a${String(i).padStart(3, '0')}.${kind === 'rank' || kind === 'glow' ? 'webp' : 'avif'}`;
+  const pools = {};
+  const getPool = (dir, kind, ei) => pools[dir + kind + ei] ||= { dir, kind, ei, imgs: new Array(FR), n: 0, fin: 0, queue: [...ORDER] };
+  let want = [], act = 0; // want : groupes de pools a charger, par ordre de priorite
+  const pump = () => {
+    while (act < MAXC) {
+      const g = want.find((grp) => grp.some((q) => q.queue.length)); if (!g) return;
+      const p = g.filter((q) => q.queue.length).sort((a, b) => a.fin - b.fin)[0];
+      const i = p.queue.shift(), im = new Image(); act++;
+      im.decoding = 'async';
+      im.onload = () => { p.imgs[i] = im; p.n++; p.fin++; act--; pump(); };
+      im.onerror = () => { p.fin++; act--; pump(); };
+      im.src = url(p.dir, p.kind, p.ei, i);
+    }
   };
-  const nearest = (p, f) => { for (let d = 0; d < FR / 2; d++) { const a = p.imgs[(f + d) % FR] || p.imgs[(f - d + FR * 2) % FR]; if (a) return a; } return null; };
+  const nearI = (p, f) => { if (!p) return -1; for (let d = 0; d <= FR / 2; d++) { if (p.imgs[(f + d) % FR]) return (f + d) % FR; const j = (f - d + FR) % FR; if (p.imgs[j]) return j; } return -1; };
   const wrapF = (f) => ((Math.round(f) % FR) + FR) % FR;
-  // taille des vues : 640 px suffit jusqu'à ~800 px affichés (écran x densité), sinon 1600 px
-  const vSize = () => { const w = innerWidth <= 900 ? innerWidth : Math.min(innerWidth - 48, 1120) * .574; return w * Math.min(devicePixelRatio || 1, 2) > 800 ? 'base' : 'sm'; };
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  // vues haute definition (base/) des qu'on zoome ou hors mobile ; sm/ seulement mobile (<= 640 px) non zoome
+  const curSize = () => (innerWidth <= 640 && viewer.zoom < 1.01 ? 'sm' : 'base');
+
+  // Calques LED (cellule) : meme chenille que /maquette-industrielle, cycle 5 s (montee 3 s, allume 1 s, extinction 1 s)
+  const LW = 800, LH = 600, LED_RISE = 3, LED_HOLD = 1, LED_FALL = 1, LED_FADE = .06;
+  let LK = null;
+  const ledKit = () => LK ||= (() => {
+    const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+    const sc = mk(LW, LH), lc = mk(LW, LH), hc = mk(160, 120), sctx = sc.getContext('2d', { willReadFrequently: true }), lctx = lc.getContext('2d'), hctx = hc.getContext('2d');
+    sctx.imageSmoothingEnabled = false; hctx.imageSmoothingQuality = 'high';
+    return { sctx, lc, lctx, hc, hctx, idat: lctx.createImageData(LW, LH), cache: new Map() };
+  })();
+  const ledOf = (dir, ei, f) => {
+    const kit = ledKit(), k = dir + ei + '_' + f; let L = kit.cache.get(k); if (L) return L;
+    const ri = pools[dir + 'rank' + ei]?.imgs[f], gi = pools[dir + 'glow' + ei]?.imgs[f]; if (!ri || !gi) return null;
+    const { sctx } = kit;
+    sctx.clearRect(0, 0, LW, LH); sctx.drawImage(ri, 0, 0, LW, LH); const R = sctx.getImageData(0, 0, LW, LH).data;
+    sctx.clearRect(0, 0, LW, LH); sctx.drawImage(gi, 0, 0, LW, LH); const G = sctx.getImageData(0, 0, LW, LH).data;
+    // pixels de lueur sans rang : rang du voisin classe le plus proche (sinon ils s'allument tous d'un coup a la fin)
+    const RK = new Float32Array(LW * LH).fill(-1);
+    for (let p = 0; p < LW * LH; p++) if (R[p * 4 + 3]) RK[p] = R[p * 4] / 255;
+    for (let it = 0; it < 6; it++) {
+      const nx = RK.slice();
+      for (let y = 1; y < LH - 1; y++) for (let x = 1; x < LW - 1; x++) {
+        const p = y * LW + x; if (RK[p] >= 0 || !G[p * 4 + 3]) continue;
+        let best = -1;
+        for (const q of [p - 1, p + 1, p - LW, p + LW, p - LW - 1, p - LW + 1, p + LW - 1, p + LW + 1]) if (RK[q] >= 0 && (best < 0 || RK[q] < best)) best = RK[q];
+        if (best >= 0) nx[p] = best;
+      }
+      RK.set(nx);
+    }
+    let n = 0; for (let p = 0; p < LW * LH; p++) if (G[p * 4 + 3] && RK[p] >= 0) n++;
+    L = { n, pos: new Uint32Array(n), rank: new Float32Array(n), rgba: new Uint8Array(n * 4) };
+    let j = 0;
+    for (let p = 0; p < LW * LH; p++) {
+      const o = p * 4; if (!G[o + 3] || RK[p] < 0) continue;
+      L.pos[j] = o; L.rank[j] = RK[p]; L.rgba.set([G[o], G[o + 1], G[o + 2], G[o + 3]], j * 4); j++;
+    }
+    kit.cache.set(k, L); if (kit.cache.size > 10) kit.cache.delete(kit.cache.keys().next().value);
+    return L;
+  };
+  const ledT = (ms) => { if (RM.matches) return 1; const s = (ms / 1000) % (LED_RISE + LED_HOLD + LED_FALL); return s < LED_RISE ? s / LED_RISE : s < LED_RISE + LED_HOLD ? 1 : 1 - (s - LED_RISE - LED_HOLD) / LED_FALL; };
+  const paintLed = (L, t) => {
+    const { lctx, lc, hctx, hc, idat } = ledKit(), d = idat.data, te = t * (1 + LED_FADE);
+    d.fill(0); if (te <= 0) return false;
+    for (let j = 0; j < L.n; j++) {
+      const vis = (te - L.rank[j]) / LED_FADE; if (vis <= 0) continue;
+      const o = L.pos[j], q = j * 4;
+      d[o] = L.rgba[q]; d[o + 1] = L.rgba[q + 1]; d[o + 2] = L.rgba[q + 2]; d[o + 3] = L.rgba[q + 3] * (vis >= 1 ? 1 : vis);
+    }
+    lctx.putImageData(idat, 0, 0); hctx.clearRect(0, 0, 160, 120); hctx.drawImage(lc, 0, 0, 160, 120);
+    return true;
+  };
 
   // ===== Zoom : le gabarit est cloné à la première ouverture (aucun titre vide dans le HTML initial) =====
   let dlg = null, strip, thumbs, grid, cur = null, origin = null, pushed = false, closing = false, openUrl = '', skipPop = 0;
   const kind = (src) => (src.startsWith('spin:') ? 'spin' : 'photo');
   const PLAY = '<svg class="i-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><svg class="i-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>';
   const ICO = '<svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>';
-  const slide = ([src, w, h, alt], i, n, size) => {
+  const slide = ([src, w, h, alt], i, n) => {
     const lbl = `${i + 1} sur ${n}`;
     if (kind(src) === 'spin') {
       const dir = src.slice(5);
-      return `<figure class="z-spin" role="group" aria-roledescription="visionneuse 3D" aria-label="${lbl} : ${esc(alt)}, en 3D. Faites glisser pour tourner, ou utilisez les flèches gauche et droite." data-spin="${dir}" data-size="${size}" tabindex="0">
-        <div class="sp-stage"><img src="${url(dir, size, START)}" width="${w}" height="${h}" alt="${esc(alt)}" decoding="sync"></div>
-        <span class="sp-pill">${ICO}3D · faites glisser</span><span class="sp-load" aria-hidden="true">chargement…</span>
+      return `<figure class="z-spin" role="group" aria-roledescription="visionneuse 3D" aria-label="${lbl} : ${esc(alt)}, en 3D. Faites glisser à l'horizontale pour tourner, à la verticale pour changer la hauteur de vue, ou utilisez les flèches du clavier." data-spin="${dir}" tabindex="0">
+        <div class="sp-stage"><img src="${url(dir, curSize(), EL0, START)}" width="${w}" height="${h}" alt="${esc(alt)}" decoding="async"><canvas class="sp-cv" aria-hidden="true"></canvas></div>
+        <span class="sp-pill">${ICO}3D · faites glisser</span>
+        <div class="sp-loader" role="status"><span class="sp-spin" aria-hidden="true"></span><span class="sp-loadtxt">Chargement de la maquette…</span></div>
         <div class="sp-ui"><button type="button" class="sp-play" aria-pressed="false" aria-label="Rotation automatique">${PLAY}</button><div class="sp-bar" aria-hidden="true"><i></i></div></div></figure>`;
     }
     return `<figure role="group" aria-roledescription="photo" aria-label="${lbl}"><img src="${src}" width="${w}" height="${h}" alt="${esc(alt)}" ${i ? 'loading="lazy"' : ''} decoding="async"></figure>`;
@@ -270,11 +328,49 @@ const fichesJson = JSON.stringify(Object.fromEntries(items.map((r) => [r.slug, r
     b.onclick = () => swap(art);
   };
 
-  // Visionneuse 3D : glisser, inertie, clavier, rotation auto lente (~1 tour en 13 s ; reprend 2 s après le dernier geste, sauf si l'utilisateur l'a mise en pause)
-  const AUTO_SPEED = FR / 13000, AUTO_IDLE = 2000; // vues par ms ; délai de reprise
-  const viewer = { el: null, img: null, ld: null, p: null, f: START, vel: 0, auto: false, drag: null, raf: 0, last: 0, shown: -1, active: false, resumeAt: 0, zoom: 1 };
+  // Visionneuse 3D : glisser horizontal = azimut, vertical = hauteur de vue (12/28/55°), inertie, clavier, rotation auto lente (~1 tour en 13 s ; reprend 2 s apres le dernier geste, sauf pause volontaire)
+  const AUTO_SPEED = FR / 13000, AUTO_IDLE = 2000, EL_PX = 70; // vues par ms ; delai de reprise ; pixels par cran de hauteur
+  const viewer = { el: null, cv: null, ctx: null, ld: null, dir: '', led: false, f: START, ei: EL0, elevs: [EL0], size: 'base', key: '', ready: false, vel: 0, auto: false, drag: null, raf: 0, last: 0, lastLed: 0, active: false, resumeAt: 0, zoom: 1 };
   const resumeSoon = () => { viewer.resumeAt = RM.matches || viewer.el?.classList.contains('paused') ? 0 : performance.now() + AUTO_IDLE; };
-  const vDraw = () => { const f = wrapF(viewer.f); if (f === viewer.shown) return; const im = viewer.p && nearest(viewer.p, f); if (im) { viewer.img.src = im.src; viewer.shown = f; } viewer.el.style.setProperty('--p', (f / (FR - 1)).toFixed(3)); };
+  const refreshWant = () => {
+    const v = viewer;
+    want = v.elevs.map((ei) => [getPool(v.dir, v.size, ei), ...(v.led ? [getPool(v.dir, 'rank', ei), getPool(v.dir, 'glow', ei)] : [])]);
+    pump();
+  };
+  // premier geste : on charge aussi les autres hauteurs de vue (le visiteur qui ne touche a rien ne les telecharge pas)
+  const moreElevs = () => { if (viewer.elevs.length < ELEVS.length) { viewer.elevs = ELEVS.map((_, i) => i).sort((a, b) => Math.abs(a - EL0) - Math.abs(b - EL0)); refreshWant(); } };
+  const vDraw = (now) => {
+    const v = viewer, cv = v.cv; if (!cv) return;
+    const st = cv.parentNode, w = st.clientWidth, h = st.clientHeight; if (!w || !h) return;
+    const f = wrapF(v.f), ei = clamp(Math.round(v.ei), 0, ELEVS.length - 1), size = curSize();
+    v.el.style.setProperty('--p', (f / (FR - 1)).toFixed(3));
+    if (size !== v.size) { v.size = size; refreshWant(); }
+    const other = size === 'sm' ? 'base' : 'sm';
+    let p = null, idx = -1;
+    for (const [k, e] of [[size, ei], [other, ei], [size, EL0], [other, EL0]]) { const q = pools[v.dir + k + e]; if (q && (idx = nearI(q, f)) >= 0) { p = q; break; } }
+    if (!p) {
+      const m = pools[v.dir + v.size + EL0]; // aucune vue recue et tout est termine : echec
+      if (m && m.fin >= FR && !m.n) { v.ld.classList.add('err'); v.ld.querySelector('.sp-loadtxt').textContent = 'La vue 3D n\'a pas pu être chargée.'; }
+      return;
+    }
+    const ledAnim = v.led && !RM.matches && now - v.lastLed >= 33; // chenille : ~30 images/s
+    const key = `${p.kind}${p.ei}_${idx}_${p.n}_${v.zoom.toFixed(2)}_${w}x${h}_${v.led ? pools[v.dir + 'glow' + p.ei]?.n + '_' + pools[v.dir + 'rank' + p.ei]?.n : 0}`;
+    if (key === v.key && !ledAnim) return;
+    v.key = key; if (ledAnim) v.lastLed = now;
+    const dpr = Math.min(devicePixelRatio || 1, 2), cw = Math.round(w * dpr), ch = Math.round(h * dpr);
+    if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+    const c = v.ctx, im = p.imgs[idx], ar = im.naturalWidth / im.naturalHeight || 4 / 3;
+    const bw = Math.min(cw, ch * ar) * v.zoom, bh = bw / ar, dx = (cw - bw) / 2, dy = (ch - bh) / 2; // zoom dessine dans le canvas (pas d'agrandissement CSS d'une image)
+    c.clearRect(0, 0, cw, ch); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+    c.drawImage(im, dx, dy, bw, bh);
+    const L = v.led ? ledOf(v.dir, p.ei, idx) : null;
+    if (L && paintLed(L, ledT(now))) {
+      const { lc, hc } = ledKit();
+      c.globalCompositeOperation = 'lighter'; c.drawImage(lc, dx, dy, bw, bh);
+      c.globalAlpha = .7; c.drawImage(hc, dx, dy, bw, bh); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
+    }
+    if (!v.ready) { v.ready = true; v.el.classList.add('ready'); } // 1re vue affichee : le chargement disparait
+  };
   const vLoop = (t) => {
     if (!viewer.active) return;
     const dt = Math.min(48, t - (viewer.last || t)); viewer.last = t;
@@ -283,17 +379,17 @@ const fichesJson = JSON.stringify(Object.fromEntries(items.map((r) => [r.slug, r
       else if (viewer.auto) viewer.f += dt * AUTO_SPEED;
       else if (viewer.resumeAt && t >= viewer.resumeAt) { viewer.resumeAt = 0; setAuto(true); }
     }
-    const ld = viewer.ld, p = viewer.p;
-    if (ld && !ld.classList.contains('done')) { if (p.fin >= FR) ld.classList.add('done'); else ld.textContent = `chargement ${Math.round(p.fin / FR * 100)} %`; }
-    vDraw(); viewer.raf = requestAnimationFrame(vLoop);
+    vDraw(t); viewer.raf = requestAnimationFrame(vLoop);
   };
   const setAuto = (on) => { viewer.auto = on; const b = viewer.el?.querySelector('.sp-play'); if (b) { b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', on ? 'Arrêter la rotation automatique' : 'Rotation automatique'); } };
-  const viewerStop = () => { viewer.active = false; cancelAnimationFrame(viewer.raf); };
+  const viewerStop = () => { viewer.active = false; cancelAnimationFrame(viewer.raf); want = []; }; // want vide : plus aucun telechargement pour ce projet
   const viewerStart = (fig) => {
     if (viewer.active && viewer.el === fig) return;
     const same = viewer.el === fig; viewerStop();
-    Object.assign(viewer, { el: fig, img: fig.querySelector('.sp-stage img'), ld: fig.querySelector('.sp-load'), f: same ? viewer.f : START, zoom: same ? viewer.zoom : 1, vel: 0, shown: -1, last: 0, drag: null, active: true });
-    viewer.p = loadPool(fig.dataset.spin, fig.dataset.size, 1);
+    const dir = fig.dataset.spin;
+    Object.assign(viewer, { el: fig, cv: fig.querySelector('.sp-cv'), ld: fig.querySelector('.sp-loader'), dir, led: LEDS.has(dir), f: same ? viewer.f : START, ei: same ? viewer.ei : EL0, zoom: same ? viewer.zoom : 1, elevs: same ? viewer.elevs : [EL0], ready: same && viewer.ready, key: '', vel: 0, last: 0, lastLed: 0, drag: null, active: true });
+    viewer.ctx = viewer.cv.getContext('2d'); viewer.size = curSize();
+    refreshWant();
     viewer.resumeAt = 0; setAuto(!RM.matches && !fig.classList.contains('paused'));
     viewer.raf = requestAnimationFrame(vLoop);
   };
@@ -328,13 +424,13 @@ const fichesJson = JSON.stringify(Object.fromEntries(items.map((r) => [r.slug, r
   };
 
   const fill = (art) => {
-    viewerStop(); viewer.el = null; viewer.f = START; viewer.zoom = 1;
-    const slug = art.dataset.slug, link = art.querySelector('.pj-link'), ph = photos[slug] || [], size = vSize();
+    viewerStop(); viewer.el = null; viewer.f = START; viewer.ei = EL0; viewer.zoom = 1; viewer.elevs = [EL0]; viewer.ready = false;
+    const slug = art.dataset.slug, link = art.querySelector('.pj-link'), ph = photos[slug] || [];
     $('z-cat').textContent = art.querySelector('.pc-cat').textContent;
     $('z-title').textContent = link.textContent;
     $('z-text').innerHTML = art.querySelector('.pc-full').innerHTML;
     $('z-page').href = link.getAttribute('href'); $('z-page').hidden = fiches[slug] === false;
-    strip.innerHTML = ph.map((p, i) => slide(p, i, ph.length, size)).join('');
+    strip.innerHTML = ph.map((p, i) => slide(p, i, ph.length)).join('');
     let nPh = 0;
     thumbs.innerHTML = ph.length > 1 ? ph.map((p, i) => thumb(p, i, ph.length, kind(p[0]) === 'photo' ? ++nPh : 0)).join('') : '';
     $('z-bar').hidden = ph.length < 2;
@@ -398,33 +494,35 @@ const fichesJson = JSON.stringify(Object.fromEntries(items.map((r) => [r.slug, r
     // visionneuse
     strip.addEventListener('pointerdown', (e) => {
       const st = e.target.closest('.sp-stage'); if (!st) return;
-      const fig = st.closest('.z-spin'); fig.classList.add('touched'); viewerStart(fig); setAuto(false); viewer.resumeAt = 0;
+      const fig = st.closest('.z-spin'); fig.classList.add('touched'); viewerStart(fig); moreElevs(); setAuto(false); viewer.resumeAt = 0;
       st.setPointerCapture(e.pointerId); st.classList.add('grab');
-      viewer.drag = { x: e.clientX, f: viewer.f, lx: e.clientX, lt: performance.now() }; viewer.vel = 0;
+      viewer.drag = { x: e.clientX, y: e.clientY, f: viewer.f, ei: viewer.ei, lx: e.clientX, lt: performance.now() }; viewer.vel = 0;
     });
     strip.addEventListener('pointermove', (e) => {
       const d = viewer.drag; if (!d) return;
-      const w = viewer.img.clientWidth || 600, ppf = Math.max(3, w * 1.1 / FR), t = performance.now();
+      const w = viewer.cv.clientWidth || 600, ppf = Math.max(3, w * 1.1 / FR), t = performance.now();
       viewer.f = d.f - (e.clientX - d.x) / ppf;
+      viewer.ei = clamp(d.ei + (e.clientY - d.y) / EL_PX, 0, ELEVS.length - 1); // glisser vers le bas = vue de plus haut
       const dt = t - d.lt; if (dt > 0) viewer.vel = viewer.vel * .6 + (-(e.clientX - d.lx) / ppf / dt) * .4;
       d.lx = e.clientX; d.lt = t;
     });
     const vUp = () => { if (!viewer.drag) return; viewer.drag = null; viewer.el?.querySelector('.sp-stage').classList.remove('grab'); if (RM.matches) viewer.vel = 0; resumeSoon(); };
     strip.addEventListener('pointerup', vUp); strip.addEventListener('pointercancel', vUp);
-    // molette sur la vue 3D = zoom / dézoom uniquement (jamais de défilement de la page) ; compte comme une prise en main
+    // molette sur la vue 3D = zoom / dezoom uniquement (jamais de defilement de la page) ; compte comme une prise en main
     strip.addEventListener('wheel', (e) => {
       const st = e.target.closest('.sp-stage'); if (!st) return;
       e.preventDefault();
       const fig = st.closest('.z-spin'), dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
       fig.classList.add('touched'); viewerStart(fig); setAuto(false); viewer.resumeAt = 0;
-      viewer.zoom = Math.max(1, Math.min(3, viewer.zoom * Math.exp(-dy * .0015)));
-      st.style.setProperty('--zs', viewer.zoom.toFixed(3));
+      viewer.zoom = clamp(viewer.zoom * Math.exp(-dy * .0015), 1, 3);
       resumeSoon();
     }, { passive: false });
     strip.addEventListener('keydown', (e) => {
       const fig = e.target.closest('.z-spin'); if (!fig || e.target.closest('.sp-play')) return;
-      const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (!d) return;
-      e.preventDefault(); e.stopPropagation(); fig.classList.add('touched'); viewerStart(fig); setAuto(false); viewer.f += d * 2; resumeSoon();
+      const k = { ArrowRight: [1, 0], ArrowLeft: [-1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key]; if (!k) return;
+      e.preventDefault(); e.stopPropagation(); fig.classList.add('touched'); viewerStart(fig); setAuto(false);
+      viewer.f += k[0] * 2; if (k[1]) { viewer.ei = clamp(Math.round(viewer.ei) + k[1], 0, ELEVS.length - 1); moreElevs(); }
+      resumeSoon();
     });
     strip.addEventListener('click', (e) => { const b = e.target.closest('.sp-play'); if (!b) return; const f = b.closest('.z-spin'), off = viewer.auto || !!viewer.resumeAt; f.classList.add('touched'); f.classList.toggle('paused', off); viewer.resumeAt = 0; setAuto(!off); });
   };

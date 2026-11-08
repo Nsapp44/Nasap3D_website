@@ -23,8 +23,17 @@ Leçon : `set_session_model` refuse sur la session courante → la passation « 
 2. [x] Optimisation site (baa17c3, local) : Lighthouse avant/après 98-100 partout, CLS accueil desktop 0,068→0,024, devis −3 requêtes, admin polices locales. /machines 87 = bruit (3 re-mesures à 100). Reste : shop.astro (Barlow Google), panier scripts Boxtal bloquants, Leaflet unpkg, og:image:alt BaseLayout ; Caddy (compression, cache, HSTS, 301 /service-impression-3d et /retro-conception) = Nolann. À vérifier en navigateur : devis-instantane (client:visible), header (CartBadge idle).
 3. [ ] Boxtal : suivi AUTO Mondial Relay (NE RIEN CASSER). Dump JSON lecture seule de `order_status/{ref}/informations` sur une commande MR réelle, chercher le n° saisi à la main, l'ajouter à TRACKING_KEY_RE (`src/lib/server/boxtal.ts` ~576). `advisor` avant de figer l'approche (je ne peux pas choisir Fable : à Nolann de le régler).
 
+4. [ ] Retours Nolann 08/11 soir (page locale 4399) :
+   a. [~] Hero : 1re image nette (vraie f_000 chargée direct, sans flou ni base64), passage naturel vers la sphère. Édité (StoryboardCellule.astro, cellule.js `?v=poster-net`), NON vérifié. Rideau = bon, ne pas toucher.
+   b. [ ] Fluidité du scroll du storyboard (technique « autre site »), pas commencé.
+   c. [~] Trop de vide entre la fin de la sphère et « 01 Maquettes interactives » : `.mqn .sb + section.sec{margin-top:clamp(-200px,-16vh,-96px)}` dans maquettiste-nantes.css, NON vérifié (à 375 le vide mesurait 442 px, peut-être insuffisant).
+   d. [~] Carrés KPI du hero tronqués : `white-space:nowrap` remplacé par retour à la ligne (text-wrap:balance), NON vérifié.
+   e. [~] Zoom carrousel : caravane ne charge rien + loader ; visionneuse = celle de /maquette-industrielle (élévations e12/e28, LED cellule, frames base/ en zoom) ; cadre autour du texte MachinesStrip à retirer. CODÉ par `executant-ui` (non commité, non vérifié à l'exécution, seulement node --check) : ProjectsCarousel.astro (canvas, 3 hauteurs e12/e28/e55, LED cellule, base/ en zoom, ordonnanceur global annulé à la fermeture = hypothèse de la cause caravane, loader `.sp-loader`), projets-carrousel.css, MachinesStrip.astro (cartes sans cadre ; si trop serré ajouter row-gap sur `.ms-grid`). Manques : pinch mobile, zoom clavier. À vérifier au build + captures (caravane surtout).
+   f. [ ] /maquette-industrielle : alléger visuellement comme la page maquettiste (trop de texte dur) : `architecte` conçoit, `executant-ui` applique, captures avant/après.
+   Non touchés (Nolann aime) : page maquettiste dans l'ensemble, pages par projet, rideau.
+
 ## Prochain pas exact
-Dire à Nolann « tout est prêt à vérifier », puis item 3 ; avant push : scan claude-security, OK de Nolann, liste des blocs retirés, 4 événements webhook Stripe cochés. Serveur prod local 4399 PID 49140 à arrêter en fin.
+Rebuild unique (arrêter PID 24504 de 4399, `npx prisma generate`, `npm run build`, relancer) + captures `testeur` (hero t0/1,5 s, fin de scène, KPI, zoom caravane/loader/LED à 375/768/1440/1920) ; puis 4b, 4f ; commits locaux fichier par fichier ; dire « prêt à vérifier » ; puis item 3 ; avant push : scan claude-security, OK de Nolann, liste des blocs retirés, 4 événements webhook Stripe cochés. Serveur 4399 à arrêter en fin.
 
 ## À reporter au code Astro
 - « PETG HF » → « PETG » partout (`prisma/seed.ts:64` ; label en base/menu admin : migration à prévoir, accord de Nolann avant push).

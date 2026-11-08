@@ -349,11 +349,11 @@
   var outT = function (id, t) { tl.to(id, { opacity: 0, duration: 0.012 }, t); };
 
   // 0 – 0,08 : arrivée (titre net, image floue qui zoome)
-  tl.to(poster, { scale: 1, filter: "blur(0px)", duration: 0.08, ease: "power1.out" }, 0);
+  tl.to(poster, { scale: 1, duration: 0.08, ease: "power1.out" }, 0);
   outT("#sb-t1", 0.066);
   // 0,08 – 0,26 : éclaté
   tl.to(P, { aEcl: 1, duration: 0.04 }, 0.08);
-  tl.to(poster, { opacity: 0, duration: 0.001 }, 0.12);
+  tl.to(poster, { opacity: 0, duration: 0.03, ease: "power1.inOut" }, 0.09);
   inT("#sb-t2", 0.085);
   tl.to(P, { ecl: 17, duration: 0.16, ease: "power1.inOut" }, 0.10);
   tl.to(P, { zoom: 1, duration: 0.16, ease: "power1.inOut" }, 0.10);
