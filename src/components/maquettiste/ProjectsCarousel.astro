@@ -1,0 +1,480 @@
+---
+// Carrousel de projets + zoom (portage de docs/maquettes/carrousel-projets_2026-11-08.html, blocs PJ:*).
+// HTML des cartes rendu côté serveur depuis REALISATIONS (visible et indexable sans JS) ; JS vanilla (pas d'îlot React).
+// Une seule instance par page (ids #pj-track, #pj-photos, #pj-zoom-tpl).
+import { REALISATIONS } from "../../data/realisations";
+import "../../styles/projets-carrousel.css";
+
+interface Props {
+  id?: string;
+  kicker?: string;
+  heading?: string;
+  note?: string;
+  allHref?: string;
+  allLabel?: string;
+}
+const {
+  id = "nos-maquettes",
+  kicker = "Réalisations",
+  heading = "Nos maquettes",
+  note = "Touchez un projet pour l'agrandir : photos, détails et fiche complète.",
+  allHref = "/realisations",
+  allLabel = "Toutes nos réalisations",
+} = Astro.props;
+
+const items = REALISATIONS;
+const pad2 = (n: number) => String(n).padStart(2, "0");
+const isSpin = (src: string) => src.startsWith("spin:");
+// Données pour le JS : { slug: [[src, w, h, alt], ...] } et { slug: fiche }
+const photosJson = JSON.stringify(Object.fromEntries(items.map((r) => [r.slug, r.photos]))).replace(/</g, "\\u003c");
+const fichesJson = JSON.stringify(Object.fromEntries(items.map((r) => [r.slug, r.fiche]))).replace(/</g, "\\u003c");
+---
+
+<script is:inline>if ('IntersectionObserver' in window) document.documentElement.classList.add('js');</script>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-3d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3.2-6.9"/><path d="M21 4v5h-5"/></symbol></svg>
+<section class="pj" id={id} aria-labelledby="pj-title">
+  <div class="pj-head">
+    <div>
+      <p class="pj-kicker">{kicker}</p>
+      <h2 class="lp-h2" id="pj-title">{heading}</h2>
+      <p class="lp-note">{note}</p>
+    </div>
+    <div class="pj-ctrl" hidden>
+      <div class="pj-ticks" role="group" aria-label="Aller au projet"></div>
+      <p class="pj-count" aria-hidden="true"><b>01–03</b> <span>sur {pad2(items.length)}</span></p>
+      <span class="pj-sr pj-live" aria-live="polite"></span>
+      <div class="pj-arrows">
+        <button class="icon-btn pj-prev" type="button" aria-label="Projets précédents" aria-controls="pj-track"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <button class="icon-btn pj-next" type="button" aria-label="Projets suivants" aria-controls="pj-track"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <ul class="track" id="pj-track" aria-label="Projets de maquettes" tabindex="-1">
+    {items.map((r, i) => {
+      const nPhotos = r.photos.filter((p) => !isSpin(p[0])).length;
+      const has3d = r.photos.some((p) => isSpin(p[0]));
+      const cover = r.photos.find((p) => !isSpin(p[0]));
+      return (
+        <li style={`--i:${i}`} data-f={r.f}>
+          <article class="pc" data-slug={r.slug}>
+            <div class="pc-media">
+              {cover && <img src={cover[0]} width={cover[1]} height={cover[2]} loading={i === 0 ? undefined : "lazy"} decoding="async" alt={cover[3]} />}
+              <div class="pc-badges"><span class="badge">{nPhotos} {nPhotos > 1 ? "vues" : "vue"}</span>{has3d && <span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d" /></svg>3D</span>}</div>
+            </div>
+            <div class="pc-body">
+              <p class="pc-cat">{r.cat}</p>
+              <h3 class="pc-title"><a class="pj-link" href={`/realisations/${r.slug}`}>{r.title}</a></h3>
+              <p class="pc-text">{r.text}</p>
+              <div class="pc-full">{r.full.map((p) => <p>{p}</p>)}</div>
+              <span class="pc-more" aria-hidden="true">Voir le projet <span>→</span></span>
+            </div>
+          </article>
+        </li>
+      );
+    })}
+  </ul>
+
+  <p class="pj-all"><a href={allHref}>{allLabel}</a></p>
+</section>
+
+<template id="pj-zoom-tpl">
+<dialog class="zoom" id="pj-zoom" aria-modal="true" aria-labelledby="z-title">
+  <button class="icon-btn z-close" type="button" id="z-close" aria-label="Fermer et revenir aux projets"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  <div class="z-grid">
+    <div class="z-media">
+      <div class="z-stage">
+        <div class="z-strip" id="z-strip" role="region" aria-roledescription="galerie" aria-label="Photos et vues 3D du projet" tabindex="-1"></div>
+      </div>
+      <div class="z-bar" id="z-bar">
+        <button class="icon-btn z-ar" type="button" id="z-pprev" aria-label="Photo précédente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <div class="z-thumbs" id="z-thumbs" role="group" aria-label="Choisir une vue"></div>
+        <button class="icon-btn z-ar" type="button" id="z-pnext" aria-label="Photo suivante"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
+      <p class="z-cap" id="z-cap" aria-live="polite"></p>
+    </div>
+    <div class="z-info">
+      <p class="pc-cat" id="z-cat"></p>
+      <h2 class="z-title" id="z-title"></h2>
+      <div class="z-meta" id="z-meta"></div>
+      <div class="z-text" id="z-text"></div>
+      <div class="z-ctas">
+        <a class="pj-btn pj-btn-primary" id="z-page" href="#">Voir la fiche projet <span aria-hidden="true">→</span></a>
+        <a class="pj-btn" href="/contact">Un projet similaire ?</a>
+      </div>
+      <nav class="z-pager" aria-label="Autres projets">
+        <button class="zp prev" type="button" id="z-prevp"></button>
+        <button class="zp next" type="button" id="z-nextp"></button>
+      </nav>
+    </div>
+  </div>
+</dialog>
+</template>
+
+<script is:inline type="application/json" id="pj-photos" set:html={photosJson} />
+<script is:inline type="application/json" id="pj-fiches" set:html={fichesJson} />
+
+<script is:inline>
+(() => {
+  const RM = matchMedia('(prefers-reduced-motion: reduce)');
+  const $ = (id) => document.getElementById(id);
+  const secs = [...document.querySelectorAll('section.pj')];
+  const photos = JSON.parse($('pj-photos').textContent), fiches = JSON.parse($('pj-fiches').textContent);
+  const cards = secs.flatMap((s) => [...s.querySelectorAll('.track .pc')]), N = cards.length;
+  const title = (art) => art.querySelector('.pj-link').textContent;
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  const how = () => (RM.matches ? 'auto' : 'smooth');
+
+  // ===== Carrousels : un composant par <section class="pj"> (1, 2, 3 ou n sections ; 1, 2, 3 ou n cartes par section) =====
+  const carousels = new Map();
+  const MIN_CARD = 240;
+  const carousel = (sec) => {
+    const track = sec.querySelector('.track'), lis = [...track.children], n = lis.length;
+    if (!n) { sec.hidden = true; return; }
+
+    // Entrée douce + images des cartes chargées dès que la section approche
+    // (le chargement différé natif ignore les cartes hors champ dans un défilement horizontal : image vide au premier glissé)
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { sec.classList.add('in'); io.disconnect(); } }, { threshold: .15 });
+      io.observe(sec);
+      const pre = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { track.querySelectorAll('img[loading="lazy"]').forEach((im) => { im.loading = 'eager'; }); pre.disconnect(); } }, { rootMargin: '300px 0px' });
+      pre.observe(sec);
+    } else sec.classList.add('in');
+
+    // ===== Repères, compteur « 01–03 sur 08 », flèches (cachés s'il n'y a qu'une page) =====
+    const ctrl = sec.querySelector('.pj-ctrl'), ticks = sec.querySelector('.pj-ticks'), countB = sec.querySelector('.pj-count b'), live = sec.querySelector('.pj-live');
+    const prev = sec.querySelector('.pj-prev'), next = sec.querySelector('.pj-next');
+    sec.querySelector('.pj-count span').textContent = 'sur ' + pad2(n);
+    [prev, next].forEach((b) => b.setAttribute('aria-controls', track.id));
+    // k cartes entières remplissent exactement la colonne ; le carrousel avance par pages de k cartes
+    // (première page calée à gauche, dernière calée à droite : dernier pas raccourci).
+    // k ne dépend que de la largeur : avec moins de cartes que k, elles gardent la largeur normale et sont centrées.
+    let K = 1, STEP = 0, PADL = 0, PAGES = 1, tickN = -1, tickEls = [];
+    const pageStart = (j) => Math.min(j * K, Math.max(0, n - K));
+    const pageOf = (i) => Math.min(PAGES - 1, Math.floor(i / K));
+    const layout = () => {
+      const cs = getComputedStyle(track), gap = parseFloat(cs.columnGap) || 0;
+      PADL = parseFloat(cs.paddingLeft) || 0;
+      const w = track.clientWidth - PADL - (parseFloat(cs.paddingRight) || 0);
+      K = Math.max(1, Math.floor((w + gap) / (MIN_CARD + gap)));
+      track.style.setProperty('--k', K);
+      STEP = (w - (K - 1) * gap) / K + gap;
+      PAGES = Math.ceil(n / K);
+      ctrl.hidden = PAGES < 2;
+      if (tickN !== PAGES) {
+        tickN = PAGES;
+        ticks.innerHTML = Array.from({ length: PAGES }, (_, j) => {
+          const a = pageStart(j), b = Math.min(n - 1, a + K - 1);
+          return `<button type="button" class="pj-tick" data-i="${j}" aria-label="${a === b ? 'Projet ' + (a + 1) : 'Projets ' + (a + 1) + ' à ' + (b + 1)}" aria-controls="${track.id}"><i></i></button>`;
+        }).join('');
+        tickEls = [...ticks.children];
+      }
+    };
+    const range = () => {
+      const max = track.scrollWidth - track.clientWidth;
+      if (track.scrollLeft >= max - 2) return [Math.max(0, n - K), n - 1];
+      const first = Math.min(n - 1, Math.max(0, Math.round(track.scrollLeft / STEP)));
+      return [first, Math.min(n - 1, first + K - 1)];
+    };
+    let shown = '', liveT = 0, raf = 0, ready = false;
+    const sync = () => {
+      raf = 0;
+      const [a, b] = range(), max = track.scrollWidth - track.clientWidth, key = a + '-' + b + '-' + PAGES;
+      prev.disabled = track.scrollLeft <= 2;
+      next.disabled = track.scrollLeft >= max - 2;
+      // flèches masquées aux extrémités (la place reste réservée : rien ne bouge)
+      prev.style.visibility = prev.disabled ? 'hidden' : '';
+      next.style.visibility = next.disabled ? 'hidden' : '';
+      if (key === shown) return;
+      shown = key;
+      countB.textContent = a === b ? pad2(a + 1) : `${pad2(a + 1)}–${pad2(b + 1)}`;
+      const pg = track.scrollLeft >= max - 2 ? PAGES - 1 : pageOf(a);
+      tickEls.forEach((t, i) => { t.classList.toggle('on', i === pg); if (i === pg) t.setAttribute('aria-current', 'true'); else t.removeAttribute('aria-current'); });
+      if (ready) { clearTimeout(liveT); liveT = setTimeout(() => { live.textContent = a === b ? `Projet ${a + 1} sur ${n}` : `Projets ${a + 1} à ${b + 1} sur ${n}`; }, 400); }
+    };
+    const toPage = (j, behavior = how()) => {
+      const i = pageStart(Math.max(0, Math.min(PAGES - 1, j)));
+      track.scrollTo({ left: track.scrollLeft + lis[i].getBoundingClientRect().left - track.getBoundingClientRect().left - PADL, behavior });
+    };
+    const curPage = () => (track.scrollLeft >= track.scrollWidth - track.clientWidth - 2 ? PAGES - 1 : pageOf(range()[0]));
+    layout();
+    track.addEventListener('scroll', () => { raf ||= requestAnimationFrame(sync); }, { passive: true });
+    addEventListener('resize', () => { const i = range()[0]; layout(); toPage(pageOf(i), 'auto'); shown = ''; raf ||= requestAnimationFrame(sync); });
+    // flèches : décalage d'UNE carte à la fois (décision Nolann 08/11)
+    const toCard = (i) => track.scrollTo({ left: track.scrollLeft + lis[Math.max(0, Math.min(n - K, i))].getBoundingClientRect().left - track.getBoundingClientRect().left - PADL, behavior: how() });
+    prev.onclick = () => toCard(range()[0] - 1);
+    next.onclick = () => toCard(range()[0] + 1);
+    ticks.addEventListener('click', (e) => { const t = e.target.closest('.pj-tick'); if (t) toPage(+t.dataset.i); });
+    sync(); ready = true;
+    // utilisé par le zoom : amener la carte ouverte dans la fenêtre de SON carrousel
+    carousels.set(sec, { reveal: (art) => toPage(pageOf(lis.findIndex((li) => li.contains(art))), 'auto') });
+  };
+  secs.forEach(carousel);
+
+  // ===== Rendus 3D : 72 vues par projet, chargées à la demande (des plus espacées aux plus fines, 6 à la fois) =====
+  const MAQ = '/assets/maquettes/', FR = 72, START = 10;
+  const pools = {};
+  const url = (dir, size, i) => `${MAQ}${dir}/${size}/e28_a${String(i).padStart(3, '0')}.avif`;
+  const rank = (i) => (i % 6 ? (i % 2 ? 2 : 1) : 0);
+  const loadPool = (dir, size, step = 1) => {
+    const p = pools[dir + size] ||= { imgs: new Array(FR), n: 0, fin: 0, req: new Set(), queue: [], active: 0 };
+    const add = [...Array(FR).keys()].filter((i) => i % step === 0 && !p.req.has(i)).sort((a, b) => rank(a) - rank(b) || a - b);
+    add.forEach((i) => p.req.add(i)); p.queue.push(...add);
+    const pump = () => {
+      while (p.active < 6 && p.queue.length) {
+        const i = p.queue.shift(), im = new Image(); p.active++;
+        im.decoding = 'async';
+        im.onload = () => { p.imgs[i] = im; p.n++; p.fin++; p.active--; pump(); };
+        im.onerror = () => { p.fin++; p.active--; pump(); };
+        im.src = url(dir, size, i);
+      }
+    };
+    pump(); return p;
+  };
+  const nearest = (p, f) => { for (let d = 0; d < FR / 2; d++) { const a = p.imgs[(f + d) % FR] || p.imgs[(f - d + FR * 2) % FR]; if (a) return a; } return null; };
+  const wrapF = (f) => ((Math.round(f) % FR) + FR) % FR;
+  // taille des vues : 640 px suffit jusqu'à ~800 px affichés (écran x densité), sinon 1600 px
+  const vSize = () => { const w = innerWidth <= 900 ? innerWidth : Math.min(innerWidth - 48, 1120) * .574; return w * Math.min(devicePixelRatio || 1, 2) > 800 ? 'base' : 'sm'; };
+
+  // ===== Zoom : le gabarit est cloné à la première ouverture (aucun titre vide dans le HTML initial) =====
+  let dlg = null, strip, thumbs, grid, cur = null, origin = null, pushed = false, closing = false, openUrl = '', skipPop = 0;
+  const kind = (src) => (src.startsWith('spin:') ? 'spin' : 'photo');
+  const PLAY = '<svg class="i-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><svg class="i-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>';
+  const ICO = '<svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>';
+  const slide = ([src, w, h, alt], i, n, size) => {
+    const lbl = `${i + 1} sur ${n}`;
+    if (kind(src) === 'spin') {
+      const dir = src.slice(5);
+      return `<figure class="z-spin" role="group" aria-roledescription="visionneuse 3D" aria-label="${lbl} : ${esc(alt)}, en 3D. Faites glisser pour tourner, ou utilisez les flèches gauche et droite." data-spin="${dir}" data-size="${size}" tabindex="0">
+        <div class="sp-stage"><img src="${url(dir, size, START)}" width="${w}" height="${h}" alt="${esc(alt)}" decoding="sync"></div>
+        <span class="sp-pill">${ICO}3D · faites glisser</span><span class="sp-load" aria-hidden="true">chargement…</span>
+        <div class="sp-ui"><button type="button" class="sp-play" aria-pressed="false" aria-label="Rotation automatique">${PLAY}</button><div class="sp-bar" aria-hidden="true"><i></i></div></div></figure>`;
+    }
+    return `<figure role="group" aria-roledescription="photo" aria-label="${lbl}"><img src="${src}" width="${w}" height="${h}" alt="${esc(alt)}" ${i ? 'loading="lazy"' : ''} decoding="async"></figure>`;
+  };
+  // Vignettes (en prod : miniatures 128 px générées par Astro)
+  const thumb = ([src], i, n, nPh) => {
+    const k = kind(src), lbl = k === 'spin' ? 'Vue 3D' : `Photo ${nPh}`;
+    const inner = k === 'spin' ? `<img src="${MAQ}${src.slice(5)}/sm/e28_a000.webp" alt="" decoding="async"><span class="zt-chip">3D</span>`
+      : `<img src="${src}" alt="" decoding="async">`;
+    return `<button type="button" class="zt" data-i="${i}" aria-label="${lbl} (${i + 1} sur ${n})">${inner}</button>`;
+  };
+  const metaHtml = (ph) => {
+    const nP = ph.filter((p) => kind(p[0]) === 'photo').length, iS = ph.findIndex((p) => kind(p[0]) === 'spin');
+    return (nP > 1 ? `<button type="button" class="z-chip" data-i="0">${nP} photos</button>` : '')
+      + (iS >= 0 ? `<button type="button" class="z-chip c3d" data-i="${iS}">${ICO}Vue 3D</button>` : '');
+  };
+  const pager = (b, art, lbl) => {
+    b.innerHTML = `<img src="${art.querySelector('.pc-media img').getAttribute('src')}" alt="" decoding="async"><span><small>${lbl}</small><b>${esc(title(art))}</b></span>`;
+    b.onclick = () => swap(art);
+  };
+
+  // Visionneuse 3D : glisser, inertie, clavier, rotation auto lente (~1 tour en 13 s ; reprend 2 s après le dernier geste, sauf si l'utilisateur l'a mise en pause)
+  const AUTO_SPEED = FR / 13000, AUTO_IDLE = 2000; // vues par ms ; délai de reprise
+  const viewer = { el: null, img: null, ld: null, p: null, f: START, vel: 0, auto: false, drag: null, raf: 0, last: 0, shown: -1, active: false, resumeAt: 0, zoom: 1 };
+  const resumeSoon = () => { viewer.resumeAt = RM.matches || viewer.el?.classList.contains('paused') ? 0 : performance.now() + AUTO_IDLE; };
+  const vDraw = () => { const f = wrapF(viewer.f); if (f === viewer.shown) return; const im = viewer.p && nearest(viewer.p, f); if (im) { viewer.img.src = im.src; viewer.shown = f; } viewer.el.style.setProperty('--p', (f / (FR - 1)).toFixed(3)); };
+  const vLoop = (t) => {
+    if (!viewer.active) return;
+    const dt = Math.min(48, t - (viewer.last || t)); viewer.last = t;
+    if (!viewer.drag) {
+      if (Math.abs(viewer.vel) > 0.002) { viewer.f += viewer.vel * dt; viewer.vel *= Math.pow(.94, dt / 16); }
+      else if (viewer.auto) viewer.f += dt * AUTO_SPEED;
+      else if (viewer.resumeAt && t >= viewer.resumeAt) { viewer.resumeAt = 0; setAuto(true); }
+    }
+    const ld = viewer.ld, p = viewer.p;
+    if (ld && !ld.classList.contains('done')) { if (p.fin >= FR) ld.classList.add('done'); else ld.textContent = `chargement ${Math.round(p.fin / FR * 100)} %`; }
+    vDraw(); viewer.raf = requestAnimationFrame(vLoop);
+  };
+  const setAuto = (on) => { viewer.auto = on; const b = viewer.el?.querySelector('.sp-play'); if (b) { b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', on ? 'Arrêter la rotation automatique' : 'Rotation automatique'); } };
+  const viewerStop = () => { viewer.active = false; cancelAnimationFrame(viewer.raf); };
+  const viewerStart = (fig) => {
+    if (viewer.active && viewer.el === fig) return;
+    const same = viewer.el === fig; viewerStop();
+    Object.assign(viewer, { el: fig, img: fig.querySelector('.sp-stage img'), ld: fig.querySelector('.sp-load'), f: same ? viewer.f : START, zoom: same ? viewer.zoom : 1, vel: 0, shown: -1, last: 0, drag: null, active: true });
+    viewer.p = loadPool(fig.dataset.spin, fig.dataset.size, 1);
+    viewer.resumeAt = 0; setAuto(!RM.matches && !fig.classList.contains('paused'));
+    viewer.raf = requestAnimationFrame(vLoop);
+  };
+
+  // ===== Historique (portage) : URL /realisations/<slug> seulement si la fiche existe ; l'URL d'ouverture est restaurée à la fermeture =====
+  const unpush = () => {
+    if (!pushed) return;
+    pushed = false; skipPop++; setTimeout(() => { skipPop = 0; }, 800); history.back();
+  };
+  const syncUrl = (art) => {
+    const slug = art.dataset.slug;
+    if (fiches[slug] !== true) { unpush(); return; }
+    try {
+      if (pushed) history.replaceState({ pj: slug }, '', '/realisations/' + slug);
+      else { history.pushState({ pj: slug }, '', '/realisations/' + slug); pushed = true; }
+    } catch (_) { pushed = false; }
+  };
+  // ===== Verrou du défilement de la page pendant le zoom (portage) : compense la barre de défilement =====
+  let lock = null;
+  const lockScroll = () => {
+    if (lock) return;
+    const de = document.documentElement, bd = document.body, sbw = innerWidth - de.clientWidth;
+    lock = { o: de.style.overflow, p: de.style.paddingRight, b: bd.style.overflow };
+    const basePad = parseFloat(getComputedStyle(de).paddingRight) || 0;
+    de.style.overflow = 'hidden'; bd.style.overflow = 'hidden';
+    if (sbw > 0) de.style.paddingRight = (basePad + sbw) + 'px';
+  };
+  const unlockScroll = () => {
+    if (!lock) return;
+    const de = document.documentElement;
+    de.style.overflow = lock.o; de.style.paddingRight = lock.p; document.body.style.overflow = lock.b; lock = null;
+  };
+
+  const fill = (art) => {
+    viewerStop(); viewer.el = null; viewer.f = START; viewer.zoom = 1;
+    const slug = art.dataset.slug, link = art.querySelector('.pj-link'), ph = photos[slug] || [], size = vSize();
+    $('z-cat').textContent = art.querySelector('.pc-cat').textContent;
+    $('z-title').textContent = link.textContent;
+    $('z-text').innerHTML = art.querySelector('.pc-full').innerHTML;
+    $('z-page').href = link.getAttribute('href'); $('z-page').hidden = fiches[slug] === false;
+    strip.innerHTML = ph.map((p, i) => slide(p, i, ph.length, size)).join('');
+    let nPh = 0;
+    thumbs.innerHTML = ph.length > 1 ? ph.map((p, i) => thumb(p, i, ph.length, kind(p[0]) === 'photo' ? ++nPh : 0)).join('') : '';
+    $('z-bar').hidden = ph.length < 2;
+    $('z-meta').innerHTML = metaHtml(ph); $('z-meta').hidden = ph.length < 2;
+    strip.scrollLeft = 0;
+    const k = cards.indexOf(art);
+    pager($('z-prevp'), cards[(k - 1 + N) % N], 'Projet précédent');
+    pager($('z-nextp'), cards[(k + 1) % N], 'Projet suivant');
+    cur = art;
+  };
+  const photoIdx = () => Math.round(strip.scrollLeft / Math.max(1, strip.clientWidth));
+  const photoSync = () => {
+    const i = photoIdx(), figs = strip.children, fig = figs[i], tb = thumbs.children[i];
+    [...thumbs.children].forEach((b, j) => b.setAttribute('aria-current', j === i));
+    $('z-cap').textContent = fig ? fig.querySelector('img').alt : '';
+    $('z-pprev').disabled = i <= 0; $('z-pnext').disabled = i >= figs.length - 1;
+    if (tb && thumbs.scrollWidth > thumbs.clientWidth) { const a = thumbs.getBoundingClientRect(), b = tb.getBoundingClientRect(); thumbs.scrollBy({ left: b.left - a.left - (a.width - b.width) / 2, behavior: how() }); }
+    const spin = fig && fig.classList.contains('z-spin');
+    if (spin && dlg.open) viewerStart(fig); else viewerStop();
+  };
+  const toPhoto = (i) => strip.scrollTo({ left: i * strip.clientWidth, behavior: how() });
+
+  const flipFrom = (rect) => {
+    const to = dlg.getBoundingClientRect();
+    if (RM.matches || !rect || !dlg.animate) { dlg.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 150 }); return; }
+    const sx = rect.width / to.width, sy = rect.height / to.height;
+    const dx = rect.left - to.left, dy = rect.top - to.top;
+    dlg.animate([
+      { transformOrigin: 'top left', transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`, opacity: .4, borderRadius: '12px' },
+      { transformOrigin: 'top left', transform: 'none', opacity: 1 }
+    ], { duration: 420, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    grid.animate([{ opacity: 0 }, { opacity: 0, offset: .35 }, { opacity: 1 }], { duration: 420 });
+  };
+
+  const ensure = () => {
+    if (dlg) return;
+    dlg = $('pj-zoom-tpl').content.firstElementChild.cloneNode(true);
+    document.body.append(dlg);
+    strip = $('z-strip'); thumbs = $('z-thumbs'); grid = dlg.querySelector('.z-grid');
+    let sr = 0;
+    strip.addEventListener('scroll', () => { sr ||= requestAnimationFrame(() => { sr = 0; photoSync(); }); }, { passive: true });
+    thumbs.addEventListener('click', (e) => { const b = e.target.closest('.zt'); if (b) toPhoto(+b.dataset.i); });
+    $('z-meta').addEventListener('click', (e) => { const b = e.target.closest('.z-chip'); if (b) toPhoto(+b.dataset.i); });
+    $('z-pprev').onclick = () => toPhoto(photoIdx() - 1);
+    $('z-pnext').onclick = () => toPhoto(photoIdx() + 1);
+    $('z-close').onclick = () => close();
+    dlg.addEventListener('cancel', (e) => { e.preventDefault(); close(); }); // Échap
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) close(); }); // clic hors du panneau
+    // fermeture effective (aussi quand le navigateur ferme seul, ex. Échap répété)
+    dlg.addEventListener('close', () => {
+      viewerStop(); closing = false;
+      unlockScroll();
+      unpush();
+      origin?.focus({ preventScroll: true });
+    });
+    dlg.addEventListener('keydown', (e) => {
+      if (e.target.closest('a,button') && e.target.closest('.z-info')) return;
+      if (e.key === 'ArrowRight') { e.preventDefault(); toPhoto(photoIdx() + 1); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); toPhoto(photoIdx() - 1); }
+    });
+    // visionneuse
+    strip.addEventListener('pointerdown', (e) => {
+      const st = e.target.closest('.sp-stage'); if (!st) return;
+      const fig = st.closest('.z-spin'); fig.classList.add('touched'); viewerStart(fig); setAuto(false); viewer.resumeAt = 0;
+      st.setPointerCapture(e.pointerId); st.classList.add('grab');
+      viewer.drag = { x: e.clientX, f: viewer.f, lx: e.clientX, lt: performance.now() }; viewer.vel = 0;
+    });
+    strip.addEventListener('pointermove', (e) => {
+      const d = viewer.drag; if (!d) return;
+      const w = viewer.img.clientWidth || 600, ppf = Math.max(3, w * 1.1 / FR), t = performance.now();
+      viewer.f = d.f - (e.clientX - d.x) / ppf;
+      const dt = t - d.lt; if (dt > 0) viewer.vel = viewer.vel * .6 + (-(e.clientX - d.lx) / ppf / dt) * .4;
+      d.lx = e.clientX; d.lt = t;
+    });
+    const vUp = () => { if (!viewer.drag) return; viewer.drag = null; viewer.el?.querySelector('.sp-stage').classList.remove('grab'); if (RM.matches) viewer.vel = 0; resumeSoon(); };
+    strip.addEventListener('pointerup', vUp); strip.addEventListener('pointercancel', vUp);
+    // molette sur la vue 3D = zoom / dézoom uniquement (jamais de défilement de la page) ; compte comme une prise en main
+    strip.addEventListener('wheel', (e) => {
+      const st = e.target.closest('.sp-stage'); if (!st) return;
+      e.preventDefault();
+      const fig = st.closest('.z-spin'), dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+      fig.classList.add('touched'); viewerStart(fig); setAuto(false); viewer.resumeAt = 0;
+      viewer.zoom = Math.max(1, Math.min(3, viewer.zoom * Math.exp(-dy * .0015)));
+      st.style.setProperty('--zs', viewer.zoom.toFixed(3));
+      resumeSoon();
+    }, { passive: false });
+    strip.addEventListener('keydown', (e) => {
+      const fig = e.target.closest('.z-spin'); if (!fig || e.target.closest('.sp-play')) return;
+      const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (!d) return;
+      e.preventDefault(); e.stopPropagation(); fig.classList.add('touched'); viewerStart(fig); setAuto(false); viewer.f += d * 2; resumeSoon();
+    });
+    strip.addEventListener('click', (e) => { const b = e.target.closest('.sp-play'); if (!b) return; const f = b.closest('.z-spin'), off = viewer.auto || !!viewer.resumeAt; f.classList.add('touched'); f.classList.toggle('paused', off); viewer.resumeAt = 0; setAuto(!off); });
+  };
+
+  const open = (art, { animate = true, push = true, at = 0, from = null } = {}) => {
+    ensure();
+    if (dlg.open) return;
+    origin = from || art.querySelector('.pj-link'); openUrl = location.href;
+    fill(art);
+    const rect = animate ? (from || art).getBoundingClientRect() : null;
+    lockScroll();
+    dlg.showModal();
+    if (at > 0) strip.scrollLeft = at * strip.clientWidth;
+    photoSync();
+    $('z-close').focus({ preventScroll: true });
+    if (animate) flipFrom(rect);
+    if (push) syncUrl(art);
+  };
+  const swap = (art) => {
+    fill(art); photoSync();
+    grid.scrollTop = 0; dlg.querySelector('.z-info').scrollTop = 0;
+    if (!RM.matches) grid.animate([{ opacity: .4, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 250, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    origin = art.querySelector('.pj-link'); carousels.get(art.closest('.pj'))?.reveal(art);
+    syncUrl(art);
+  };
+  const close = (fromPop = false) => {
+    if (!dlg || !dlg.open || closing) return;
+    closing = true; viewerStop();
+    const a = (!RM.matches && dlg.animate) ? dlg.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.97)' }], { duration: 180, easing: 'ease-in' }) : null;
+    const done = () => dlg.close();
+    a ? a.finished.then(done, done) : done();
+    if (fromPop) pushed = false; else unpush();
+  };
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && dlg?.open) photoSync(); });
+
+  secs.forEach((sc) => sc.querySelector('.track').addEventListener('click', (e) => {
+    const art = e.target.closest('.pc'); if (!art) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; // ouvrir dans un onglet = vraie page
+    e.preventDefault(); open(art);
+  }));
+  // Liens « Faire tourner en 3D » ailleurs dans la page : <a href="/realisations/<slug>" data-pj-spin="<slug>">
+  document.addEventListener('click', (e) => {
+    const l = e.target.closest('[data-pj-spin]'); if (!l || e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
+    const art = cards.find((c) => c.dataset.slug === l.dataset.pjSpin); if (!art) return;
+    e.preventDefault();
+    open(art, { at: (photos[art.dataset.slug] || []).findIndex((p) => kind(p[0]) === 'spin'), from: l });
+  });
+  addEventListener('popstate', () => {
+    if (skipPop) { skipPop = 0; if (openUrl && location.href !== openUrl) { try { history.replaceState(null, '', openUrl); } catch (_) {} } return; }
+    if (dlg?.open) close(true);
+  });
+})();
+</script>
