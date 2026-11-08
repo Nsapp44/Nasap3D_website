@@ -46,8 +46,13 @@ Points à plus fort enjeu (classés « important » mais à traiter en premier) 
 4. Études de cas détaillées par réalisation (déjà porté par le gabarit `/realisations/<slug>` des maquettes 08).
 5. `/maquette-industrielle-3d` : voir `/maquette-industrielle` déjà prévu côté maquettes ; éviter de doubler `/maquette-impression-3d`.
 6. `/impression-3d-professionnels` (série, TPU 528 pièces) : à tester après les autres.
-Hors site, ordre voulu par Nolann (08/11) : 1) French Tech / French Fab (demande à faire par Nolann ; le plan `plan_3dnatives_frenchtech_2026-10-27.md` jugeait French Tech Nantes peu adapté [NV] et French Fab plausible : à vérifier sur `lafrenchfab.fr`) ; 2) 3Dnatives, page « Impression 3D à Nantes » (3 prestataires, Nasap3D absent) : formulaire + email déjà rédigés dans ce plan, rien envoyé ; 3) Google Business Profile.
-Backlinks gratuits [A] : compléter Google Business Profile (horaires, posts, réponses aux avis), I3DEL (impression3denligne.fr, SIRET requis), lesimprimantes3d.fr/annuaire, jesuisnumerique.fr, Pages Jaunes/Cylex. Citation par ChatGPT/Perplexity non testée.
+## Reste à faire hors site (backlinks) : le vrai manque
+Constat de Nolann (08/11) : pas assez de backlinks. Google Business Profile : déjà complet, rien à faire (retiré de la liste). Tout ce qui suit est préparé mais RIEN n'est envoyé ni payé sans son accord.
+1. **French Tech / French Fab** : c'est lui qui peut faire la demande. Nuance du plan du 27/10 (`docs/plan_3dnatives_frenchtech_2026-10-27.md`) : French Tech Nantes jugée peu adaptée (label d'écosystème, pas d'annuaire trouvé) [NV] ; French Fab (Bpifrance, `lafrenchfab.fr`) plausible pour un atelier qui produit en France [NV, site illisible par l'outil : 10 min dans un navigateur]. À confirmer avant de passer du temps.
+2. **3Dnatives** (priorité 1 du plan du 27/10) : page « Impression 3D à Nantes » avec 3 prestataires, Nasap3D absent. Formulaire `3dnatives.com/ajout-societe/` (vérifier avant d'envoyer s'il est payant) + email à la rédaction, textes déjà rédigés dans le plan.
+3. **Annuaires gratuits** [A] : I3DEL (impression3denligne.fr, SIRET requis), lesimprimantes3d.fr/annuaire, jesuisnumerique.fr, Pages Jaunes / Cylex.
+4. **« L'autre chose »** évoquée par Nolann : non identifiée avec certitude (3Dnatives ? French Fab ?) : à confirmer.
+5. Mesure : citation par ChatGPT/Perplexity non testée ; suivre les liens entrants dans Search Console (Liens) et Bing Webmaster.
 
 ## Ordre d'action conseillé
 1. Lien de l'accueil vers `/impression-3d-nantes` + nouveau titre Nantes (+ LocalBusiness sur cette page).
@@ -60,7 +65,7 @@ Ne pas toucher : ads, URLs, `/reparer-piece-3d` (Ads), titre de l'accueil avant 
 Contenu complet des 4 guides, de `/a-propos`, `/machines`, `/realisations`, `LocalSeoLayout.astro` (grep seulement) ; poids et Lighthouse réels ; citations IA ; longueurs de titres/descriptions estimées à la main.
 
 ## Comparaison avec l'audit des maquettes 08
-- Nouveau ici : en-têtes réels de la prod (pas de compression, pas de cache, pas de HSTS), `favicon.ico` 404, cannibalisation accueil / `/impression-3d-nantes` (données GSC), pages jumelles Cholet/Angers, `?trk=` indexé, absence de `llms.txt`, JSON-LD par page, concurrents nantais et backlinks gratuits.
+- Nouveau ici : en-têtes réels de la prod (pas de compression, pas de cache, pas de HSTS), `favicon.ico` 404, cannibalisation accueil / `/impression-3d-nantes` (données GSC), pages jumelles Cholet/Angers, absence de `llms.txt`, JSON-LD par page, concurrents nantais, manque de backlinks.
 - Recoupe l'audit précédent : polices Google à héberger, compression Caddy, pages `/realisations/<slug>`, lastmod du sitemap, légendes de `/realisations`.
 - Apport des « nouveaux outils » : les agents plugin `searchfit-seo` étaient indisponibles ; le travail est fait par `seo` + `chercheur-web` avec leurs consignes recopiées. Utiles surtout pour les concurrents et le positionnement ; le code et les en-têtes ont demandé des `curl` en plus. Pas de découverte critique que l'audit précédent aurait ratée sur les maquettes (périmètres différents).
 
