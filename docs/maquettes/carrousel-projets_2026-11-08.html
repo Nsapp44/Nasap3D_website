@@ -250,7 +250,7 @@
   <ul class="track" id="pj-track" aria-label="Projets de maquettes" tabindex="-1">
     <li style="--i:0" data-f="industrie"><article class="pc" data-slug="systeme-filtration-purification">
       <div class="pc-media"><img src="../../public/assets/real-1.webp" width="896" height="1195" loading="lazy" decoding="async" alt="Système de filtration et de purification : équipement de procédé biotechnologique, châssis imprimé, vraie tuyauterie transparente, roulettes et presse-étoupes en métal">
-        <div class="pc-badges"><span class="badge">5 vues</span><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>360°</span></div></div>
+        <div class="pc-badges"><span class="badge">5 vues</span><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>3D</span></div></div>
       <div class="pc-body">
         <p class="pc-cat">Industrie et salon</p>
         <h3 class="pc-title"><a class="pj-link" href="/realisations/systeme-filtration-purification">Système de filtration et de purification</a></h3>
@@ -272,7 +272,7 @@
 
     <li style="--i:2" data-f="pedagogie"><article class="pc" data-slug="maquette-cellule-biologique">
       <div class="pc-media"><img src="../../public/assets/real-8.webp" width="589" height="643" loading="lazy" decoding="async" alt="Cellule biologique : maquette pédagogique en coupe, coque imprimée puis peinte à la main">
-        <div class="pc-badges"><span class="badge">3 vues</span><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>360°</span></div></div>
+        <div class="pc-badges"><span class="badge">3 vues</span><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>3D</span></div></div>
       <div class="pc-body">
         <p class="pc-cat">Pédagogie</p>
         <h3 class="pc-title"><a class="pj-link" href="/realisations/maquette-cellule-biologique">Cellule biologique en coupe</a></h3>
@@ -283,7 +283,7 @@
 
     <li style="--i:3" data-f="vitrine"><article class="pc" data-slug="caravane-de-presentation">
       <div class="pc-media"><img src="../../public/assets/real-5.webp" width="1200" height="1600" loading="lazy" decoding="async" alt="Caravanes de présentation miniatures imprimées en 3D, série de modèles réduits">
-        <div class="pc-badges"><span class="badge">2 vues</span><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>360°</span></div></div>
+        <div class="pc-badges"><span class="badge">2 vues</span><span class="badge b3d"><svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>3D</span></div></div>
       <div class="pc-body">
         <p class="pc-cat">Vitrine</p>
         <h3 class="pc-title"><a class="pj-link" href="/realisations/caravane-de-presentation">Caravane de présentation</a></h3>
@@ -552,17 +552,17 @@
     const lbl = `${i + 1} sur ${n}`;
     if (kind(src) === 'spin') {
       const dir = src.slice(5);
-      return `<figure class="z-spin" role="group" aria-roledescription="visionneuse 3D" aria-label="${lbl} : ${esc(alt)}, à 360°. Faites glisser pour tourner, ou utilisez les flèches gauche et droite." data-spin="${dir}" data-size="${size}" tabindex="0">
+      return `<figure class="z-spin" role="group" aria-roledescription="visionneuse 3D" aria-label="${lbl} : ${esc(alt)}, en 3D. Faites glisser pour tourner, ou utilisez les flèches gauche et droite." data-spin="${dir}" data-size="${size}" tabindex="0">
         <div class="sp-stage"><img src="${url(dir, size, START)}" width="${w}" height="${h}" alt="${esc(alt)}" decoding="sync"></div>
-        <span class="sp-pill">${ICO}360° · faites glisser</span><span class="sp-load" aria-hidden="true">chargement…</span>
+        <span class="sp-pill">${ICO}3D · faites glisser</span><span class="sp-load" aria-hidden="true">chargement…</span>
         <div class="sp-ui"><button type="button" class="sp-play" aria-pressed="false" aria-label="Rotation automatique">${PLAY}</button><div class="sp-bar" aria-hidden="true"><i></i></div></div></figure>`;
     }
     return `<figure role="group" aria-roledescription="photo" aria-label="${lbl}"><img src="${src}" width="${w}" height="${h}" alt="${esc(alt)}" ${i ? 'loading="lazy"' : ''} decoding="async"></figure>`;
   };
   // Vignettes (en prod : miniatures 128 px générées par Astro)
   const thumb = ([src], i, n, nPh) => {
-    const k = kind(src), lbl = k === 'spin' ? 'Vue 3D à 360°' : k === 'render' ? 'Rendu 3D' : `Photo ${nPh}`;
-    const inner = k === 'spin' ? `<canvas width="128" height="96" data-spin="${src.slice(5)}"></canvas><span class="zt-chip">360°</span>`
+    const k = kind(src), lbl = k === 'spin' ? 'Vue 3D' : k === 'render' ? 'Rendu 3D' : `Photo ${nPh}`;
+    const inner = k === 'spin' ? `<canvas width="128" height="96" data-spin="${src.slice(5)}"></canvas><span class="zt-chip">3D</span>`
       : k === 'render' ? `<img src="${src.replace('/base/', '/sm/')}" alt="" decoding="async"><span class="zt-chip">3D</span>`
       : `<img src="${src}" alt="" decoding="async">`;
     return `<button type="button" class="zt" data-i="${i}" aria-label="${lbl} (${i + 1} sur ${n})">${inner}</button>`;
@@ -571,7 +571,7 @@
     const nP = ph.filter((p) => kind(p[0]) === 'photo').length, iR = ph.findIndex((p) => kind(p[0]) === 'render'), iS = ph.findIndex((p) => kind(p[0]) === 'spin');
     return (nP > 1 ? `<button type="button" class="z-chip" data-i="0">${nP} photos</button>` : '')
       + (iR >= 0 ? `<button type="button" class="z-chip" data-i="${iR}">Rendu 3D</button>` : '')
-      + (iS >= 0 ? `<button type="button" class="z-chip c3d" data-i="${iS}">${ICO}Vue 360°</button>` : '');
+      + (iS >= 0 ? `<button type="button" class="z-chip c3d" data-i="${iS}">${ICO}Vue 3D</button>` : '');
   };
   const pager = (b, art, lbl) => {
     b.innerHTML = `<img src="${art.querySelector('.pc-media img').getAttribute('src')}" alt="" decoding="async"><span><small>${lbl}</small><b>${esc(title(art))}</b></span>`;
