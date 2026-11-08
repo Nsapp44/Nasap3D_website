@@ -4,6 +4,16 @@ import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import MobileNavToggle from "../components/MobileNavToggle";
 import AnalyticsClicks from "../components/AnalyticsClicks.astro";
+// Polices auto-hébergées (OFL 1.1), sous-ensemble latin, font-display: swap.
+import "@fontsource/space-grotesk/latin-500.css";
+import "@fontsource/space-grotesk/latin-600.css";
+import "@fontsource/space-grotesk/latin-700.css";
+import "@fontsource/inter/latin-400.css";
+import "@fontsource/inter/latin-500.css";
+import "@fontsource/inter/latin-600.css";
+import "@fontsource/inter/latin-700.css";
+import spaceGrotesk600 from "@fontsource/space-grotesk/files/space-grotesk-latin-600-normal.woff2?url";
+import spaceGrotesk700 from "@fontsource/space-grotesk/files/space-grotesk-latin-700-normal.woff2?url";
 
 interface Props {
   title: string;
@@ -65,11 +75,8 @@ const canonical = canonicalUrl ?? new URL(path, Astro.site).toString();
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={new URL(ogImage, Astro.site).toString()} />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="preload" href={spaceGrotesk600} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={spaceGrotesk700} as="font" type="font/woff2" crossorigin />
     {import.meta.env.PROD && (
       <script defer data-domain="nasap3d.com" data-api="/m/e" src="/m/s.js"></script>
     )}
