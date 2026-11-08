@@ -373,18 +373,18 @@
   .z-bar[hidden] { display: none; }
   .z-ar:disabled, .pj-arrows .icon-btn:disabled { visibility: hidden; }
 
-  /* Vignettes : photos, rendu 3D, 360° animée */
+  /* Vignettes : photos et vue 3D (image fixe + chip 3D) */
   .z-thumbs { display: flex; gap: 8px; justify-content: safe center; padding: 4px 4px; overflow-x: auto; scrollbar-width: none; flex: 0 1 auto; min-width: 0; }
   .z-thumbs::-webkit-scrollbar { display: none; }
   .z-thumbs[hidden] { display: none; }
   .zt { position: relative; flex: none; width: 64px; height: 48px; padding: 0; border: 0; border-radius: 8px; overflow: hidden; background: #2a2622; cursor: pointer; opacity: .55; outline: 2px solid transparent; outline-offset: 2px; transition: opacity .2s, outline-color .2s; }
   .zt:hover { opacity: .9; }
   .zt[aria-current="true"] { opacity: 1; outline-color: var(--pj-acc); }
-  .zt img, .zt canvas { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .zt img { display: block; width: 100%; height: 100%; object-fit: cover; }
   .zt-chip { position: absolute; left: 4px; bottom: 4px; font: 700 9px/1 "Inter", sans-serif; letter-spacing: .3px; padding: 3px 5px; border-radius: 99px; background: rgba(22,21,20,.82); color: #ffd9d0; border: 1px solid rgba(255,90,60,.55); pointer-events: none; }
   .z-cap { margin: 0; padding: 6px 20px 12px; font-size: 13px; line-height: 1.4; color: var(--pj-muted); text-align: center; min-height: calc(2.8em + 18px); flex: none; }
 
-  /* Visionneuse 360° (dernière diapo des projets qui ont un modèle 3D) */
+  /* Visionneuse 3D (dernière diapo des projets qui ont un modèle 3D) */
   .z-strip figure.z-spin { position: relative; display: block; padding: 0; background: radial-gradient(ellipse at 50% 45%, #2b2724 0%, var(--pj-bg3) 72%); outline-offset: -6px; }
   .sp-stage { position: absolute; inset: 16px 64px 60px; touch-action: pan-y pinch-zoom; cursor: grab; user-select: none; -webkit-user-select: none; }
   .sp-stage.grab { cursor: grabbing; }
@@ -983,7 +983,6 @@
     ["../../public/assets/real-2.webp", 896, 1195, "Maquette d'équipement de procédé avec pompe et tuyauterie"],
     ["../../public/assets/real-3.webp", 896, 1195, "Vue 3/4 : châssis, tubulures et raccords fonctionnels à l'échelle"],
     ["../../public/assets/real-11.webp", 896, 1195, "Bloc fluidique : manomètres et vannes imprimés"],
-    ["../../public/assets/maquettes/purification/base/e55_a010.avif", 1600, 1200, "Rendu 3D de la maquette du système de purification"],
     ["spin:purification", 1600, 1200, "Maquette du système de purification en 3D"]
   ],
   "maquette-bioreacteur": [
@@ -994,12 +993,10 @@
   "maquette-cellule-biologique": [
     ["../../public/assets/real-8.webp", 589, 643, "Cellule biologique : maquette pédagogique en coupe, coque imprimée puis peinte à la main"],
     ["../../public/assets/real-9.webp", 595, 587, "Maquette de cellule, vue de trois quarts"],
-    ["../../public/assets/maquettes/cellule/base/e55_a010.avif", 1600, 1200, "Rendu 3D de la maquette de cellule"],
     ["spin:cellule", 1600, 1200, "Maquette de cellule en 3D"]
   ],
   "caravane-de-presentation": [
     ["../../public/assets/real-5.webp", 1200, 1600, "Caravanes de présentation miniatures imprimées en 3D, série de modèles réduits"],
-    ["../../public/assets/maquettes/caravane/base/e55_a010.avif", 1600, 1200, "Rendu 3D de la caravane de présentation"],
     ["spin:caravane", 1600, 1200, "Caravane de présentation en 3D"]
   ],
   "maquettes-design-produit": [["../../public/assets/real-17.webp", 824, 1099, "Maquettes de design produit"]],
@@ -1185,7 +1182,7 @@
 
   // ===== Zoom : le gabarit est cloné à la première ouverture (aucun titre vide dans le HTML initial) =====
   let dlg = null, strip, thumbs, grid, cur = null, origin = null, pushed = false, closing = false;
-  const kind = (src) => (src.startsWith('spin:') ? 'spin' : src.includes('/maquettes/') ? 'render' : 'photo');
+  const kind = (src) => (src.startsWith('spin:') ? 'spin' : 'photo');
   const PLAY = '<svg class="i-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><svg class="i-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>';
   const ICO = '<svg class="spin-ico" aria-hidden="true"><use href="#i-3d"/></svg>';
   const slide = ([src, w, h, alt], i, n, size) => {
@@ -1201,16 +1198,14 @@
   };
   // Vignettes (en prod : miniatures 128 px générées par Astro)
   const thumb = ([src], i, n, nPh) => {
-    const k = kind(src), lbl = k === 'spin' ? 'Vue 3D' : k === 'render' ? 'Rendu 3D' : `Photo ${nPh}`;
-    const inner = k === 'spin' ? `<canvas width="128" height="96" data-spin="${src.slice(5)}"></canvas><span class="zt-chip">3D</span>`
-      : k === 'render' ? `<img src="${src.replace('/base/', '/sm/')}" alt="" decoding="async"><span class="zt-chip">3D</span>`
+    const k = kind(src), lbl = k === 'spin' ? 'Vue 3D' : `Photo ${nPh}`;
+    const inner = k === 'spin' ? `<img src="${MAQ}${src.slice(5)}/sm/e28_a000.webp" alt="" decoding="async"><span class="zt-chip">3D</span>`
       : `<img src="${src}" alt="" decoding="async">`;
     return `<button type="button" class="zt" data-i="${i}" aria-label="${lbl} (${i + 1} sur ${n})">${inner}</button>`;
   };
   const metaHtml = (ph) => {
-    const nP = ph.filter((p) => kind(p[0]) === 'photo').length, iR = ph.findIndex((p) => kind(p[0]) === 'render'), iS = ph.findIndex((p) => kind(p[0]) === 'spin');
+    const nP = ph.filter((p) => kind(p[0]) === 'photo').length, iS = ph.findIndex((p) => kind(p[0]) === 'spin');
     return (nP > 1 ? `<button type="button" class="z-chip" data-i="0">${nP} photos</button>` : '')
-      + (iR >= 0 ? `<button type="button" class="z-chip" data-i="${iR}">Rendu 3D</button>` : '')
       + (iS >= 0 ? `<button type="button" class="z-chip c3d" data-i="${iS}">${ICO}Vue 3D</button>` : '');
   };
   const pager = (b, art, lbl) => {
@@ -1218,15 +1213,18 @@
     b.onclick = () => swap(art);
   };
 
-  // Visionneuse 360° : glisser, inertie, clavier, rotation auto
-  const viewer = { el: null, img: null, ld: null, p: null, f: START, vel: 0, auto: false, drag: null, raf: 0, last: 0, shown: -1, active: false };
+  // Visionneuse 3D : glisser, inertie, clavier, rotation auto lente (~1 tour en 13 s ; reprend 2 s après le dernier geste, sauf si l'utilisateur l'a mise en pause)
+  const AUTO_SPEED = FR / 13000, AUTO_IDLE = 2000; // vues par ms ; délai de reprise
+  const viewer = { el: null, img: null, ld: null, p: null, f: START, vel: 0, auto: false, drag: null, raf: 0, last: 0, shown: -1, active: false, resumeAt: 0 };
+  const resumeSoon = () => { viewer.resumeAt = RM.matches || viewer.el?.classList.contains('paused') ? 0 : performance.now() + AUTO_IDLE; };
   const vDraw = () => { const f = wrapF(viewer.f); if (f === viewer.shown) return; const im = viewer.p && nearest(viewer.p, f); if (im) { viewer.img.src = im.src; viewer.shown = f; } viewer.el.style.setProperty('--p', (f / (FR - 1)).toFixed(3)); };
   const vLoop = (t) => {
     if (!viewer.active) return;
     const dt = Math.min(48, t - (viewer.last || t)); viewer.last = t;
     if (!viewer.drag) {
       if (Math.abs(viewer.vel) > 0.002) { viewer.f += viewer.vel * dt; viewer.vel *= Math.pow(.94, dt / 16); }
-      else if (viewer.auto) viewer.f += dt * 0.01;
+      else if (viewer.auto) viewer.f += dt * AUTO_SPEED;
+      else if (viewer.resumeAt && t >= viewer.resumeAt) { viewer.resumeAt = 0; setAuto(true); }
     }
     const ld = viewer.ld, p = viewer.p;
     if (ld && !ld.classList.contains('done')) { if (p.fin >= FR) ld.classList.add('done'); else ld.textContent = `chargement ${Math.round(p.fin / FR * 100)} %`; }
@@ -1239,27 +1237,8 @@
     const same = viewer.el === fig; viewerStop();
     Object.assign(viewer, { el: fig, img: fig.querySelector('.sp-stage img'), ld: fig.querySelector('.sp-load'), f: same ? viewer.f : START, vel: 0, shown: -1, last: 0, drag: null, active: true });
     viewer.p = loadPool(fig.dataset.spin, fig.dataset.size, 1);
-    setAuto(!RM.matches && !fig.classList.contains('touched'));
+    viewer.resumeAt = 0; setAuto(!RM.matches && !fig.classList.contains('paused'));
     viewer.raf = requestAnimationFrame(vLoop);
-  };
-
-  // Vignette 360° : petite boucle (1 vue sur 3, ~8 images/s) ; arrêtée zoom fermé, onglet caché, diapo 360° affichée ou mouvement réduit
-  const ta = { cv: null, raf: 0 };
-  const thumbStop = () => { cancelAnimationFrame(ta.raf); ta.raf = 0; };
-  const thumbSetup = () => {
-    thumbStop(); const cv = thumbs.querySelector('canvas'); ta.cv = cv; if (!cv) return;
-    const ctx = cv.getContext('2d');
-    Object.assign(ta, { dir: cv.dataset.spin, f: 0, t: 0, draw: (im) => { const w = im.naturalWidth, h = im.naturalHeight; ctx.drawImage(im, w * .1, h * .1, w * .8, h * .8, 0, 0, cv.width, cv.height); } });
-    const po = new Image(); po.onload = () => { if (ta.cv === cv && !ta.f) ta.draw(po); }; po.src = `${MAQ}${ta.dir}/sm/e28_a000.webp`;
-  };
-  const thumbPlay = () => {
-    if (!ta.cv || ta.raf || RM.matches || document.hidden || !dlg.open) return;
-    const p = loadPool(ta.dir, 'sm', 3);
-    const tick = (t) => {
-      if (t - ta.t >= 125) { const nf = (ta.f + 3) % FR, im = p.imgs[nf]; if (im) { ta.f = nf; ta.t = t; ta.draw(im); } }
-      ta.raf = requestAnimationFrame(tick);
-    };
-    ta.raf = requestAnimationFrame(tick);
   };
 
   const fill = (art) => {
@@ -1278,7 +1257,6 @@
     const k = cards.indexOf(art);
     pager($('z-prevp'), cards[(k - 1 + N) % N], 'Projet précédent');
     pager($('z-nextp'), cards[(k + 1) % N], 'Projet suivant');
-    thumbSetup();
     cur = art;
   };
   const photoIdx = () => Math.round(strip.scrollLeft / Math.max(1, strip.clientWidth));
@@ -1289,7 +1267,7 @@
     $('z-pprev').disabled = i <= 0; $('z-pnext').disabled = i >= figs.length - 1;
     if (tb && thumbs.scrollWidth > thumbs.clientWidth) { const a = thumbs.getBoundingClientRect(), b = tb.getBoundingClientRect(); thumbs.scrollBy({ left: b.left - a.left - (a.width - b.width) / 2, behavior: how() }); }
     const spin = fig && fig.classList.contains('z-spin');
-    if (spin && dlg.open) { viewerStart(fig); thumbStop(); } else { viewerStop(); thumbPlay(); }
+    if (spin && dlg.open) viewerStart(fig); else viewerStop();
   };
   const toPhoto = (i) => strip.scrollTo({ left: i * strip.clientWidth, behavior: how() });
 
@@ -1321,7 +1299,7 @@
     dlg.addEventListener('click', (e) => { if (e.target === dlg) close(); }); // clic hors du panneau
     // fermeture effective (aussi quand le navigateur ferme seul, ex. Échap répété)
     dlg.addEventListener('close', () => {
-      viewerStop(); thumbStop(); closing = false;
+      viewerStop(); closing = false;
       document.documentElement.style.overflow = '';
       if (pushed) { pushed = false; history.back(); }
       origin?.focus({ preventScroll: true });
@@ -1334,7 +1312,7 @@
     // visionneuse
     strip.addEventListener('pointerdown', (e) => {
       const st = e.target.closest('.sp-stage'); if (!st) return;
-      const fig = st.closest('.z-spin'); fig.classList.add('touched'); viewerStart(fig); setAuto(false);
+      const fig = st.closest('.z-spin'); fig.classList.add('touched'); viewerStart(fig); setAuto(false); viewer.resumeAt = 0;
       st.setPointerCapture(e.pointerId); st.classList.add('grab');
       viewer.drag = { x: e.clientX, f: viewer.f, lx: e.clientX, lt: performance.now() }; viewer.vel = 0;
     });
@@ -1345,14 +1323,14 @@
       const dt = t - d.lt; if (dt > 0) viewer.vel = viewer.vel * .6 + (-(e.clientX - d.lx) / ppf / dt) * .4;
       d.lx = e.clientX; d.lt = t;
     });
-    const vUp = () => { if (!viewer.drag) return; viewer.drag = null; viewer.el?.querySelector('.sp-stage').classList.remove('grab'); if (RM.matches) viewer.vel = 0; };
+    const vUp = () => { if (!viewer.drag) return; viewer.drag = null; viewer.el?.querySelector('.sp-stage').classList.remove('grab'); if (RM.matches) viewer.vel = 0; resumeSoon(); };
     strip.addEventListener('pointerup', vUp); strip.addEventListener('pointercancel', vUp);
     strip.addEventListener('keydown', (e) => {
       const fig = e.target.closest('.z-spin'); if (!fig || e.target.closest('.sp-play')) return;
       const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (!d) return;
-      e.preventDefault(); e.stopPropagation(); fig.classList.add('touched'); viewerStart(fig); setAuto(false); viewer.f += d * 2;
+      e.preventDefault(); e.stopPropagation(); fig.classList.add('touched'); viewerStart(fig); setAuto(false); viewer.f += d * 2; resumeSoon();
     });
-    strip.addEventListener('click', (e) => { const b = e.target.closest('.sp-play'); if (!b) return; b.closest('.z-spin').classList.add('touched'); setAuto(!viewer.auto); });
+    strip.addEventListener('click', (e) => { const b = e.target.closest('.sp-play'); if (!b) return; const f = b.closest('.z-spin'), off = viewer.auto || !!viewer.resumeAt; f.classList.add('touched'); f.classList.toggle('paused', off); viewer.resumeAt = 0; setAuto(!off); });
   };
 
   const open = (art, { animate = true, push = true, at = 0, from = null } = {}) => {
@@ -1379,14 +1357,14 @@
   };
   const close = (fromPop = false) => {
     if (!dlg || !dlg.open || closing) return;
-    closing = true; viewerStop(); thumbStop();
+    closing = true; viewerStop();
     const a = (!RM.matches && dlg.animate) ? dlg.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.97)' }], { duration: 180, easing: 'ease-in' }) : null;
     const done = () => dlg.close();
     a ? a.finished.then(done, done) : done();
     if (!fromPop && pushed) { pushed = false; history.back(); }
     else { pushed = false; try { history.replaceState(null, '', location.pathname + location.search); } catch (_) {} }
   };
-  document.addEventListener('visibilitychange', () => { if (document.hidden) thumbStop(); else if (dlg?.open) photoSync(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && dlg?.open) photoSync(); });
 
   secs.forEach((sc) => sc.querySelector('.track').addEventListener('click', (e) => {
     const art = e.target.closest('.pc'); if (!art) return;
