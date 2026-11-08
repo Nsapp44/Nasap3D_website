@@ -128,7 +128,7 @@ export default function HomeHeader() {
           goToSection("accueil");
         }}
       >
-        <img src="/assets/logo-blanc-full.png" alt="Nasap3D" className="logo-img" />
+        <img src="/assets/logo-blanc-full.png" alt="Nasap3D" className="logo-img" width={1920} height={712} />
       </a>
 
       <div className="nav-links">

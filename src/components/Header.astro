@@ -45,7 +45,7 @@ const guidesIsCurrent = GUIDES.some((g) => g.href === currentPath);
 
 <div class="site-header">
   <a href="/" class="logo-link">
-    <img src="/assets/logo-blanc-full.png" alt="Nasap3D" class="logo-img" />
+    <img src="/assets/logo-blanc-full.png" alt="Nasap3D" class="logo-img" width="1920" height="712" />
   </a>
 
   <div class="nav-links">
@@ -69,7 +69,7 @@ const guidesIsCurrent = GUIDES.some((g) => g.href === currentPath);
         </a>
       )
     }
-    <QuoteNavLink isCurrent={currentPath === "/devis-instantane"} client:load />
+    <QuoteNavLink isCurrent={currentPath === "/devis-instantane"} client:idle />
     {
       NAV_ITEMS.slice(DEVIS_INDEX, GUIDES_INDEX).map((item) =>
         item.href === currentPath ? (
@@ -128,7 +128,7 @@ const guidesIsCurrent = GUIDES.some((g) => g.href === currentPath);
 
   <div class="header-account">
     <a href="/compte" class="nav-hover-scale">Compte</a>
-    {showAuthIcon && <NavAuthIcon client:load />}
+    {showAuthIcon && <NavAuthIcon client:idle />}
     <a href="/panier" class={`cart-link${cartIsCurrent ? " cart-current" : ""}`}>
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -145,7 +145,7 @@ const guidesIsCurrent = GUIDES.some((g) => g.href === currentPath);
         <circle cx="19" cy="21" r="1"></circle>
         <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
       </svg>
-      <CartBadge client:load />
+      <CartBadge client:idle />
     </a>
   </div>
 

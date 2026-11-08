@@ -46,7 +46,7 @@ const ITEMS = [
         return (
           <Card class="gallery-card" href={it.href}>
             <div class="gallery-photo">
-              <img src={`/assets/${it.img}`} alt={it.label} loading="lazy" />
+              <img src={`/assets/${it.img}`} alt={it.label} loading="lazy" decoding="async" />
             </div>
             <div class="gallery-body">
               <div class="gallery-label">{it.label}</div>

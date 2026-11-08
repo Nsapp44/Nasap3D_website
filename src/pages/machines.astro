@@ -37,7 +37,7 @@ const OTHER_MACHINES = [
         FDM_MACHINES.map((m) => (
           <div class="machine-card">
             <div class="machine-photo">
-              <img src={`/assets/${m.img}`} alt={m.name} loading="lazy" />
+              <img src={`/assets/${m.img}`} alt={m.name} loading="lazy" decoding="async" />
             </div>
             <div class="machine-body">
               <div class="machine-head">
@@ -59,7 +59,7 @@ const OTHER_MACHINES = [
         OTHER_MACHINES.map((m) => (
           <div class="machine-card">
             <div class="machine-photo">
-              <img src={`/assets/${m.img}`} alt={m.name} loading="lazy" />
+              <img src={`/assets/${m.img}`} alt={m.name} loading="lazy" decoding="async" />
             </div>
             <div class="machine-body small">
               <div class="machine-name small">{m.name}</div>

@@ -100,7 +100,7 @@ export default function RealisationsCarousel() {
               style={{ width: cardW > 0 ? `${cardW}px` : "calc((100% - 64px) / 3)", marginRight: `${GAP}px` }}
             >
               <div className="real-card" onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}>
-                <img src={r.img} alt={r.label} className="real-img" />
+                <img src={r.img} alt={r.label} className="real-img" decoding="async" />
                 <div className={`real-overlay${hovered === i ? " show" : ""}`}>
                   <div className="real-label">{r.label}</div>
                   <div className="real-desc">{r.desc}</div>
