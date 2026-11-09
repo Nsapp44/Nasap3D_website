@@ -47,7 +47,7 @@ Questions en attente (pop-up au retour) : real-17 renommé « Objets liturgiques
 Idée écartée : SMS au client (payant, Nolann le fait à la main, 08/11).
 
 ## Conversations à supprimer
-Fille SEO et fork SEO : SUPPRIMÉS le 08/11 (accord de Nolann). Rien d'autre en liste.
+Fille SEO et fork SEO : SUPPRIMÉS le 08/11 (accord de Nolann). Passation 09/11 : ancienne = local_1bb3337a-6b12-452b-8f2e-e460714d8e81 (« [P] NASAP [page maquettiste Astro] L8 contrôle + optim », à supprimer par la nouvelle). Rien d'autre en liste.
 
 ## Décisions de Nolann (en vigueur)
 Une page par projet = GO (~300 mots, sans nom de client) ; « Un projet similaire ? » → `/contact` ; « Blocs courts » + « Animé au scroll » par défaut ; rideau A. Validé, ne pas toucher : zoom, « De l'idée à la maquette », bouton devis, « Un bureau d'études… », « Usage », « Ce qui nous distingue », « De la maquette à la petite série », carte « Maquette de design produit ». Guide Ads « Maquettage B2B » : `docs/ads_campagne_maquettage_2026-11-02.md` (publication après push et pages en 200).
