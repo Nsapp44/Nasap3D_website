@@ -13,6 +13,7 @@ interface Props {
   note?: string;
   allHref?: string;
   allLabel?: string;
+  slugs?: string[]; // restreint le carrousel à ces projets (ordre de la liste)
 }
 const {
   id = "nos-maquettes",
@@ -21,9 +22,12 @@ const {
   note = "Touchez un projet pour l'agrandir : photos, détails et fiche complète.",
   allHref = "/realisations",
   allLabel = "Toutes nos réalisations",
+  slugs,
 } = Astro.props;
 
-const items = REALISATIONS;
+const items = slugs
+  ? slugs.map((s) => REALISATIONS.find((r) => r.slug === s)).filter((r): r is (typeof REALISATIONS)[number] => !!r)
+  : REALISATIONS;
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const isSpin = (src: string) => src.startsWith("spin:");
 // Données pour le JS : { slug: [[src, w, h, alt], ...] } et { slug: fiche }

@@ -4,6 +4,8 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import FaqAccordion from "../components/FaqAccordion";
 import MaquetteCarousel from "../components/MaquetteCarousel.astro";
+import ProjectsCarousel from "../components/maquettiste/ProjectsCarousel.astro";
+import "../styles/maquettiste-nantes.css";
 import { MAQUETTES_ACTIVES } from "../data/maquettes";
 
 const uses = [
@@ -27,19 +29,6 @@ const steps = [
   { n: "2", title: "Modélisation", text: "Nous modélisons la maquette en 3D à partir de vos éléments et vous la présentons." },
   { n: "3", title: "Fabrication et finitions", text: "Impression, assemblage, peinture, électronique : tout est réalisé dans notre atelier à Nantes." },
   { n: "4", title: "Livraison", text: "Livraison partout en France, ou retrait à Nantes (Canclaux)." },
-];
-
-const cases = [
-  { title: "Bioréacteur en inox", text: "Maquette d'équipement de procédé avec vannes, leviers et manomètres à l'échelle, rendu inox." },
-  { title: "Système de purification", text: "Équipement de procédé biotechnologique, avec vraie tuyauterie et composants métalliques." },
-  { title: "Caravane de vitrine", text: "Carrosserie multicolore imprimée dans la masse, vitres en plexiglas découpé." },
-];
-
-const gallery = [
-  { img: "/assets/real-19.webp", label: "Maquette de bioréacteur en inox imprimée en 3D" },
-  { img: "/assets/real-1.webp", label: "Maquette d'un équipement de filtration sur roulettes" },
-  { img: "/assets/real-21.webp", label: "Détail de vannes, leviers et manomètres à l'échelle" },
-  { img: "/assets/real-2.webp", label: "Maquette d'équipement de procédé avec pompe et tuyauterie" },
 ];
 
 const faqs = [
@@ -134,31 +123,16 @@ const jsonLd = {
     </div>
   </section>
 
-  <section class="lp-section" data-rv>
-    <h2 class="lp-h2">Maquettes industrielles réalisées</h2>
-    <div class="lp-steps lp-steps--3">
-      {
-        cases.map((c, i) => (
-          <div class="lp-step" style={`--i:${i}`}>
-            <h3 class="lp-step-title">{c.title}</h3>
-            <p class="lp-step-text">{c.text}</p>
-          </div>
-        ))
-      }
-    </div>
-    <div class="lp-real-grid lp-real-gap">
-      {
-        gallery.map((r, i) => (
-          <figure class="lp-real" style={`--i:${i}`}>
-            <img src={r.img} alt={r.label} loading="lazy" decoding="async" width="600" height="750" />
-            <figcaption>
-              <strong>{r.label}</strong>
-            </figcaption>
-          </figure>
-        ))
-      }
-    </div>
-  </section>
+  <div class="mqn mqn-realisees">
+    <ProjectsCarousel
+      id="maquettes-realisees"
+      kicker="Réalisations"
+      heading="Maquettes industrielles réalisées"
+      note="Touchez une maquette pour l'agrandir : photos, détails et fiche complète."
+      slugs={["maquette-bioreacteur", "systeme-filtration-purification", "maquette-cellule-biologique"]}
+      allHref="/realisations"
+    />
+  </div>
 
   {
     MAQUETTES_ACTIVES.length > 0 && (
@@ -579,4 +553,9 @@ const jsonLd = {
   .lp-links a:hover {
     color: #ff5a3c;
   }
+</style>
+
+<style is:global>
+  /* maquettiste-nantes.css ajoute 80px sous le body pour la barre CTA mobile : absente ici */
+  html body:has(.mqn-realisees) { padding-bottom: 0; }
 </style>
