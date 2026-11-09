@@ -136,7 +136,7 @@ const jsonLd = {
 
   <section class="lp-section" data-rv>
     <h2 class="lp-h2">Maquettes industrielles réalisées</h2>
-    <div class="lp-steps">
+    <div class="lp-steps lp-steps--3">
       {
         cases.map((c, i) => (
           <div class="lp-step" style={`--i:${i}`}>
@@ -171,7 +171,7 @@ const jsonLd = {
 
   <section class="lp-section" data-rv>
     <h2 class="lp-h2">Du premier échange à la livraison</h2>
-    <div class="lp-steps">
+    <div class="lp-steps lp-steps--4">
       {
         steps.map((s, i) => (
           <div class="lp-step" style={`--i:${i}`}>
@@ -223,26 +223,32 @@ const jsonLd = {
 <style>
   .lp-hero,
   .lp-section {
-    max-width: 800px;
+    max-width: 1040px;
     margin: 0 auto;
     padding: 0 24px;
   }
   .lp-hero {
-    padding-top: 40px;
-    padding-bottom: 40px;
+    padding-top: clamp(48px, 8vw, 104px);
+    padding-bottom: 0;
   }
   .lp-section {
-    padding-bottom: 44px;
+    padding: clamp(56px, 7vw, 96px) 24px 0;
+  }
+  .lp-narrow {
+    max-width: 860px;
   }
   .lp-title {
-    font: 700 32px/1.15 "Space Grotesk", sans-serif;
+    font: 700 clamp(30px, 4.2vw, 50px) / 1.08 "Space Grotesk", sans-serif;
     color: #f3f1ec;
-    margin: 0 0 14px;
+    max-width: 20ch;
+    text-wrap: balance;
+    margin: 0 0 18px;
   }
   .lp-subtitle {
-    font: 400 15px/1.6 "Inter", sans-serif;
+    font: 400 clamp(16px, 1.5vw, 18px) / 1.65 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.65);
-    margin: 0 0 24px;
+    max-width: 62ch;
+    margin: 0 0 32px;
   }
   .lp-ctas {
     display: flex;
@@ -265,49 +271,86 @@ const jsonLd = {
     color: #f3f1ec;
   }
   .lp-h2 {
-    font: 700 20px "Space Grotesk", sans-serif;
+    font: 700 clamp(25px, 2.8vw, 36px) / 1.12 "Space Grotesk", sans-serif;
     color: #f3f1ec;
-    margin: 0 0 16px;
+    max-width: 24ch;
+    margin: 0 0 clamp(24px, 3vw, 36px);
+    text-wrap: balance;
+  }
+  :global(body:has(.lp-hero)) {
+    counter-reset: lpsec;
+  }
+  .lp-section:not(.lp-final) > .lp-h2::before {
+    counter-increment: lpsec;
+    content: counter(lpsec, decimal-leading-zero) " —";
+    content: counter(lpsec, decimal-leading-zero) " —" / "";
+    display: block;
+    margin-bottom: 14px;
+    font: 600 13px/1 "Space Grotesk", sans-serif;
+    letter-spacing: 0.06em;
+    color: #ff5a3c;
   }
   .lp-steps {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 14px;
+    gap: 32px 48px;
   }
-  /* Nombre impair de cartes : la dernière prend toute la ligne (pas de carte orpheline). */
-  .lp-steps > :last-child:nth-child(odd) { grid-column: 1 / -1; }
   .lp-step {
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    padding: 18px;
-    background: #1a1917;
+    position: relative;
+    border: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0;
+    background: none;
+    padding: 20px 0 0;
+  }
+  .lp-step::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: 0;
+    width: 24px;
+    height: 2px;
+    background: #ff5a3c;
   }
   .lp-step-n {
-    font: 700 18px "Space Grotesk", sans-serif;
+    font: 700 clamp(28px, 3vw, 40px) / 1 "Space Grotesk", sans-serif;
     color: #ff5a3c;
-    margin-bottom: 6px;
+    margin-bottom: 12px;
   }
   .lp-step-title {
-    font: 600 14px "Space Grotesk", sans-serif;
+    font: 600 clamp(16px, 1.4vw, 18px) / 1.3 "Space Grotesk", sans-serif;
     color: #f3f1ec;
-    margin: 0 0 6px;
+    margin: 0 0 8px;
   }
   .lp-step-text {
-    font: 400 12px/1.6 "Inter", sans-serif;
-    color: rgba(255, 255, 255, 0.55);
+    font: 400 15px/1.65 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.62);
+    max-width: 52ch;
     margin: 0;
+  }
+  @media (min-width: 900px) {
+    .lp-steps--3 { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (min-width: 1100px) {
+    .lp-steps--4 { grid-template-columns: repeat(4, 1fr); }
   }
   .lp-real-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 14px;
+    gap: 32px 20px;
+  }
+  @media (max-width: 480px) {
+    .lp-real-grid { grid-template-columns: 1fr; }
+  }
+  @media (min-width: 900px) {
+    .lp-real-grid { grid-template-columns: repeat(4, 1fr); }
   }
   .lp-real {
     margin: 0;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    overflow: hidden;
-    background: #1a1917;
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
+    background: none;
   }
   .lp-real img {
     display: block;
@@ -317,23 +360,26 @@ const jsonLd = {
     object-fit: cover;
     object-position: center;
     background: #201d1b;
+    border-radius: 10px;
   }
   .lp-real figcaption {
-    padding: 12px 14px;
+    padding: 12px 0 0;
     font: 400 12px/1.5 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.55);
   }
   .lp-real strong {
     display: block;
-    color: #f3f1ec;
-    font: 600 13px "Space Grotesk", sans-serif;
+    color: rgba(255, 255, 255, 0.6);
+    font: 400 13px/1.5 "Inter", sans-serif;
   }
   .lp-final {
     border: 1px solid rgba(255, 90, 60, 0.3);
     background: rgba(255, 90, 60, 0.08);
     border-radius: 12px;
-    padding: 28px 24px;
-    margin-bottom: 44px;
+    max-width: 1040px;
+    padding: clamp(28px, 4vw, 48px);
+    margin: clamp(56px, 7vw, 96px) auto clamp(48px, 6vw, 80px);
+    box-sizing: border-box;
   }
 
   /* Motion : entrée du hero au chargement, apparition au défilement, survols. */
@@ -380,11 +426,6 @@ const jsonLd = {
   .lp-btn-secondary:hover {
     border-color: #ff5a3c;
     background: rgba(255, 90, 60, 0.16);
-  }
-  .lp-step:hover,
-  .lp-real:hover {
-    border-color: rgba(255, 90, 60, 0.45);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
   }
   /* Même survol que les cartes machines : carte +2 % (propriété scale, indépendante du transform d'entrée), photo +5 %. */
   .lp-real {
@@ -463,9 +504,6 @@ const jsonLd = {
   }
 
   @media (max-width: 640px) {
-    .lp-title {
-      font-size: 26px;
-    }
     .lp-ctas {
       flex-direction: column;
     }
@@ -474,8 +512,7 @@ const jsonLd = {
       box-sizing: border-box;
       padding: 20px 22px;
     }
-    .lp-steps,
-    .lp-real-grid {
+    .lp-steps {
       grid-template-columns: 1fr;
     }
     .lp-final {
@@ -486,7 +523,7 @@ const jsonLd = {
 
   /* Ajouts B2B : note, bloc de renvoi, liens, grille photo sous les cartes. */
   .lp-note {
-    font: 400 14px/1.6 "Inter", sans-serif;
+    font: 400 15px/1.6 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.65);
     margin: 16px 0 0;
   }
@@ -494,7 +531,7 @@ const jsonLd = {
     margin: 0 0 20px;
   }
   .lp-real-gap {
-    margin-top: 14px;
+    margin-top: clamp(40px, 5vw, 64px);
   }
   .lp-cross {
     display: block;
