@@ -22,6 +22,7 @@ Commits : ec01251 (vide sous la sphère réduit d'environ 144 px : `.mqn .sb ~ s
 7. [x] « Ouvrir la 3D de /maquette-industrielle dans le zoom, pareil pour les 2 autres » : déjà en place (visionneuse réutilisée). LED seulement sur la cellule (`led: true`, src/data/maquettes.ts) : question à Nolann si LED voulues sur purification/caravane (calques de rendu à produire).
 
 ## Prochain pas exact
+09/11 soir : poster du storyboard remis comme avant (miniature floue 160x120 inline + blur 10px qui se précise, fondu retiré ; revert partiel de 07c5aa0) à la demande de Nolann ; en attente de son retour visuel. Puis Boxtal : clés BOXTAL_* présentes en local, reste à vérifier la base (commande MR réelle) avant le dump.
 Rapport « prêt à vérifier » fait (captures `$TEMP/4f/avant_*`, `apres_*`, FAQ valide = `$TEMP/final/faq_1440.png`) -> pop-up Nolann -> item 3 Boxtal (advisor + OK dump) -> item 4 -> item 5 audit. Serveur 4399 = PID 51900 : à arrêter après vérification de Nolann / audit final.
 
 ## À reporter au code Astro

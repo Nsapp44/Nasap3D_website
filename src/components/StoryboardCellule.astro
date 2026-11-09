@@ -17,7 +17,7 @@ const P = "/storyboard/cellule/";
     <div class="sb-stage">
       <div class="sb-box" id="sb-box">
         <canvas id="sb-cv" role="img" aria-label="Cellule verte, vue de loin, en cours de mise au point"></canvas>
-        <img class="sb-poster" id="sb-poster" alt="" aria-hidden="true" width="960" height="720" fetchpriority="high" decoding="async" src={`${P}eclate3/f_000.webp`} />
+        <img class="sb-poster" id="sb-poster" alt="" aria-hidden="true" width="160" height="120" decoding="async" src="data:image/webp;base64,UklGRlQCAABXRUJQVlA4IEgCAACQEgCdASqgAHgAPsFgq1AnpaQipBTZCPAYCWdu4XSg4DcfGrMBiMt1SJErEov8aVwOlnzlG/hRfjrLhs9xxF0C68jFH4FcLxk8UKlO3p9q2WYYItW4v+fCIBFQZOYVcyto/y269uCb4yL5oItCOUxI5cqzPCN2y7V786kUrHK+dlNUphQaXpoAGxTALdmAla8XD+NL1nDTShhRflUAAP7+25Wh2QJTK7rKBVw5w6xLBisIm7N0uJ9bk0vkmyktHJK2HK8qDGWGc0U94HWoKztrMCdez3wpGY1OcdLQXxGF6hmx2qfigvmb+2YEBigx3HKtEk9KShogc3t+ifwEv28J+7BlIIBVuBeCrmGdvcyXUaY7+uyp/VtZWpXLB6tt+Ivs0h/7nDhl62ypXV1UNk0leuI7ko49P1Aq4hCCttuEGGDmulcHXVrq3CVgJ7bE+iKPqDNKplWeK1LqkcBRzWLj7FimrCM5q+/XTs51Cq4gVBH+z+RY0921wvqzW1y5D/Q0Il33wKU32u3JVcdNEaAOgg4rMQeRCWs+vCBvixGFlWCWMAzDq0mQD2e6nR7dSf7GpgvBLuKZfBx47tw5sSkIdGrw75sxop1QmNMgtHyuHGhR2p9oCcPN77ZMEUXSkIp9LKdT1FeZwCs4RoOLkJzuuIvEmiLjN7HU5Js3B0xYnFux54CBQrUEom0oqfxXO/C+FlbCmVBEWCQVMx30YacU/IG/h9X36bYnEgwFGbvYvHr2SkMSoRxR+9vDA9UI9BykEECekAAAAA==" />
         <div class="sb-leg" id="sb-lg0" aria-hidden="true"><i class="sb-ln"></i><i class="sb-dot"></i><span class="sb-pill">Bandeau LED</span></div>
         <div class="sb-leg" id="sb-lg1" aria-hidden="true"><i class="sb-ln"></i><i class="sb-dot"></i><span class="sb-pill">ESP</span></div>
         <div class="sb-leg" id="sb-lg2" aria-hidden="true"><i class="sb-ln"></i><i class="sb-dot"></i><span class="sb-pill">Bouton capacitif</span></div>
@@ -72,7 +72,7 @@ const P = "/storyboard/cellule/";
 <script is:inline defer src="/vendor/gsap/gsap.min.js"></script>
 <script is:inline defer src="/vendor/gsap/ScrollTrigger.min.js"></script>
 {/* ?v= : à changer à chaque modif de cellule.js (sinon un onglet ou un cache garde l'ancien JS avec le nouveau CSS) */}
-<script is:inline defer src="/storyboard/cellule/cellule.js?v=poster-net"></script>
+<script is:inline defer src="/storyboard/cellule/cellule.js?v=poster-flou"></script>
 
 <style is:global>
   /* Le filet global « overflow-x: hidden » sur html/body casse position: sticky (body devient le conteneur de défilement). `clip` empêche aussi tout scroll horizontal. */
@@ -136,7 +136,7 @@ const P = "/storyboard/cellule/";
   .sb.anim .sb-tb { grid-area: 1 / 1; opacity: 0; transform: translateY(6px); }
   .sb.anim .sb-t1 { opacity: 1; transform: none; animation: sb-entree .5s ease-out backwards; }
   .sb.anim .sb-sfig, .sb.anim .sb-pills { display: none; }
-  .sb.anim .sb-poster { transform: scale(.55); will-change: transform; }
+  .sb.anim .sb-poster { transform: scale(.55); filter: blur(10px); will-change: transform; }
   .sb.anim .sb-box canvas { will-change: transform, opacity;
     -webkit-mask-image: radial-gradient(ellipse closest-side at 50% 50%, #000 80%, transparent 100%);
     mask-image: radial-gradient(ellipse closest-side at 50% 50%, #000 80%, transparent 100%); }
