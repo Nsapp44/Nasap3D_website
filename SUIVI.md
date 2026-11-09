@@ -16,6 +16,8 @@ Commits : ec01251 (vide sous la sphère réduit d'environ 144 px : `.mqn .sb ~ s
 3. [ ] Boxtal : suivi AUTO Mondial Relay (NE RIEN CASSER). `advisor` avant de figer l'approche ; OK de Nolann pour un dump JSON lecture seule de `order_status/{ref}/informations` sur une commande MR réelle ; ajouter le n° saisi à la main à `TRACKING_KEY_RE` (`src/lib/server/boxtal.ts` ~576).
 4. [ ] Demande orale de Nolann (09/11) : « la passe de grosso modo » sur le rapport de la conversation SEO, une fois tout le reste fini. Sens probable : appliquer la liste « À reporter au code Astro » ci-dessous (rapport `docs/chantiers/audit-seo-nouveaux-outils_2026-11-08.md`). À confirmer par pop-up avant de coder.
 
+5. [ ] Demande orale de Nolann (09/11) : à la toute fin, audit de performance (Lighthouse avant/après) ET de sécurité (scan `claude-security` depuis le fil principal) pour confirmer que tout va bien.
+
 ## Prochain pas exact
 Résultat testeur (4b, 404 à 375, FAQ) -> commit SUIVI -> `get_usage` + ligne `C:/bo-test/docs/conso_sessions.md` -> advisor (2e appel) -> arrêter serveur 4399 par PID -> rapport « prêt à vérifier » avec captures avant/après (`$TEMP/4f/avant_*`, `apres_*`) -> pop-up 3D d'abord ? -> item 3 puis 4.
 
