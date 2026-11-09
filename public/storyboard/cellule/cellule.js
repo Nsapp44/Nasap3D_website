@@ -13,6 +13,7 @@
   var $ = function (s) { return sb.querySelector(s); };
   var scene = $("#sb-scene"), box = $("#sb-box"), cv = $("#sb-cv"), ctx = cv.getContext("2d");
   var poster = $("#sb-poster"), loader = $("#sb-loader");
+  var pw = $("#sb-pw");
   var legs = [$("#sb-lg0"), $("#sb-lg1"), $("#sb-lg2")], pzg = $("#sb-pzg"), pzw = $("#sb-pzw");
   var small = innerWidth < 768;
   var cs = getComputedStyle(sb);
@@ -219,6 +220,7 @@
     lastKey = key;
     ctx.clearRect(0, 0, cw, ch);
     var worst = 0;
+    if (P.aEcl > 0.003 && !SEQ.ecl.arr[0]) pw.style.opacity = "1";
     if (P.aEcl > 0.003) { ctx.globalAlpha = P.aEcl; worst = Math.max(worst, drawEcl(e), drawCut()); }
     if (P.aLum > 0.003) { ctx.globalAlpha = P.aLum; worst = Math.max(worst, drawLum(l)); }
     if (P.aAim > 0.003) {
@@ -338,6 +340,7 @@
       trigger: scene, start: "top top", end: "bottom bottom", scrub: 1,
       onUpdate: function (self) {
         var p = self.progress;
+        if (p > 0) loadSeq("ecl");
         if (p > 0.12) loadSeq("ele");
         if (p > 0.30) loadSeq("lum");
         if (p > 0.40) { loadSeq("aim"); loadBase(); loadLed(); }
@@ -349,11 +352,11 @@
   var outT = function (id, t) { tl.to(id, { opacity: 0, duration: 0.012 }, t); };
 
   // 0 – 0,08 : arrivée (titre net, image floue qui zoome)
-  tl.to(poster, { scale: 1, filter: "blur(0px)", duration: 0.08, ease: "power1.out" }, 0);
+  tl.to(poster, { scale: 1.5, filter: "blur(0px)", duration: 0.08, ease: "power1.out" }, 0);
   outT("#sb-t1", 0.066);
   // 0,08 – 0,26 : éclaté
-  tl.to(P, { aEcl: 1, duration: 0.04 }, 0.08);
-  tl.to(poster, { opacity: 0, duration: 0.001 }, 0.12);
+  tl.set(P, { aEcl: 1 }, 0.08);
+  tl.to(pw, { opacity: 0, duration: 0.02 }, 0.08);
   inT("#sb-t2", 0.085);
   tl.to(P, { ecl: 17, duration: 0.16, ease: "power1.inOut" }, 0.10);
   tl.to(P, { zoom: 1, duration: 0.16, ease: "power1.inOut" }, 0.10);
@@ -409,12 +412,9 @@
   tl.to({}, { duration: 0.0001 }, 1); // la timeline dure 1 : derniers ~8 % = produit tenu
 
   /* ---- Chargement progressif ---- */
-  if ("IntersectionObserver" in window) {
-    var sio = new IntersectionObserver(function (es) {
-      if (es[0].isIntersecting) { loadSeq("ecl"); loadHd(); }
-    }, { rootMargin: "50% 0px" });
-    sio.observe(scene);
-  } else { loadSeq("ecl"); loadHd(); }
+  function first() { removeEventListener("scroll", first); loadSeq("ecl"); }
+  addEventListener("scroll", first, { passive: true });
+  if (scrollY > 0) loadSeq("ecl");
 
   resize();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { resize(); ScrollTrigger.refresh(); });
