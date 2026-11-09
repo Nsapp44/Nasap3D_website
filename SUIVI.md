@@ -14,7 +14,7 @@ Commits : ec01251 (vide sous la sphère réduit d'environ 144 px : `.mqn .sb ~ s
 1. [x] Retours 08/11 soir : a hero, c vide, d KPI, e zoom, f /maquette-industrielle : faits et vérifiés.
 2. [x] 4b fluidité scroll storyboard : mesuré 09/11 (440 frames, 2 > 33 ms, max 49 ms, 1 long task 110 ms, headless) = aucun changement, déjà fluide.
 3. [ ] Boxtal : suivi AUTO Mondial Relay (NE RIEN CASSER). `advisor` avant de figer l'approche ; OK de Nolann pour un dump JSON lecture seule de `order_status/{ref}/informations` sur une commande MR réelle ; ajouter le n° saisi à la main à `TRACKING_KEY_RE` (`src/lib/server/boxtal.ts` ~576).
-4. [ ] Demande orale de Nolann (09/11) : « la passe de grosso modo » sur le rapport de la conversation SEO, une fois tout le reste fini. Sens probable : appliquer la liste « À reporter au code Astro » ci-dessous (rapport `docs/chantiers/audit-seo-nouveaux-outils_2026-11-08.md`). À confirmer par pop-up avant de coder.
+4. [~] Passe SEO (Nolann a choisi « liste À reporter », 09/11) : og:image:alt corrigé (BaseLayout). Rien d'autre fait : PETG = migration base (accord avant push), 301 Cholet/Angers = après contrôle Search Console, Footer/404/nantes les lient encore, nav.href introuvable dans src/. Slide 3D : Nolann dit « charge au slide avec loader comme avant » = comportement actuel, aucun changement.
 
 5. [ ] Demande orale de Nolann (09/11) : à la toute fin, audit de performance (Lighthouse avant/après) ET de sécurité (scan `claude-security` depuis le fil principal) pour confirmer que tout va bien.
 
@@ -29,7 +29,6 @@ Rapport « prêt à vérifier » fait (captures `$TEMP/4f/avant_*`, `apres_*`, F
 - Caddy (compression, cache HTML, HSTS, 301 anciens slugs) = dev de Nolann.
 
 ## Questions en attente (pop-up au retour de Nolann)
-- Slide 3D = 2e de 3 dans le zoom du carrousel : la 3D ne démarre qu'au swipe ou au chip « Vue 3D ». Mettre la 3D en 1re, ouvrir sur la 3D, ou précharger e28 à l'ouverture ?
 - Pinch mobile et zoom clavier absents du zoom (optionnel).
 - KPI hero « 2 sem. – 3 mois… » : texte littéral à raccourcir ?
 - Ancres ou KPI dans le hero de /maquette-industrielle (optionnel).
