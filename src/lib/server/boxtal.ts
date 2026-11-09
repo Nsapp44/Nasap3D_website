@@ -596,6 +596,16 @@ export function extractTrackingNumber(order: unknown): string | null {
   return uniq.length > 0 ? uniq.join(", ") : null;
 }
 
+// Chemins de clés d'un objet (profondeur 4, valeurs exclues) pour le diagnostic.
+function listKeyPaths(node: unknown, prefix = "", depth = 0): string[] {
+  if (depth > 4 || node == null || typeof node !== "object") return [];
+  if (Array.isArray(node)) return node.length ? listKeyPaths(node[0], prefix + "[]", depth + 1) : [];
+  return Object.entries(node as Record<string, unknown>).flatMap(([k, v]) => {
+    const path = prefix ? `${prefix}.${k}` : k;
+    return v != null && typeof v === "object" ? [path, ...listKeyPaths(v, path, depth + 1)] : [path];
+  });
+}
+
 export interface BoxtalOrderStatus {
   labelAvailable: boolean;
   labelUrl: string | null;
@@ -658,6 +668,10 @@ export async function checkLabelStatus(boxtalOrderRef: string): Promise<BoxtalOr
   // joint par ", " dans le champ unique trackingNumber.
   const carrierReference: string | null = extractTrackingNumber(doc?.order);
   const state: string | null = doc?.order?.state || null;
+  // Diagnostic (chemins de clés seulement, jamais de valeurs) : si Boxtal répond
+  // mais qu'aucun n° de suivi n'est reconnu, on journalise la structure pour
+  // trouver où Mondial Relay le met (puis l'ajouter à TRACKING_KEY_RE).
+  if (!carrierReference && doc?.order) console.warn("[boxtal] order_status sans n° de suivi reconnu ; clés :", listKeyPaths(doc.order).join(" | "));
   return {
     labelAvailable,
     labelUrl,
