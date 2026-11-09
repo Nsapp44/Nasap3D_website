@@ -18,6 +18,9 @@ Commits : ec01251 (vide sous la sphère réduit d'environ 144 px : `.mqn .sb ~ s
 
 5. [ ] Demande orale de Nolann (09/11) : à la toute fin, audit de performance (Lighthouse avant/après) ET de sécurité (scan `claude-security` depuis le fil principal) pour confirmer que tout va bien.
 
+6. [x] Passe LCP (Nolann 09/11 « fonce ») : pistes 2-5 déjà faites (baa17c3). Lighthouse mobile 09/11, médiane 2 passes, build prod local : `/` 95, LCP 1,62 s ; `/maquettiste-nantes` 95, LCP 2,05 s (variance : 1,5 à 2,6 s) ; `/maquette-industrielle` 100, LCP 1,35 s ; `/devis-instantane` 99, LCP 1,43 s. Base 08/11 (69 / 6,85 s et 79 / 4,26 s) = avant baa17c3. Reste : JS inutilisé ~0,3 s sur maquettiste-nantes, Speed Index 4,5 s sur `/`. Pistes 1 (Caddy) = dev de Nolann.
+7. [x] « Ouvrir la 3D de /maquette-industrielle dans le zoom, pareil pour les 2 autres » : déjà en place (visionneuse réutilisée). LED seulement sur la cellule (`led: true`, src/data/maquettes.ts) : question à Nolann si LED voulues sur purification/caravane (calques de rendu à produire).
+
 ## Prochain pas exact
 Rapport « prêt à vérifier » fait (captures `$TEMP/4f/avant_*`, `apres_*`, FAQ valide = `$TEMP/final/faq_1440.png`) -> pop-up Nolann -> item 3 Boxtal (advisor + OK dump) -> item 4 -> item 5 audit. Serveur 4399 = PID 51900 : à arrêter après vérification de Nolann / audit final.
 
