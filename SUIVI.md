@@ -12,14 +12,14 @@ Commits : ec01251 (vide sous la sphère réduit d'environ 144 px : `.mqn .sb ~ s
 
 ## File des demandes
 1. [x] Retours 08/11 soir : a hero, c vide, d KPI, e zoom, f /maquette-industrielle : faits et vérifiés.
-2. [~] 4b fluidité du scroll storyboard : mesure confiée au testeur (long tasks, frames > 33 ms). Rien de mesurable = « aucun changement, déjà fluide » (Nolann le trouve « très bien »).
+2. [x] 4b fluidité scroll storyboard : mesuré 09/11 (440 frames, 2 > 33 ms, max 49 ms, 1 long task 110 ms, headless) = aucun changement, déjà fluide.
 3. [ ] Boxtal : suivi AUTO Mondial Relay (NE RIEN CASSER). `advisor` avant de figer l'approche ; OK de Nolann pour un dump JSON lecture seule de `order_status/{ref}/informations` sur une commande MR réelle ; ajouter le n° saisi à la main à `TRACKING_KEY_RE` (`src/lib/server/boxtal.ts` ~576).
 4. [ ] Demande orale de Nolann (09/11) : « la passe de grosso modo » sur le rapport de la conversation SEO, une fois tout le reste fini. Sens probable : appliquer la liste « À reporter au code Astro » ci-dessous (rapport `docs/chantiers/audit-seo-nouveaux-outils_2026-11-08.md`). À confirmer par pop-up avant de coder.
 
 5. [ ] Demande orale de Nolann (09/11) : à la toute fin, audit de performance (Lighthouse avant/après) ET de sécurité (scan `claude-security` depuis le fil principal) pour confirmer que tout va bien.
 
 ## Prochain pas exact
-Résultat testeur (4b, 404 à 375, FAQ) -> commit SUIVI -> `get_usage` + ligne `C:/bo-test/docs/conso_sessions.md` -> advisor (2e appel) -> arrêter serveur 4399 par PID -> rapport « prêt à vérifier » avec captures avant/après (`$TEMP/4f/avant_*`, `apres_*`) -> pop-up 3D d'abord ? -> item 3 puis 4.
+Rapport « prêt à vérifier » fait (captures `$TEMP/4f/avant_*`, `apres_*`, FAQ valide = `$TEMP/final/faq_1440.png`) -> pop-up Nolann -> item 3 Boxtal (advisor + OK dump) -> item 4 -> item 5 audit. Serveur 4399 = PID 51900 : à arrêter après vérification de Nolann / audit final.
 
 ## À reporter au code Astro
 - « PETG HF » → « PETG » (`prisma/seed.ts:64`, migration base : accord de Nolann avant push).
@@ -40,7 +40,7 @@ Résultat testeur (4b, 404 à 375, FAQ) -> commit SUIVI -> `get_usage` + ligne `
 Une page par projet = GO ; « Un projet similaire ? » → `/contact` ; rideau A ; carrousel « Nos maquettes » 5 cartes. Validé, ne pas toucher : zoom, « De l'idée à la maquette », bouton devis, « Un bureau d'études… », « Usage », « Ce qui nous distingue », « De la maquette à la petite série », carte « Maquette de design produit », rideau. Guide Ads : `docs/ads_campagne_maquettage_2026-11-02.md`.
 
 ## Ce qui n'a pas marché
-Navigateur intégré peu fiable pour scroll/rAF → Chrome headless + playwright-core. Lecture entière des maquettes (56 et 109 Ko) → boucles de compaction. Sélecteur `+` cassé par les `<script>` intercalés. 404 console à 375 px dans le zoom : en cours d'identification.
+Navigateur intégré peu fiable pour scroll/rAF → Chrome headless + playwright-core. Lecture entière des maquettes (56 et 109 Ko) → boucles de compaction. Sélecteur `+` cassé par les `<script>` intercalés. 404 console à 375 px dans le zoom : non reproduit après rebuild (0 réponse >= 400). Zoom : la carte est un lien étiré (`.pj-link::after`) dont le clic est intercepté par JS (ProjectsCarousel l.561) = voulu, vraie page pour no-JS/ctrl-clic ; Playwright `locator.click` expire à cause de ça, pas un bug.
 
 ## Conversations à supprimer
 Aucune (ancienne session déjà supprimée). Agents lancés cette session : terminés sauf testeur en cours.
