@@ -1,73 +1,72 @@
 ---
-// Cartes : "main" = cœur de métier (pleine largeur, la plus grande) ; "wide" = bandeau pleine largeur
-// sans photo (icône) ; les autres vont 2 par 2.
-const machines = [
-  {
-    name: "Impression 3D · Bambu Lab H2C",
-    img: "/assets/machines/bambu-h2c.webp",
-    alt: "Imprimante 3D multi-matériaux Bambu Lab H2C",
-    main: true,
-    use: "Notre cœur de métier : impression multi-matériaux et multicolore, modèles en coupe, pièces fonctionnelles et maquettes.",
-  },
-  {
-    name: "xTool C1",
-    img: "/assets/machines/xtool-c1.webp",
-    alt: "Découpeuse et graveuse laser de bureau xTool C1",
-    use: "Découpe et gravure de matériaux fins : papier, carton, vinyle, cuir et plastique fin.",
-  },
-  {
-    name: "xTool Omni",
-    img: "/assets/machines/xtool-omni.webp",
-    alt: "Laser tout-en-un xTool Omni",
-    use: "Découpe et gravure sur bois, acrylique et cuir : plaques, repères et étiquettes.",
-  },
-  {
-    name: "xTool S1",
-    img: "/assets/machines/xtool-s1.webp",
-    alt: "Laser diode 40 W xTool S1",
-    use: "Laser diode 40 W : découpe nette de panneaux en bois et acrylique, gravure précise.",
-  },
-  {
-    name: "Impression résine SLA",
-    img: "/assets/machines/anycubic-sla.webp",
-    alt: "Imprimante 3D résine SLA Anycubic Photon Mono",
-    use: "Détails très fins et grande précision, pour les éléments miniatures de la maquette.",
-  },
-  {
-    name: "Peinture et finition",
-    img: "/assets/machines/peinture-finition.webp",
-    alt: "Pictogramme d'un pinceau et d'une pièce en cours de peinture",
-    wide: true,
-    use: "Ponçage, apprêt, peinture et vernis : un rendu réaliste, couleurs et textures.",
-  },
+// Proposition A « Vitrine » : carte H2C (cœur de métier) pleine largeur, 4 machines en carrés photo,
+// peinture et finition en bandeau avec icône.
+const main = {
+  n: "01",
+  tag: "Cœur de métier",
+  name: "Impression 3D · Bambu Lab H2C",
+  img: "/assets/machines/bambu-h2c.webp",
+  alt: "Imprimante 3D multi-matériaux Bambu Lab H2C",
+  use: "Impression multi-matériaux et multicolore, modèles en coupe, pièces fonctionnelles et maquettes.",
+  specs: ["Multi-matériaux et multicolore", "Modèles en coupe et maquettes", "Pièces fonctionnelles"],
+};
+const others = [
+  { n: "02", tag: "Laser", name: "xTool C1", img: "/assets/machines/xtool-c1.webp", alt: "Découpeuse et graveuse laser de bureau xTool C1", use: "Découpe et gravure de matériaux fins : papier, carton, vinyle, cuir et plastique fin." },
+  { n: "03", tag: "Laser", name: "xTool Omni", img: "/assets/machines/xtool-omni.webp", alt: "Laser tout-en-un xTool Omni", use: "Découpe et gravure sur bois, acrylique et cuir : plaques, repères et étiquettes." },
+  { n: "04", tag: "Laser 40 W", name: "xTool S1", img: "/assets/machines/xtool-s1.webp", alt: "Laser diode 40 W xTool S1", use: "Laser diode 40 W : découpe nette de panneaux en bois et acrylique, gravure précise." },
+  { n: "05", tag: "Résine", name: "Impression résine SLA", img: "/assets/machines/anycubic-sla.webp", alt: "Imprimante 3D résine SLA Anycubic Photon Mono", use: "Détails très fins et grande précision, pour les éléments miniatures de la maquette." },
 ];
+const paint = {
+  n: "06",
+  tag: "Finition",
+  name: "Peinture et finition",
+  img: "/assets/machines/peinture-finition.webp",
+  alt: "Pictogramme d'un pinceau et d'une pièce en cours de peinture",
+  use: "Ponçage, apprêt, peinture et vernis : un rendu réaliste, couleurs et textures.",
+};
 ---
 
 <div class="ms">
   <h2 class="ms-h2">Le matériel derrière nos maquettes</h2>
   <p class="ms-intro">Chaque maquette est réalisée dans notre atelier avec ces machines, choisies selon la matière et le niveau de détail attendus.</p>
   <div class="ms-grid">
+    <figure class="ms-card ms-main" style="--i:0">
+      <div class="ms-ph">
+        <img src={main.img} alt={main.alt} width="1200" height="1200" loading="lazy" decoding="async" />
+      </div>
+      <figcaption class="ms-body">
+        <div class="ms-meta"><span class="ms-num">{main.n}</span><span class="ms-tag">{main.tag}</span></div>
+        <h3 class="ms-name">{main.name}</h3>
+        <p class="ms-use">{main.use}</p>
+        <ul class="ms-specs">
+          {main.specs.map((s) => <li>{s}</li>)}
+        </ul>
+      </figcaption>
+    </figure>
     {
-      machines.map((m, i) => (
-        <figure class={`ms-card${m.main ? " ms-main" : ""}${m.wide ? " ms-wide" : ""}`} style={`--i:${i}`}>
-          {m.wide ? (
-            m.img && (
-              <div class="ms-icon">
-                <img src={m.img} alt={m.alt} width="176" height="176" loading="lazy" decoding="async" />
-              </div>
-            )
-          ) : (
-            <div class="ms-frame">
-              <img src={m.img} alt={m.alt} width="1200" height="1200" loading="lazy" decoding="async" />
-            </div>
-          )}
-          <figcaption>
-            <strong>{m.name}</strong>
-            <span>{m.use}</span>
+      others.map((o, i) => (
+        <figure class="ms-card" style={`--i:${i + 1}`}>
+          <div class="ms-ph">
+            <img src={o.img} alt={o.alt} width="1200" height="1200" loading="lazy" decoding="async" />
+          </div>
+          <figcaption class="ms-body">
+            <div class="ms-meta"><span class="ms-num">{o.n}</span><span class="ms-tag">{o.tag}</span></div>
+            <h3 class="ms-name">{o.name}</h3>
+            <p class="ms-use">{o.use}</p>
           </figcaption>
         </figure>
       ))
     }
+    <figure class="ms-card ms-wide" style="--i:5">
+      <div class="ms-ico">
+        <img src={paint.img} alt={paint.alt} width="176" height="176" loading="lazy" decoding="async" />
+      </div>
+      <figcaption class="ms-body">
+        <div class="ms-meta"><span class="ms-num">{paint.n}</span><span class="ms-tag">{paint.tag}</span></div>
+        <h3 class="ms-name">{paint.name}</h3>
+        <p class="ms-use">{paint.use}</p>
+      </figcaption>
+    </figure>
   </div>
 </div>
 
@@ -84,7 +83,7 @@ const machines = [
   }
   .ms-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 16px;
   }
   .ms-card {
@@ -92,113 +91,164 @@ const machines = [
     margin: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
+    border-radius: 14px;
     background: #1a1917;
     color: rgba(255, 255, 255, 0.65);
-    padding: 16px;
-    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+    transition: border-color 0.25s ease, transform 0.25s ease;
   }
   .ms-card:hover {
-    border-color: #ff5a3c;
-    transform: scale(1.02);
-    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 90, 60, 0.6);
+    transform: translateY(-2px);
   }
-  .ms-card:hover .ms-frame img {
-    transform: scale(1.05);
+  .ms-card:hover .ms-ph img {
+    transform: scale(1.04);
   }
 
-  /* Cadre photo : ton chaud au lieu du blanc pur ; multiply fond le blanc des photos dans ce ton. */
-  .ms-frame {
-    background: #efebe5;
-    border-radius: 8px;
-    padding: 12px;
+  /* Zone studio : la photo remplit la zone jusqu'aux bords de la carte ; multiply fond le blanc des photos. */
+  .ms-ph {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    padding: 10%;
     overflow: hidden;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+    background: radial-gradient(120% 95% at 50% 38%, #f8f6f2 0%, #eeeae3 62%, #e3ddd3 100%);
   }
-  .ms-frame img {
+  .ms-ph img {
     display: block;
     width: 100%;
-    height: auto;
-    aspect-ratio: 1 / 1;
-    transition: transform 0.4s ease;
-  }
-  .ms-frame img {
+    height: 100%;
     object-fit: contain;
     mix-blend-mode: multiply;
+    transition: transform 0.45s ease;
   }
 
-  figcaption {
-    padding: 16px 4px 4px;
+  .ms-body {
+    padding: 16px 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
     font: 400 15px/1.6 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.65);
   }
-  figcaption strong {
-    display: block;
-    margin-bottom: 4px;
+  .ms-meta {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .ms-num {
+    font: 600 12px/1 "Space Grotesk", sans-serif;
+    letter-spacing: 0.08em;
+    color: #ff5a3c;
+  }
+  .ms-tag {
+    font: 600 11px/1 "Space Grotesk", sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .ms-name {
+    margin: 0;
     font: 600 18px/1.3 "Space Grotesk", sans-serif;
     color: #f3f1ec;
   }
+  .ms-use {
+    margin: 0;
+    font: 400 14px/1.55 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.65);
+  }
 
-  /* Cœur de métier : pleine largeur, photo à gauche, titre plus grand, liseré accent. */
+  /* Cœur de métier : pleine largeur, photo pleine hauteur à gauche, texte à droite. */
   .ms-card.ms-main {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-    gap: 32px;
-    align-items: center;
-    padding: 24px;
-    border-color: rgba(255, 90, 60, 0.35);
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    border-color: rgba(255, 90, 60, 0.45);
     background: #201d1b;
   }
-  .ms-main figcaption {
-    padding: 0;
-    font-size: 17px;
+  .ms-main .ms-ph {
+    aspect-ratio: auto;
+    min-height: 440px;
+    padding: 6%;
   }
-  .ms-main figcaption strong {
-    margin-bottom: 8px;
-    font-size: 26px;
+  .ms-main .ms-body {
+    padding: 44px 44px 44px 40px;
+    justify-content: center;
+    gap: 10px;
+  }
+  .ms-main .ms-name {
+    font-size: 30px;
+    line-height: 1.15;
+  }
+  .ms-main .ms-use {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  .ms-specs {
+    list-style: none;
+    margin: 20px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+  }
+  .ms-specs li {
+    position: relative;
+    padding-left: 20px;
+    font: 500 14px/1.45 "Inter", sans-serif;
+    color: #e9e6e0;
+  }
+  .ms-specs li::before {
+    content: "";
+    position: absolute;
+    left: 2px;
+    top: 0.5em;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: #ff5a3c;
   }
 
-  /* Peinture et finition : bandeau pleine largeur, liseré accent ; image facultative à gauche. */
+  /* Peinture et finition : bandeau avec icône. */
   .ms-card.ms-wide {
     grid-column: 1 / -1;
     flex-direction: row;
     align-items: center;
-    gap: 16px;
-    border-left: 3px solid #ff5a3c;
   }
-  .ms-icon {
-    flex: 0 0 auto;
-    width: 88px;
-    height: 88px;
-    display: grid;
-    place-items: center;
-    border-radius: 8px;
-    background: #201d1b;
-    border: 1px solid rgba(255, 90, 60, 0.35);
+  .ms-ico {
+    flex: 0 0 96px;
+    height: 96px;
+    margin-left: 12px;
+    border-radius: 10px;
     overflow: hidden;
+    border: 1px solid rgba(255, 90, 60, 0.35);
+    background: #201d1b;
   }
-  .ms-icon img {
+  .ms-ico img {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
-  .ms-wide figcaption {
-    padding: 0;
+  .ms-wide .ms-body {
+    padding: 18px 22px;
   }
 
+  @media (max-width: 1023px) {
+    .ms-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ms-main .ms-ph { min-height: 360px; }
+    .ms-main .ms-body { padding: 32px; }
+  }
   @media (max-width: 559px) {
     .ms-grid { grid-template-columns: minmax(0, 1fr); }
-    .ms-card.ms-main {
-      display: flex;
-      gap: 16px;
-      padding: 16px;
-    }
-    .ms-main figcaption { font-size: 15px; }
-    .ms-main figcaption strong { font-size: 22px; }
-    .ms-icon { width: 72px; height: 72px; }
+    .ms-card.ms-main { grid-template-columns: minmax(0, 1fr); }
+    /* Mobile compact : zones photo plus basses que la maquette (16/11 -> 16/9, 1/1 -> 4/3). */
+    .ms-ph { aspect-ratio: 16 / 9; padding: 5% 16%; }
+    .ms-main .ms-ph { min-height: 0; aspect-ratio: 4 / 3; padding: 5%; }
+    .ms-main .ms-body { padding: 20px 20px 22px; }
+    .ms-main .ms-name { font-size: 24px; }
+    .ms-specs { margin-top: 12px; }
+    .ms-body { padding: 14px 18px 18px; }
+    .ms-ico { flex-basis: 72px; height: 72px; }
   }
 
   @keyframes msUp {
@@ -206,13 +256,13 @@ const machines = [
     to { opacity: 1; transform: none; }
   }
   .ms-card {
-    /* backwards (pas both) : sinon le transform final de l'animation écrase le scale du survol. */
+    /* backwards (pas both) : sinon le transform final de l'animation écrase le survol. */
     animation: msUp 0.5s ease backwards;
-    animation-delay: calc(var(--i, 0) * 90ms);
+    animation-delay: calc(var(--i, 0) * 80ms);
   }
   @media (prefers-reduced-motion: reduce) {
     .ms-card { animation: none; transition: none; }
     .ms-card:hover,
-    .ms-card:hover .ms-frame img { transform: none; }
+    .ms-card:hover .ms-ph img { transform: none; }
   }
 </style>
