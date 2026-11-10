@@ -39,7 +39,6 @@ export const REALISATIONS: Realisation[] = [
       ["/assets/real-1.webp", 896, 1195, "Système de filtration et de purification : équipement de procédé biotechnologique, châssis imprimé, vraie tuyauterie transparente, roulettes et presse-étoupes en métal"],
       ["/assets/real-2.webp", 896, 1195, "Maquette d'équipement de procédé avec pompe et tuyauterie"],
       ["/assets/real-3.webp", 896, 1195, "Vue 3/4 : châssis, tubulures et raccords fonctionnels à l'échelle"],
-      ["/assets/real-11.webp", 896, 1195, "Bloc fluidique : manomètres et vannes imprimés"],
       ["spin:purification", 1600, 1200, "Maquette du système de purification en 3D"],
     ],
     fiche: true,
