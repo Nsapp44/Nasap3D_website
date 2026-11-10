@@ -13,6 +13,7 @@ interface Props {
   note?: string;
   allHref?: string;
   allLabel?: string;
+  no3d?: boolean; // sans vue 3D (les vues 3D sont présentées ailleurs sur la page)
   slugs?: string[]; // restreint le carrousel à ces projets (ordre de la liste)
 }
 const {
@@ -23,11 +24,13 @@ const {
   allHref = "/realisations",
   allLabel = "Toutes nos réalisations",
   slugs,
+  no3d = false,
 } = Astro.props;
 
-const items = slugs
+const all = slugs
   ? slugs.map((s) => REALISATIONS.find((r) => r.slug === s)).filter((r): r is (typeof REALISATIONS)[number] => !!r)
   : REALISATIONS;
+const items = no3d ? all.map((r) => ({ ...r, photos: r.photos.filter((p) => !p[0].startsWith("spin:")) })) : all;
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const isSpin = (src: string) => src.startsWith("spin:");
 // Données pour le JS : { slug: [[src, w, h, alt], ...] } et { slug: fiche }
