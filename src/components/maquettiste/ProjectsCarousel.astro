@@ -538,6 +538,7 @@ const ledJson = JSON.stringify(MAQUETTES.filter((m) => m.enabled && m.led).map((
     ensure();
     if (dlg.open) return;
     origin = from || art.querySelector('.pj-link'); openUrl = location.href;
+    try { sessionStorage.setItem('n3d-fiche-from', location.pathname); } catch (_) {} // la fiche saura d'où l'on vient
     fill(art);
     const rect = animate ? (from || art).getBoundingClientRect() : null;
     lockScroll();

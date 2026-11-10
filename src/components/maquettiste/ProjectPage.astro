@@ -110,9 +110,12 @@ const jsonLd = {
 
     <div class="fiche-body">
       {
-        page.sections.map((s) => (
-          <section class="fiche-section">
-            <h2>{s.h2}</h2>
+        page.sections.map((s, i) => (
+          <section class={`fiche-section fiche-s${i + 1}`}>
+            <h2>
+              <span class="fiche-num" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+              {s.h2}
+            </h2>
             <div class="fiche-prose" set:html={s.html} />
           </section>
         ))
@@ -163,7 +166,22 @@ const jsonLd = {
       )
     }
 
-    <p class="fiche-back"><a href="/maquettiste-nantes">← Retour à Maquettiste Nantes</a></p>
+    <p class="fiche-back"><a href="/maquettiste-nantes" data-back>← Retour à Maquettiste Nantes</a></p>
+    <script is:inline>
+      // Retour vers la page d'où l'on vient (réalisations, maquettiste, maquette industrielle) ; défaut = maquettiste.
+      (() => {
+        try {
+          const L = { "/realisations": "Retour aux réalisations", "/maquettiste-nantes": "Retour à Maquettiste Nantes", "/maquette-industrielle": "Retour à Maquette industrielle" };
+          let from = sessionStorage.getItem("n3d-fiche-from");
+          const u = document.referrer ? new URL(document.referrer) : null;
+          if (!u || u.origin !== location.origin) { from = null; sessionStorage.removeItem("n3d-fiche-from"); }
+          else if (L[u.pathname]) { from = u.pathname; sessionStorage.setItem("n3d-fiche-from", from); }
+          else if (!u.pathname.startsWith("/realisations/")) { from = null; sessionStorage.removeItem("n3d-fiche-from"); }
+          const a = document.querySelector("[data-back]");
+          if (a && from && L[from]) { a.href = from; a.textContent = "← " + L[from]; }
+        } catch (e) {}
+      })();
+    </script>
   </main>
 </BaseLayout>
 
@@ -305,6 +323,75 @@ const jsonLd = {
   }
   .fiche-prose :global(strong) {
     color: #f3f1ec;
+  }
+
+  /* Lecture : 1re section = chapô d'accroche, 2e = étapes, 3e = encadré « bénéfice ».
+     Purement CSS, piloté par la position : toutes les fiches (présentes et futures) ont le même rendu. */
+  .fiche-section > h2 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .fiche-num {
+    font: 600 12px / 1 "Space Grotesk", sans-serif;
+    letter-spacing: 0.08em;
+    color: #ff5a3c;
+    border: 1px solid rgba(255, 90, 60, 0.45);
+    border-radius: 999px;
+    padding: 5px 9px;
+  }
+  .fiche-s1 .fiche-prose :global(p) {
+    font-size: 18px;
+    line-height: 1.65;
+    color: #f3f1ec;
+  }
+  .fiche-s2 .fiche-prose {
+    counter-reset: etape;
+    position: relative;
+    display: grid;
+    gap: 14px;
+  }
+  .fiche-s2 .fiche-prose :global(p) {
+    counter-increment: etape;
+    position: relative;
+    margin: 0;
+    padding: 16px 18px 16px 58px;
+    background: #1a1917;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+  }
+  .fiche-s2 .fiche-prose :global(p::before) {
+    content: counter(etape);
+    position: absolute;
+    left: 16px;
+    top: 16px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font: 600 13px / 1 "Space Grotesk", sans-serif;
+    color: #161514;
+    background: #ff5a3c;
+  }
+  .fiche-s3 .fiche-prose {
+    background: #201d1b;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 3px solid #ff5a3c;
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  @media (max-width: 520px) {
+    .fiche-s2 .fiche-prose :global(p) {
+      padding: 14px 14px 14px 52px;
+    }
+    .fiche-s2 .fiche-prose :global(p::before) {
+      left: 14px;
+      top: 14px;
+    }
+    .fiche-s1 .fiche-prose :global(p) {
+      font-size: 17px;
+    }
   }
 
   .fiche-specs {
