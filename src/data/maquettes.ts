@@ -67,7 +67,7 @@ export const MAQUETTES: Maquette[] = [
     parts: [
       { title: "Impression 3D", text: "Toute la caravane est imprimée en 3D, pièce par pièce. Nos machines de dernière génération impriment aussi plusieurs couleurs dans la masse : les détails noirs de la carrosserie blanche sont imprimés directement en bicolore, sans peinture." },
       { title: "Plexiglas découpé", text: "Seules exceptions : les vitres noires et les feux orange. Ce sont des plexiglas que nous découpons puis ajoutons à la maquette, pour un rendu premium et réaliste." },
-      { title: "Finitions", text: "Ponçage, assemblage et finitions soignées donnent à l'ensemble l'allure d'un vrai modèle de vitrine." },
+      { title: "Finitions", text: "Assemblage et finitions soignées donnent à l'ensemble l'allure d'un vrai modèle de vitrine." },
     ],
     dir: "/assets/maquettes/caravane",
     elevs: [12, 28, 55],
