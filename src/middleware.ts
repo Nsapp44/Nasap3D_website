@@ -29,7 +29,7 @@ import { startDbWatchdog } from "./lib/server/dbWatchdog";
 // process to host a setInterval at all) — neither applies to the current
 // deployment target.
 const SWEEP_INTERVAL_MS = 15 * 60 * 1000; // 15 min
-const TRACKING_SWEEP_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24h
+const TRACKING_SWEEP_INTERVAL_MS = 3 * 60 * 60 * 1000; // 3h (était 24h : livraison trop lente à se refléter)
 
 // setInterval doesn't wait for the previous run: if a run is still going
 // when the next tick fires (a slow external call — S3, Boxtal — inside a

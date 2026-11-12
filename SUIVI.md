@@ -52,3 +52,9 @@ Navigateur intégré peu fiable pour scroll/rAF → Chrome headless + playwright
 
 ## Conversations à supprimer
 Aucune (ancienne session déjà supprimée). Agents lancés cette session : terminés sauf testeur en cours.
+
+## 12/11 — Suivi colis (compte client)
+- Dashboard.tsx : « Numéro de suivi Mondial Relay / Colissimo » (icône pin/colis génériques, pas de logos de marque), n° dessous + bouton copier → coche animée (reduced-motion ok). Pas de lien transporteur.
+- middleware.ts : balayage suivi Boxtal 24 h → 3 h (passage auto en LIVRÉE seulement pour PRINTING/READY).
+- Mondial Relay : n° auto non confirmé ; lire en prod `[boxtal] order_status sans n° …` puis compléter `TRACKING_KEY_RE` (boxtal.ts). Forçage manuel de LIVRÉE toujours possible.
+- Ponçage retiré des textes caravane (d77541a).

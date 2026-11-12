@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { useAccount } from "../../hooks/useAccount";
 import { api } from "../../lib/api-client";
 
@@ -15,6 +16,48 @@ const STATUS_LABELS: Record<string, string> = {
   // côté serveur pour le même ton.
   REJECTED: "Problème de faisabilité",
 };
+
+function CarrierIcon({ mode }: { mode: string | null }) {
+  const common = { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
+  return mode === "RELAY" ? (
+    <svg {...common}><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z" /><circle cx="12" cy="10" r="2.3" /></svg>
+  ) : (
+    <svg {...common}><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z" /><path d="M3.3 7.6L12 12.5l8.7-4.9M12 12.5V21" /></svg>
+  );
+}
+
+function TrackingCopy({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = value;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); } catch {}
+      ta.remove();
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <div className="tracking-row">
+      <span className="tracking-number">{value}</span>
+      <button type="button" className={`copy-btn${copied ? " copied" : ""}`} onClick={copy} aria-label={copied ? "Numéro copié" : "Copier le numéro de suivi"} title="Copier">
+        {copied ? (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path className="tick" d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+        ) : (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V6a2 2 0 0 1 2-2h9" /></svg>
+        )}
+      </button>
+      <span className="copy-msg" role="status" aria-live="polite">{copied ? "Copié" : ""}</span>
+    </div>
+  );
+}
 
 function statusClass(status: string) {
   if (status === "DELIVERED") return "delivered";
@@ -139,12 +182,14 @@ export default function Dashboard({ account }: { account: Account }) {
                       )}
                       {showsTracking && (
                         <div className="tracking-block">
+                          <div className="tracking-label">
+                            <CarrierIcon mode={order.shippingMode} />
+                            Numéro de suivi {order.shippingMode === "RELAY" ? "Mondial Relay" : "Colissimo"}
+                          </div>
                           {order.trackingNumber ? (
-                            <>
-                              Numéro de suivi : <span className="tracking-number">{order.trackingNumber}</span>
-                            </>
+                            <TrackingCopy value={order.trackingNumber} />
                           ) : (
-                            "Numéro de suivi pas encore disponible."
+                            <div className="tracking-pending">Pas encore disponible, il apparaîtra ici dès l'expédition.</div>
                           )}
                         </div>
                       )}
@@ -250,7 +295,22 @@ export default function Dashboard({ account }: { account: Account }) {
         .cancel-order-btn { margin-top: 18px; border: 1px solid rgba(255,255,255,.2); color: #f3f1ec; font: 500 11px 'Inter',sans-serif; padding: 9px 14px; border-radius: 6px; cursor: pointer; text-align: center; transition: border-color .2s ease; }
         .cancel-order-btn:hover { border-color: #ff5a3c; }
         .tracking-block { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.08); font: 400 11px 'Inter',sans-serif; color: rgba(255,255,255,.55); }
-        .tracking-number { color: #f3f1ec; font-weight: 600; font-family: ui-monospace,monospace; }
+        .tracking-label { display: flex; align-items: center; gap: 7px; font: 500 11px 'Inter',sans-serif; color: rgba(255,255,255,.6); margin-bottom: 8px; }
+        .tracking-label svg { color: #ff5a3c; flex: none; }
+        .tracking-pending { font: 400 11px 'Inter',sans-serif; color: rgba(255,255,255,.5); }
+        .tracking-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .tracking-number { color: #f3f1ec; font-weight: 600; font-size: 14px; letter-spacing: .02em; font-family: ui-monospace,monospace; word-break: break-all; }
+        .copy-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 7px; border: 1px solid rgba(255,255,255,.18); background: transparent; color: rgba(255,255,255,.75); cursor: pointer; padding: 0; transition: border-color .2s ease, color .2s ease, background .2s ease; }
+        .copy-btn:hover { border-color: #ff5a3c; color: #f3f1ec; }
+        .copy-btn:focus-visible { outline: 2px solid #ff5a3c; outline-offset: 2px; }
+        .copy-btn.copied { border-color: #4cc38a; color: #4cc38a; background: rgba(76,195,138,.1); }
+        .copy-btn svg { display: block; }
+        .copy-btn .tick { stroke-dasharray: 24; stroke-dashoffset: 24; animation: tick-draw .35s ease forwards; }
+        @keyframes tick-draw { to { stroke-dashoffset: 0; } }
+        .copy-btn.copied svg { animation: copy-pop .3s ease; }
+        @keyframes copy-pop { 0% { transform: scale(.6); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
+        .copy-msg { font: 500 11px 'Inter',sans-serif; color: #4cc38a; }
+        @media (prefers-reduced-motion: reduce) { .copy-btn .tick { animation: none; stroke-dashoffset: 0; } .copy-btn.copied svg { animation: none; } }
         .pickup-block { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.08); font: 400 11px/1.6 'Inter',sans-serif; color: rgba(255,255,255,.55); }
         .pickup-block strong { color: #e8e6e1; }
         .list-col { display: flex; flex-direction: column; gap: 10px; }
