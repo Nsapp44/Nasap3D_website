@@ -58,3 +58,8 @@ Aucune (ancienne session déjà supprimée). Agents lancés cette session : term
 - middleware.ts : balayage suivi Boxtal 24 h → 3 h (passage auto en LIVRÉE seulement pour PRINTING/READY).
 - Mondial Relay : n° auto non confirmé ; lire en prod `[boxtal] order_status sans n° …` puis compléter `TRACKING_KEY_RE` (boxtal.ts). Forçage manuel de LIVRÉE toujours possible.
 - Ponçage retiré des textes caravane (d77541a).
+
+### 12/11 — Suivi colis, refonte visuelle (ff9a567)
+- Bloc suivi refait par architecte (ticket, bouton Copier -> coche, un ticket par colis si plusieurs numéros séparés par ","). Build OK. Captures = maquette HTML (après_375/900), pas la vraie page compte (non vérifiée avec une vraie commande).
+- Balayage `sweepOrderTracking` (toutes les 3 h, PRINTING/READY) : recopie le n° de suivi à chaque passage (rattrape un n° absent à l'achat de l'étiquette) et passe en DELIVERED si l'état Boxtal contient « livré ». Clé du n° Mondial Relay non confirmée : lire le log `[boxtal] order_status sans n° de suivi reconnu` après un vrai envoi MR.
+- Prochain pas exact : captures de la vraie page compte (375/768/desktop) avec une commande de test ; `get_usage` + ligne conso ; push seulement sur accord de Nolann après scan claude-security.
