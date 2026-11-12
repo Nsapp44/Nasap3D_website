@@ -14,6 +14,7 @@ export interface AccountOrder {
   createdAt: string;
   items: AccountOrderItem[];
   shippingMode: string | null;
+  shippingCarrierCode?: string | null;
   trackingNumber: string | null;
 }
 export interface AccountInvoice {

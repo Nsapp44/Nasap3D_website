@@ -17,6 +17,13 @@ const STATUS_LABELS: Record<string, string> = {
   REJECTED: "Problème de faisabilité",
 };
 
+// Nom du transporteur d'après le code Boxtal enregistré à la commande ; repli sur le mode.
+const CARRIER_NAMES: Record<string, string> = { MONR: "Mondial Relay", POFR: "Colissimo", CHRP: "Chronopost", COPR: "Colis Privé", UPSE: "UPS", DHLE: "DHL" };
+function carrierName(code?: string | null, mode?: string | null): string {
+  if (code && CARRIER_NAMES[code]) return CARRIER_NAMES[code];
+  return mode === "RELAY" ? "Mondial Relay" : "Colissimo";
+}
+
 function CarrierIcon({ mode }: { mode: string | null }) {
   const common = { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
   return mode === "RELAY" ? (
@@ -195,7 +202,7 @@ export default function Dashboard({ account }: { account: Account }) {
                             <div className="tracking-head">
                               <span className="tracking-ico"><CarrierIcon mode={order.shippingMode} /></span>
                               <div className="tracking-title">
-                                {multi ? "Numéros" : "Numéro"} de suivi <span className="tracking-carrier">{order.shippingMode === "RELAY" ? "Mondial Relay" : "Colissimo"}</span>
+                                {multi ? "Numéros" : "Numéro"} de suivi <span className="tracking-carrier">{carrierName(order.shippingCarrierCode, order.shippingMode)}</span>
                               </div>
                             </div>
                             {nums.length > 0 ? (
