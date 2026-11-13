@@ -24,7 +24,7 @@ function carrierName(code?: string | null, mode?: string | null): string {
   return mode === "RELAY" ? "Mondial Relay" : "Colissimo";
 }
 
-function CarrierIcon({ mode }: { mode: string | null }) {
+function CarrierIcon({ mode }: { mode?: string | null }) {
   const common = { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
   return mode === "RELAY" ? (
     <svg {...common}><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z" /><circle cx="12" cy="10" r="2.3" /></svg>
@@ -200,7 +200,7 @@ export default function Dashboard({ account }: { account: Account }) {
                         return (
                           <div className="tracking-block">
                             <div className="tracking-head">
-                              <span className="tracking-ico"><CarrierIcon mode={order.shippingMode} /></span>
+                              <span className="tracking-ico"><CarrierIcon /></span>
                               <div className="tracking-title">
                                 {multi ? "Numéros" : "Numéro"} de suivi <span className="tracking-carrier">{carrierName(order.shippingCarrierCode, order.shippingMode)}</span>
                               </div>
@@ -324,8 +324,8 @@ export default function Dashboard({ account }: { account: Account }) {
         .tracking-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
         .tracking-ico { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: rgba(255,90,60,.12); color: #ff5a3c; }
         .tracking-ico svg { display: block; }
-        .tracking-title { margin: 0; font: 600 13px/1.3 'Space Grotesk',sans-serif; color: #f3f1ec; letter-spacing: .01em; }
-        .tracking-carrier { color: rgba(255,255,255,.55); font-weight: 500; }
+        .tracking-title { margin: 0; font: 400 13px/1.3 'Space Grotesk',sans-serif; color: rgba(255,255,255,.6); letter-spacing: .01em; }
+        .tracking-carrier { color: #f3f1ec; font-weight: 700; }
         .tracking-list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
         .tracking-ticket { position: relative; display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 18px; border: 1px solid rgba(255,255,255,.1); border-radius: 10px; background: #201d1b; color: #f3f1ec; overflow: hidden; transition: border-color .25s ease, background-color .25s ease; }
         .tracking-ticket::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 0 3px 3px 0; background: #ff5a3c; transition: background-color .25s ease; }
