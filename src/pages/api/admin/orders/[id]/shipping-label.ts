@@ -79,9 +79,10 @@ export const POST = apiHandler(async (context) => {
     await resolveAlerts("LABEL_REFUSED", order.id);
     const tracking = await refreshOrderTrackingStatus(id!);
     // Boxtal met quelques secondes à connaître l'étiquette : si le n° de suivi
-    // n'est pas encore là, on réessaie en arrière-plan (45 s puis 3 min).
+    // n'est pas encore là, on réessaie en arrière-plan (5 s, 20 s, 1 min, 3 min, 10 min ; au bac à sable le
+    // n° arrive ~2 s après l'achat). Au-delà, le balayage de 3 h prend le relais.
     if (!tracking?.trackingNumber) {
-      for (const delay of [45_000, 180_000]) {
+      for (const delay of [5_000, 20_000, 60_000, 180_000, 600_000]) {
         setTimeout(() => {
           refreshOrderTrackingStatus(id!).catch((e) => console.error("retry suivi colis", e));
         }, delay).unref?.();
