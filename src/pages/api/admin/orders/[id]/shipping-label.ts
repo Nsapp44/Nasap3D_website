@@ -136,12 +136,18 @@ export const GET = apiHandler(async (context) => {
     return json({ shippingLabelUrl: null, labelPending: false, trackingNumber: null, autoDelivered: false });
 
   try {
-    const result = await refreshOrderTrackingStatus(id!);
+    // Même délai que l'achat : Boxtal peut mettre quelques secondes à répondre
+    // (l'interface affiche « Vérification… » pendant ce temps).
+    let result = await refreshOrderTrackingStatus(id!);
+    for (let i = 0; i < 3 && !result?.trackingNumber && !result?.autoDelivered && !order.trackingNumber; i++) {
+      await new Promise((r) => setTimeout(r, 2_500));
+      result = await refreshOrderTrackingStatus(id!);
+    }
     const fresh = await prisma.order.findUnique({ where: { id } });
     return json({
       shippingLabelUrl: result?.autoDelivered ? null : (fresh?.shippingLabelUrl ?? null),
       labelPending: !result?.autoDelivered && !fresh?.shippingLabelUrl,
-      trackingNumber: result?.trackingNumber ?? null,
+      trackingNumber: result?.trackingNumber ?? fresh?.trackingNumber ?? null,
       autoDelivered: !!result?.autoDelivered,
     });
   } catch (err) {
