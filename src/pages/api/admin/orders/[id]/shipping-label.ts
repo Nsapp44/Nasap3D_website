@@ -77,22 +77,35 @@ export const POST = apiHandler(async (context) => {
     // try right away so it's often already there by the time the admin
     // looks, instead of always needing a separate manual check.
     await resolveAlerts("LABEL_REFUSED", order.id);
-    const tracking = await refreshOrderTrackingStatus(id!);
-    // Boxtal met quelques secondes à connaître l'étiquette : si le n° de suivi
-    // n'est pas encore là, on réessaie en arrière-plan (5 s, 20 s, 1 min, 3 min, 10 min ; au bac à sable le
-    // n° arrive ~2 s après l'achat). Au-delà, le balayage de 3 h prend le relais.
+    // Boxtal met quelques secondes à connaître l'étiquette (bac à sable : 404
+    // puis n° dispo ~2 s après l'achat) : on attend dans la requête, 3 essais
+    // espacés de 2,5 s, pour que le n° revienne dans la réponse.
+    let tracking = await refreshOrderTrackingStatus(id!);
+    for (let i = 0; i < 3 && !tracking?.trackingNumber; i++) {
+      await new Promise((r) => setTimeout(r, 2_500));
+      tracking = await refreshOrderTrackingStatus(id!);
+    }
+    // Toujours pas là : essais en arrière-plan (20 s, 1 min, 3 min, 10 min),
+    // sans effet si le n° est déjà enregistré. Au-delà, le balayage de 3 h.
     if (!tracking?.trackingNumber) {
-      for (const delay of [5_000, 20_000, 60_000, 180_000, 600_000]) {
-        setTimeout(() => {
-          refreshOrderTrackingStatus(id!).catch((e) => console.error("retry suivi colis", e));
+      for (const delay of [20_000, 60_000, 180_000, 600_000]) {
+        setTimeout(async () => {
+          try {
+            const cur = await prisma.order.findUnique({ where: { id }, select: { trackingNumber: true } });
+            if (cur?.trackingNumber) return;
+            await refreshOrderTrackingStatus(id!);
+          } catch (e) {
+            console.error("retry suivi colis", e);
+          }
         }, delay).unref?.();
       }
     }
+    const fresh = await prisma.order.findUnique({ where: { id }, select: { shippingLabelUrl: true, trackingNumber: true } });
     return json({
       boxtalOrderRef: updated.boxtalOrderRef,
-      shippingLabelUrl: updated.shippingLabelUrl,
-      labelPending: !updated.shippingLabelUrl,
-      trackingNumber: tracking?.trackingNumber ?? null,
+      shippingLabelUrl: fresh?.shippingLabelUrl ?? updated.shippingLabelUrl,
+      labelPending: !(fresh?.shippingLabelUrl ?? updated.shippingLabelUrl),
+      trackingNumber: tracking?.trackingNumber ?? fresh?.trackingNumber ?? null,
     });
   } catch (err) {
     if (err instanceof BoxtalConfigError) return jsonError(500, "boxtal_not_configured");
