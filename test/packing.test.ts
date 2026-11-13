@@ -155,3 +155,15 @@ describe("poids déclaré du colis", () => {
     expect(parcelParams(r.parcels)["colis_1.poids"]).toBe((r.parcels[0].weightG / 1000).toFixed(3));
   });
 });
+
+import { parcelsLockerOk as _lockerOk } from "../src/lib/server/packing";
+describe("locker : 20 kg et 62×38×36", () => {
+  it("refuse > 20 kg même en carton L", () => {
+    expect(_lockerOk([{ box: "L", outerCm: [41, 36, 31], weightG: 20001, pieces: [] }])).toBe(false);
+    expect(_lockerOk([{ box: "L", outerCm: [41, 36, 31], weightG: 6000, pieces: [] }])).toBe(true);
+  });
+  it("tri des côtés : 36×62×38 passe, 63×10×10 non", () => {
+    expect(_lockerOk([{ box: "L", outerCm: [36, 62, 38], weightG: 1000, pieces: [] }])).toBe(true);
+    expect(_lockerOk([{ box: "L", outerCm: [63, 10, 10], weightG: 1000, pieces: [] }])).toBe(false);
+  });
+});

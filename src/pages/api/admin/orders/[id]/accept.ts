@@ -16,10 +16,13 @@ export const POST = apiHandler(async (context) => {
   if (!order) return jsonError(404, "not_found");
   if (order.status !== "EXPERTISE") return jsonError(409, "not_expertise");
 
-  const updated = await prisma.order.update({
-    where: { id },
+  // Transition atomique : un double clic / deux admins ne passent qu'une fois.
+  const res = await prisma.order.updateMany({
+    where: { id, status: "EXPERTISE" },
     data: { status: "AWAITING_PAYMENT", acceptedAt: new Date() },
   });
+  if (res.count === 0) return jsonError(409, "not_expertise");
+  const updated = await prisma.order.findUniqueOrThrow({ where: { id } });
   await sendOrderAcceptedEmail(order.user.email, order.ref, order.totalCents);
   return json({ order: updated });
 });

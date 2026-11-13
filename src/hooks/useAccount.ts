@@ -14,6 +14,7 @@ export interface AccountOrder {
   createdAt: string;
   items: AccountOrderItem[];
   shippingMode: string | null;
+  shippingCarrierCode?: string | null;
   trackingNumber: string | null;
 }
 export interface AccountInvoice {
@@ -445,6 +446,10 @@ export function useAccount() {
     const data = res.data as { url?: string } | null;
     if (!res.ok || !data?.url) {
       setPayBusyId(null);
+      if (res.status === 409 && (res.data as { error?: string } | null)?.error === "payment_in_progress") {
+        window.alert("Votre paiement est déjà en cours de validation. Actualisez la page dans quelques minutes.");
+        return;
+      }
       window.alert("Le paiement n'a pas pu démarrer, réessayez.");
       return;
     }

@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
-import { checkLabelStatus, BoxtalApiError, BoxtalConfigError } from "./boxtal";
+import { checkLabelStatus, BoxtalApiError, BoxtalConfigError, shortBoxtalReason } from "./boxtal";
+import { recordAlert, resolveAlerts } from "./adminAlerts";
 import { deleteFile } from "./storage";
 
 // Wiped the moment an order reaches DELIVERED — none of it serves any
@@ -84,9 +85,21 @@ export async function refreshOrderTrackingStatus(orderId: string): Promise<{
   try {
     status = await checkLabelStatus(order.boxtalOrderRef);
   } catch (err) {
-    if (err instanceof BoxtalConfigError || err instanceof BoxtalApiError) return null;
+    if (err instanceof BoxtalApiError) {
+      // Juste après l'achat de l'étiquette, Boxtal répond 404 « introuvable »
+      // pendant quelques secondes (constaté au bac à sable le 13/11/2026 : 404
+      // à l'instant T, 200 avec carrier_reference quelques secondes après).
+      // Ce n'est pas une panne : pas d'alerte, le balayage / le nouvel essai
+      // retrouvera le numéro.
+      const justBought = !!order.labelPurchasedAt && Date.now() - order.labelPurchasedAt.getTime() < 30 * 60 * 1000;
+      if (justBought && / http 404/.test(err.message)) return null;
+      await recordAlert({ kind: "TRACKING_UNREACHABLE", orderId, orderRef: order.ref, message: shortBoxtalReason(err), detail: err.message });
+      return null;
+    }
+    if (err instanceof BoxtalConfigError) return null;
     throw err;
   }
+  await resolveAlerts("TRACKING_UNREACHABLE", orderId);
 
   if (status.isLikelyDelivered) {
     await prisma.order.update({
@@ -111,7 +124,7 @@ export async function refreshOrderTrackingStatus(orderId: string): Promise<{
 // marked without the admin having to click "vérifier" on it themselves.
 export async function sweepOrderTracking(): Promise<number> {
   const candidates = await prisma.order.findMany({
-    where: { status: { in: ["PRINTING", "READY"] }, boxtalOrderRef: { not: null } },
+    where: { status: { in: ["PENDING", "PRINTING", "READY"] }, boxtalOrderRef: { not: null } },
     select: { id: true },
   });
   let autoDeliveredCount = 0;

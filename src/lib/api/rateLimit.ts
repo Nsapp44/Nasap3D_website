@@ -54,9 +54,56 @@ export function enforceRateLimit(key: string, max: number, windowMs: number): vo
   if (!checkRateLimit(key, max, windowMs)) throw new RateLimitError();
 }
 
+// True for loopback / private-network addresses (the reverse proxy's side of
+// the Docker network): IPv4 127/8, 10/8, 172.16/12, 192.168/16; IPv6 ::1,
+// fc00::/7, fe80::/10; and IPv4-mapped IPv6 (::ffff:a.b.c.d).
+export function isPrivateOrLoopback(ip: string): boolean {
+  const value = (ip ?? "").trim().toLowerCase().split("%")[0];
+  if (!value) return false;
+
+  const v4 = value.match(/^(?:::ffff:)?(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (v4) {
+    const [a, b, c, d] = v4.slice(1).map(Number);
+    if (a > 255 || b > 255 || c > 255 || d > 255) return false;
+    return a === 127 || a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+  }
+
+  if (!/^[0-9a-f:]+$/.test(value) || !value.includes(":")) return false;
+  if (value === "::1" || value === "0:0:0:0:0:0:0:1") return true;
+  const first = value.split(":")[0];
+  if (!/^[0-9a-f]{1,4}$/.test(first)) return false;
+  const n = parseInt(first, 16);
+  return (n & 0xfe00) === 0xfc00 || (n & 0xffc0) === 0xfe80;
+}
+
+// Pure core of clientIp. Behind the Caddy proxy the socket address is the
+// proxy's (private) one, so the real visitor is in X-Forwarded-For. Only then
+// do we trust the header, and only its RIGHTMOST entry: that one is appended
+// by the nearest proxy and can't be forged by the client, whereas earlier
+// entries can. A public socket address always ignores the header.
+export function resolveClientIp(
+  socketAddress: string | undefined,
+  xForwardedFor: string | null | undefined,
+): string {
+  if (socketAddress && isPrivateOrLoopback(socketAddress) && xForwardedFor) {
+    const entries = xForwardedFor.split(",").map((e) => e.trim()).filter(Boolean);
+    if (entries.length > 0) return entries[entries.length - 1];
+  }
+  return socketAddress || "unknown";
+}
+
 // Best-effort caller IP for rate-limit keys — matches @fastify/rate-limit's
-// default IP-based keying. clientAddress is Astro's own equivalent of
-// Fastify's request.ip.
-export function clientIp(context: { clientAddress?: string }): string {
-  return context.clientAddress || "unknown";
+// default IP-based keying. Astro only honours X-Forwarded-For when
+// security.allowedDomains is set (which we don't), so behind Caddy on the
+// Docker network clientAddress is the proxy's address, shared by every
+// visitor: hence resolveClientIp. Astro's clientAddress getter can throw when
+// the adapter doesn't provide it, hence the try/catch.
+export function clientIp(context: { clientAddress?: string; request?: Request }): string {
+  let socket: string | undefined;
+  try {
+    socket = context.clientAddress;
+  } catch {
+    socket = undefined;
+  }
+  return resolveClientIp(socket, context.request?.headers.get("x-forwarded-for"));
 }

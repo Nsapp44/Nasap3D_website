@@ -22,6 +22,7 @@ const LOCAL_FILE_SIGNATURE = 0x04034b50;
 // value as a sentinel meaning "see the ZIP64 extra field instead" — never a
 // real value on its own (it'd mean a 4GB+ field).
 const ZIP64_SENTINEL_32 = 0xffffffff;
+const MAX_INFLATED_BYTES = 200 * 1024 * 1024;
 
 function findEndOfCentralDirectory(buffer: Buffer): number {
   // EOCD is a fixed 22-byte record optionally followed by a comment (up to
@@ -146,7 +147,18 @@ function extractZipEntry(buffer: Buffer, entryName: string): Buffer {
       const dataStart = lh + 30 + lhNameLen + lhExtraLen;
       const compressed = buffer.subarray(dataStart, dataStart + compressedSize);
       if (method === 0) return Buffer.from(compressed);
-      if (method === 8) return inflateRawSync(compressed);
+      if (method === 8) {
+        // Anti zip-bomb: refuse a declared size over the cap, and cap the
+        // real output too (the declared size in the header can lie).
+        if (uncompSizeRaw !== ZIP64_SENTINEL_32 && uncompSizeRaw > MAX_INFLATED_BYTES) {
+          throw new Error("3mf_too_large_uncompressed");
+        }
+        try {
+          return inflateRawSync(compressed, { maxOutputLength: MAX_INFLATED_BYTES });
+        } catch {
+          throw new Error("3mf_inflate_failed");
+        }
+      }
       throw new Error(`unsupported zip compression method: ${method}`);
     }
 

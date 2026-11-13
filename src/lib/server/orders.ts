@@ -11,6 +11,9 @@ export async function nextOrderRef(): Promise<string> {
 }
 
 export class EmptyCartError extends Error {}
+// The cart changed (or was already consumed by a concurrent checkout)
+// between reading it and creating the order.
+export class CartChangedError extends Error {}
 
 export interface ShippingSelection {
   mode: "PICKUP" | "RELAY" | "HOME";
@@ -44,7 +47,38 @@ export async function createOrderFromCart(
     include: { quoteJob: { include: { material: true, color: true, quality: true } } },
   });
 
+  // The price summary and the rows above were read separately: refuse to
+  // build an order if they disagree (cart edited in between).
+  if (cartItems.length !== summary.lines.length) throw new CartChangedError();
+  const linesById = new Map(summary.lines.map((l) => [l.id, l]));
+  const itemRows = cartItems.map((item) => {
+    const line = linesById.get(item.id);
+    if (!line || line.qty !== item.qty) throw new CartChangedError();
+    return {
+      quoteJobId: item.quoteJobId,
+      nameSnapshot: item.quoteJob.fileName,
+      materialSnapshot: item.quoteJob.material.label,
+      colorNameSnapshot: item.quoteJob.color.colorName,
+      colorHexSnapshot: item.quoteJob.color.colorHex,
+      infillSnapshot: item.quoteJob.infillPct,
+      scaleSnapshot: item.quoteJob.scale,
+      qualitySnapshot: item.quoteJob.quality.label,
+      qty: item.qty,
+      unitPriceCents: line.unitPriceCents,
+      lineTotalCents: line.lineTotalCents,
+    };
+  });
+
   const order = await prisma.$transaction(async (tx) => {
+    // Consume exactly the cart rows we priced, conditionally on id + qty.
+    // Under READ COMMITTED a concurrent checkout's transaction blocks on rows
+    // already deleted by the first one, then finds count 0 and rolls back:
+    // no duplicate order. A skipped orderRef number is accepted.
+    // Sorted by id so two concurrent checkouts lock rows in the same order (no deadlock).
+    for (const item of [...cartItems].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))) {
+      const { count } = await tx.cartItem.deleteMany({ where: { id: item.id, userId, qty: item.qty } });
+      if (count !== 1) throw new CartChangedError();
+    }
     const created = await tx.order.create({
       data: {
         ref,
@@ -79,22 +113,7 @@ export async function createOrderFromCart(
         relayPointZipcode: shipping?.relayPoint?.zipcode,
         items: {
           create: [
-            ...cartItems.map((item) => {
-              const line = summary.lines.find((l) => l.id === item.id)!;
-              return {
-                quoteJobId: item.quoteJobId,
-                nameSnapshot: item.quoteJob.fileName,
-                materialSnapshot: item.quoteJob.material.label,
-                colorNameSnapshot: item.quoteJob.color.colorName,
-                colorHexSnapshot: item.quoteJob.color.colorHex,
-                infillSnapshot: item.quoteJob.infillPct,
-                scaleSnapshot: item.quoteJob.scale,
-                qualitySnapshot: item.quoteJob.quality.label,
-                qty: item.qty,
-                unitPriceCents: line.unitPriceCents,
-                lineTotalCents: line.lineTotalCents,
-              };
-            }),
+            ...itemRows,
             ...(summary.smallOrderFeeCents > 0
               ? [
                   {
@@ -115,7 +134,6 @@ export async function createOrderFromCart(
         },
       },
     });
-    await tx.cartItem.deleteMany({ where: { userId } });
     return created;
   });
 

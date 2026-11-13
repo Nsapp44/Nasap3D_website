@@ -18,6 +18,7 @@ export const GET = apiHandler(async (context) => {
       totalCents: o.totalCents,
       createdAt: o.createdAt,
       shippingMode: o.shippingMode,
+      shippingCarrierCode: o.shippingCarrierCode,
       trackingNumber: o.trackingNumber,
       items: o.items.map((i) => ({
         nameSnapshot: i.nameSnapshot,

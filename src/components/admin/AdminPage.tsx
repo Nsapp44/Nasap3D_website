@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "../../lib/api-client";
 import { useAdminAuth } from "../../hooks/useAdminAuth";
 import NavAuthIcon from "../NavAuthIcon";
+import AlertCenter from "./AlertCenter";
 import OrdersTab from "./OrdersTab";
 import StockTab from "./StockTab";
 import ShippingTab from "./ShippingTab";
@@ -26,6 +27,14 @@ export default function AdminPage() {
   function selectTab(next: "orders" | "stock" | "shipping" | "quote" | "waitlist") {
     setTab(next);
     setMobileNavOpen(false);
+  }
+
+  // Filtre « une seule commande » posé depuis le centre d'erreurs ; `n` relance l'effet si on reclique la même ref.
+  const [orderFocus, setOrderFocus] = useState<{ ref: string; n: number } | null>(null);
+
+  function openOrder(ref: string) {
+    setOrderFocus((prev) => ({ ref, n: (prev?.n ?? 0) + 1 }));
+    selectTab("orders");
   }
 
   const loadSettings = useCallback(async () => {
@@ -62,6 +71,7 @@ export default function AdminPage() {
                 .header-account sur le site public (Header.astro) : l'accès
                 au compte ne doit pas dépendre d'un menu déroulant replié. */}
             <div className="admin-quick-account">
+              <AlertCenter onOpenOrder={openOrder} onOpenTab={(t) => selectTab(t)} />
               <a href="/compte" className="nav-hover-scale">Compte</a>
               <NavAuthIcon />
             </div>
@@ -137,7 +147,7 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {tab === "orders" && <OrdersTab />}
+          {tab === "orders" && <OrdersTab focus={orderFocus} onClearFocus={() => setOrderFocus(null)} />}
           {tab === "stock" && <StockTab settings={settings} onSettingsSaved={loadSettings} />}
           {tab === "shipping" && <ShippingTab />}
           {tab === "quote" && <QuoteBuilderTab />}

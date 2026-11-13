@@ -3,6 +3,12 @@
 // footer du site — juste son propre header minimal (logo+badge ADMIN,
 // onglets Commandes/Stock, Déconnexion), reproduit tel quel dans AdminPage.
 import AdminPage from "../components/admin/AdminPage";
+import "@fontsource/space-grotesk/latin-500.css";
+import "@fontsource/space-grotesk/latin-600.css";
+import "@fontsource/space-grotesk/latin-700.css";
+import "@fontsource/inter/latin-400.css";
+import "@fontsource/inter/latin-500.css";
+import "@fontsource/inter/latin-600.css";
 ---
 
 <!doctype html>
@@ -13,11 +19,6 @@ import AdminPage from "../components/admin/AdminPage";
     <link rel="icon" type="image/png" href="/assets/logo-icon.png" />
     <title>Administration | Nasap3D</title>
     <meta name="robots" content="noindex,nofollow" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
   </head>
   <body>
     <AdminPage client:load />

@@ -105,13 +105,13 @@ Code : `src/lib/server/packing.ts` (`packPieces()`, testé dans `test/packing.te
 
 **Prix client** : un seul prix = somme des tarifs Boxtal des colis (devis `colis_1…colis_N` en une requête) + **1,50 € d'emballage par colis** (`PACKAGING_FEE_CENTS`). Mondial Relay (point relais) n'est proposé que si **aucun** colis n'est XXL (S, M, L, XL passent) ; sinon Colissimo seul. Locker : seulement si **tous** les colis sont S, M ou L.
 
-**Plafond 25 kg par colis** (plus petite limite transporteurs : Mondial Relay et locker 25 kg ; Colissimo 30 kg). XL et XXL sont prévus pour 30 kg mais plafonnés à 25 kg (`maxWeightG`). Règles : XL = relais oui, locker non ; XXL (L+l+h = 160 > 150) = Colissimo seul.
+**Plafond 25 kg par colis** (choix du site ; Mondial Relay Point Relais accepte en réalité 30 kg, L+l+h ≤ 150 cm, longueur ≤ 120 cm ; Colissimo 30 kg). **Locker (étiquette Mondial Relay/InPost, 05/11/2026) : 20 kg max et 62×38×36 cm max** (côtés triés : plus grand ≤ 62, médian ≤ 38, plus petit ≤ 36 ; le carton L 41×36×31 rentre). Règle explicite dans `parcelsLockerOk()` (`LOCKER_MAX_WEIGHT_G`, `LOCKER_MAX_SORTED_CM`) : un colis > 20 kg ne va jamais en locker. XL et XXL sont prévus pour 30 kg mais plafonnés à 25 kg (`maxWeightG`). Règles : XL = relais oui, locker non ; XXL (L+l+h = 160 > 150) = Colissimo seul.
 
 **Messages du panier** (`GET /api/cart` renvoie `parcelCount`, `relayOk`, `lockerOk`) : « N colis » au-delà d'un colis, « Locker impossible pour cette commande », « Colissimo seulement ». Chaque message finit par « contactez-nous ».
 
 **Stockage** : `Order.shippingParcels` (JSON : carton, extérieur, poids, pièces de chaque colis), figé à la commande. `shippingWeightG` = total, `shippingParcel*Cm` = 1er colis (compatibilité). Les anciennes commandes (`shippingParcels` vide) gardent l'affichage d'avant.
 
-**Stock de cartons** : table `ShippingBoxStock`, onglet admin « Expédition » (`ShippingTab.tsx`, `GET/PATCH /api/admin/shipping-boxes`). Stock **manuel** uniquement (+/−, jamais sous 0, aucune baisse automatique) ; à 0, la carte commande affiche « Stock à 0 : acheter ce carton » avec le lien karton.eu.
+**Stock de cartons** : table `ShippingBoxStock`, onglet admin « Expédition » (`ShippingTab.tsx`, `GET/PATCH /api/admin/shipping-boxes`). Baisse **automatique à l'expédition** (`boxStockAuto.ts`, appelée une seule fois dans le PATCH admin au premier passage en READY « Expédié », ou DELIVERED direct ; `readyAt` sert de marqueur, donc pas de double baisse si on revient en arrière, d'après les cartons de `shippingParcels`, jamais sous 0, retrait sans carton = rien) + correction **manuelle** (+/−, jamais sous 0) pour les commandes emballées autrement ; à 0, la carte commande affiche « Stock à 0 : acheter ce carton » avec le lien karton.eu.
 
 ## Commande impossible (pièce trop grande)
 

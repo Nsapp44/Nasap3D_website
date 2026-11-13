@@ -1,7 +1,9 @@
 import { apiHandler, json, jsonError } from "../../../../../lib/api/handler";
 import { requireAdmin } from "../../../../../lib/api/auth";
 import { prisma } from "../../../../../lib/server/prisma";
-import { purchaseShippingLabel, BoxtalConfigError, BoxtalApiError } from "../../../../../lib/server/boxtal";
+import { purchaseShippingLabel, BoxtalConfigError, BoxtalApiError, shortBoxtalReason } from "../../../../../lib/server/boxtal";
+import { recordAlert, resolveAlerts } from "../../../../../lib/server/adminAlerts";
+import { describeMissingFields, missingShippingFields } from "../../../../../lib/server/shippingChecks";
 import type { Parcel } from "../../../../../lib/server/packing";
 import { refreshOrderTrackingStatus } from "../../../../../lib/server/orderTracking";
 
@@ -19,22 +21,11 @@ export const POST = apiHandler(async (context) => {
   // Retrait à l'atelier : gratuit, jamais expédié, rien à acheter chez
   // Boxtal.
   if (order.shippingMode === "PICKUP") return jsonError(409, "not_shippable");
-  if (
-    !order.shippingMode ||
-    !order.shippingCarrierCode ||
-    !order.shippingServiceCode ||
-    !order.shippingWeightG ||
-    !order.shippingParcelLengthCm ||
-    !order.shippingParcelWidthCm ||
-    !order.shippingParcelHeightCm ||
-    !order.recipientName ||
-    !order.recipientPhone ||
-    !order.recipientAddress ||
-    !order.recipientCity ||
-    !order.recipientZipcode ||
-    !order.recipientCountry
-  ) {
-    return jsonError(409, "missing_shipping_info");
+  // Étiquette déjà faite à la main (hors site) : ne pas en racheter une.
+  if (order.labelManualAt) return jsonError(409, "label_made_manually");
+  const missing = missingShippingFields(order);
+  if (missing.length > 0) {
+    return jsonError(409, "missing_shipping_info", { reason: describeMissingFields(missing) });
   }
   if (order.shippingMode === "RELAY" && !order.relayPointCode) {
     return jsonError(409, "missing_relay_point");
@@ -47,8 +38,9 @@ export const POST = apiHandler(async (context) => {
     : [
         {
           box: "S",
-          outerCm: [order.shippingParcelLengthCm, order.shippingParcelWidthCm, order.shippingParcelHeightCm],
-          weightG: order.shippingWeightG,
+          // missingShippingFields() a vérifié que ces champs sont renseignés.
+          outerCm: [order.shippingParcelLengthCm!, order.shippingParcelWidthCm!, order.shippingParcelHeightCm!],
+          weightG: order.shippingWeightG!,
           pieces: [],
         },
       ];
@@ -56,17 +48,17 @@ export const POST = apiHandler(async (context) => {
   try {
     const result = await purchaseShippingLabel({
       recipient: {
-        fullName: order.recipientName,
-        phone: order.recipientPhone,
+        fullName: order.recipientName!,
+        phone: order.recipientPhone!,
         email: order.user.email,
-        address: order.recipientAddress,
-        city: order.recipientCity,
-        zipcode: order.recipientZipcode,
-        country: order.recipientCountry,
+        address: order.recipientAddress!,
+        city: order.recipientCity!,
+        zipcode: order.recipientZipcode!,
+        country: order.recipientCountry!,
       },
       parcels,
-      operatorCode: order.shippingCarrierCode,
-      serviceCode: order.shippingServiceCode,
+      operatorCode: order.shippingCarrierCode!,
+      serviceCode: order.shippingServiceCode!,
       mode: order.shippingMode as "RELAY" | "HOME",
       relayPointCode: order.relayPointCode,
       declaredValueCents: order.subtotalCents,
@@ -77,24 +69,51 @@ export const POST = apiHandler(async (context) => {
         boxtalOrderRef: result.boxtalOrderRef,
         shippingLabelUrl: result.labelUrl,
         labelPurchasedAt: new Date(),
+        ...(result.trackingNumber ? { trackingNumber: result.trackingNumber } : {}),
       },
     });
     // Best-effort: the tracking number is never in the purchase response
     // itself (confirmed against the real API), only learned afterward —
     // try right away so it's often already there by the time the admin
     // looks, instead of always needing a separate manual check.
-    const tracking = await refreshOrderTrackingStatus(id!);
+    await resolveAlerts("LABEL_REFUSED", order.id);
+    // Boxtal met quelques secondes à connaître l'étiquette (bac à sable : 404
+    // puis n° dispo ~2 s après l'achat) : on attend dans la requête, 3 essais
+    // espacés de 2,5 s, pour que le n° revienne dans la réponse.
+    let tracking = await refreshOrderTrackingStatus(id!);
+    for (let i = 0; i < 3 && !tracking?.trackingNumber; i++) {
+      await new Promise((r) => setTimeout(r, 2_500));
+      tracking = await refreshOrderTrackingStatus(id!);
+    }
+    // Toujours pas là : essais en arrière-plan (20 s, 1 min, 3 min, 10 min),
+    // sans effet si le n° est déjà enregistré. Au-delà, le balayage de 3 h.
+    if (!tracking?.trackingNumber) {
+      for (const delay of [20_000, 60_000, 180_000, 600_000]) {
+        setTimeout(async () => {
+          try {
+            const cur = await prisma.order.findUnique({ where: { id }, select: { trackingNumber: true } });
+            if (cur?.trackingNumber) return;
+            await refreshOrderTrackingStatus(id!);
+          } catch (e) {
+            console.error("retry suivi colis", e);
+          }
+        }, delay).unref?.();
+      }
+    }
+    const fresh = await prisma.order.findUnique({ where: { id }, select: { shippingLabelUrl: true, trackingNumber: true } });
     return json({
       boxtalOrderRef: updated.boxtalOrderRef,
-      shippingLabelUrl: updated.shippingLabelUrl,
-      labelPending: !updated.shippingLabelUrl,
-      trackingNumber: tracking?.trackingNumber ?? null,
+      shippingLabelUrl: fresh?.shippingLabelUrl ?? updated.shippingLabelUrl,
+      labelPending: !(fresh?.shippingLabelUrl ?? updated.shippingLabelUrl),
+      trackingNumber: tracking?.trackingNumber ?? fresh?.trackingNumber ?? null,
     });
   } catch (err) {
     if (err instanceof BoxtalConfigError) return jsonError(500, "boxtal_not_configured");
     if (err instanceof BoxtalApiError) {
       console.error("boxtal label purchase failed", err);
-      return jsonError(502, "boxtal_order_failed", { reason: err.message });
+      const reason = shortBoxtalReason(err);
+      await recordAlert({ kind: "LABEL_REFUSED", orderId: order.id, orderRef: order.ref, message: reason, detail: err.message });
+      return jsonError(502, "boxtal_order_failed", { reason });
     }
     throw err;
   }
@@ -117,19 +136,25 @@ export const GET = apiHandler(async (context) => {
     return json({ shippingLabelUrl: null, labelPending: false, trackingNumber: null, autoDelivered: false });
 
   try {
-    const result = await refreshOrderTrackingStatus(id!);
+    // Même délai que l'achat : Boxtal peut mettre quelques secondes à répondre
+    // (l'interface affiche « Vérification… » pendant ce temps).
+    let result = await refreshOrderTrackingStatus(id!);
+    for (let i = 0; i < 3 && !result?.trackingNumber && !result?.autoDelivered && !order.trackingNumber; i++) {
+      await new Promise((r) => setTimeout(r, 2_500));
+      result = await refreshOrderTrackingStatus(id!);
+    }
     const fresh = await prisma.order.findUnique({ where: { id } });
     return json({
       shippingLabelUrl: result?.autoDelivered ? null : (fresh?.shippingLabelUrl ?? null),
       labelPending: !result?.autoDelivered && !fresh?.shippingLabelUrl,
-      trackingNumber: result?.trackingNumber ?? null,
+      trackingNumber: result?.trackingNumber ?? fresh?.trackingNumber ?? null,
       autoDelivered: !!result?.autoDelivered,
     });
   } catch (err) {
     if (err instanceof BoxtalConfigError) return jsonError(500, "boxtal_not_configured");
     if (err instanceof BoxtalApiError) {
       console.error("boxtal label status check failed", err);
-      return jsonError(502, "boxtal_status_failed", { reason: err.message });
+      return jsonError(502, "boxtal_status_failed", { reason: shortBoxtalReason(err) });
     }
     throw err;
   }

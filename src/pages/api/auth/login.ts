@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { apiHandler, json, jsonError } from "../../../lib/api/handler";
 import { prisma } from "../../../lib/server/prisma";
-import { verifyPassword } from "../../../lib/server/password";
+import { hashPassword, verifyPassword } from "../../../lib/server/password";
 import { verifyCaptcha } from "../../../lib/server/captcha";
 import { createSession } from "../../../lib/server/session";
 import { setSessionCookie, getGuestSessionId } from "../../../lib/api/cookies";
@@ -16,9 +16,15 @@ const loginSchema = z.object({
   rememberMe: z.boolean().optional(),
 });
 
+// Hachage factice (calculé une fois) : pour un email inconnu on vérifie quand
+// même un mot de passe, afin que le temps de réponse ne révèle pas si le
+// compte existe.
+let dummyHash: Promise<string> | null = null;
+const getDummyHash = () => (dummyHash ??= hashPassword("nasap3d-dummy-password"));
+
 // Direct port of POST /auth/login.
 export const POST = apiHandler(async ({ request, cookies, clientAddress }) => {
-  enforceRateLimit(`auth:login:${clientIp({ clientAddress })}`, 10, 60_000);
+  enforceRateLimit(`auth:login:${clientIp({ clientAddress, request })}`, 10, 60_000);
 
   const body = loginSchema.safeParse(await request.json().catch(() => null));
   if (!body.success) return jsonError(400, "invalid_body");
@@ -31,7 +37,11 @@ export const POST = apiHandler(async ({ request, cookies, clientAddress }) => {
   // Same generic error whether the email is unknown or the password is
   // wrong — confirming which one it was lets an attacker enumerate
   // registered emails.
-  if (!user || user.deletedAt || !(await verifyPassword(user.passwordHash, password))) {
+  if (!user || user.deletedAt) {
+    await verifyPassword(await getDummyHash(), password).catch(() => false);
+    return jsonError(401, "invalid_credentials");
+  }
+  if (!(await verifyPassword(user.passwordHash, password))) {
     return jsonError(401, "invalid_credentials");
   }
 

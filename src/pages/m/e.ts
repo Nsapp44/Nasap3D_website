@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { checkRateLimit, clientIp } from "../../lib/api/rateLimit";
 
 // First-party proxy for Plausible's event endpoint (see s.js.ts). Forwards the
 // visitor's real IP and User-Agent so Plausible's unique-visitor, country and
@@ -11,11 +12,15 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   const body = await request.text();
   if (body.length > MAX_BODY) return new Response("", { status: 413 });
 
-  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const ip = clientIp({ clientAddress, request });
+  // 60 événements/min/IP : au-delà on répond 202 sans transmettre (pas de faux événements).
+  if (!checkRateLimit(`plausible:event:${ip}`, 60, 60_000)) {
+    return new Response("ok", { status: 202, headers: { "Cache-Control": "no-store" } });
+  }
   const headers: Record<string, string> = {
     "Content-Type": "text/plain",
     "User-Agent": request.headers.get("user-agent") ?? "",
-    "X-Forwarded-For": forwarded || clientAddress || "",
+    "X-Forwarded-For": ip === "unknown" ? "" : ip,
   };
 
   try {

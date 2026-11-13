@@ -465,6 +465,14 @@ export default function OrderCard({ order, onChanged, boxStock }: { order: Admin
         </div>
       )}
 
+      {order.labelManualAt && (
+        <div className="order-section">
+          <span className="hint-text">
+            Étiquette faite à la main{order.trackingNumber ? ` · suivi ${order.trackingNumber}` : ""}
+          </span>
+        </div>
+      )}
+
       {hasLabel && (
         <div className="order-section">
           <a href={api.adminOrderLabelDownloadUrl(order.id)} target="_blank" rel="noreferrer" className="btn-label">
@@ -477,7 +485,7 @@ export default function OrderCard({ order, onChanged, boxStock }: { order: Admin
         <div className="order-section" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <span className="hint-text">Étiquette en cours de génération…</span>
           <span onClick={checkShippingLabel} className="btn-outline">
-            Vérifier
+            {labelBusy ? "Vérification…" : "Vérifier"}
           </span>
         </div>
       )}
@@ -495,7 +503,7 @@ export default function OrderCard({ order, onChanged, boxStock }: { order: Admin
           )}
           {canCheckTracking && (
             <span onClick={checkShippingLabel} className="btn-outline muted">
-              Vérifier auprès de Boxtal
+              {labelBusy ? "Vérification en cours…" : "Vérifier auprès de Boxtal"}
             </span>
           )}
         </div>
