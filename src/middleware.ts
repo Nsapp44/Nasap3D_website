@@ -4,6 +4,7 @@ import { sweepExpiredQuoteFiles } from "./lib/server/quoteCleanup";
 import { sweepRejectedOrders } from "./lib/server/orders";
 import { sweepOrderTracking } from "./lib/server/orderTracking";
 import { startDbWatchdog } from "./lib/server/dbWatchdog";
+import { isMaintenanceOn } from "./lib/server/maintenance";
 
 // Replaces two of Fastify's global hooks (server/src/app.ts) that every
 // route implicitly relied on:
@@ -150,6 +151,17 @@ function isForbiddenCrossOrigin(context: { request: Request; url: URL }): boolea
 // ever sees these headers.
 const CROSS_ORIGIN_ISOLATED_PATHS = new Set<string>([]); // TEMP AB test
 
+// Toujours servi, même en maintenance : /maintenance elle-même, la connexion (/compte + /api/auth/*),
+// /admin + /api/admin/* (qui gardent leur requireAdmin), les webhooks entrants (Stripe), /api/health
+// (sonde Docker) et les fichiers statiques nécessaires à l'affichage.
+const MAINTENANCE_EXEMPT_EXACT = new Set(["/maintenance", "/compte", "/admin", "/api/health", "/favicon.ico", "/robots.txt"]);
+const MAINTENANCE_EXEMPT_PREFIXES = ["/api/auth/", "/api/admin/", "/api/webhooks/", "/_astro/", "/assets/"];
+
+function isMaintenanceExempt(p: string): boolean {
+  const path = p.length > 1 && p.endsWith("/") ? p.slice(0, -1) : p;
+  return MAINTENANCE_EXEMPT_EXACT.has(path) || MAINTENANCE_EXEMPT_PREFIXES.some((x) => path.startsWith(x));
+}
+
 export const onRequest = defineMiddleware(async (context, next) => {
   startBackgroundSweepsOnce();
 
@@ -162,6 +174,24 @@ export const onRequest = defineMiddleware(async (context, next) => {
     if (p === "/") return context.rewrite("/shop");
     const isStatic = p === "/shop" || p === "/api/shop-waitlist" || p.startsWith("/assets/") || p.startsWith("/_astro/") || p === "/favicon.ico" || p === "/robots.txt";
     if (!isStatic) return context.redirect(`https://nasap3d.com${p}${context.url.search}`, 302);
+  }
+
+  // Mode maintenance (interrupteur admin). Ni pages prérendues ni sous-domaine shop.* (comportement inchangé).
+  if (!context.isPrerendered && !reqHost.startsWith("shop.") && !isMaintenanceExempt(context.url.pathname)) {
+    if (await isMaintenanceOn()) {
+      const headers = { "Cache-Control": "private, no-store", "Retry-After": "3600" };
+      if (context.url.pathname.startsWith("/api/")) {
+        return new Response(JSON.stringify({ error: "maintenance" }), {
+          status: 503,
+          headers: { ...headers, "Content-Type": "application/json" },
+        });
+      }
+      // /maintenance est dans la liste blanche : si le middleware rejoue sur la réécriture, pas de boucle.
+      const page = await context.rewrite("/maintenance");
+      const out = new Response(page.body, { status: 503, headers: page.headers });
+      for (const [k, v] of Object.entries(headers)) out.headers.set(k, v);
+      return out;
+    }
   }
 
   if (CROSS_ORIGIN_ISOLATED_PATHS.has(context.url.pathname)) {

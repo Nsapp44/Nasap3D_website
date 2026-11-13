@@ -11,6 +11,7 @@ import ShopWaitlistTab from "./ShopWaitlistTab";
 
 interface Settings {
   quoteEnabled: boolean;
+  maintenanceMode: boolean;
   hourlyRateCents: number;
   minUnitPriceCents: number;
   minOrderCents: number;
@@ -56,6 +57,14 @@ export default function AdminPage() {
     const next = !settings.quoteEnabled;
     setSettings({ ...settings, quoteEnabled: next });
     await api.adminUpdateSettings({ quoteEnabled: next });
+  }
+
+  async function toggleMaintenance() {
+    if (!settings) return;
+    const next = !settings.maintenanceMode;
+    setSettings({ ...settings, maintenanceMode: next });
+    const res = await api.adminUpdateSettings({ maintenanceMode: next });
+    if (!res.ok) setSettings((s) => (s ? { ...s, maintenanceMode: !next } : s));
   }
 
   return (
@@ -147,6 +156,34 @@ export default function AdminPage() {
             </div>
           </div>
 
+          <div className="quote-bar-wrap" style={{ paddingTop: 12 }}>
+            <div className={`quote-bar${settings?.maintenanceMode ? " paused" : ""}`}>
+              <div className="quote-bar-left">
+                <span className={`quote-badge${settings?.maintenanceMode ? " paused" : ""}`}>{settings?.maintenanceMode ? "ACTIVÉE" : "DÉSACTIVÉE"}</span>
+                <div>
+                  <div className="quote-bar-title">Site en maintenance</div>
+                  <div className="quote-bar-hint">Quand c'est activé, les visiteurs voient une page de maintenance ; l'admin reste accessible.</div>
+                </div>
+              </div>
+              <span
+                className={`quote-track${settings?.maintenanceMode ? " on" : ""}`}
+                role="switch"
+                aria-checked={!!settings?.maintenanceMode}
+                aria-label="Site en maintenance"
+                tabIndex={0}
+                onClick={toggleMaintenance}
+                onKeyDown={(e) => {
+                  if (e.key === " " || e.key === "Enter") {
+                    e.preventDefault();
+                    toggleMaintenance();
+                  }
+                }}
+              >
+                <span className={`quote-knob${settings?.maintenanceMode ? " on" : ""}`} />
+              </span>
+            </div>
+          </div>
+
           {tab === "orders" && <OrdersTab focus={orderFocus} onClearFocus={() => setOrderFocus(null)} />}
           {tab === "stock" && <StockTab settings={settings} onSettingsSaved={loadSettings} />}
           {tab === "shipping" && <ShippingTab />}
@@ -228,6 +265,7 @@ export default function AdminPage() {
         .quote-track.on { background: #ff5a3c; }
         .quote-knob { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .2s ease; }
         .quote-knob.on { left: 25px; }
+        .quote-track:focus-visible { outline: 2px solid #f3f1ec; outline-offset: 2px; }
       `}</style>
     </div>
   );

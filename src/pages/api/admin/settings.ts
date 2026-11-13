@@ -2,6 +2,7 @@ import { z } from "zod";
 import { apiHandler, json, jsonError } from "../../../lib/api/handler";
 import { requireAdmin } from "../../../lib/api/auth";
 import { prisma } from "../../../lib/server/prisma";
+import { invalidateMaintenanceCache } from "../../../lib/server/maintenance";
 
 // Direct port of GET /admin/settings.
 export const GET = apiHandler(async (context) => {
@@ -12,6 +13,7 @@ export const GET = apiHandler(async (context) => {
 
 const schema = z.object({
   quoteEnabled: z.boolean().optional(),
+  maintenanceMode: z.boolean().optional(),
   hourlyRateCents: z.number().int().positive().optional(),
   minUnitPriceCents: z.number().int().min(0).optional(),
   minOrderCents: z.number().int().min(0).optional(),
@@ -26,5 +28,6 @@ export const PATCH = apiHandler(async (context) => {
   if (!body.success) return jsonError(400, "invalid_body");
 
   const updated = await prisma.settings.update({ where: { id: 1 }, data: body.data });
+  invalidateMaintenanceCache();
   return json({ settings: updated });
 });

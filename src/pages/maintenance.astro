@@ -1,0 +1,61 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Maintenance | Nasap3D" description="Nasap3D est en maintenance." path="/maintenance" noindex hideFooter hideHeader>
+  <main class="content">
+    <div class="box">
+      <img src="/assets/logo-blanc-full.png" alt="Nasap3D" class="logo" />
+      <h1 class="title">Nasap3D est en maintenance, on revient très vite</h1>
+      <p class="text">Le site est momentanément indisponible. Merci de votre patience, revenez dans un instant.</p>
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 60px 24px;
+    box-sizing: border-box;
+  }
+  .box {
+    max-width: 560px;
+    text-align: center;
+    animation: maintFadeUp 0.5s ease both;
+  }
+  @keyframes maintFadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .logo {
+    height: 40px;
+    width: auto;
+    margin-bottom: 28px;
+  }
+  .title {
+    font: 700 24px/1.25 "Space Grotesk", sans-serif;
+    color: #f3f1ec;
+    margin: 0 0 12px;
+  }
+  .text {
+    font: 400 14px/1.7 "Inter", sans-serif;
+    color: rgba(255, 255, 255, 0.7);
+    max-width: 420px;
+    margin: 0 auto;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .box {
+      animation: none;
+    }
+  }
+</style>

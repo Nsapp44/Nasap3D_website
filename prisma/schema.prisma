@@ -171,6 +171,9 @@ model DiscountTier {
 model Settings {
   id                  Int      @id @default(1)
   quoteEnabled        Boolean  @default(true)
+  // Interrupteur « Site en maintenance » (admin) : coupe le site au public,
+  // /admin et la connexion restent accessibles (voir src/middleware.ts).
+  maintenanceMode     Boolean  @default(false)
   // Prix pièce = hourlyRateCents x temps d'impression (mesuré par le
   // slicer) + prix matière (poids x prix/kg du matériau) — pas de marge ni
   // de frais fixe séparés, voir PRICING.md. Réglable ici, en admin.
