@@ -53,13 +53,9 @@ Navigateur intégré peu fiable pour scroll/rAF → Chrome headless + playwright
 ## Conversations à supprimer
 Aucune (ancienne session déjà supprimée). Agents lancés cette session : terminés sauf testeur en cours.
 
-## 12/11 — Suivi colis (compte client)
-- Dashboard.tsx : « Numéro de suivi Mondial Relay / Colissimo » (icône pin/colis génériques, pas de logos de marque), n° dessous + bouton copier → coche animée (reduced-motion ok). Pas de lien transporteur.
-- middleware.ts : balayage suivi Boxtal 24 h → 3 h (passage auto en LIVRÉE seulement pour PRINTING/READY).
-- Mondial Relay : n° auto non confirmé ; lire en prod `[boxtal] order_status sans n° …` puis compléter `TRACKING_KEY_RE` (boxtal.ts). Forçage manuel de LIVRÉE toujours possible.
-- Ponçage retiré des textes caravane (d77541a).
-
-### 12/11 — Suivi colis, refonte visuelle (ff9a567)
-- Bloc suivi refait par architecte (ticket, bouton Copier -> coche, un ticket par colis si plusieurs numéros séparés par ","). Build OK. Captures = maquette HTML (après_375/900), pas la vraie page compte (non vérifiée avec une vraie commande).
-- Balayage `sweepOrderTracking` (toutes les 3 h, PRINTING/READY) : recopie le n° de suivi à chaque passage (rattrape un n° absent à l'achat de l'étiquette) et passe en DELIVERED si l'état Boxtal contient « livré ». Clé du n° Mondial Relay non confirmée : lire le log `[boxtal] order_status sans n° de suivi reconnu` après un vrai envoi MR.
-- Prochain pas exact : captures de la vraie page compte (375/768/desktop) avec une commande de test ; `get_usage` + ligne conso ; push seulement sur accord de Nolann après scan claude-security.
+## 13/11 — Suivi colis (compte client + récupération Boxtal)
+- UI faite et vérifiée sur la vraie page /compte (commandes simulées) : icône colis constante, « Numéro de suivi » léger + transporteur en gras, Copier -> coche (commits bf367ec, ff9a567, 0443b8d, 6b271ea). Pas de logos de marque (fichiers officiels à fournir par Nolann).
+- **Test bac à sable Boxtal (test.envoimoinscher.com) 13/11** : achat MONR/CpourToi OK ; `order_status` = **404 « not found » juste après l'achat**, puis **200 avec `<carrier_reference>` et `<state>Commande validée par le transporteur</state>`** quelques secondes plus tard. Donc le n° MR est bien dans `carrier_reference` (déjà lu). Cause probable de l'erreur vue en prod : le 404 immédiat déclenchait l'alerte TRACKING_UNREACHABLE.
+- Correctif (à relire, non poussé) : orderTracking.ts ignore le 404 dans les 30 min après l'achat ; shipping-label.ts réessaie à 45 s et 3 min ; balayage 3 h inclut aussi PENDING.
+- Non vérifié : vrai n° Mondial Relay en prod (le bac à sable renvoie un faux CR…), chaîne d'états réels jusqu'à « livré » (sandbox ne montre que « validée par le transporteur »). Forçage manuel LIVRÉE reste possible.
+- Prochain pas exact : Nolann confirme si l'alerte prod était bien ce 404 (texte exacte de l'erreur) ; scan claude-security puis push seulement sur son accord ; `get_usage` + ligne conso.

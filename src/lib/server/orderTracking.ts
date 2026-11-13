@@ -86,6 +86,13 @@ export async function refreshOrderTrackingStatus(orderId: string): Promise<{
     status = await checkLabelStatus(order.boxtalOrderRef);
   } catch (err) {
     if (err instanceof BoxtalApiError) {
+      // Juste après l'achat de l'étiquette, Boxtal répond 404 « introuvable »
+      // pendant quelques secondes (constaté au bac à sable le 13/11/2026 : 404
+      // à l'instant T, 200 avec carrier_reference quelques secondes après).
+      // Ce n'est pas une panne : pas d'alerte, le balayage / le nouvel essai
+      // retrouvera le numéro.
+      const justBought = !!order.labelPurchasedAt && Date.now() - order.labelPurchasedAt.getTime() < 30 * 60 * 1000;
+      if (justBought && / http 404/.test(err.message)) return null;
       await recordAlert({ kind: "TRACKING_UNREACHABLE", orderId, orderRef: order.ref, message: shortBoxtalReason(err), detail: err.message });
       return null;
     }
@@ -117,7 +124,7 @@ export async function refreshOrderTrackingStatus(orderId: string): Promise<{
 // marked without the admin having to click "vérifier" on it themselves.
 export async function sweepOrderTracking(): Promise<number> {
   const candidates = await prisma.order.findMany({
-    where: { status: { in: ["PRINTING", "READY"] }, boxtalOrderRef: { not: null } },
+    where: { status: { in: ["PENDING", "PRINTING", "READY"] }, boxtalOrderRef: { not: null } },
     select: { id: true },
   });
   let autoDeliveredCount = 0;

@@ -78,6 +78,15 @@ export const POST = apiHandler(async (context) => {
     // looks, instead of always needing a separate manual check.
     await resolveAlerts("LABEL_REFUSED", order.id);
     const tracking = await refreshOrderTrackingStatus(id!);
+    // Boxtal met quelques secondes à connaître l'étiquette : si le n° de suivi
+    // n'est pas encore là, on réessaie en arrière-plan (45 s puis 3 min).
+    if (!tracking?.trackingNumber) {
+      for (const delay of [45_000, 180_000]) {
+        setTimeout(() => {
+          refreshOrderTrackingStatus(id!).catch((e) => console.error("retry suivi colis", e));
+        }, delay).unref?.();
+      }
+    }
     return json({
       boxtalOrderRef: updated.boxtalOrderRef,
       shippingLabelUrl: updated.shippingLabelUrl,
