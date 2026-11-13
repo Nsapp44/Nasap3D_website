@@ -77,3 +77,7 @@ Aucune (ancienne session déjà supprimée). Agents lancés cette session : term
 - INCIDENT NON RÉSOLU : migrate+seed lancés par erreur sur la base locale principale 5432 (dev, pas la prod) : le seed a pu réécrire matériaux/couleurs/profils/remises modifiés à la main. À comparer avec la dernière sauvegarde `backups/` (SHIPPING.md), décision de Nolann.
 - Données de test restantes : base 5433 (conteneur `nasap3d-lot-test-db`), appli PID 22968. Nettoyage : `taskkill //PID 22968 //F`, `docker rm -f nasap3d-lot-test-db`, fichiers temp de `scratchpad/lot/cookies/`.
 - **Prochain pas exact** : 1) Nolann répond : push de `claude/lot-securite-boxtal` oui/non ; a-t-il coché les 4 événements webhook Stripe ; seed 5432 à comparer ? ; 2) captures responsive + build strict (avec son accord) ; 3) push ; 4) nettoyage ci-dessus, `get_usage` + ligne dans `C:/bo-test/docs/conso_sessions.md`. Hors sujet : erreurs `uv trampoline` des hooks.
+
+
+## 13/11 PUSH FAIT
+Lot poussé sur master : 9d69d2f..063c4cc (centre d'erreurs, suivi Boxtal, maintenance, Stripe async). Nettoyage fait (appli de test, base jetable, fichiers temp). À vérifier en prod : migration maintenanceMode passée, interrupteur dans /admin, vrai numéro Mondial Relay, 4 événements webhook Stripe côté tableau de bord. Reste : seed 5432 à comparer à une sauvegarde ; dossier docs/securite-lot-2026-11-13/ non commité (garder ou sortir) ; captures admin par Nolann. Prochain : conversation de maintenance. Conversation à supprimer : local_e6e8af89-a204-4058-bdd3-3c7b10ef3ce2 (cette session, après rapport).
