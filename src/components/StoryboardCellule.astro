@@ -65,6 +65,9 @@ const P = "/storyboard/cellule/";
           <p class="sb-lead">Électronique intégrée.</p>
         </div>
       </div>
+
+      <div class="sb-prog" id="sb-prog" aria-hidden="true"><i class="sb-prog-fill"></i></div>
+      <p class="sb-hint" id="sb-hint" aria-hidden="true">Faites défiler<i class="sb-hint-ln"></i></p>
     </div>
   </section>
 </div>
@@ -72,7 +75,7 @@ const P = "/storyboard/cellule/";
 <script is:inline defer src="/vendor/gsap/gsap.min.js"></script>
 <script is:inline defer src="/vendor/gsap/ScrollTrigger.min.js"></script>
 {/* ?v= : à changer à chaque modif de cellule.js (sinon un onglet ou un cache garde l'ancien JS avec le nouveau CSS) */}
-<script is:inline defer src="/storyboard/cellule/cellule.js?v=poster-net"></script>
+<script is:inline defer src="/storyboard/cellule/cellule.js?v=prog-rail"></script>
 
 <style is:global>
   /* Le filet global « overflow-x: hidden » sur html/body casse position: sticky (body devient le conteneur de défilement). `clip` empêche aussi tout scroll horizontal. */
@@ -157,9 +160,25 @@ const P = "/storyboard/cellule/";
   .sb .sb-sfig img { width: 100%; height: 100%; object-fit: cover; }
   .sb .sb-sfig .sb-glow { position: absolute; inset: 0; mix-blend-mode: screen; }
 
+  /* ---- Progression (rail à droite, un repère par texte) + invite à défiler : mode animé seulement ---- */
+  .sb .sb-prog, .sb .sb-hint { display: none; }
+  .sb.anim .sb-prog { display: block; position: absolute; right: -12px; top: 50%; width: 2px; height: clamp(140px, 34svh, 260px); transform: translateY(-50%); background: var(--line); border-radius: 2px; pointer-events: none; }
+  .sb .sb-prog-fill { position: absolute; inset: 0; border-radius: 2px; background: var(--accent); transform: scaleY(0); transform-origin: 50% 0; }
+  .sb .sb-prog-dot { position: absolute; left: 50%; top: calc(var(--p) * 100%); width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: var(--bg); border: 1.5px solid rgba(255,255,255,.35); transition: background-color .3s, border-color .3s, box-shadow .3s; }
+  .sb .sb-prog-dot.on { background: var(--accent); border-color: var(--accent); }
+  .sb .sb-prog-dot.cur { box-shadow: 0 0 0 4px rgba(255,90,60,.25); }
+  .sb.anim .sb-hint { display: flex; flex-direction: column; align-items: center; gap: 10px; position: absolute; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); margin: 0; color: var(--muted); font: 500 .75rem/1.2 Inter, system-ui, sans-serif; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; pointer-events: none; }
+  .sb .sb-hint-ln { position: relative; width: 1.5px; height: 32px; overflow: hidden; background: var(--line); border-radius: 2px; }
+  .sb .sb-hint-ln::after { content: ""; position: absolute; left: 0; top: 0; width: 100%; height: 12px; border-radius: 2px; background: var(--accent); animation: sb-descend 1.6s cubic-bezier(.45, 0, .55, 1) infinite; }
+  @media (min-width: 768px) { .sb.anim .sb-prog { right: 0; } }
+  @media (min-width: 1024px) { .sb.anim .sb-prog { right: -8px; } }
+  /* ≤ 640 px : la barre « Demander un devis » (.mcta, ~72 px) occupe le bas de l'écran */
+  @media (max-width: 640px) { .sb.anim .sb-hint { bottom: calc(92px + env(safe-area-inset-bottom, 0px)); } }
+  @keyframes sb-descend { from { transform: translateY(-12px); } to { transform: translateY(32px); } }
+
   @keyframes sb-entree { from { opacity: 0; transform: translateY(6px); } }
   @keyframes sb-spin { to { transform: rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) {
-    .sb .sb-t1 { animation: none !important; transition: none !important; }
+    .sb .sb-t1, .sb .sb-hint-ln::after { animation: none !important; transition: none !important; }
   }
 </style>

@@ -323,6 +323,20 @@
     "Cellule complète : une pression sur le bouton, la bande de points s'allume",
     "Cellule complète, bande de points allumée"
   ];
+  /* ---- Progression : rail + un repère par texte (t1, t2, t3, t4, t5a, t5b, t7a), placés à leur temps réel ---- */
+  var MK = [0, 0.085, 0.265, 0.51, 0.63, 0.765, 0.90];
+  var prog = $("#sb-prog"), pfill = prog && prog.firstChild, pdots = [], curM = -1;
+  if (prog) MK.forEach(function (m) { var d = document.createElement("i"); d.className = "sb-prog-dot"; d.style.setProperty("--p", m); prog.appendChild(d); pdots.push(d); });
+  function setProg(p) {
+    if (!pfill) return;
+    pfill.style.transform = "scaleY(" + p.toFixed(4) + ")";
+    var m = 0, i;
+    for (i = 0; i < MK.length; i++) if (p >= MK[i] - 0.002) m = i;
+    if (m === curM) return;
+    curM = m;
+    for (i = 0; i < pdots.length; i++) { pdots[i].classList.toggle("on", i <= m); pdots[i].classList.toggle("cur", i === m); }
+  }
+
   var curT = -1;
   function setTime(p) {
     var t = 0;
@@ -346,7 +360,7 @@
         if (p > 0.40) { loadSeq("aim"); loadBase(); loadLed(); }
       }
     },
-    onUpdate: function () { setTime(tl.progress()); updateLegs(); render(); }
+    onUpdate: function () { setTime(tl.progress()); setProg(tl.progress()); updateLegs(); render(); }
   });
   var inT = function (id, t) { tl.to(id, { opacity: 1, y: 0, duration: 0.015, ease: "power1.out" }, t); };
   var outT = function (id, t) { tl.to(id, { opacity: 0, duration: 0.012 }, t); };
@@ -354,6 +368,9 @@
   // 0 – 0,08 : arrivée (titre net, image floue qui zoome)
   tl.to(poster, { scale: 1.5, filter: "blur(0px)", duration: 0.08, ease: "power1.out" }, 0);
   outT("#sb-t1", 0.066);
+  // invite « Faites défiler » : part avec le titre (réversible : revient si on remonte en haut de la scène)
+  var hint = $("#sb-hint");
+  if (hint) tl.to(hint, { opacity: 0, duration: 0.026 }, 0.04);
   // 0,08 – 0,26 : éclaté
   tl.set(P, { aEcl: 1 }, 0.08);
   tl.to(pw, { opacity: 0, duration: 0.02 }, 0.08);
@@ -418,5 +435,5 @@
 
   resize();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { resize(); ScrollTrigger.refresh(); });
-  setTime(0);
+  setTime(0); setProg(0);
 })();
