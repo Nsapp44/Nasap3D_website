@@ -46,7 +46,7 @@
   function loadSeq(name) {
     if (started[name]) return; started[name] = 1;
     var s = SEQ[name], ids = [];
-    for (var i = 0; i < s.n; i++) if (!small || i % 2 === 0 || i === s.n - 1) ids.push(i);
+    for (var i = 0; i < s.n; i++) ids.push(i); /* toutes les images aussi sur mobile (14/11 : une sur deux = saccades au scroll lent) */
     var w = function (i) { return (i === s.n - 1 || i % 4 === 0) ? 0 : (i % 2 === 0 ? 1 : 2); };
     ids.sort(function (a, b) { return w(a) - w(b) || a - b; });
     ids.forEach(function (i) {
