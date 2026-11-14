@@ -116,6 +116,9 @@
   .z-spin.ready .sp-loader { opacity: 0; visibility: hidden; transition: opacity .3s, visibility 0s .3s; }
   .sp-spin { width: 34px; height: 34px; border-radius: 50%; border: 3px solid rgba(255,255,255,.12); border-top-color: var(--pj-acc); animation: spSpin .9s linear infinite; }
   .sp-loader.err .sp-spin { display: none; }
+  .sp-loader.err { pointer-events: auto; }
+  .sp-retry { padding: 10px 20px; border-radius: 999px; border: 1px solid var(--pj-acc); background: transparent; color: #f3f1ec; font: 600 14px "Inter", sans-serif; cursor: pointer; }
+  .sp-retry:hover { background: var(--pj-acc); color: #161514; }
   @keyframes spSpin { to { transform: rotate(360deg); } }
 
   /* Colonne texte */

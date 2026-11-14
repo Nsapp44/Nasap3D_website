@@ -16,6 +16,7 @@ Archives : `docs/chantiers/suivi-maquettes-09_avant-menage_2026-11-09.md` (porta
 3. [x] Cholet/Angers : on GARDE (décision 14/11).
 4. [ ] Perf téléphone des vues 3D. Mesures prod (headless, indicatif) : Lighthouse mobile `/` 100, maquettiste-nantes 100, maquette-industrielle 90 (LCP 3,6 s), bioreacteur 94, cellule 94 ; CLS mobile 0,146 (`/`) et 0,174 (bioreacteur) ; scène cellule ~139 FPS ; vue 3D NON mesurée (sélecteur `figure.z-spin`). Retour de Nolann sur son téléphone : saccadé au scroll lent au doigt (mode économie d'énergie ?), fluide sinon. Pistes : plus de frames / scrub plus court sur mobile, images de l'accueil (1,3 Mo), dimensions explicites des médias (CLS), poids JS de la scène (340 Ko).
 5. [ ] Après le push de ces modifs majeures : demander la réindexation des pages dans Google Search Console (idée de Nolann 14/11 ; inspection d'URL + sitemap soumis). À faire par lui, je prépare la liste des URL.
+6. [ ] Vue 3D : loader jusqu'à TOUTES les vues chargées (3 hauteurs x 72), 3 essais par image, blocage 20 s ou échec = bouton « Réessayer » (code écrit dans `ProjectsCarousel.astro` + `projets-carrousel.css`, build OK, PAS ENCORE TESTÉ au navigateur : ouvrir une carte `article.pc` de /maquettiste-nantes, puis la vue 3D ; test cassé = `scratchpad/spin_test.cjs`, à adapter). Prod = `4a47ea1` ; `ced2bdd` (cellule mobile, toutes les images) non poussé. Captures PNG de `d515306` sous `public/` à déplacer dans `docs/` au prochain push.
 Aucun push sans « oui ».
 
 ## Mission : conversation de MAINTENANCE

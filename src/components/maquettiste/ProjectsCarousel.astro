@@ -231,19 +231,35 @@ const ledJson = JSON.stringify(MAQUETTES.filter((m) => m.enabled && m.led).map((
   const ORDER = [START, ...[...Array(FR).keys()].filter((i) => i !== START).sort((a, b) => rank(a) - rank(b) || a - b)];
   const url = (dir, kind, ei, i) => `${MAQ}${dir}/${kind}/e${ELEVS[ei]}_a${String(i).padStart(3, '0')}.${kind === 'rank' || kind === 'glow' ? 'webp' : 'avif'}`;
   const pools = {};
-  const getPool = (dir, kind, ei) => pools[dir + kind + ei] ||= { dir, kind, ei, imgs: new Array(FR), n: 0, fin: 0, queue: [...ORDER] };
-  let want = [], act = 0; // want : groupes de pools a charger, par ordre de priorite
+  const getPool = (dir, kind, ei) => pools[dir + kind + ei] ||= { dir, kind, ei, imgs: new Array(FR), n: 0, fin: 0, fail: 0, tries: [], queue: [...ORDER] };
+  let want = [], act = 0, progAt = 0; // want : groupes de pools a charger, par ordre de priorite ; progAt : derniere image recue
+  const flying = new Set(); // requetes en cours (annulables au « Réessayer »)
+  const RETRIES = 3, STALL_MS = 20000;
   const pump = () => {
     while (act < MAXC) {
       const g = want.find((grp) => grp.some((q) => q.queue.length)); if (!g) return;
       const p = g.filter((q) => q.queue.length).sort((a, b) => a.fin - b.fin)[0];
       const i = p.queue.shift(), im = new Image(); act++;
-      im.decoding = 'async';
-      im.onload = () => { p.imgs[i] = im; p.n++; p.fin++; act--; pump(); };
-      im.onerror = () => { p.fin++; act--; pump(); };
+      im.decoding = 'async'; im._p = p; im._i = i; flying.add(im);
+      im.onload = () => { flying.delete(im); p.imgs[i] = im; p.n++; p.fin++; progAt = performance.now(); act--; pump(); };
+      im.onerror = () => {
+        flying.delete(im); act--;
+        const t = p.tries[i] = (p.tries[i] || 0) + 1;
+        if (t < RETRIES) setTimeout(() => { p.queue.push(i); pump(); }, 700 * t); // nouvel essai apres une courte pause
+        else { p.fin++; p.fail++; }
+        pump();
+      };
       im.src = url(p.dir, p.kind, p.ei, i);
     }
   };
+  // « Réessayer » : on abandonne les requetes bloquees et on remet en file toutes les images manquantes
+  const retryAll = () => {
+    flying.forEach((im) => { im.onload = im.onerror = null; im.src = ''; act--; });
+    flying.clear();
+    want.flat().forEach((p) => { p.queue = []; p.tries = []; p.fail = 0; p.fin = p.n; for (const i of ORDER) if (!p.imgs[i]) p.queue.push(i); });
+    progAt = performance.now(); pump();
+  };
+  const sumPools = (v) => { const ps = want.flat(); return { all: ps.every((p) => p.n >= FR), pct: Math.floor(ps.reduce((s, p) => s + p.n, 0) / (ps.length * FR) * 100), failed: ps.some((p) => p.fail > 0) && ps.every((p) => p.fin >= FR) }; };
   const nearI = (p, f) => { if (!p) return -1; for (let d = 0; d <= FR / 2; d++) { if (p.imgs[(f + d) % FR]) return (f + d) % FR; const j = (f - d + FR) % FR; if (p.imgs[j]) return j; } return -1; };
   const wrapF = (f) => ((Math.round(f) % FR) + FR) % FR;
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -352,6 +368,19 @@ const ledJson = JSON.stringify(MAQUETTES.filter((m) => m.enabled && m.led).map((
     const f = wrapF(v.f), ei = clamp(Math.round(v.ei), 0, ELEVS.length - 1), size = curSize();
     v.el.style.setProperty('--p', (f / (FR - 1)).toFixed(3));
     if (size !== v.size) { v.size = size; refreshWant(); }
+    if (!v.ready) { // la rotation ne s'affiche que quand TOUTES les vues (3 hauteurs x 72) sont chargees ; sinon chargement, puis erreur + « Réessayer »
+      const s = sumPools(v), txt = v.ld.querySelector('.sp-loadtxt');
+      if (!s.all) {
+        const stalled = s.failed || (progAt && now - progAt > STALL_MS);
+        if (stalled && !v.ld.classList.contains('err')) {
+          v.ld.classList.add('err'); txt.textContent = 'Le chargement de la vue 3D a échoué ou est trop lent.';
+          let b = v.ld.querySelector('.sp-retry');
+          if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 'sp-retry'; b.textContent = 'Réessayer'; v.ld.appendChild(b); }
+          b.onclick = () => { v.ld.classList.remove('err'); txt.textContent = 'Chargement de la maquette…'; retryAll(); };
+        } else if (!stalled) txt.textContent = `Chargement de la maquette… ${s.pct} %`;
+        return;
+      }
+    }
     const other = size === 'sm' ? 'base' : 'sm';
     let p = null, idx = -1;
     for (const [k, e] of [[size, ei], [other, ei], [size, EL0], [other, EL0]]) { const q = pools[v.dir + k + e]; if (q && (idx = nearI(q, f)) >= 0) { p = q; break; } }
@@ -394,8 +423,9 @@ const ledJson = JSON.stringify(MAQUETTES.filter((m) => m.enabled && m.led).map((
     if (viewer.active && viewer.el === fig) return;
     const same = viewer.el === fig; viewerStop();
     const dir = fig.dataset.spin;
-    Object.assign(viewer, { el: fig, cv: fig.querySelector('.sp-cv'), ld: fig.querySelector('.sp-loader'), dir, led: LEDS.has(dir), f: same ? viewer.f : START, ei: same ? viewer.ei : EL0, zoom: same ? viewer.zoom : 1, elevs: same ? viewer.elevs : [EL0], ready: same && viewer.ready, key: '', vel: 0, last: 0, lastLed: 0, drag: null, active: true });
+    Object.assign(viewer, { el: fig, cv: fig.querySelector('.sp-cv'), ld: fig.querySelector('.sp-loader'), dir, led: LEDS.has(dir), f: same ? viewer.f : START, ei: same ? viewer.ei : EL0, zoom: same ? viewer.zoom : 1, elevs: ELEVS.map((_, i) => i).sort((a, b) => Math.abs(a - EL0) - Math.abs(b - EL0)), ready: same && viewer.ready, key: '', vel: 0, last: 0, lastLed: 0, drag: null, active: true });
     viewer.ctx = viewer.cv.getContext('2d'); viewer.size = curSize();
+    progAt = performance.now(); fig.querySelector('.sp-loader')?.classList.remove('err');
     refreshWant();
     viewer.resumeAt = 0; setAuto(!RM.matches && !fig.classList.contains('paused'));
     viewer.raf = requestAnimationFrame(vLoop);
