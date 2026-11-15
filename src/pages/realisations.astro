@@ -51,6 +51,11 @@ const ITEMS = [
             <div class="gallery-body">
               <div class="gallery-label">{it.label}</div>
               <div class="gallery-desc">{it.desc}</div>
+              {it.href && (
+                <span class="gallery-more" aria-hidden="true">
+                  Voir en détail <span class="gallery-more-arrow">→</span>
+                </span>
+              )}
             </div>
           </Card>
         );
@@ -151,6 +156,39 @@ const ITEMS = [
   .gallery-desc {
     font: 400 10.5px/1.5 "Inter", sans-serif;
     color: rgba(255, 255, 255, 0.5);
+  }
+  .gallery-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 6px 12px;
+    border: 1px solid rgba(255, 90, 60, 0.5);
+    border-radius: 999px;
+    background: rgba(255, 90, 60, 0.1);
+    font: 600 11.5px "Inter", sans-serif;
+    color: #ff5a3c;
+    transition:
+      background 0.25s ease,
+      color 0.25s ease;
+  }
+  .gallery-more-arrow {
+    transition: transform 0.25s ease;
+  }
+  a.gallery-card:hover .gallery-more,
+  a.gallery-card:focus-visible .gallery-more {
+    background: #ff5a3c;
+    color: #161514;
+  }
+  a.gallery-card:hover .gallery-more-arrow {
+    transform: translateX(3px);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .gallery-card,
+    .gallery-more,
+    .gallery-more-arrow {
+      transition: none;
+    }
   }
   .cta-wrap {
     padding: 0 24px 56px;

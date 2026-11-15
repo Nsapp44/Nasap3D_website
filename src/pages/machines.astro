@@ -140,7 +140,8 @@ const OTHER_MACHINES = [
   .machine-photo {
     position: relative;
     overflow: hidden;
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 1 / 1;
+    background: radial-gradient(120% 95% at 50% 38%, #f8f6f2 0%, #eeeae3 62%, #e3ddd3 100%);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
   .machine-photo img {
@@ -150,6 +151,7 @@ const OTHER_MACHINES = [
     height: 100%;
     object-fit: contain;
     object-position: center;
+    mix-blend-mode: multiply;
     display: block;
   }
   .machine-body {
