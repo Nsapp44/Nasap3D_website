@@ -10,13 +10,15 @@ Archives : `docs/chantiers/suivi-maquettes-09_avant-menage_2026-11-09.md` (porta
 - Maintenance : `Settings.maintenanceMode` (id=1), cache 10 s, page 503 (JSON 503 sur `/api/*`). Exemptés : `/maintenance`, `/compte`, `/admin`, `/api/health`, `/api/auth|admin|webhooks`, `/_astro`, `/assets`. Écart accepté : `GET /maintenance` direct = 200 (noindex). shop.* inchangé.
 - Règle modèle : Sonnet 90 %. Ne pas commiter : `src/pages/shop.astro`, `planches-maquettes-08/`, `retours-n2_cartes-chiffres.png`, `public/storyboard/cellule/preview-onde.html`, `SUIVI.avant-ff-2026-10-28.md`, `reseaux-sociaux/*`.
 
-## File des demandes (14/11, lot « retours Nolann + père »)
-1. [x] Machines : Cricut remplacé PARTOUT par la xTool C1 (accueil `index.astro`, `/machines`, `MachinesStrip`), photo existante `/assets/machines/xtool-c1.webp` (fond blanc). Libellés corrigés : C1 = traceur de découpe à lame + impression couleur (pas un laser), Omni = imprimante UV. Commité en local, en attente de son OK visuel (tuile accueil un peu petite, à agrandir si il veut). `public/assets/machine-cricut.webp` n'est plus référencé.
-2. [x] Indicateur de scroll de la scène cellule : commit local `d515306`, validé.
-3. [x] Cholet/Angers : on GARDE (décision 14/11).
-4. [ ] Perf téléphone des vues 3D. Mesures prod (headless, indicatif) : Lighthouse mobile `/` 100, maquettiste-nantes 100, maquette-industrielle 90 (LCP 3,6 s), bioreacteur 94, cellule 94 ; CLS mobile 0,146 (`/`) et 0,174 (bioreacteur) ; scène cellule ~139 FPS ; vue 3D NON mesurée (sélecteur `figure.z-spin`). Retour de Nolann sur son téléphone : saccadé au scroll lent au doigt (mode économie d'énergie ?), fluide sinon. Pistes : plus de frames / scrub plus court sur mobile, images de l'accueil (1,3 Mo), dimensions explicites des médias (CLS), poids JS de la scène (340 Ko).
-5. [ ] Après le push de ces modifs majeures : demander la réindexation des pages dans Google Search Console (idée de Nolann 14/11 ; inspection d'URL + sitemap soumis). À faire par lui, je prépare la liste des URL.
-6. [x] Vue 3D : loader jusqu'à TOUTES les vues chargées + 3 essais + bouton « Réessayer » (`5ac1f7b`, EN PROD le 15/11 avec `ced2bdd` cellule mobile). Loader rond existant gardé (15/11, Nolann : la buse qui imprime reste réservée au devis instantané). Reste : Nolann vérifie en ligne. Captures PNG supprimées (`d1cd405`, local, non poussé).
+## File des demandes (lot « retours Nolann + père »)
+1. [x] Machines : Cricut → xTool C1 partout (en prod).
+2. [x] Indicateur de scroll scène cellule (en prod).
+3. [x] Cholet/Angers : on GARDE.
+4. [ ] Perf téléphone des vues 3D (Lighthouse mobile 90-100 ; CLS mobile 0,146 `/` et 0,174 bioréacteur ; scène cellule ~139 FPS ; saccadé au scroll lent sur le téléphone de Nolann). Pistes : moins de frames/scrub mobile, images accueil (1,3 Mo), dimensions explicites des médias, JS scène (340 Ko).
+5. [ ] Réindexation Google Search Console : à faire par Nolann. URLs : `/`, `/machines`, `/realisations`, `/maquettiste-nantes`, `/realisations/{systeme-filtration-purification,maquette-bioreacteur,maquette-cellule-biologique,maquette-caravane,maquettes-design-produit}` + sitemap.
+6. [x] Loader vues 3D + « Réessayer » (en prod).
+7. [x] « PETG HF » → « PETG » (devis, seed + migration `20261115120000_petg_label`), bouton « Voir en détail » sur les cartes cliquables des réalisations, tuiles machines pleines : EN PROD le 15/11 (`a3699af`).
+8. [x] xTool Omni ajoutée sur `/machines` (6 tuiles 3×2, intro mise à jour) : commit local `cf9261f`, NON poussé (attend le « oui »). Pas sur l'accueil `index.astro` (MachinesStrip l'a déjà) : à proposer.
 Aucun push sans « oui ».
 
 ## Mission : conversation de MAINTENANCE
@@ -46,6 +48,3 @@ Navigateur intégré peu fiable pour scroll/rAF → Chrome headless + playwright
 
 ## Prochain pas exact
 Attendre les retours de Nolann sur le site en ligne et les traiter ; dérouler le bloc « À vérifier en prod » quand il le demande. Aucun push sans son « oui ».
-
-## Conversations à supprimer
-- `local_e6e8af89-a204-4058-bdd3-3c7b10ef3ce2` (« [P] NASAP [page maquettiste Astro] vérif + zoom 3D (à supprimer) »), remplacée par la passation du 13/11.
