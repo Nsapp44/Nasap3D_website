@@ -61,7 +61,7 @@ const MATERIALS: {
   },
   {
     key: "PETG",
-    label: "PETG HF",
+    label: "PETG",
     densityGCm3: 1.28,
     pricePerKgCents: 2600,
     colors: [
