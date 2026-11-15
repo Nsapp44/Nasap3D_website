@@ -9,6 +9,7 @@ const FDM_MACHINES = [
 
 const OTHER_MACHINES = [
   { img: "machines/xtool-c1.webp", height: 200, name: "xTool C1", text: "Découpeuse à lame avec impression couleur : stickers, vinyle, plastique fin, du scan à la découpe." },
+  { img: "machines/xtool-omni.webp", height: 200, name: "xTool Omni", text: "Imprimante UV grand format : impression directe en couleur et en relief sur objets, plaques et supports variés, repères, étiquettes, finitions." },
   { img: "machine-sla.webp", height: 318, name: "Imprimante SLA résine", text: "Finitions ultra détaillées pour figurines et pièces techniques." },
   { img: "machine-laser-fibre.webp", height: 315, name: "Gravure laser métal (Fibre)", text: "Fibre 20W — gravure inaltérable sur inox, aluminium, laiton, titane." },
   { img: "machine-presse.webp", height: 314, name: "Presse à chaud", text: "Transfert vinyle & sublimation thermique." },
@@ -25,8 +26,8 @@ const OTHER_MACHINES = [
     <div class="kicker">Parc machine</div>
     <h1 class="hero-title">L'atelier, machine par machine</h1>
     <div class="hero-intro">
-      Trois imprimantes FDM, une résine SLA, un laser diode/UV, un laser fibre métal, une xTool C1 (découpe + impression couleur) et une presse à
-      chaud — de quoi couvrir la plupart des besoins, du prototype au marquage.
+      Trois imprimantes FDM, une résine SLA, une imprimante UV xTool Omni, un laser diode, un laser fibre métal, une xTool C1 (découpe + impression
+      couleur) et une presse à chaud — de quoi couvrir la plupart des besoins, du prototype au marquage.
     </div>
   </div>
 
@@ -200,12 +201,6 @@ const OTHER_MACHINES = [
   .machine-grid-other .machine-card {
     grid-column: span 2;
   }
-  .machine-grid-other .machine-card:nth-child(4) {
-    grid-column: 2 / span 2;
-  }
-  .machine-grid-other .machine-card:nth-child(5) {
-    grid-column: 4 / span 2;
-  }
   .cta-wrap {
     padding: 0 24px 56px;
     text-align: center;
@@ -268,15 +263,8 @@ const OTHER_MACHINES = [
     .machine-grid-other {
       grid-template-columns: repeat(2, 1fr);
     }
-    .machine-grid-other .machine-card,
-    .machine-grid-other .machine-card:nth-child(4),
-    .machine-grid-other .machine-card:nth-child(5) {
+    .machine-grid-other .machine-card {
       grid-column: auto;
-    }
-    .machine-grid-other .machine-card:nth-child(5) {
-      grid-column: 1 / -1;
-      justify-self: center;
-      width: calc(50% - 8px);
     }
   }
   @media (max-width: 420px) {
@@ -284,9 +272,8 @@ const OTHER_MACHINES = [
     .machine-grid-other {
       grid-template-columns: 1fr;
     }
-    .machine-grid-other .machine-card:nth-child(5) {
+    .machine-grid-other .machine-card {
       grid-column: auto;
-      width: auto;
     }
   }
 </style>

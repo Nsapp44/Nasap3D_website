@@ -31,7 +31,7 @@ Nolann enverra des retours pour « prendre le site en ligne » ; traiter chaque 
 - Hors sujet : erreurs `uv trampoline` des hooks du terminal.
 
 ## À reporter au code Astro
-- « PETG HF » → « PETG » : FAIT en local (`d` seed + migration `20261115120000_petg_label`), à pousser sur « oui ».
+- « PETG HF » → « PETG » : EN PROD le 15/11 (`a3699af`, avec cue « Voir en détail » réalisations + tuiles machines pleines).
 - SEO : `[data-rv]` masqué seulement si JS ; retirer « (MAQUETTE 08/11/2026) » si resté. Cholet/Angers : 301 → /impression-3d-nantes après contrôle Search Console. Lien `{{ nav.href }}` (404) à chercher.
 - Reste Google Fonts : `shop.astro` (pas à nous), Leaflet unpkg, scripts Boxtal du panier bloquants. Caddy (compression, cache HTML, HSTS, 301) = dev de Nolann.
 
