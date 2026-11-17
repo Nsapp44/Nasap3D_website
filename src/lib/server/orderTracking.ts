@@ -100,6 +100,8 @@ export async function refreshOrderTrackingStatus(orderId: string): Promise<{
     throw err;
   }
   await resolveAlerts("TRACKING_UNREACHABLE", orderId);
+  // Journal du libellé réel Boxtal (pas de donnée perso) pour affiner la détection « livré ».
+  console.log(`[tracking] ${order.ref} état Boxtal: ${JSON.stringify(status.state)} livré=${status.isLikelyDelivered}`);
 
   if (status.isLikelyDelivered) {
     await prisma.order.update({
