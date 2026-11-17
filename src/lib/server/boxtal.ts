@@ -628,7 +628,12 @@ export interface BoxtalOrderStatus {
 // "word" characters, so "é" at the end of a string breaks a trailing \b —
 // this is a heuristic to surface in the admin UI, not something that
 // silently auto-confirms delivery on its own.
-const DELIVERED_STATE_RE = /livr[ée]e?(?![a-zà-ÿ])/i;
+// 17/11/2026 : un colis Mondial Relay livré n'est pas passé en DELIVERED (le
+// libellé réel n'était pas reconnu). On accepte aussi « retiré » (retrait au
+// point relais), « delivered » et le code push v1 « LIV », sauf négations
+// (« non livré », « pas retiré »).
+const DELIVERED_STATE_RE = /(?:livr[ée]e?|retir[ée]e?|delivered)(?![a-zà-ÿ])|^s*LIVs*$/i;
+const NOT_DELIVERED_RE = /(?:non|pas|échec|echec|avant)s+(?:des+)?(?:livr|retir)/i;
 
 // Label generation can be asynchronous for some carriers — call this if
 // purchaseShippingLabel() didn't return a label URL immediately. Also the
@@ -677,6 +682,6 @@ export async function checkLabelStatus(boxtalOrderRef: string): Promise<BoxtalOr
     labelUrl,
     carrierReference,
     state,
-    isLikelyDelivered: !!state && DELIVERED_STATE_RE.test(state),
+    isLikelyDelivered: !!state && DELIVERED_STATE_RE.test(state) && !NOT_DELIVERED_RE.test(state),
   };
 }
