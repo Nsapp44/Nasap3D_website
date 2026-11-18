@@ -18,7 +18,8 @@ Archives : `docs/chantiers/suivi-maquettes-09_avant-menage_2026-11-09.md` (porta
 5. [ ] Réindexation Google Search Console : à faire par Nolann. URLs : `/`, `/machines`, `/realisations`, `/maquettiste-nantes`, `/realisations/{systeme-filtration-purification,maquette-bioreacteur,maquette-cellule-biologique,maquette-caravane,maquettes-design-produit}` + sitemap.
 6. [x] Loader vues 3D + « Réessayer » (en prod).
 7. [x] « PETG HF » → « PETG » (devis, seed + migration `20261115120000_petg_label`), bouton « Voir en détail » sur les cartes cliquables des réalisations, tuiles machines pleines : EN PROD le 15/11 (`a3699af`).
-8. [x] xTool Omni ajoutée sur `/machines` (6 tuiles 3×2, intro mise à jour) : commit local `cf9261f`, NON poussé (attend le « oui »). Pas sur l'accueil `index.astro` (MachinesStrip l'a déjà) : à proposer.
+8. [x] xTool Omni ajoutée sur `/machines` (6 tuiles 3×2) : EN PROD. Pas sur l'accueil (MachinesStrip l'a déjà).
+9. [x] Colis Mondial Relay 75537808 pas passé en « livré » : filtre `DELIVERED_STATE_RE` élargi (retiré, delivered, LIV ; négations refusées) + log `[tracking] réf état Boxtal` à chaque vérification. EN PROD le 18/11 (`c79e2fe`). Libellé réel NON confirmé : si le colis ne passe pas au balayage (3 h) ou via « vérifier » admin, lire le log et ajouter le libellé.
 Aucun push sans « oui ».
 
 ## Mission : conversation de MAINTENANCE
