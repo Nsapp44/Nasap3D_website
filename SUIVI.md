@@ -22,6 +22,9 @@ Archives : `docs/chantiers/suivi-maquettes-09_avant-menage_2026-11-09.md` (porta
 9. [x] Colis Mondial Relay 75537808 pas passé en « livré » : filtre `DELIVERED_STATE_RE` élargi (retiré, delivered, LIV ; négations refusées) + log `[tracking] réf état Boxtal` à chaque vérification. EN PROD le 18/11 (`c79e2fe`). Libellé réel NON confirmé : si le colis ne passe pas au balayage (3 h) ou via « vérifier » admin, lire le log et ajouter le libellé.
 Aucun push sans « oui ».
 
+## Idée en attente : Dolibarr + facture électronique (18/11, pas avant janvier-février 2027)
+Nolann veut ranger/archiver les factures dans Dolibarr (Aptatio l'utilise déjà), garder nos PDF react-pdf, créer des factures depuis le portail, et se préparer à la facture électronique (plateforme agréée à choisir). Pistes vues : API REST Dolibarr (gratuite en auto-hébergé, à vérifier chez l'hébergeur à ~9 €/mois) ; synchro « à la connexion » (script qui récupère les nouvelles factures du site et les pousse à Dolibarr, local ou hébergé) ; NAS déconseillé comme hébergement final. Bloqué : les sociétés ne sont pas créées (instance partagée avec Aptatio ou séparée ?). Reprendre : état des lieux `chercheur-web` (hébergement, plateformes agréées, Factur-X) puis plan, dans une session dédiée.
+
 ## Mission : conversation de MAINTENANCE
 Nolann enverra des retours pour « prendre le site en ligne » ; traiter chaque retour, un lot à la fois. Les « portails » (admin, Nasap, Nasap Shop) : probablement hors de ce chantier, à clarifier avec lui.
 
