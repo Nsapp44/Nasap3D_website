@@ -22,8 +22,14 @@ Archives : `docs/chantiers/suivi-maquettes-09_avant-menage_2026-11-09.md` (porta
 9. [x] Colis Mondial Relay 75537808 pas passé en « livré » : filtre `DELIVERED_STATE_RE` élargi (retiré, delivered, LIV ; négations refusées) + log `[tracking] réf état Boxtal` à chaque vérification. EN PROD le 18/11 (`c79e2fe`). Libellé réel NON confirmé : si le colis ne passe pas au balayage (3 h) ou via « vérifier » admin, lire le log et ajouter le libellé.
 Aucun push sans « oui ».
 
-## Idée en attente : Dolibarr + facture électronique (18/11, pas avant janvier-février 2027)
-Nolann veut ranger/archiver les factures dans Dolibarr (Aptatio l'utilise déjà), garder nos PDF react-pdf, créer des factures depuis le portail, et se préparer à la facture électronique (plateforme agréée à choisir). Pistes vues : API REST Dolibarr (gratuite en auto-hébergé, à vérifier chez l'hébergeur à ~9 €/mois) ; synchro « à la connexion » (script qui récupère les nouvelles factures du site et les pousse à Dolibarr, local ou hébergé) ; NAS déconseillé comme hébergement final. Bloqué : les sociétés ne sont pas créées (instance partagée avec Aptatio ou séparée ?). Reprendre : état des lieux `chercheur-web` (hébergement, plateformes agréées, Factur-X) puis plan, dans une session dédiée.
+## Idée en attente : Dolibarr + facture électronique (recherche faite le 18/11, pas avant janvier-février 2027)
+Nolann facture sur Abby, veut récupérer ses clients Abby puis passer à Dolibarr (Aptatio l'utilise déjà), garder nos PDF react-pdf, créer des factures depuis le portail.
+Résultats `chercheur-web` (sources officielles lues) : 
+- Abby : export CSV/Excel/PDF seulement dès l'offre Plus (15 €/mois HT, résiliable) ; API publique (docs.abby.fr, clé Bearer) aussi réservée à Plus. FEC indisponible. Aucun outil Abby vers Dolibarr existant.
+- Dolibarr : import CSV des tiers OK ; factures historiques = point dur (numérotation, TVA, payé) ; API REST gratuite en auto-hébergé (DoliCloud Basic 14 €/mois : 2 000 appels/mois, pas d'offre à 9 € confirmée). PDF à rattacher nommé `REF.pdf`.
+- Facture électronique : réception obligatoire depuis le 01/09/2026, émission 01/09/2027 (micro). Dolibarr n'est pas une plateforme agréée : module EInvoicing + PA (ex. SuperPDP, prix à confirmer). Abby est déjà PA, même en offre gratuite.
+- Reco : tiers par CSV, anciens PDF Abby archivés (10 ans), pas de migration des factures ; si historique voulu : 1 mois Abby Plus + API + script vers l'API Dolibarr testé sur base vide ; Dolibarr en Docker OVH (version épinglée, dump + volume sauvegardés ensemble). Abby reste la solution la moins risquée tant que la PA Dolibarr n'est pas prête.
+Reprendre : décision de Nolann (migrer ou non, session dédiée Sonnet medium).
 
 ## Mission : conversation de MAINTENANCE
 Nolann enverra des retours pour « prendre le site en ligne » ; traiter chaque retour, un lot à la fois. Les « portails » (admin, Nasap, Nasap Shop) : probablement hors de ce chantier, à clarifier avec lui.
