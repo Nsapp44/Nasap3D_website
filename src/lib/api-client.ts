@@ -241,6 +241,9 @@ export const api = {
   adminOrderLabelDownloadUrl(orderId: string) {
     return apiBase() + "/admin/orders/" + orderId + "/shipping-label/download";
   },
+  adminOrderLabelInlineUrl(orderId: string) {
+    return apiBase() + "/admin/orders/" + orderId + "/shipping-label/download?inline=1";
+  },
   adminOrderInvoiceDownloadUrl(orderId: string) {
     return apiBase() + "/admin/orders/" + orderId + "/invoice/download";
   },

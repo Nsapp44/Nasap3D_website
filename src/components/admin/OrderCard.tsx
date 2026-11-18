@@ -90,6 +90,29 @@ export default function OrderCard({ order, onChanged, boxStock }: { order: Admin
   const canBuyLabel = order.status === "PRINTING" && order.canBuyLabel && !order.shippingLabelUrl;
   const parcels = order.shippingParcels;
   const hasLabel = !!order.shippingLabelUrl;
+
+  // Impression de l'étiquette 100×150 : le PDF Boxtal est chargé dans un iframe caché
+  // (format 100×150 déjà défini par le PDF), puis print() ouvre la boîte d'impression du PC.
+  // Repli : si l'impression directe échoue, on ouvre le PDF dans un onglet.
+  const printLabel = () => {
+    const url = api.adminOrderLabelInlineUrl(order.id);
+    const frame = document.createElement("iframe");
+    frame.setAttribute("aria-hidden", "true");
+    frame.title = `Étiquette ${order.ref}`;
+    frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden";
+    const cleanup = () => window.setTimeout(() => frame.remove(), 60000);
+    frame.onload = () => {
+      try {
+        frame.contentWindow?.focus();
+        frame.contentWindow?.print();
+      } catch {
+        window.open(url, "_blank", "noopener");
+      }
+      cleanup();
+    };
+    frame.src = url;
+    document.body.appendChild(frame);
+  };
   const labelPending = !!order.boxtalOrderRef && !order.shippingLabelUrl;
   const isPickup = order.shippingMode === "PICKUP" && order.status !== "DELIVERED";
   const hasShipping = !!order.shippingMode && order.shippingMode !== "PICKUP" && order.status !== "DELIVERED";
@@ -477,7 +500,10 @@ export default function OrderCard({ order, onChanged, boxStock }: { order: Admin
         <div className="order-section">
           <a href={api.adminOrderLabelDownloadUrl(order.id)} target="_blank" rel="noreferrer" className="btn-label">
             Télécharger l'étiquette
-          </a>
+          </a>{" "}
+          <button type="button" className="btn-label" onClick={printLabel} title={`Imprimer l'étiquette ${order.ref} (100×150 mm)`}>
+            Imprimer l'étiquette · {order.ref}
+          </button>
         </div>
       )}
 

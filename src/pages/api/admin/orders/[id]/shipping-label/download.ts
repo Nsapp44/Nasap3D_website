@@ -20,7 +20,8 @@ export const GET = apiHandler(async (context) => {
     return new Response(new Uint8Array(buffer), {
       headers: {
         "Content-Type": contentType,
-        "Content-Disposition": `attachment; filename="${order.ref}-etiquette.pdf"`,
+        // ?inline=1 : affiché dans la page (iframe d'impression) au lieu d'être téléchargé.
+        "Content-Disposition": `${context.url.searchParams.get("inline") === "1" ? "inline" : "attachment"}; filename="${order.ref}-etiquette.pdf"`,
       },
     });
   } catch (err) {
