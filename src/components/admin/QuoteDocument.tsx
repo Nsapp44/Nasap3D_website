@@ -60,6 +60,8 @@ export interface QuotePdfData {
   docType?: "devis" | "facture";
   // Free multi-line text (contact + address), printed under "Livraison".
   deliveryAddress?: string | null;
+  // Facture only: free multi-line billing address, printed under "Facturé à".
+  billingAddress?: string | null;
   items: QuotePdfItem[];
   totalCents: number;
 }
@@ -68,6 +70,7 @@ export function QuoteDocument({ data }: { data: QuotePdfData }) {
   const hasPrintItem = data.items.some((it) => it.isPrint);
   const isInvoice = data.docType === "facture";
   const deliveryLines = (data.deliveryAddress ?? "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const billingLines = isInvoice ? (data.billingAddress ?? "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean) : [];
   return (
     <Document>
       <Page size="A4" style={sharedPdfStyles.page}>
@@ -75,10 +78,15 @@ export function QuoteDocument({ data }: { data: QuotePdfData }) {
 
         <View style={sharedPdfStyles.partiesRow}>
           <PdfIssuerBlock />
-          {data.clientName && (
+          {(data.clientName || billingLines.length > 0) && (
             <View style={sharedPdfStyles.partyBlock}>
               <Text style={sharedPdfStyles.partyLabel}>{isInvoice ? "Facturé à" : "Devis pour"}</Text>
-              <Text style={[sharedPdfStyles.partyLine, { fontWeight: 600 }]}>{data.clientName}</Text>
+              {data.clientName && <Text style={[sharedPdfStyles.partyLine, { fontWeight: 600 }]}>{data.clientName}</Text>}
+              {billingLines.map((line, i) => (
+                <Text key={i} style={sharedPdfStyles.partyLineMuted}>
+                  {line}
+                </Text>
+              ))}
             </View>
           )}
           {deliveryLines.length > 0 && (
@@ -147,8 +155,13 @@ export function QuoteDocument({ data }: { data: QuotePdfData }) {
         <View style={sharedPdfStyles.footerBlock}>
           <Text style={sharedPdfStyles.footerTitle}>{isInvoice ? "Modalités" : "Validité et modalités"}</Text>
           <Text style={sharedPdfStyles.footerLine}>
-            {isInvoice ? "Facture à régler à réception." : "Devis valable 30 jours à compter de la date d'émission. Paiement après acceptation de la commande."}
+            {isInvoice ? "Paiement à réception de facture." : "Devis valable 30 jours à compter de la date d'émission. Paiement après acceptation de la commande."}
           </Text>
+          {isInvoice && (
+            <Text style={sharedPdfStyles.footerLine}>
+              En cas de retard de paiement : pénalités au taux de 3 fois le taux d'intérêt légal, ainsi qu'une indemnité forfaitaire de recouvrement de 40 € (art. L441-10 du Code de commerce). Pas d'escompte pour paiement anticipé.
+            </Text>
+          )}
           <Text style={sharedPdfStyles.legalMention}>TVA non applicable, art. 293 B du CGI</Text>
         </View>
 

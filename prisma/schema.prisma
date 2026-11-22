@@ -384,6 +384,23 @@ model Invoice {
   @@index([userId])
 }
 
+model ManualInvoice {
+  id              String    @id @default(cuid())
+  ref             String    @unique
+  dailySeq        Int
+  clientName      String
+  billingAddress  String
+  deliveryAddress String?
+  clientEmail     String?
+  // Instantané : [{title, description?, quantity, unitPriceCents}]
+  items           Json
+  note            String?
+  totalCents      Int
+  pdfKey          String?
+  sentAt          DateTime?
+  issuedAt        DateTime  @default(now())
+}
+
 model ContactMessage {
   id             String               @id @default(cuid())
   name           String

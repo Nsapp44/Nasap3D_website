@@ -77,10 +77,22 @@ export function isMailConfigured(): boolean {
   return getTransporter() !== null;
 }
 
-export async function sendMail(to: string, subject: string, body: string, html?: string) {
+export interface MailAttachment {
+  filename: string;
+  content: Buffer;
+  contentType?: string;
+}
+
+export interface SendMailOptions {
+  attachments?: MailAttachment[];
+}
+
+export async function sendMail(to: string, subject: string, body: string, html?: string, options?: SendMailOptions) {
   const t = getTransporter();
+  const attachments = options?.attachments;
   if (!t) {
-    console.log(`[mailer] (SMTP not configured — see SMTP_* in .env) to=${to} subject="${subject}"\n${body}`);
+    const att = attachments?.length ? ` attachments=[${attachments.map((a) => a.filename).join(", ")}]` : "";
+    console.log(`[mailer] (SMTP not configured — see SMTP_* in .env) to=${to} subject="${subject}"${att}\n${body}`);
     return;
   }
   await t.sendMail({
@@ -89,5 +101,6 @@ export async function sendMail(to: string, subject: string, body: string, html?:
     subject,
     text: body,
     ...(html ? { html } : {}),
+    ...(attachments?.length ? { attachments } : {}),
   });
 }

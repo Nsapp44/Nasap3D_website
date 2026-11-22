@@ -7,6 +7,7 @@ import OrdersTab from "./OrdersTab";
 import StockTab from "./StockTab";
 import ShippingTab from "./ShippingTab";
 import QuoteBuilderTab from "./QuoteBuilderTab";
+import InvoiceBuilderTab from "./InvoiceBuilderTab";
 import ShopWaitlistTab from "./ShopWaitlistTab";
 
 interface Settings {
@@ -21,11 +22,11 @@ interface Settings {
 
 export default function AdminPage() {
   const authStatus = useAdminAuth();
-  const [tab, setTab] = useState<"orders" | "stock" | "shipping" | "quote" | "waitlist">("orders");
+  const [tab, setTab] = useState<"orders" | "stock" | "shipping" | "quote" | "invoice" | "waitlist">("orders");
   const [settings, setSettings] = useState<Settings | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  function selectTab(next: "orders" | "stock" | "shipping" | "quote" | "waitlist") {
+  function selectTab(next: "orders" | "stock" | "shipping" | "quote" | "invoice" | "waitlist") {
     setTab(next);
     setMobileNavOpen(false);
   }
@@ -109,6 +110,9 @@ export default function AdminPage() {
                 <span onClick={() => selectTab("quote")} className={`admin-tab${tab === "quote" ? " active" : ""}`}>
                   Devis
                 </span>
+                <span onClick={() => selectTab("invoice")} className={`admin-tab${tab === "invoice" ? " active" : ""}`}>
+                  Factures
+                </span>
                 <span onClick={() => selectTab("waitlist")} className={`admin-tab${tab === "waitlist" ? " active" : ""}`}>
                   Liste shop
                 </span>
@@ -188,6 +192,7 @@ export default function AdminPage() {
           {tab === "stock" && <StockTab settings={settings} onSettingsSaved={loadSettings} />}
           {tab === "shipping" && <ShippingTab />}
           {tab === "quote" && <QuoteBuilderTab />}
+          {tab === "invoice" && <InvoiceBuilderTab />}
           {tab === "waitlist" && <ShopWaitlistTab />}
         </>
       )}

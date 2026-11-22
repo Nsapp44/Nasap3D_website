@@ -94,6 +94,44 @@ async function requestForm<T = unknown>(path: string, form: FormData, timeoutMs?
 // themselves and pass the resulting token into these calls.
 export const HCAPTCHA_SITE_KEY = "8874894e-8ac6-4344-bb7e-67541fec27b8";
 
+// Factures libres (créées depuis l'admin, sans commande) — /api/admin/manual-invoices.
+export interface ManualInvoiceItem {
+  title: string;
+  description?: string;
+  quantity: number;
+  unitPriceCents: number;
+}
+export interface ManualInvoiceInput {
+  clientName: string;
+  billingAddress: string;
+  deliveryAddress?: string;
+  clientEmail?: string;
+  items: ManualInvoiceItem[];
+  note?: string;
+}
+export interface ManualInvoiceCreated {
+  id: string;
+  ref: string;
+  issuedAt: string;
+  totalCents: number;
+  dailySeq: number;
+  clientName: string;
+  billingAddress: string;
+  deliveryAddress: string | null;
+  clientEmail: string | null;
+  items: ManualInvoiceItem[];
+  note: string | null;
+}
+export interface ManualInvoiceListItem {
+  id: string;
+  ref: string;
+  clientName: string;
+  totalCents: number;
+  issuedAt: string;
+  sentAt: string | null;
+  hasPdf: boolean;
+}
+
 export const api = {
   async signup(email: string, password: string, captchaToken?: string) {
     return request("POST", "/auth/signup", { email, password, captchaToken });
@@ -273,6 +311,23 @@ export const api = {
   // instead of guessing from a timestamp.
   async adminNextQuoteRef(kind: "devis" | "facture" = "devis") {
     return request<{ dailySeq: number }>("POST", kind === "facture" ? "/admin/quote-ref?kind=facture" : "/admin/quote-ref");
+  },
+  async adminListManualInvoices() {
+    return request<ManualInvoiceListItem[]>("GET", "/admin/manual-invoices");
+  },
+  async adminCreateManualInvoice(payload: ManualInvoiceInput) {
+    return request<ManualInvoiceCreated>("POST", "/admin/manual-invoices", payload);
+  },
+  async adminUploadManualInvoicePdf(id: string, blob: Blob) {
+    const form = new FormData();
+    form.append("file", blob, "facture.pdf");
+    return requestForm<{ ok: boolean; ref: string }>("/admin/manual-invoices/" + id + "/pdf", form);
+  },
+  async adminSendManualInvoice(id: string, to: string) {
+    return request<{ ok: boolean; sentAt: string }>("POST", "/admin/manual-invoices/" + id + "/send", { to });
+  },
+  adminManualInvoicePdfUrl(id: string) {
+    return apiBase() + "/admin/manual-invoices/" + id + "/pdf";
   },
   async adminGetSettings() {
     return request("GET", "/admin/settings");
