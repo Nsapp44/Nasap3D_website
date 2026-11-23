@@ -8,7 +8,10 @@ import { QuoteDocument, type QuotePdfData } from "./QuoteDocument";
 // ni calcul matière. Contrairement au devis, la facture est ÉMISE côté
 // serveur : le serveur attribue ref, date et total (numérotation légale), le
 // PDF est rendu ici à partir de SA réponse, puis renvoyé au serveur. Une
-// facture émise ne se modifie ni ne se supprime.
+// facture NON envoyée peut être modifiée (le PDF est alors regénéré et
+// redéposé, même numéro et même date) ou supprimée (son numéro n'est pas
+// réutilisé). Une facture envoyée au client est verrouillée (le serveur
+// répond 409). La liste n'est pas synchronisée avec le logiciel comptable.
 const SERVICE_TYPES = [
   { key: "retroconception", shortLabel: "Rétro-conception", pdfLabel: "Rétro-conception de votre pièce selon le modèle fourni" },
   { key: "impression3d", shortLabel: "Impression 3D", pdfLabel: "Impression 3D" },
@@ -124,6 +127,15 @@ export default function InvoiceBuilderTab() {
   const [mailTo, setMailTo] = useState("");
   const [sending, setSending] = useState(false);
   const [sendMsg, setSendMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  // Modification d'une facture non envoyée + actions de la liste
+  const [note, setNote] = useState(""); // conservée telle quelle lors d'une modification (pas de champ dédié)
+  const [modifyingId, setModifyingId] = useState<{ id: string; ref: string } | null>(null);
+  const [loadingEditId, setLoadingEditId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [mailRowId, setMailRowId] = useState<string | null>(null);
+  const [mailRowTo, setMailRowTo] = useState("");
+  const [sendingRow, setSendingRow] = useState(false);
+  const [listMsg, setListMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const emailOk = clientEmail.trim() === "" || isEmail(clientEmail);
   const canIssue = items.length > 0 && clientName.trim() !== "" && billingAddress.trim() !== "" && emailOk && !issuing;
@@ -139,17 +151,55 @@ export default function InvoiceBuilderTab() {
     URL.revokeObjectURL(url);
   }
 
+  function clearInvoiceForm() {
+    setClientName("");
+    setBillingAddress("");
+    setDeliveryAddress("");
+    setClientEmail("");
+    setNote("");
+    setItems([]);
+    resetForm();
+  }
+
+  // PDF construit à partir de la RÉPONSE du serveur (ref, date, total officiels), pas du formulaire,
+  // puis redéposé sur le serveur et téléchargé. Partagé entre émission et modification.
+  async function renderAndUploadPdf(created: ManualInvoiceCreated): Promise<{ upOk: boolean }> {
+    const data: QuotePdfData = {
+      ref: created.ref,
+      issuedAt: new Date(created.issuedAt),
+      clientName: created.clientName,
+      billingAddress: created.billingAddress,
+      deliveryAddress: created.deliveryAddress || null,
+      docType: "facture",
+      items: created.items.map((it) => ({
+        label: it.title,
+        material: it.description || null,
+        unitPriceCents: it.unitPriceCents,
+        quantity: it.quantity,
+        priceCents: it.quantity * it.unitPriceCents,
+      })),
+      totalCents: created.totalCents,
+    };
+    const blob = await pdf(<QuoteDocument data={data} />).toBlob();
+    const up = await api.adminUploadManualInvoicePdf(created.id, blob);
+    download(blob, `${created.ref}.pdf`);
+    return { upOk: up.ok };
+  }
+
   async function issueInvoice() {
     if (!canIssue || issuing) return;
     setIssuing(true);
     setIssueError(null);
     setSendMsg(null);
+    setListMsg(null);
+    const modifying = modifyingId;
     try {
       const payload: ManualInvoiceInput = {
         clientName: clientName.trim(),
         billingAddress: billingAddress.trim(),
         deliveryAddress: deliveryAddress.trim() || undefined,
         clientEmail: clientEmail.trim() || undefined,
+        note: note.trim() || undefined,
         items: items.map((it) => ({
           title: it.title,
           description: it.description,
@@ -157,57 +207,143 @@ export default function InvoiceBuilderTab() {
           unitPriceCents: it.unitPriceCents,
         })),
       };
-      const res = await api.adminCreateManualInvoice(payload);
+      const res = modifying ? await api.adminUpdateManualInvoice(modifying.id, payload) : await api.adminCreateManualInvoice(payload);
       if (!res.ok || !res.data) {
-        setIssueError(
-          res.status === 0
-            ? "Facture non émise : le serveur ne répond pas. Vérifiez votre connexion puis réessayez."
-            : "Facture non émise : le serveur a refusé la demande. Vérifiez les champs puis réessayez.",
-        );
+        if (res.status === 409) {
+          setIssueError("Facture déjà envoyée, modification impossible.");
+        } else if (res.status === 0) {
+          setIssueError(`Facture non ${modifying ? "modifiée" : "émise"} : le serveur ne répond pas. Vérifiez votre connexion puis réessayez.`);
+        } else {
+          setIssueError(`Facture non ${modifying ? "modifiée" : "émise"} : le serveur a refusé la demande. Vérifiez les champs puis réessayez.`);
+        }
         return;
       }
       const created: ManualInvoiceCreated = res.data;
-
-      // PDF construit à partir de la RÉPONSE du serveur (ref, date, total officiels), pas du formulaire.
-      const data: QuotePdfData = {
-        ref: created.ref,
-        issuedAt: new Date(created.issuedAt),
-        clientName: created.clientName,
-        billingAddress: created.billingAddress,
-        deliveryAddress: created.deliveryAddress || null,
-        docType: "facture",
-        items: created.items.map((it) => ({
-          label: it.title,
-          material: it.description || null,
-          unitPriceCents: it.unitPriceCents,
-          quantity: it.quantity,
-          priceCents: it.quantity * it.unitPriceCents,
-        })),
-        totalCents: created.totalCents,
-      };
-      const blob = await pdf(<QuoteDocument data={data} />).toBlob();
-      const up = await api.adminUploadManualInvoicePdf(created.id, blob);
-      download(blob, `${created.ref}.pdf`);
-      setEmitted({ id: created.id, ref: created.ref, email: created.clientEmail ?? "" });
-      setMailTo(created.clientEmail ?? "");
-      if (!up.ok) {
-        setSendMsg({
-          ok: false,
-          text: "Facture émise et téléchargée, mais le PDF n'a pas pu être enregistré sur le serveur : l'envoi par e-mail peut échouer. Conservez le PDF téléchargé.",
+      const { upOk } = await renderAndUploadPdf(created);
+      if (modifying) {
+        setListMsg({
+          ok: upOk,
+          text: upOk
+            ? `Facture ${created.ref} modifiée. Le nouveau PDF a été téléchargé.`
+            : `Facture ${created.ref} modifiée et PDF téléchargé, mais le PDF n'a pas pu être enregistré sur le serveur : l'envoi par e-mail est impossible tant qu'il manque. Rouvrez la facture avec ✎ puis enregistrez à nouveau.`,
         });
+        setModifyingId(null);
+      } else {
+        setEmitted({ id: created.id, ref: created.ref, email: created.clientEmail ?? "" });
+        setMailTo(created.clientEmail ?? "");
+        if (!upOk) {
+          setSendMsg({
+            ok: false,
+            text: "Facture émise et téléchargée, mais le PDF n'a pas pu être enregistré sur le serveur : l'envoi par e-mail peut échouer. Conservez le PDF téléchargé.",
+          });
+        }
       }
-      // Le formulaire se vide : la facture est émise, rien ne s'édite plus.
-      setClientName("");
-      setBillingAddress("");
-      setDeliveryAddress("");
-      setClientEmail("");
-      setItems([]);
-      resetForm();
+      // Le formulaire se vide : la facture est enregistrée, on repart d'un formulaire vierge.
+      clearInvoiceForm();
       loadList();
     } catch {
-      setIssueError("Facture non émise ou PDF non généré : une erreur est survenue. Consultez la liste « Factures émises » avant de réessayer pour éviter un doublon.");
+      setIssueError(
+        modifying
+          ? "Modification ou PDF non finalisé : une erreur est survenue. Vérifiez la liste « Factures émises (non synchronisées) », puis rouvrez la facture avec ✎ si son PDF manque."
+          : "Facture non émise ou PDF non généré : une erreur est survenue. Consultez la liste « Factures émises (non synchronisées) » avant de réessayer pour éviter un doublon.",
+      );
     } finally {
       setIssuing(false);
+    }
+  }
+
+  async function startModify(inv: ManualInvoiceListItem) {
+    if (loadingEditId) return;
+    setLoadingEditId(inv.id);
+    setListMsg(null);
+    setIssueError(null);
+    const res = await api.adminGetManualInvoice(inv.id);
+    setLoadingEditId(null);
+    if (!res.ok || !res.data) {
+      setListMsg({
+        ok: false,
+        text: `Impossible de charger la facture ${inv.ref}. Vérifiez votre connexion puis réessayez.`,
+      });
+      return;
+    }
+    const d = res.data;
+    setClientName(d.clientName);
+    setBillingAddress(d.billingAddress);
+    setDeliveryAddress(d.deliveryAddress ?? "");
+    setClientEmail(d.clientEmail ?? "");
+    setNote(d.note ?? "");
+    setItems(
+      d.items.map((it) => ({
+        id: Math.random().toString(36).slice(2),
+        title: it.title,
+        description: it.description || undefined,
+        quantity: it.quantity,
+        unitPriceCents: it.unitPriceCents,
+      })),
+    );
+    resetForm();
+    setModifyingId({ id: d.id, ref: d.ref });
+    setTimeout(() => document.getElementById("inv-modify-banner")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+  }
+
+  function cancelModify() {
+    setModifyingId(null);
+    setIssueError(null);
+    clearInvoiceForm();
+  }
+
+  async function deleteInvoice(inv: ManualInvoiceListItem) {
+    if (deletingId) return;
+    if (
+      !window.confirm(
+        `Supprimer la facture ${inv.ref} ?\n\nSon numéro ne sera pas réutilisé : il restera un trou dans la numérotation, à garder en tête pour la compta. Cette action est définitive.`,
+      )
+    )
+      return;
+    setDeletingId(inv.id);
+    setListMsg(null);
+    const res = await api.adminDeleteManualInvoice(inv.id);
+    setDeletingId(null);
+    if (!res.ok) {
+      setListMsg({
+        ok: false,
+        text: res.status === 409 ? "Facture déjà envoyée, suppression impossible." : `Suppression de ${inv.ref} échouée : la facture est conservée. Vérifiez votre connexion puis réessayez.`,
+      });
+      if (res.status === 409) loadList();
+      return;
+    }
+    if (modifyingId?.id === inv.id) {
+      setModifyingId(null);
+      clearInvoiceForm();
+    }
+    if (emitted?.id === inv.id) {
+      setEmitted(null);
+      setSendMsg(null);
+    }
+    if (mailRowId === inv.id) setMailRowId(null);
+    setListMsg({ ok: true, text: `Facture ${inv.ref} supprimée.` });
+    loadList();
+  }
+
+  function openRowMail(inv: ManualInvoiceListItem) {
+    setMailRowId(inv.id);
+    setMailRowTo(inv.clientEmail ?? "");
+    setListMsg(null);
+  }
+
+  async function sendRowMail(inv: ManualInvoiceListItem) {
+    if (sendingRow || !isEmail(mailRowTo)) return;
+    if (!window.confirm(`Envoyer la facture ${inv.ref} à ${mailRowTo.trim()} ?\n\nL'e-mail part immédiatement et ne peut pas être rappelé. La facture sera ensuite verrouillée : plus de modification ni de suppression.`)) return;
+    setSendingRow(true);
+    setListMsg(null);
+    const res = await api.adminSendManualInvoice(inv.id, mailRowTo.trim());
+    setSendingRow(false);
+    if (res.ok) {
+      setListMsg({ ok: true, text: `Facture ${inv.ref} envoyée à ${mailRowTo.trim()}.` });
+      setMailRowId(null);
+      loadList();
+    } else {
+      setListMsg({ ok: false, text: "Envoi échoué : l'e-mail n'est pas parti. Vérifiez l'adresse puis réessayez." });
     }
   }
 
@@ -230,6 +366,20 @@ export default function InvoiceBuilderTab() {
     <div className="quote-tab">
       <div className="eyebrow">Factures</div>
       <div className="title">Facture</div>
+
+      {modifyingId && (
+        <div id="inv-modify-banner" className="modify-banner" role="status">
+          <div>
+            <div className="emitted-title">Modification de {modifyingId.ref}</div>
+            <div className="emitted-hint" style={{ marginBottom: 0 }}>
+              Le numéro et la date restent identiques. Le PDF sera regénéré et téléchargé à l'enregistrement.
+            </div>
+          </div>
+          <span role="button" tabIndex={0} onClick={cancelModify} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && cancelModify()} className="cancel-edit-btn">
+            Annuler la modification
+          </span>
+        </div>
+      )}
 
       {emitted && (
         <div className="emitted-card" role="status">
@@ -418,10 +568,11 @@ export default function InvoiceBuilderTab() {
         aria-disabled={!canIssue}
         className={`save-btn generate-btn${canIssue ? "" : " disabled"}`}
       >
-        {issuing ? "Émission en cours…" : "Émettre la facture"}
+        {issuing ? (modifyingId ? "Enregistrement…" : "Émission en cours…") : modifyingId ? "Enregistrer les modifications" : "Émettre la facture"}
       </span>
 
-      <div className="pricing-title issued-title">Factures émises</div>
+      <div className="pricing-title issued-title">Factures émises (non synchronisées)</div>
+      {listMsg && <div className={listMsg.ok ? "msg-ok" : "msg-err"} role={listMsg.ok ? "status" : "alert"} style={{ marginTop: 0, marginBottom: 12 }}>{listMsg.text}</div>}
       {listState === "loading" && <div className="empty-orders">Chargement des factures…</div>}
       {listState === "error" && <div className="msg-err" role="alert">Impossible de charger les factures émises. Rechargez la page ; si cela continue, contactez le développeur.</div>}
       {listState === "ok" && issued.length === 0 && <div className="empty-orders">Aucune facture émise pour l'instant.</div>}
@@ -429,8 +580,9 @@ export default function InvoiceBuilderTab() {
         <div className="quote-items">
           {issued.map((inv) => {
             const sent = !!inv.sentAt;
+            const mailOpen = mailRowId === inv.id && !sent;
             return (
-              <div key={inv.id} className="order-card">
+              <div key={inv.id} className={`order-card${modifyingId?.id === inv.id ? " editing" : ""}`}>
                 <div className="order-head">
                   <div>
                     <div className="order-title">{inv.ref}</div>
@@ -440,11 +592,93 @@ export default function InvoiceBuilderTab() {
                   </div>
                   <div className="order-head-right">
                     <span className="order-price">{eur(inv.totalCents)}</span>
+                    {(
+                      <>
+                        <span
+                          className="btn-edit"
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`Modifier la facture ${inv.ref}`}
+                          aria-disabled={!!loadingEditId}
+                          title="Modifier"
+                          onClick={() => startModify(inv)}
+                          onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && startModify(inv)}
+                        >
+                          ✎
+                        </span>
+                        <span
+                          className="btn-close"
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`Supprimer la facture ${inv.ref}`}
+                          aria-disabled={deletingId === inv.id}
+                          title="Supprimer"
+                          onClick={() => deleteInvoice(inv)}
+                          onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && deleteInvoice(inv)}
+                        >
+                          ✕
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className="row-actions">
+                  {inv.hasPdf && (
                     <a className="dl-link" href={api.adminManualInvoicePdfUrl(inv.id)} download>
                       Télécharger le PDF
                     </a>
-                  </div>
+                  )}
+                  {inv.hasPdf && (
+                    <a
+                      className="dl-link"
+                      href={api.adminManualInvoiceCsvUrl(inv.id)}
+                      download
+                      title="Fichier d'import Abby (Livre des recettes). Date et moyen de paiement à compléter avant import."
+                    >
+                      Export CSV (Abby)
+                    </a>
+                  )}
+                  {!sent && inv.hasPdf && !mailOpen && (
+                    <span className="dl-link" role="button" tabIndex={0} onClick={() => openRowMail(inv)} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && openRowMail(inv)}>
+                      Envoyer par mail
+                    </span>
+                  )}
+                  {sent && (
+                    <span className="dl-link" aria-disabled="true" style={{ opacity: 0.45, cursor: "default" }} title="Cette facture a déjà été envoyée au client par mail.">
+                      Envoyée au client
+                    </span>
+                  )}
+                  {!sent && !inv.hasPdf && (
+                    <span className="order-desc" title="Le PDF n'est pas enregistré sur le serveur : rouvrez la facture avec ✎ puis enregistrez-la pour le regénérer.">
+                      Envoi par mail indisponible (PDF manquant)
+                    </span>
+                  )}
                 </div>
+                {mailOpen && (
+                  <div className="emitted-row" style={{ marginTop: 12 }}>
+                    <input
+                      type="email"
+                      value={mailRowTo}
+                      onChange={(e) => setMailRowTo(e.target.value)}
+                      className="field-input wide"
+                      placeholder="e-mail du client"
+                      aria-label={`E-mail du client pour la facture ${inv.ref}`}
+                    />
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => sendRowMail(inv)}
+                      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && sendRowMail(inv)}
+                      className={`save-btn${isEmail(mailRowTo) && !sendingRow ? "" : " disabled"}`}
+                      aria-disabled={!isEmail(mailRowTo) || sendingRow}
+                    >
+                      {sendingRow ? "Envoi…" : "Envoyer au client"}
+                    </span>
+                    <span role="button" tabIndex={0} onClick={() => setMailRowId(null)} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setMailRowId(null)} className="cancel-edit-btn">
+                      Annuler
+                    </span>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -469,7 +703,7 @@ export default function InvoiceBuilderTab() {
         textarea.field-input { height: auto; padding: 8px 10px; resize: vertical; }
         .field-input.wide { width: 260px; }
         .admin-select { width: 200px; box-sizing: border-box; height: 32px; border: 1px solid rgba(255,255,255,.15); border-radius: 5px; background: #161514; padding: 0 10px; font: 11.5px 'Inter',sans-serif; color: #e8e6e1; outline: none; }
-        .field-input:focus-visible, .admin-select:focus-visible, .save-btn:focus-visible, .btn-edit:focus-visible, .btn-close:focus-visible, .cancel-edit-btn:focus-visible, .dl-link:focus-visible { outline: 2px solid #ff5a3c; outline-offset: 2px; }
+        .field-input:focus-visible, .admin-select:focus-visible, .save-btn:focus-visible, .btn-edit:focus-visible, .btn-close:focus-visible, .cancel-edit-btn:focus-visible, .dl-link:focus-visible, .field-input:focus-visible { outline: 2px solid #ff5a3c; outline-offset: 2px; }
         .add-grid { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
         .form-field { display: flex; flex-direction: column; gap: 6px; }
         .save-btn { font: 600 11px 'Inter',sans-serif; padding: 9px 16px; border-radius: 6px; cursor: pointer; background: #ff5a3c; color: #161514; display: inline-block; }
@@ -501,7 +735,13 @@ export default function InvoiceBuilderTab() {
         .msg-ok { font: 500 11.5px 'Inter',sans-serif; color: #8fd9a8; margin-top: 12px; }
         .msg-err { font: 500 11.5px 'Inter',sans-serif; color: #ff8a70; margin-top: 12px; }
         .msg-hint { font: 400 11px 'Inter',sans-serif; color: rgba(255,255,255,.5); margin-top: 12px; }
-        .dl-link { font: 600 11px 'Inter',sans-serif; color: #ff8a70; text-decoration: underline; white-space: nowrap; }
+        .dl-link { font: 600 11px 'Inter',sans-serif; color: #ff8a70; text-decoration: underline; white-space: nowrap; cursor: pointer; }
+        .row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 12px; }
+        .order-head { flex-wrap: wrap; }
+        .order-head-right { flex-wrap: wrap; }
+        .modify-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; border: 1px solid rgba(255,90,60,.5); border-radius: 10px; background: rgba(255,90,60,.06); padding: 14px 20px; margin-bottom: 20px; }
+        .modify-banner .cancel-edit-btn { color: #f3f1ec; text-decoration: underline; }
+        .btn-edit[aria-disabled="true"], .btn-close[aria-disabled="true"] { opacity: .4; cursor: wait; }
 
         @media (max-width: 640px) {
           .add-grid { flex-direction: column; }

@@ -148,6 +148,10 @@ export default function QuoteBuilderTab() {
 
   const [clientName, setClientName] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
+  // E-mail du client : validé comme sur la facture, mais NON transporté dans le PDF
+  // (QuotePdfData n'a pas ce champ, et le devis n'a ni stockage ni envoi serveur).
+  const [clientEmail, setClientEmail] = useState("");
+  const emailOk = clientEmail.trim() === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail.trim());
   const [items, setItems] = useState<QuoteLineItem[]>([]);
 
   const [serviceKey, setServiceKey] = useState<(typeof SERVICE_TYPES)[number]["key"]>(SERVICE_TYPES[0].key);
@@ -334,7 +338,7 @@ export default function QuoteBuilderTab() {
   const [generating, setGenerating] = useState(false);
 
   async function createQuotePdf() {
-    if (items.length === 0) return;
+    if (items.length === 0 || !emailOk) return;
     setGenerating(true);
     try {
       const now = new Date();
@@ -411,6 +415,13 @@ export default function QuoteBuilderTab() {
             <input value={clientName} onChange={(e) => setClientName(e.target.value)} className="field-input wide" placeholder="Nom / société" />
           </div>
         </div>
+        <div className="pricing-row">
+          <div className="pricing-field info">
+            <label className="field-label" htmlFor="quote-email">E-mail du client (facultatif)</label>
+            <input id="quote-email" type="email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} className="field-input wide" placeholder="client@exemple.fr" aria-invalid={!emailOk} />
+          </div>
+        </div>
+        {!emailOk && <div className="msg-err" role="alert">Adresse e-mail invalide : corrigez-la ou videz le champ.</div>}
       </div>
 
       <div className="pricing-card">
@@ -594,7 +605,7 @@ export default function QuoteBuilderTab() {
         </div>
       )}
 
-      <span onClick={items.length > 0 && !generating ? createQuotePdf : undefined} className={`save-btn generate-btn${items.length > 0 && !generating ? "" : " disabled"}`}>
+      <span onClick={items.length > 0 && !generating && emailOk ? createQuotePdf : undefined} className={`save-btn generate-btn${items.length > 0 && !generating && emailOk ? "" : " disabled"}`}>
         {generating ? "Génération..." : "Créer le devis"}
       </span>
 
@@ -642,6 +653,7 @@ export default function QuoteBuilderTab() {
         .btn-close:hover { border-color: rgba(255,90,60,.5); color: #ff8a70; background: rgba(255,90,60,.08); }
         .quote-total-row { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding: 14px 20px; border-radius: 10px; background: #1a1917; border: 1px solid rgba(255,255,255,.1); font: 600 13px 'Space Grotesk',sans-serif; color: #f3f1ec; }
         .quote-total-value { color: #ff5a3c; font-size: 16px; }
+        .msg-err { font: 500 11.5px 'Inter',sans-serif; color: #ff8a70; margin-top: 12px; }
 
         @media (max-width: 640px) {
           .add-grid { flex-direction: column; }

@@ -130,7 +130,10 @@ export interface ManualInvoiceListItem {
   issuedAt: string;
   sentAt: string | null;
   hasPdf: boolean;
+  clientEmail: string | null;
 }
+// Détail complet (GET /admin/manual-invoices/:id), pour recharger une facture non envoyée dans le formulaire.
+export type ManualInvoiceDetail = ManualInvoiceCreated & { sentAt: string | null; hasPdf: boolean };
 
 export const api = {
   async signup(email: string, password: string, captchaToken?: string) {
@@ -317,6 +320,21 @@ export const api = {
   },
   async adminCreateManualInvoice(payload: ManualInvoiceInput) {
     return request<ManualInvoiceCreated>("POST", "/admin/manual-invoices", payload);
+  },
+  async adminGetManualInvoice(id: string) {
+    return request<ManualInvoiceDetail>("GET", "/admin/manual-invoices/" + id);
+  },
+  // Modifie une facture NON envoyée : même ref / dailySeq / issuedAt, total recalculé, pdfKey remis à null
+  // (le client doit ensuite regénérer et redéposer le PDF via adminUploadManualInvoicePdf). 409 si déjà envoyée.
+  async adminUpdateManualInvoice(id: string, payload: ManualInvoiceInput) {
+    return request<ManualInvoiceCreated>("PUT", "/admin/manual-invoices/" + id, payload);
+  },
+  // Supprime une facture NON envoyée (409 si envoyée). Le compteur journalier ne redescend pas.
+  async adminDeleteManualInvoice(id: string) {
+    return request<{ ok: boolean }>("DELETE", "/admin/manual-invoices/" + id);
+  },
+  adminManualInvoiceCsvUrl(id: string) {
+    return apiBase() + "/admin/manual-invoices/" + id + "/csv";
   },
   async adminUploadManualInvoicePdf(id: string, blob: Blob) {
     const form = new FormData();

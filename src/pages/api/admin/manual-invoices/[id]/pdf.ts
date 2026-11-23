@@ -5,8 +5,9 @@ import { saveFile, readFileByKey } from "../../../../../lib/server/storage";
 
 const MAX_PDF_BYTES = 10 * 1024 * 1024;
 
-// Le PDF est généré côté navigateur (admin) puis déposé ici une seule fois :
-// facture émise = figée, donc 409 si un PDF est déjà attaché.
+// Le PDF est généré côté navigateur (admin) puis déposé ici ; 409 si un PDF est
+// déjà attaché. Modifier une facture non envoyée (PUT) remet pdfKey à null :
+// le client regénère alors le PDF et le redépose ici. Envoyée = verrouillée.
 export const POST = apiHandler(async (context) => {
   await requireAdmin(context);
   const { id } = context.params;
