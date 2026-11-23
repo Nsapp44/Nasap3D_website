@@ -136,6 +136,7 @@ export default function InvoiceBuilderTab() {
   const [mailRowId, setMailRowId] = useState<string | null>(null);
   const [mailRowTo, setMailRowTo] = useState("");
   const [sendingRow, setSendingRow] = useState(false);
+  const [resyncId, setResyncId] = useState<string | null>(null);
   const [listMsg, setListMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const emailOk = clientEmail.trim() === "" || isEmail(clientEmail);
@@ -185,6 +186,8 @@ export default function InvoiceBuilderTab() {
     const blob = await pdf(<QuoteDocument data={data} />).toBlob();
     const up = await api.adminUploadManualInvoicePdf(created.id, blob);
     download(blob, `${created.ref}.pdf`);
+    // Le PDF vient d'être téléchargé par le navigateur : on le marque « téléchargé » côté serveur.
+    if (up.ok) await fetch(api.adminManualInvoicePdfUrl(created.id), { credentials: "same-origin" }).then((r) => r.arrayBuffer()).catch(() => {});
     return { upOk: up.ok };
   }
 
@@ -288,6 +291,44 @@ export default function InvoiceBuilderTab() {
     resetForm();
     setModifyingId({ id: d.id, ref: d.ref });
     setTimeout(() => document.getElementById("inv-modify-banner")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+  }
+
+  // Regénère le PDF d'une facture telle qu'enregistrée (mêmes données), le redépose et le télécharge.
+  async function resyncInvoice(inv: ManualInvoiceListItem) {
+    if (resyncId) return;
+    setResyncId(inv.id);
+    setListMsg(null);
+    try {
+      const got = await api.adminGetManualInvoice(inv.id);
+      if (!got.ok || !got.data) {
+        setListMsg({ ok: false, text: `Impossible de charger la facture ${inv.ref}. Vérifiez votre connexion puis réessayez.` });
+        return;
+      }
+      const d = got.data;
+      const res = await api.adminUpdateManualInvoice(inv.id, {
+        clientName: d.clientName,
+        billingAddress: d.billingAddress,
+        deliveryAddress: d.deliveryAddress || undefined,
+        clientEmail: d.clientEmail || undefined,
+        paid: !!d.paidAt,
+        note: d.note || undefined,
+        items: d.items.map((it) => ({ title: it.title, description: it.description, quantity: it.quantity, unitPriceCents: it.unitPriceCents })),
+      });
+      if (!res.ok || !res.data) {
+        setListMsg({ ok: false, text: `Resynchronisation de ${inv.ref} impossible : le serveur a refusé la demande.` });
+        return;
+      }
+      const { upOk } = await renderAndUploadPdf(res.data);
+      setListMsg({
+        ok: upOk,
+        text: upOk ? `Facture ${inv.ref} resynchronisée. Le PDF a été téléchargé.` : `PDF de ${inv.ref} téléchargé, mais non enregistré sur le serveur : réessayez la resynchronisation.`,
+      });
+      loadList();
+    } catch {
+      setListMsg({ ok: false, text: `Resynchronisation de ${inv.ref} interrompue : une erreur est survenue. Réessayez.` });
+    } finally {
+      setResyncId(null);
+    }
   }
 
   function cancelModify() {
@@ -453,10 +494,11 @@ export default function InvoiceBuilderTab() {
             <input id="inv-email" type="email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} className="field-input wide" placeholder="client@exemple.fr" />
           </div>
           <div className="pricing-field info">
-            <label className="field-label" htmlFor="inv-paid">
-              <input id="inv-paid" type="checkbox" checked={paid} onChange={(e) => setPaid(e.target.checked)} /> Facture payée
-            </label>
-            <div className="field-hint">Cochée : la date du jour est enregistrée et l'export CSV Abby devient disponible.</div>
+            <span className="field-label" id="inv-paid-label">Facture payée</span>
+            <button type="button" id="inv-paid" role="switch" aria-checked={paid} aria-labelledby="inv-paid-label" className={`paid-switch${paid ? " on" : ""}`} onClick={() => setPaid(!paid)}>
+              <span className="paid-knob" />
+              <span className="paid-text">{paid ? "Payée" : "Non payée"}</span>
+            </button>
           </div>
         </div>
         {!emailOk && <div className="msg-err">Adresse e-mail invalide : corrigez-la ou videz le champ.</div>}
@@ -598,6 +640,7 @@ export default function InvoiceBuilderTab() {
                     <div className="order-title">{inv.ref}</div>
                     <div className="order-desc">
                       {inv.clientName} · {fmtDate(inv.issuedAt)} · {sent ? "Envoyée au client" : "Non envoyée"} · {inv.paidAt ? "Payée" : "Non payée"}
+                      {inv.hasPdf && (inv.downloadedAt ? <span className="dl-badge ok" title="Le PDF a déjà été téléchargé : vous pouvez le supprimer en toute sécurité.">✓ Téléchargée</span> : <span className="dl-badge todo" title="Le PDF n'a pas encore été téléchargé depuis le serveur.">● À télécharger</span>)}
                     </div>
                   </div>
                   <div className="order-head-right">
@@ -648,21 +691,34 @@ export default function InvoiceBuilderTab() {
                       Export CSV (Abby)
                     </a>
                   )}
+                </div>
+                <div className="row-actions">
                   {!sent && inv.hasPdf && !mailOpen && (
-                    <span className="dl-link" role="button" tabIndex={0} onClick={() => openRowMail(inv)} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && openRowMail(inv)}>
-                      Envoyer par mail
+                    <span className="act-btn primary" role="button" tabIndex={0} onClick={() => openRowMail(inv)} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && openRowMail(inv)}>
+                      ✉ Envoyer par mail au client
                     </span>
                   )}
                   {sent && (
-                    <span className="dl-link" aria-disabled="true" style={{ opacity: 0.45, cursor: "default" }} title="Cette facture a déjà été envoyée au client par mail.">
-                      Envoyée au client
+                    <span className="act-btn" aria-disabled="true" style={{ opacity: 0.45, cursor: "default" }} title="Cette facture a déjà été envoyée au client par mail.">
+                      ✓ Envoyée au client
                     </span>
                   )}
                   {!sent && !inv.hasPdf && (
-                    <span className="order-desc" title="Le PDF n'est pas enregistré sur le serveur : rouvrez la facture avec ✎ puis enregistrez-la pour le regénérer.">
+                    <span className="order-desc" title="Le PDF n'est pas enregistré sur le serveur : cliquez sur Resynchroniser.">
                       Envoi par mail indisponible (PDF manquant)
                     </span>
                   )}
+                  <span
+                    className={`act-btn${resyncId === inv.id ? " disabled" : ""}`}
+                    role="button"
+                    tabIndex={0}
+                    aria-disabled={resyncId === inv.id}
+                    title="Regénère le PDF, le redépose sur le serveur et le télécharge."
+                    onClick={() => resyncInvoice(inv)}
+                    onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && resyncInvoice(inv)}
+                  >
+                    {resyncId === inv.id ? "Synchronisation…" : "↻ Resynchroniser"}
+                  </span>
                 </div>
                 {mailOpen && (
                   <div className="emitted-row" style={{ marginTop: 12 }}>
@@ -746,6 +802,20 @@ export default function InvoiceBuilderTab() {
         .msg-err { font: 500 11.5px 'Inter',sans-serif; color: #ff8a70; margin-top: 12px; }
         .msg-hint { font: 400 11px 'Inter',sans-serif; color: rgba(255,255,255,.5); margin-top: 12px; }
         .dl-link { font: 600 11px 'Inter',sans-serif; color: #ff8a70; text-decoration: underline; white-space: nowrap; cursor: pointer; }
+        .paid-switch { display: inline-flex; align-items: center; gap: 12px; background: none; border: 0; padding: 4px 0; cursor: pointer; font: 600 13px 'Inter',sans-serif; color: #b9b3ab; }
+        .paid-switch .paid-knob { position: relative; width: 56px; height: 30px; border-radius: 999px; background: #3a3631; border: 1px solid #55504a; transition: background .2s, border-color .2s; flex: none; }
+        .paid-switch .paid-knob::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #e9e4dc; transition: transform .2s; }
+        .paid-switch.on .paid-knob { background: #2f9e5b; border-color: #2f9e5b; }
+        .paid-switch.on .paid-knob::after { transform: translateX(26px); background: #fff; }
+        .paid-switch.on .paid-text { color: #6fd39a; }
+        .paid-switch:focus-visible { outline: 2px solid #ff5a3c; outline-offset: 3px; border-radius: 999px; }
+        .act-btn { display: inline-block; font: 600 11px 'Inter',sans-serif; padding: 7px 12px; border-radius: 6px; background: #2a2724; color: #f1ece4; border: 1px solid #55504a; cursor: pointer; white-space: nowrap; }
+        .act-btn.primary { background: #ff5a3c; color: #161514; border-color: #ff5a3c; }
+        .act-btn.disabled { opacity: .5; cursor: wait; }
+        .act-btn:focus-visible { outline: 2px solid #ff5a3c; outline-offset: 2px; }
+        .dl-badge { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px; font: 600 10px 'Inter',sans-serif; white-space: nowrap; }
+        .dl-badge.ok { background: rgba(47,158,91,.18); color: #6fd39a; }
+        .dl-badge.todo { background: rgba(255,170,60,.16); color: #ffb454; }
         .row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 12px; }
         .order-head { flex-wrap: wrap; }
         .order-head-right { flex-wrap: wrap; }

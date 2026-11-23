@@ -6,8 +6,8 @@ import { saveFile, readFileByKey } from "../../../../../lib/server/storage";
 const MAX_PDF_BYTES = 10 * 1024 * 1024;
 
 // Le PDF est généré côté navigateur (admin) puis déposé ici ; 409 si un PDF est
-// déjà attaché. Modifier une facture non envoyée (PUT) remet pdfKey à null :
-// le client regénère alors le PDF et le redépose ici. Envoyée = verrouillée.
+// déjà attaché. Modifier une facture (PUT) remet pdfKey à null :
+// le client regénère alors le PDF et le redépose ici. Le GET marque downloadedAt.
 export const POST = apiHandler(async (context) => {
   await requireAdmin(context);
   const { id } = context.params;
@@ -44,6 +44,9 @@ export const GET = apiHandler(async (context) => {
   if (!inv.pdfKey) return jsonError(404, "pdf_not_found");
 
   const pdf = await readFileByKey(inv.pdfKey);
+  if (!inv.downloadedAt) {
+    await prisma.manualInvoice.update({ where: { id: inv.id }, data: { downloadedAt: new Date() } }).catch(() => {});
+  }
   return new Response(new Uint8Array(pdf), {
     headers: {
       "Content-Type": "application/pdf",

@@ -38,6 +38,7 @@ export const GET = apiHandler(async (context) => {
     note: inv.note,
     sentAt: inv.sentAt,
     paidAt: inv.paidAt,
+    downloadedAt: inv.downloadedAt,
     hasPdf: !!inv.pdfKey,
   });
 });
@@ -64,6 +65,7 @@ export const PUT = apiHandler(async (context) => {
       note: d.note,
       totalCents: d.totalCents,
       pdfKey: null,
+      downloadedAt: null, // nouveau PDF : à re-télécharger
       // Cochée : on garde la date d'origine si déjà payée, sinon aujourd'hui.
       paidAt: d.paid ? (before?.paidAt ?? new Date()) : null,
     },

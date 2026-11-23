@@ -13,7 +13,7 @@ export const GET = apiHandler(async (context) => {
   await requireAdmin(context);
   const rows = await prisma.manualInvoice.findMany({
     orderBy: { issuedAt: "desc" },
-    select: { id: true, ref: true, clientName: true, clientEmail: true, totalCents: true, issuedAt: true, sentAt: true, paidAt: true, pdfKey: true },
+    select: { id: true, ref: true, clientName: true, clientEmail: true, totalCents: true, issuedAt: true, sentAt: true, paidAt: true, downloadedAt: true, pdfKey: true },
   });
   return json(
     rows.map((r) => ({
@@ -25,6 +25,7 @@ export const GET = apiHandler(async (context) => {
       issuedAt: r.issuedAt,
       sentAt: r.sentAt,
       paidAt: r.paidAt,
+      downloadedAt: r.downloadedAt,
       hasPdf: !!r.pdfKey,
     })),
   );

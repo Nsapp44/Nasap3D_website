@@ -399,6 +399,7 @@ model ManualInvoice {
   pdfKey          String?
   sentAt          DateTime?
   // Date à laquelle la facture a été cochée « payée » (null = non payée)
+  downloadedAt DateTime? // 1er téléchargement du PDF par l'admin (pastille « téléchargée »)
   paidAt          DateTime?
   issuedAt        DateTime  @default(now())
 }
