@@ -398,6 +398,8 @@ model ManualInvoice {
   totalCents      Int
   pdfKey          String?
   sentAt          DateTime?
+  // Date à laquelle la facture a été cochée « payée » (null = non payée)
+  paidAt          DateTime?
   issuedAt        DateTime  @default(now())
 }
 

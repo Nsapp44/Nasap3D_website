@@ -12,14 +12,12 @@ Archives : `docs/chantiers/SUIVI_complet_2026-11-23_avant_factures.md` (version 
 4. [ ] Perf téléphone des vues 3D (CLS mobile 0,146 `/`, 0,174 bioréacteur ; saccadé au scroll lent).
 5. [ ] Réindexation Search Console : par Nolann (`/`, `/machines`, `/realisations`, `/maquettiste-nantes`, 5 pages réalisations + sitemap).
 10. [ ] Étiquettes 100×150 : bouton « Imprimer l'étiquette » fait en local, non poussé, non testé ; Nolann n'a pas d'imprimante, item en pause.
-11. [~] **Factures libres (portail admin)**. Commité local `aaacc34` (émission, PDF, envoi mail). **Lot « demandes 23/11 » FAIT en local, NON COMMITÉ** (en attente du « oui » de Nolann) :
-    - (a) e-mail client facultatif sur le DEVIS (`QuoteBuilderTab.tsx`) : validé, gardé dans l'état seulement (devis 100 % côté client, `QuoteDocument` inchangé, e-mail NON imprimé sur le PDF : choix à Nolann).
-    - (b)(h) ✎ modifier (même numéro, PDF regénéré) + ✕ supprimer (pop-up, PDF stocké supprimé) : routes `src/pages/api/admin/manual-invoices/[id]/index.ts` (GET/PUT/DELETE), helper `src/lib/server/manual-invoice-validate.ts`. **CHANGÉ 23/11 sur demande de Nolann : plus de verrou « envoyée »** : ✎ et ✕ visibles même si envoyée (il avait une facture envoyée sans pouvoir la corriger) ; « Envoyée au client » affiché grisé (plus de bouton Envoyer), PDF + CSV toujours téléchargeables ; `sentAt` conservé à la modification, PDF regénéré/retéléchargé. Risque légal à rappeler : modifier/supprimer une facture déjà envoyée (numérotation, avoir). Les branches 409 du composant sont mortes mais inoffensives. `tsc` 0 erreur ; Retesté navigateur 23/11 : facture envoyée → ✎ ✕ « Envoyée au client » grisé visibles ; ✎ puis « Enregistrer les modifications » : même numéro, `sentAt` gardé, PDF regénéré (`hasPdf` true). Clic réel ✕ (pop-up) non testé.
-    - (c) export CSV Abby : `[id]/csv.ts` ; en-tête exact du modèle Abby (aide.abby.fr 8957481), BOM, `\r\n`, anti-injection de formule. **Date de paiement et moyen de paiement laissés VIDES** (absents du modèle de données ; Abby les exige, import des factures SOLDÉES seulement) ; TVA 0 (art. 293 B), type de vente 3 par défaut. Encodage du modèle Abby non vérifié.
-    - (d) aucun lien commandes/comptes. (g) section « Factures émises (non synchronisées) ». (i) « Envoyer par mail » visible par ligne. (e) expéditeur du mail = `MAIL_FROM` (défaut `Nasap3D <no-reply@nasap3d.com>`).
-    - Test navigateur 23/11 : onglet Factures OK (liste, ✎ ✕ Envoyer, export CSV ; facture envoyée = sans ✎/✕, libellé « Envoyée au client »). `tsc --noEmit` 0 erreur. NON FAIT : clic réel ✎/✕ dans l'UI, test visuel mobile des nouvelles lignes, PDF devis comparé visuellement (fichier non modifié), envoi e-mail réel (adresse de Nolann seulement, demander par pop-up).
-    - Questions à Nolann : date/moyen de paiement du CSV, type de vente 3 OK ?, e-mail imprimé sur le devis ?, trou de numérotation si une facture est supprimée (FAC_002 supprimée, FAC_003 gardée : risque légal, à rappeler). IBAN/mode de règlement et forme juridique de l'émetteur à fournir.
-    - Données de test : base LOCALE seulement (facture FAC_001 marquée envoyée à la main, compte admin de test).
+11. [~] **Factures libres (portail admin)** : FAIT, poussé 23/11. Émission, PDF, mail, ✎ modifier (même numéro, PDF regénéré), ✕ supprimer, CSV Abby.
+    - Plus de verrou « envoyée » (demande Nolann) : ✎ ✕ visibles ; « Envoyée au client » grisé ; PDF/CSV toujours téléchargeables. Risque légal à rappeler : modifier/supprimer une facture envoyée, trou de numérotation (compteur journalier ne redescend pas).
+    - **Case « Facture payée »** (migration `20261123180000_manual_invoice_paid`, `paidAt`) : cochée = date du jour ; liste affiche Payée/Non payée ; **CSV Abby seulement si payée** (409 `not_paid` sinon ; lien masqué) ; date de paiement JJ/MM/AAAA ; moyen de paiement VIDE (Abby l'exige, Nolann ne veut pas le saisir : question ouverte). Testé en local (API + onglet).
+    - E-mail client : facultatif sur devis et facture, JAMAIS imprimé (décision Nolann 23/11).
+    - À FAIRE : IBAN (pied de facture, Nolann le fournit) et forme juridique de l'émetteur (mention légale, à fournir). Type de vente 3 à confirmer. Encodage du modèle Abby non vérifié.
+    - NON TESTÉ : clic réel ✕, mobile, envoi e-mail réel.
 12. [~] Déplacement vers `Desktop\Projet\Nasap3D website` partiel (dépôt, `.git`, worktree faits ; restent `reseaux-sociaux`, 2 worktrees d'autres sessions, dossiers annexes). Rien supprimé sans accord.
 13. [ ] SEO : audit fait (`docs/chantiers/seo_audit_2026-11-22.md`). Décision 22/11 : cible TOUTE LA FRANCE ; pages `/maquette-industrielle` + « maquette impression 3D sur mesure », `/maquettiste-nantes` en local. Rien codé.
 14. [ ] French Fab : erreur à l'inscription, capture à demander à Nolann.
@@ -34,7 +32,7 @@ LED purification/caravane ; KPI hero ; 4 textes BROUILLON caravane ; incident ba
 Navigateur intégré peu fiable pour scroll/rAF (→ Chrome headless). Boxtal bac à sable : `order_status` 404 juste après achat. Login `fetch` depuis un onglet sans page chargée : « Failed to fetch » (naviguer d'abord sur /admin). Le serveur dev du worktree : `preview_start nasap3d-worktree-b2b` (port 3000).
 
 ## Prochain pas exact
-Pop-up à Nolann « je committe le lot factures ? » (fichiers : `src/lib/api-client.ts`, `manual-invoice-validate.ts`, `manual-invoices/index.ts`, `[id]/index.ts`, `[id]/csv.ts`, `[id]/pdf.ts`, `InvoiceBuilderTab.tsx`, `QuoteBuilderTab.tsx`, `SUIVI.md`, archive docs) ; puis clic réel ✎/✕ dans l'UI. Arrêter le serveur dev en fin de test.
+IBAN + forme juridique en pied de facture dès que Nolann les donne ; confirmer moyen de paiement CSV.
 
 ## Conversations à supprimer
 - `local_e6e8af89-a204-4058-bdd3-3c7b10ef3ce2` : NE PAS TOUCHER (session parente, jamais supprimer)

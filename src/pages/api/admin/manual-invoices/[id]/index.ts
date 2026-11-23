@@ -37,6 +37,7 @@ export const GET = apiHandler(async (context) => {
     items: inv.items,
     note: inv.note,
     sentAt: inv.sentAt,
+    paidAt: inv.paidAt,
     hasPdf: !!inv.pdfKey,
   });
 });
@@ -50,7 +51,7 @@ export const PUT = apiHandler(async (context) => {
   if (!v.ok) return jsonError(400, v.error);
   const d = v.data;
 
-  const before = await prisma.manualInvoice.findUnique({ where: { id }, select: { pdfKey: true } });
+  const before = await prisma.manualInvoice.findUnique({ where: { id }, select: { pdfKey: true, paidAt: true } });
 
   const res = await prisma.manualInvoice.updateMany({
     where: { id },
@@ -63,6 +64,8 @@ export const PUT = apiHandler(async (context) => {
       note: d.note,
       totalCents: d.totalCents,
       pdfKey: null,
+      // Cochée : on garde la date d'origine si déjà payée, sinon aujourd'hui.
+      paidAt: d.paid ? (before?.paidAt ?? new Date()) : null,
     },
   });
   if (res.count === 0) {

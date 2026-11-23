@@ -108,6 +108,7 @@ export interface ManualInvoiceInput {
   clientEmail?: string;
   items: ManualInvoiceItem[];
   note?: string;
+  paid?: boolean;
 }
 export interface ManualInvoiceCreated {
   id: string;
@@ -129,11 +130,12 @@ export interface ManualInvoiceListItem {
   totalCents: number;
   issuedAt: string;
   sentAt: string | null;
+  paidAt: string | null;
   hasPdf: boolean;
   clientEmail: string | null;
 }
 // Détail complet (GET /admin/manual-invoices/:id), pour recharger une facture non envoyée dans le formulaire.
-export type ManualInvoiceDetail = ManualInvoiceCreated & { sentAt: string | null; hasPdf: boolean };
+export type ManualInvoiceDetail = ManualInvoiceCreated & { sentAt: string | null; paidAt: string | null; hasPdf: boolean };
 
 export const api = {
   async signup(email: string, password: string, captchaToken?: string) {

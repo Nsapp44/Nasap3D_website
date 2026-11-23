@@ -13,7 +13,7 @@ export const GET = apiHandler(async (context) => {
   await requireAdmin(context);
   const rows = await prisma.manualInvoice.findMany({
     orderBy: { issuedAt: "desc" },
-    select: { id: true, ref: true, clientName: true, clientEmail: true, totalCents: true, issuedAt: true, sentAt: true, pdfKey: true },
+    select: { id: true, ref: true, clientName: true, clientEmail: true, totalCents: true, issuedAt: true, sentAt: true, paidAt: true, pdfKey: true },
   });
   return json(
     rows.map((r) => ({
@@ -24,6 +24,7 @@ export const GET = apiHandler(async (context) => {
       totalCents: r.totalCents,
       issuedAt: r.issuedAt,
       sentAt: r.sentAt,
+      paidAt: r.paidAt,
       hasPdf: !!r.pdfKey,
     })),
   );
@@ -36,7 +37,7 @@ export const POST = apiHandler(async (context) => {
 
   const v = validateManualInvoiceBody(body);
   if (!v.ok) return jsonError(400, v.error);
-  const { clientName, billingAddress, deliveryAddress, clientEmail, note, items, totalCents } = v.data;
+  const { clientName, billingAddress, deliveryAddress, clientEmail, note, items, totalCents, paid } = v.data;
 
   const now = new Date();
   const dateKey = now.toISOString().slice(0, 10);
@@ -61,6 +62,7 @@ export const POST = apiHandler(async (context) => {
         note,
         totalCents,
         issuedAt: now,
+        paidAt: paid ? now : null,
       },
     });
   });

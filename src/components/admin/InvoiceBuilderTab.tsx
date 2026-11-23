@@ -49,6 +49,7 @@ export default function InvoiceBuilderTab() {
   const [billingAddress, setBillingAddress] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [clientEmail, setClientEmail] = useState("");
+  const [paid, setPaid] = useState(false);
   const [items, setItems] = useState<InvoiceLine[]>([]);
 
   const [serviceKey, setServiceKey] = useState<(typeof SERVICE_TYPES)[number]["key"]>(SERVICE_TYPES[0].key);
@@ -156,6 +157,7 @@ export default function InvoiceBuilderTab() {
     setBillingAddress("");
     setDeliveryAddress("");
     setClientEmail("");
+    setPaid(false);
     setNote("");
     setItems([]);
     resetForm();
@@ -199,6 +201,7 @@ export default function InvoiceBuilderTab() {
         billingAddress: billingAddress.trim(),
         deliveryAddress: deliveryAddress.trim() || undefined,
         clientEmail: clientEmail.trim() || undefined,
+        paid,
         note: note.trim() || undefined,
         items: items.map((it) => ({
           title: it.title,
@@ -271,6 +274,7 @@ export default function InvoiceBuilderTab() {
     setBillingAddress(d.billingAddress);
     setDeliveryAddress(d.deliveryAddress ?? "");
     setClientEmail(d.clientEmail ?? "");
+    setPaid(!!d.paidAt);
     setNote(d.note ?? "");
     setItems(
       d.items.map((it) => ({
@@ -448,6 +452,12 @@ export default function InvoiceBuilderTab() {
             <label className="field-label" htmlFor="inv-email">E-mail du client (optionnel)</label>
             <input id="inv-email" type="email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} className="field-input wide" placeholder="client@exemple.fr" />
           </div>
+          <div className="pricing-field info">
+            <label className="field-label" htmlFor="inv-paid">
+              <input id="inv-paid" type="checkbox" checked={paid} onChange={(e) => setPaid(e.target.checked)} /> Facture payée
+            </label>
+            <div className="field-hint">Cochée : la date du jour est enregistrée et l'export CSV Abby devient disponible.</div>
+          </div>
         </div>
         {!emailOk && <div className="msg-err">Adresse e-mail invalide : corrigez-la ou videz le champ.</div>}
       </div>
@@ -587,7 +597,7 @@ export default function InvoiceBuilderTab() {
                   <div>
                     <div className="order-title">{inv.ref}</div>
                     <div className="order-desc">
-                      {inv.clientName} · {fmtDate(inv.issuedAt)} · {sent ? "Envoyée au client" : "Non envoyée"}
+                      {inv.clientName} · {fmtDate(inv.issuedAt)} · {sent ? "Envoyée au client" : "Non envoyée"} · {inv.paidAt ? "Payée" : "Non payée"}
                     </div>
                   </div>
                   <div className="order-head-right">
@@ -628,12 +638,12 @@ export default function InvoiceBuilderTab() {
                       Télécharger le PDF
                     </a>
                   )}
-                  {inv.hasPdf && (
+                  {inv.hasPdf && inv.paidAt && (
                     <a
                       className="dl-link"
                       href={api.adminManualInvoiceCsvUrl(inv.id)}
                       download
-                      title="Fichier d'import Abby (Livre des recettes). Date et moyen de paiement à compléter avant import."
+                      title="Fichier d'import Abby (Livre des recettes, factures payées). Moyen de paiement à compléter avant import."
                     >
                       Export CSV (Abby)
                     </a>

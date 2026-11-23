@@ -27,6 +27,7 @@ export type ManualInvoiceData = {
   note: string | null;
   items: CleanItem[];
   totalCents: number;
+  paid: boolean;
 };
 
 export type ManualInvoiceValidation =
@@ -87,6 +88,6 @@ export function validateManualInvoiceBody(body: unknown): ManualInvoiceValidatio
 
   return {
     ok: true,
-    data: { clientName, billingAddress, deliveryAddress, clientEmail, note, items, totalCents },
+    data: { clientName, billingAddress, deliveryAddress, clientEmail, note, items, totalCents, paid: b.paid === true },
   };
 }
