@@ -44,6 +44,11 @@ function isEmail(v: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 }
 
+const ico = { width: 15, height: 15, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.9, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true, style: { verticalAlign: "-3px", marginRight: 6 } };
+const MailIcon = () => (<svg {...ico}><path d="M4 6h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Z" /><path d="m3.5 7.5 8.5 6 8.5-6" /></svg>);
+const CheckIcon = () => (<svg {...ico} style={{ ...ico.style, marginRight: 3, width: 12, height: 12, strokeWidth: 2.8 }}><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>);
+const SyncIcon = () => (<svg {...ico}><path d="M20 12a8 8 0 0 1-13.7 5.6" /><path d="M4 12a8 8 0 0 1 13.7-5.6" /><path d="M18 3v4h-4" /><path d="M6 21v-4h4" /></svg>);
+
 export default function InvoiceBuilderTab() {
   const [clientName, setClientName] = useState("");
   const [billingAddress, setBillingAddress] = useState("");
@@ -640,7 +645,6 @@ export default function InvoiceBuilderTab() {
                     <div className="order-title">{inv.ref}</div>
                     <div className="order-desc">
                       {inv.clientName} · {fmtDate(inv.issuedAt)} · {sent ? "Envoyée au client" : "Non envoyée"} · {inv.paidAt ? "Payée" : "Non payée"}
-                      {inv.hasPdf && (inv.downloadedAt ? <span className="dl-badge ok" title="Le PDF a déjà été téléchargé : vous pouvez le supprimer en toute sécurité.">✓ Téléchargée</span> : <span className="dl-badge todo" title="Le PDF n'a pas encore été téléchargé depuis le serveur.">● À télécharger</span>)}
                     </div>
                   </div>
                   <div className="order-head-right">
@@ -681,6 +685,8 @@ export default function InvoiceBuilderTab() {
                       Télécharger le PDF
                     </a>
                   )}
+                  {inv.hasPdf && (inv.downloadedAt ? <span className="dl-badge ok" title="Le PDF a déjà été téléchargé : vous pouvez le supprimer en toute sécurité."><CheckIcon /> Téléchargée</span> : <span className="dl-badge todo" title="Le PDF n'a pas encore été téléchargé depuis le serveur.">● À télécharger</span>)}
+                  {sent && <span className="dl-badge ok" title="Cette facture a déjà été envoyée au client par mail."><CheckIcon /> Envoyée au client</span>}
                   {inv.hasPdf && inv.paidAt && (
                     <a
                       className="dl-link"
@@ -693,14 +699,9 @@ export default function InvoiceBuilderTab() {
                   )}
                 </div>
                 <div className="row-actions">
-                  {!sent && inv.hasPdf && !mailOpen && (
+                  {inv.hasPdf && !mailOpen && (
                     <span className="act-btn primary" role="button" tabIndex={0} onClick={() => openRowMail(inv)} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && openRowMail(inv)}>
-                      ✉ Envoyer par mail au client
-                    </span>
-                  )}
-                  {sent && (
-                    <span className="act-btn" aria-disabled="true" style={{ opacity: 0.45, cursor: "default" }} title="Cette facture a déjà été envoyée au client par mail.">
-                      ✓ Envoyée au client
+                      <MailIcon /> {sent ? "Renvoyer par mail au client" : "Envoyer par mail au client"}
                     </span>
                   )}
                   {!sent && !inv.hasPdf && (
@@ -717,7 +718,7 @@ export default function InvoiceBuilderTab() {
                     onClick={() => resyncInvoice(inv)}
                     onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && resyncInvoice(inv)}
                   >
-                    {resyncId === inv.id ? "Synchronisation…" : "↻ Resynchroniser"}
+                    {resyncId === inv.id ? <><span className="spin" aria-hidden="true" /> Synchronisation…</> : <><SyncIcon /> Resynchroniser</>}
                   </span>
                 </div>
                 {mailOpen && (
@@ -738,7 +739,7 @@ export default function InvoiceBuilderTab() {
                       className={`save-btn${isEmail(mailRowTo) && !sendingRow ? "" : " disabled"}`}
                       aria-disabled={!isEmail(mailRowTo) || sendingRow}
                     >
-                      {sendingRow ? "Envoi…" : "Envoyer au client"}
+                      {sendingRow ? <><span className="spin" aria-hidden="true" /> Envoi en cours…</> : "Envoyer au client"}
                     </span>
                     <span role="button" tabIndex={0} onClick={() => setMailRowId(null)} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setMailRowId(null)} className="cancel-edit-btn">
                       Annuler
@@ -802,6 +803,9 @@ export default function InvoiceBuilderTab() {
         .msg-err { font: 500 11.5px 'Inter',sans-serif; color: #ff8a70; margin-top: 12px; }
         .msg-hint { font: 400 11px 'Inter',sans-serif; color: rgba(255,255,255,.5); margin-top: 12px; }
         .dl-link { font: 600 11px 'Inter',sans-serif; color: #ff8a70; text-decoration: underline; white-space: nowrap; cursor: pointer; }
+        .spin { display: inline-block; width: 11px; height: 11px; margin-right: 6px; vertical-align: -2px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: invspin .7s linear infinite; }
+        @keyframes invspin { to { transform: rotate(360deg); } }
+        @media (prefers-reduced-motion: reduce) { .spin { animation-duration: 2s; } }
         .paid-switch { display: inline-flex; align-items: center; gap: 12px; background: none; border: 0; padding: 4px 0; cursor: pointer; font: 600 13px 'Inter',sans-serif; color: #b9b3ab; }
         .paid-switch .paid-knob { position: relative; width: 56px; height: 30px; border-radius: 999px; background: #3a3631; border: 1px solid #55504a; transition: background .2s, border-color .2s; flex: none; }
         .paid-switch .paid-knob::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #e9e4dc; transition: transform .2s; }
@@ -813,7 +817,7 @@ export default function InvoiceBuilderTab() {
         .act-btn.primary { background: #ff5a3c; color: #161514; border-color: #ff5a3c; }
         .act-btn.disabled { opacity: .5; cursor: wait; }
         .act-btn:focus-visible { outline: 2px solid #ff5a3c; outline-offset: 2px; }
-        .dl-badge { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px; font: 600 10px 'Inter',sans-serif; white-space: nowrap; }
+        .dl-badge { display: inline-block; margin-left: -8px; padding: 2px 8px; border-radius: 999px; font: 600 10px 'Inter',sans-serif; white-space: nowrap; }
         .dl-badge.ok { background: rgba(47,158,91,.18); color: #6fd39a; }
         .dl-badge.todo { background: rgba(255,170,60,.16); color: #ffb454; }
         .row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 12px; }
