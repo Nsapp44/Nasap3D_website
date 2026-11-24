@@ -159,8 +159,16 @@ export function QuoteDocument({ data }: { data: QuotePdfData }) {
           </Text>
           {isInvoice && (
             <Text style={sharedPdfStyles.footerLine}>
+              Règlement par virement : NASAP3D E.I. — IBAN FR76 1333 5004 0108 0036 9744 345 — BIC CEPAFRPP333.
+            </Text>
+          )}
+          {isInvoice && (
+            <Text style={sharedPdfStyles.footerLine}>
               En cas de retard de paiement : pénalités au taux de 3 fois le taux d'intérêt légal, ainsi qu'une indemnité forfaitaire de recouvrement de 40 € (art. L441-10 du Code de commerce). Pas d'escompte pour paiement anticipé.
             </Text>
+          )}
+          {isInvoice && (
+            <Text style={sharedPdfStyles.legalMention}>Nasap3D — Micro-entrepreneur (entreprise individuelle)</Text>
           )}
           <Text style={sharedPdfStyles.legalMention}>TVA non applicable, art. 293 B du CGI</Text>
         </View>

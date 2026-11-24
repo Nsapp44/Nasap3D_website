@@ -128,6 +128,7 @@ export function InvoiceDocument({ data }: { data: InvoicePdfData }) {
         <View style={sharedPdfStyles.footerBlock}>
           <Text style={sharedPdfStyles.footerTitle}>Conditions et modalités de paiement</Text>
           <Text style={sharedPdfStyles.footerLine}>Payé en ligne par carte bancaire via Stripe à la validation de la commande.</Text>
+          <Text style={sharedPdfStyles.legalMention}>Nasap3D — Micro-entrepreneur (entreprise individuelle)</Text>
           <Text style={sharedPdfStyles.legalMention}>TVA non applicable, art. 293 B du CGI</Text>
         </View>
 
