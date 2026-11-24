@@ -242,7 +242,11 @@ export default function OrdersTab({ focus = null, onClearFocus }: { focus?: { re
         .parcel-note { font: 400 10px/1.5 'Inter',sans-serif; color: rgba(255,255,255,.45); }
         @media (max-width: 640px) { .parcel-buy-link { min-height: 40px; } }
         .btn-label, .btn-label:hover { text-decoration: none; color: #ff5a3c; }
-        .btn-label { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,90,60,.35); font: 600 10.5px 'Inter',sans-serif; padding: 6px 12px; border-radius: 5px; }
+        .btn-label { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,90,60,.35); background: transparent; cursor: pointer; font: 600 10.5px 'Inter',sans-serif; padding: 6px 12px; border-radius: 5px; transition: background .15s, border-color .15s, transform .1s; }
+        .btn-label:hover { background: rgba(255,90,60,.14); border-color: #ff5a3c; }
+        .btn-label:active { transform: translateY(1px); }
+        .btn-label:focus-visible { outline: 2px solid #ff5a3c; outline-offset: 2px; }
+        .btn-label svg { flex: none; }
         .tracking-number { font: 600 10.5px ui-monospace,monospace; color: #e8e6e1; }
         .tracking-input { width: 180px; box-sizing: border-box; height: 28px; border: 1px solid rgba(255,255,255,.15); border-radius: 5px; background: #161514; padding: 0 8px; font: 10.5px ui-monospace,monospace; color: #e8e6e1; outline: none; }
         .btn-emergency { border: 1px dashed rgba(255,90,60,.5); color: #ff8a70; background: transparent; font: 500 10px 'Inter',sans-serif; padding: 5px 10px; border-radius: 5px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; }

@@ -502,6 +502,7 @@ export default function OrderCard({ order, onChanged, boxStock }: { order: Admin
             Télécharger l'étiquette
           </a>{" "}
           <button type="button" className="btn-label" onClick={printLabel} title={`Imprimer l'étiquette ${order.ref} (100×150 mm)`}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 9V3.5h10V9" /><path d="M7 17.5H5a1.5 1.5 0 0 1-1.5-1.5v-5A1.5 1.5 0 0 1 5 9.5h14a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 1-1.5 1.5h-2" /><rect x="7" y="14" width="10" height="6.5" rx="1" /></svg>
             Imprimer l'étiquette · {order.ref}
           </button>
         </div>
