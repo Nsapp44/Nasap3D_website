@@ -66,6 +66,17 @@ export async function purgeOrderFiles(orderId: string): Promise<void> {
   }
 }
 
+// DELIVERED transition shared by the tracking refresh and the Boxtal webhook:
+// status + deliveredAt, shipping data purge, then uploaded files purge.
+export async function markOrderDelivered(orderId: string): Promise<void> {
+  const order = await prisma.order.findUnique({ where: { id: orderId }, select: { deliveredAt: true } });
+  await prisma.order.update({
+    where: { id: orderId },
+    data: { status: "DELIVERED", deliveredAt: order?.deliveredAt ?? new Date(), ...SHIPPING_DATA_PURGE },
+  });
+  await purgeOrderFiles(orderId);
+}
+
 // Pulls the live tracking number + carrier status from Boxtal for one
 // order, persists whatever's new, and auto-transitions to DELIVERED (with
 // the purge above) when the carrier status looks like a delivery — see
@@ -104,11 +115,7 @@ export async function refreshOrderTrackingStatus(orderId: string): Promise<{
   console.log(`[tracking] ${order.ref} état Boxtal: ${JSON.stringify(status.state)} livré=${status.isLikelyDelivered}`);
 
   if (status.isLikelyDelivered) {
-    await prisma.order.update({
-      where: { id: orderId },
-      data: { status: "DELIVERED", deliveredAt: order.deliveredAt ?? new Date(), ...SHIPPING_DATA_PURGE },
-    });
-    await purgeOrderFiles(orderId);
+    await markOrderDelivered(orderId);
     return { trackingNumber: null, state: status.state, autoDelivered: true };
   }
 

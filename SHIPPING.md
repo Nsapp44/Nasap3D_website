@@ -298,6 +298,16 @@ vérifier si un vrai passage en livraison ne se détecte pas correctement.
   commande toutes les 15 minutes) sur toutes les commandes PRINTING/READY
   avec un `boxtalOrderRef`.
 
+**Webhook Boxtal (`url_push`)** : à l'achat de l'étiquette, le site envoie
+`url_push` = `FRONT_URL/api/webhooks/boxtal/<orderId>/<signature>` (HMAC de
+`boxtal:<orderId>`, clé `BOXTAL_WEBHOOK_SECRET` ou à défaut
+`BOXTAL_API_SECRET_V1`). Boxtal l'appelle en GET : `type=tracking` avec
+`etat=LIV` passe la commande en DELIVERED (même transition que ci-dessus,
+`markOrderDelivered`), `ENV` / `type=status` enregistrent le numéro de suivi.
+Réponses : 200, 403 (signature), 422 (commande inconnue). Valable seulement
+pour les étiquettes achetées après la mise en ligne ; les anciennes restent
+couvertes par le balayage.
+
 **Numéro de suivi obligatoire avant "Expédié / Prêt"** : pour toute
 commande expédiée (pas retrait atelier), `PATCH /admin/orders/:id` refuse
 `{status: "READY"}` tant qu'aucun `trackingNumber` n'existe (auto-récupéré

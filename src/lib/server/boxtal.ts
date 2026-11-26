@@ -465,6 +465,9 @@ export interface LabelPurchaseInput {
   // Boxtal for cross-border shipments even within the EU (declared value,
   // not a real customs form).
   declaredValueCents?: number;
+  // Signed callback URL sent as `url_push` (Boxtal then notifies tracking
+  // changes, incl. delivery). See boxtalWebhook.ts.
+  webhookUrl?: string;
 }
 
 // Every order is the same kind of good — always this fixed description,
@@ -523,6 +526,7 @@ export async function purchaseShippingLabel(input: LabelPurchaseInput): Promise<
     if (!input.relayPointCode) throw new BoxtalApiError("relayPointCode required for a RELAY shipment");
     params.set("retrait.pointrelais", input.relayPointCode);
   }
+  if (input.webhookUrl) params.set("url_push", input.webhookUrl);
   // Boxtal's own mandatory_informations for the *Europe/*International offer
   // variants list these as required to place the order, on top of the usual
   // fields above — not needed for FR-domestic offers, which don't ask for

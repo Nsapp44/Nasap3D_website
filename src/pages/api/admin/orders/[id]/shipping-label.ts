@@ -6,6 +6,7 @@ import { recordAlert, resolveAlerts } from "../../../../../lib/server/adminAlert
 import { describeMissingFields, missingShippingFields } from "../../../../../lib/server/shippingChecks";
 import type { Parcel } from "../../../../../lib/server/packing";
 import { refreshOrderTrackingStatus } from "../../../../../lib/server/orderTracking";
+import { boxtalWebhookUrl } from "../../../../../lib/server/boxtalWebhook";
 
 // Direct port of POST /admin/orders/:id/shipping-label — achat RÉEL de
 // l'étiquette d'expédition (Boxtal api/v1/order) — argent réel, jamais
@@ -45,8 +46,17 @@ export const POST = apiHandler(async (context) => {
         },
       ];
 
+  // Callback URL so Boxtal notifies delivery; never blocks the purchase.
+  let webhookUrl: string | undefined;
+  try {
+    webhookUrl = boxtalWebhookUrl(id!);
+  } catch (e) {
+    console.error("boxtal webhook url unavailable, buying label without url_push", e);
+  }
+
   try {
     const result = await purchaseShippingLabel({
+      webhookUrl,
       recipient: {
         fullName: order.recipientName!,
         phone: order.recipientPhone!,
